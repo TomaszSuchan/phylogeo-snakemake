@@ -1,0 +1,4 @@
+channels:
+ - bioconda
+dependencies:
+ - pcaone=0.5.2
