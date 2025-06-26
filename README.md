@@ -60,10 +60,6 @@ This repository contains a Snakemake pipeline for population genetics and phylog
    snakemake --use-conda --cores <number_of_cores>
    ```
 
-Or on HPC:
-   ```sh
-snakemake --use-conda --cores <number_of_cores>
-
 To run on an HPC cluster with SLURM:
 
 ```sh
