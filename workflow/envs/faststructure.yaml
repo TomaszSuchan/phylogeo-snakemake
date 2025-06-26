@@ -3,4 +3,4 @@ channels:
   - bioconda
   - defaults
 dependencies:
- - pcaone=0.5.2
+ - faststructure=1.0

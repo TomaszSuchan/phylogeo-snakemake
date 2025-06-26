@@ -3,4 +3,4 @@ channels:
   - bioconda
   - defaults
 dependencies:
- - pcaone=0.5.2
+ - bcftools=1.22

@@ -1,0 +1,8 @@
+.snakemake/
+.snakejob/
+work/
+logs/
+log/
+tmp/
+.cache/
+test_data

@@ -1,0 +1,37 @@
+## Input ipyrad file prefix (without extension)
+ipyrad_prefix: "test_data/Belenois_aurota_rmoutgroup"
+
+
+## Population Structure Analysis
+
+# The VCF file will is first filtered for bilallelic SNPs with MAC>1.
+# Then the resulting VCF is thinned (one SNP per RAD fragment is kept).
+
+# VCF thinning parameters (defaults shown):
+vcf_thinning:
+  min_coverage: 0          # minimum number of samples with data
+  method: "max_coverage"   # selection method: random, max_coverage, or weighted
+  ties: "random"           # handle ties in max_coverage: first or random
+  ns_tag: "NS"             # INFO field tag for number of samples with data
+  id_pattern: "loc(\\d+)_" # regex pattern to extract RAD fragment ID
+
+# K values to test for population structure (fastStructure and admixture):
+k_values: [2, 3]
+
+# Optional fastStructure parameters (defaults shown)
+faststructure:
+  faststructure_tol: "10e-6"        # convergence criterion
+  faststructure_prior: "simple"     # prior choice: simple or logistic
+
+
+
+## PCA
+
+# SVD method SVD method to be applied.
+# Options are
+# 0: the Implicitly Restarted Arnoldi Method (IRAM);
+# 1: the Yu's single-pass Randomized SVD with power iterations;
+# 2: the accurate window-based Randomized SVD method (PCAone), recommended for big data;
+# 3: the full Singular Value Decomposition (default).
+
+SVD_method: 3  

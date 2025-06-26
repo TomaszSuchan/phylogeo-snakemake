@@ -1,0 +1,21 @@
+# Load configuration
+configfile: "config/config.yaml"
+
+# Include rule files
+include: "rules/preprocessing.smk"
+include: "rules/faststructure.smk"
+include: "rules/admixture.smk"
+include: "rules/pcaone.smk"
+
+# Main target rule
+rule all:
+    input:
+        expand("admixture/input.{k}.Q", k=config["k_values"]),
+        expand("admixture/input.{k}.P", k=config["k_values"]),
+        expand("faststructure/input_K{k}.meanQ", k=config["k_values"]),
+        expand("faststructure/input_K{k}.meanP", k=config["k_values"]),
+        "faststructure/chooseK_results.txt",
+        "pcaone_EMU/PCA_EMU.eigvecs",
+        "pcaone_EMU/PCA_EMU.eigvals",
+        "pcaone/PCA.eigvecs",
+        "pcaone/PCA.eigvals"
