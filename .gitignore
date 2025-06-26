@@ -6,3 +6,5 @@ log/
 tmp/
 .cache/
 test_data
+filtered_data/
+results/
