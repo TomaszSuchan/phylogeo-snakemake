@@ -9,7 +9,7 @@ rule faststructure:
         meanP = "faststructure/faststructure.K{k}.meanP"
     params:
         input_prefix = rules.vcf_to_plink.params.output_prefix,
-        output_prefix = "faststructure/input_K{k}",
+        output_prefix = "faststructure/faststructure.K{k}",
         tol = config["faststructure"].get("faststructure_tol", "10e-6"),
         prior = config["faststructure"].get("faststructure_prior", "simple")
     conda:
