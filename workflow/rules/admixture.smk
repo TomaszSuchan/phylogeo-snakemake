@@ -5,8 +5,8 @@ rule admixture:
         bim = rules.vcf_to_plink.output.bim,
         fam = rules.vcf_to_plink.output.fam
     output:
-        Q = "admixture/input.{k}.Q",
-        P = "admixture/input.{k}.P"
+        Q = "admixture/admixture.K{k}.Q",
+        P = "admixture/admixture.K{k}.P"
     params:
         output_dir = "admixture/"
     conda:

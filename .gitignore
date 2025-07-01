@@ -8,3 +8,4 @@ tmp/
 test_data
 filtered_data/
 results/
+.DS_Store

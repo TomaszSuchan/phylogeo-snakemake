@@ -5,8 +5,8 @@ rule faststructure:
         bim = rules.vcf_to_plink.output.bim,
         fam = rules.vcf_to_plink.output.fam
     output:
-        meanQ = "faststructure/input_K{k}.meanQ",
-        meanP = "faststructure/input_K{k}.meanP"
+        meanQ = "faststructure/faststructure.K{k}.meanQ",
+        meanP = "faststructure/faststructure.K{k}.meanP"
     params:
         input_prefix = rules.vcf_to_plink.params.output_prefix,
         output_prefix = "faststructure/input_K{k}",
@@ -32,7 +32,7 @@ rule faststructure:
 # Rule to choose optimal K for fastStructure
 rule faststructure_chooseK:
     input:
-        expand("faststructure/input_K{k}.meanQ", k=config["k_values"])
+        expand("faststructure/faststructure.K{k}.meanQ", k=config["k_values"])
     output:
         "faststructure/chooseK_results.txt"
     params:
