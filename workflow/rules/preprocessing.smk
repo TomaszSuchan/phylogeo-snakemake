@@ -55,7 +55,7 @@ rule thin_vcf:
         time = "10:00"
     shell:
         """
-        python workflow/scripts/thin_ipyrad_vcf.py \
+        python3 workflow/scripts/thin_ipyrad_vcf.py \
             --vcf {input.vcf} \
             --out {output.thinned_vcf} \
             --min-coverage {params.min_coverage} \
@@ -97,18 +97,16 @@ rule vcf_to_structure:
     output:
         str = "filtered_data/biallelic_snps_thinned.str"
     conda:
-        "../envs/plink.yaml"
+        "../envs/vcfpy.yaml"
     threads: 1
     resources:
         mem_mb = 4000,
         time = "10:00"
     shell:
         """
-        plink --vcf {input.vcf} \
-               --make-bed \
-               --out {params.output_prefix} \
-               --allow-extra-chr \
-               --double-id
+        python3 workflow/scripts/vcf_to_structure.py \
+            --vcf {input.vcf} \
+            --out {output.str}
         """
 
 # Rule to filter VCF for missing data threshold and convert to PLINK
