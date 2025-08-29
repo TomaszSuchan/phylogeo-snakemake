@@ -15,13 +15,17 @@ vcf_thinning:
   ns_tag: "NS"             # INFO field tag for number of samples with data
   id_pattern: "loc(\\d+)_" # regex pattern to extract RAD fragment ID
 
-# K values to test for population structure (fastStructure and admixture):
+# K values to test for population structure (Structure, fastStructure and admixture):
 k_values: [2, 3]
+
+# Structure parameters
+structure:
+  replicates: 10      # number of replicates for structure
 
 # Optional fastStructure parameters (defaults shown)
 faststructure:
-  faststructure_tol: "10e-6"        # convergence criterion
-  faststructure_prior: "simple"     # prior choice: simple or logistic
+  tol: "10e-6"        # convergence criterion
+  prior: "simple"     # prior choice: simple or logistic
 
 
 
@@ -33,5 +37,12 @@ faststructure:
 # 1: the Yu's single-pass Randomized SVD with power iterations;
 # 2: the accurate window-based Randomized SVD method (PCAone), recommended for big data;
 # 3: the full Singular Value Decomposition (default).
+PCA:
+  mincov_thresholds: [0.5, 0.6, 0.7, 0.8, 0.9]
+  SVD_method: 3  
 
-SVD_method: 3  
+
+## Pixy parameters
+pixy:
+  stats: "pi fst dxy"  # statistics to compute, options: pi, fst, dxy
+  window_size: 10000  # size of the sliding window in bp

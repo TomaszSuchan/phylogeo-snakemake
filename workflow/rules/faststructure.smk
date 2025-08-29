@@ -5,13 +5,13 @@ rule faststructure:
         bim = rules.vcf_to_plink.output.bim,
         fam = rules.vcf_to_plink.output.fam
     output:
-        meanQ = "faststructure/faststructure.K{k}.meanQ",
-        meanP = "faststructure/faststructure.K{k}.meanP"
+        meanQ = "results/faststructure/faststructure.{k}.meanQ",
+        meanP = "results/faststructure/faststructure.{k}.meanP"
     params:
         input_prefix = rules.vcf_to_plink.params.output_prefix,
-        output_prefix = "faststructure/faststructure.K{k}",
-        tol = config["faststructure"].get("faststructure_tol", "10e-6"),
-        prior = config["faststructure"].get("faststructure_prior", "simple")
+        output_prefix = "results/faststructure/faststructure",
+        tol = config["faststructure"].get("tol", "10e-6"),
+        prior = config["faststructure"].get("prior", "simple")
     conda:
         "../envs/faststructure.yaml"
     threads: 4
@@ -32,11 +32,11 @@ rule faststructure:
 # Rule to choose optimal K for fastStructure
 rule faststructure_chooseK:
     input:
-        expand("faststructure/faststructure.K{k}.meanQ", k=config["k_values"])
+        expand("results/faststructure/faststructure.{k}.meanQ", k=config["k_values"])
     output:
-        "faststructure/chooseK_results.txt"
+        "results/faststructure/chooseK_results.txt"
     params:
-        input_prefix = "faststructure/input"
+        input_prefix =  "results/faststructure/faststructure",
     conda:
         "../envs/faststructure.yaml"
     threads: 1

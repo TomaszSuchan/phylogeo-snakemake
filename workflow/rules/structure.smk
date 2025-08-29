@@ -1,46 +1,54 @@
-# Rule for structure
-rule select_biallelic_snps:
-    input:
-        vcf = config["ipyrad_prefix"] + ".vcf"
-    output:
-        biallelic_vcf = "filtered_data/biallelic_snps.vcf.gz"
-    conda:
-        "../envs/bcftools.yaml"
-    threads: 1
-    resources:
-        mem_mb = 4000,
-        time = "10:00"
-    shell:
-        """
-        bcftools view -i 'MAC <= 1' -m2 -M2 \
-        -v snps {input.vcf} \
-        -Oz -o {output.biallelic_vcf}
-        """
+# Function to parse .ustr file and get NIND and NLOCI
+def get_ustr_info(ustr_file):
+    """Parse .ustr file to get number of individuals and loci"""
+    with open(ustr_file, 'r') as f:
+        lines = f.readlines()
+    
+    nind = 0
+    nloci = 0
+    for i, line in enumerate(lines):
+        if line.strip():  # skip empty lines
+            if nloci == 0:  # first data line
+                # Count loci from first line (excluding individual name and pop info)
+                parts = line.strip().split()
+                nloci = len(parts) - 2  # subtract individual name and population columns
+            nind += 1
+    
+    nind = nind // 2  # each individual has 2 lines in STRUCTURE format
+    return nind, nloci
 
+
+# Rule for structure
 rule structure:
     input:
         ustr = config["ipyrad_prefix"] + ".ustr"
     output:
-        meanQ = "faststructure/input_K{k}.meanQ",
-        meanP = "faststructure/input_K{k}.meanP"
+        stroutput = "results/structure/structure.K{k}.R{r}_f"
     params:
-        input_prefix = rules.vcf_to_plink.params.output_prefix,
-        output_prefix = "faststructure/input_K{k}",
-        tol = config["faststructure"].get("faststructure_tol", "10e-6"),
-        prior = config["faststructure"].get("faststructure_prior", "simple")
+        mainparams = "data/mainparams",
+        extraparams = "data/extraparams",
+        nind = lambda wildcards, input: get_ustr_info(input.ustr)[0],
+        nloci = lambda wildcards, input: get_ustr_info(input.ustr)[1],
+        basename = lambda wildcards: f"results/structure/structure.K{wildcards.k}.R{wildcards.r}"
     conda:
-        "../envs/faststructure.yaml"
-    threads: 4
+        "../envs/structure.yaml"
+    threads: 1
     resources:
         mem_mb = 8000,
         time = "2:00:00"
     shell:
         """
-        structure.py \
+        structure \
             -K {wildcards.k} \
-            --input={params.input_prefix} \
-            --output={params.output_prefix} \
-            --tol={params.tol} \
-            --prior={params.prior} \
-            --cv=0
+            -L {params.nloci} \
+            -N {params.nind} \
+            -m {params.mainparams} \
+            -e {params.extraparams} \
+            -i {input.ustr} \
+            -o {params.basename}
         """
+
+# Rule to run structure for all K values  
+rule run_structure:
+    input:
+        expand("results/structure/structure.K{k}.R{r}_f", k=config["k_values"], r=list(range(1, config["structure"].get("replicates", 1) + 1)))

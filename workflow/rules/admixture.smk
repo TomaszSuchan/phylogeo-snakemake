@@ -5,10 +5,10 @@ rule admixture:
         bim = rules.vcf_to_plink.output.bim,
         fam = rules.vcf_to_plink.output.fam
     output:
-        Q = "admixture/admixture.K{k}.Q",
-        P = "admixture/admixture.K{k}.P"
+        Q = "results/admixture/admixture.K{k}.Q",
+        P = "results/admixture/admixture.K{k}.P"
     params:
-        output_dir = "admixture/"
+        output_dir = "results/admixture/"
     conda:
         "../envs/admixture.yaml"
     threads: 4
@@ -18,11 +18,11 @@ rule admixture:
     shell:
         """
         cd {params.output_dir}
-        admixture -j{threads} ../{input.bed} {wildcards.k} | tee log{wildcards.k}.out
+        admixture --cv -j{threads} ../../{input.bed} {wildcards.k} | tee log{wildcards.k}.out
         """
 
 # Rule to run ADMIXTURE for all K values  
 rule run_admixture:
     input:
-        rules.admixture.output.Q,
-        rules.admixture.output.P
+        expand("results/admixture/admixture.K{k}.Q", k=config["k_values"]),
+        expand("results/admixture/admixture.K{k}.P", k=config["k_values"])

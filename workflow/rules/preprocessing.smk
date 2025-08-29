@@ -1,7 +1,25 @@
+import os
+
+# Rule to compress and index VCF if necessary
+rule bgzip_vcf:
+    input:
+        vcf = lambda wildcards: config["ipyrad_prefix"] + ".vcf"
+    output:
+        vcf = config["ipyrad_prefix"] + ".vcf.gz",
+        index = config["ipyrad_prefix"] + ".vcf.gz.csi"
+    conda:
+        "../envs/bcftools.yaml"
+    shell:
+        """
+        bgzip -c {input.vcf} > {output.vcf}
+        bcftools index -f {output.vcf}
+        """
+
 # Rule to select only biallelic SNPs with MAC>1 from VCF
 rule select_biallelic_snps:
     input:
-        vcf = config["ipyrad_prefix"] + ".vcf"
+        vcf = rules.bgzip_vcf.output.vcf,
+        index = rules.bgzip_vcf.output.index
     output:
         biallelic_vcf = "filtered_data/biallelic_snps.vcf.gz"
     conda:
@@ -12,12 +30,12 @@ rule select_biallelic_snps:
         time = "10:00"
     shell:
         """
-        bcftools view -i 'MAC <= 1' -m2 -M2 \
+        bcftools view -i 'MAC > 1' -m2 -M2 \
         -v snps {input.vcf} \
         -Oz -o {output.biallelic_vcf}
         """
 
-# Rule to thin VCF using ipyrad script
+# Rule to thin VCF using the custom script
 rule thin_vcf:
     input:
         vcf = rules.select_biallelic_snps.output.biallelic_vcf
@@ -65,14 +83,79 @@ rule vcf_to_plink:
         time = "10:00"
     shell:
         """
-        plink2 --vcf {input.vcf} \
+        plink --vcf {input.vcf} \
+              --make-bed \
+              --out {params.output_prefix} \
+              --allow-extra-chr \
+              --double-id
+        """
+
+# Rule to convert thinned VCF to STRUCTURE format
+rule vcf_to_structure:
+    input:
+        vcf = rules.thin_vcf.output.thinned_vcf
+    output:
+        str = "filtered_data/biallelic_snps_thinned.str"
+    conda:
+        "../envs/plink.yaml"
+    threads: 1
+    resources:
+        mem_mb = 4000,
+        time = "10:00"
+    shell:
+        """
+        plink --vcf {input.vcf} \
                --make-bed \
                --out {params.output_prefix} \
                --allow-extra-chr \
                --double-id
         """
 
+# Rule to filter VCF for missing data threshold and convert to PLINK
+rule filter_missing_vcf:
+    input:
+        vcf = rules.thin_vcf.output.thinned_vcf
+    output:
+        vcf = "filtered_data/biallelic_snps_thinned_mincov{mincov}.vcf.gz"
+    params:
+        mincov = lambda wc: "{:.6f}".format(max(0.0, min(1.0, 1.0 - float(wc.mincov))))
+    conda:
+        "../envs/bcftools.yaml"
+    shell:
+        """
+        bcftools view -i 'F_MISSING<{params.mincov}' {input.vcf} -Oz -o {output.vcf}
+        """
+
+# Rule to filter VCF for missing data threshold and convert to PLINK
+rule missing_vcf_to_plink:
+    input:
+        vcf = rules.filter_missing_vcf.output.vcf
+    output:
+        bed = "filtered_data/biallelic_snps_thinned_mincov{mincov}.bed",
+        bim = "filtered_data/biallelic_snps_thinned_mincov{mincov}.bim",
+        fam = "filtered_data/biallelic_snps_thinned_mincov{mincov}.fam"
+    params:
+        mincov = lambda wildcards: wildcards.mincov,
+        output_prefix = "filtered_data/biallelic_snps_thinned_mincov{mincov}"
+    conda:
+        "../envs/plink.yaml"
+    shell:
+        """
+        plink --vcf {input.vcf} \
+              --make-bed \
+              --out {params.output_prefix} \
+              --allow-extra-chr \
+              --double-id
+        """
+
 # Rule to run complete preprocessing pipeline
 rule run_preprocessing:
     input:
-        rules.vcf_to_plink.output
+        rules.vcf_to_plink.output.bed,
+        rules.vcf_to_structure.output.str,
+        expand("filtered_data/biallelic_snps_thinned_mincov{mincov}.bed",
+               mincov=config["PCA"]["mincov_thresholds"]),
+        expand("filtered_data/biallelic_snps_thinned_mincov{mincov}.bim",
+               mincov=config["PCA"]["mincov_thresholds"]),
+        expand("filtered_data/biallelic_snps_thinned_mincov{mincov}.fam",
+               mincov=config["PCA"]["mincov_thresholds"])

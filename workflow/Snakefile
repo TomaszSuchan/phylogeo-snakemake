@@ -4,18 +4,23 @@ configfile: "config/config.yaml"
 # Include rule files
 include: "rules/preprocessing.smk"
 include: "rules/faststructure.smk"
-include: "rules/admixture.smk"
+#include: "rules/admixture.smk"
 include: "rules/pcaone.smk"
+include: "rules/pixy.smk"
+include: "rules/structure.smk"
 
 # Main target rule
 rule all:
     input:
-        expand("admixture/admixture.K{k}.Q", k=config["k_values"]),
-        expand("admixture/admixture.K{k}.P", k=config["k_values"]),
-        expand("faststructure/faststructure.K{k}.meanQ", k=config["k_values"]),
-        expand("faststructure/faststructure.K{k}.meanP", k=config["k_values"]),
-        "faststructure/chooseK_results.txt",
-        "pcaone_EMU/PCA_EMU.eigvecs",
-        "pcaone_EMU/PCA_EMU.eigvals",
-        "pcaone/PCA.eigvecs",
-        "pcaone/PCA.eigvals"
+        #expand("results/admixture/admixture.K{k}.Q", k=config["k_values"]),
+        #expand("results/admixture/admixture.K{k}.P", k=config["k_values"]),
+        expand("results/faststructure/faststructure.{k}.meanQ", k=config["k_values"]),
+        expand("results/faststructure/faststructure.{k}.meanP", k=config["k_values"]),
+        "results/faststructure/chooseK_results.txt",
+        expand("results/structure/structure.K{k}.R{r}_f", k=config["k_values"], r=list(range(1, config["structure"].get("replicates", 1) + 1))),
+        "results/pcaone_EMU/PCA_EMU.eigvecs",
+        "results/pcaone_EMU/PCA_EMU.eigvals",
+        "results/pcaone/PCA.eigvecs",
+        "results/pcaone/PCA.eigvals",
+        expand("results/pcaone_mincov{mincov}/PCA.eigvecs", mincov=config["PCA"]["mincov_thresholds"]),
+        expand("results/pcaone_mincov{mincov}/PCA.eigvals", mincov=config["PCA"]["mincov_thresholds"])
