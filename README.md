@@ -2,6 +2,8 @@
 
 This repository contains a Snakemake pipeline for population genetics and phylogeographic data analysis.
 
+For now, it assumes that the organism is diploid.
+
 ## Pipeline Steps, Tools, and Parameters
 
 ### 1. Preprocessing and Filtering

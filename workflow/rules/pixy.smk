@@ -13,7 +13,7 @@ rule prepare_invariant_vcf:
         time = "10:00"
     shell:
         """
-        python workflow/scripts/extract_invariant_vcf.py {input.loci} -o filtered_data/invariant_sites.vcf
+        python3 workflow/scripts/extract_invariant_vcf.py {input.loci} -o filtered_data/invariant_sites.vcf
         bgzip filtered_data/invariant_sites.vcf
         bcftools index invariant_sites.vcf.gz
         bcftools concat invariant_sites.vcf.gz {input.vcf_gz} -Oz -a -o {output.invariant_vcf}
