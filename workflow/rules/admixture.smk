@@ -14,7 +14,7 @@ rule admixture:
     threads: 4
     resources:
         mem_mb = 8000,
-        time = "1:00:00"
+        time = "72:00:00"
     shell:
         """
         cd {params.output_dir}
