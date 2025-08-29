@@ -10,8 +10,8 @@ def get_ustr_info(ustr_file):
         if line.strip():  # skip empty lines
             if nloci == 0:  # first data line
                 # Count loci from first line (excluding individual name and pop info)
-                parts = line.strip().split()
-                nloci = len(parts) - 2  # subtract individual name and population columns
+                parts = line.strip().split('\t')
+                nloci = len(parts) - 5  # subtract individual name and population columns
             nind += 1
     
     nind = nind // 2  # each individual has 2 lines in STRUCTURE format
@@ -21,7 +21,7 @@ def get_ustr_info(ustr_file):
 # Rule for structure
 rule structure:
     input:
-        ustr = config["ipyrad_prefix"] + ".ustr"
+        ustr = vcf_to_structure.output.str
     output:
         stroutput = "results/structure/structure.K{k}.R{r}_f"
     params:
