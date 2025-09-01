@@ -5,6 +5,7 @@ import random
 import re
 import sys
 import gzip
+import warnings
 from collections import defaultdict
 
 try:
@@ -70,42 +71,48 @@ def process_vcf(vcf_file, min_coverage, ns_tag, id_pattern=r'loc(\d+)_'):
         file_handle = open(vcf_file, 'r')
     
     try:
-        reader = vcfpy.Reader(file_handle)
-        
-        for record in reader:
-            variant_count += 1
-            chrom = record.CHROM
-            pos = record.POS
-            variant_id = record.ID[0] if record.ID else f"{chrom}:{pos}"
+        # WRAP THE ENTIRE VCF READING PROCESS in warnings suppression
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=vcfpy.exceptions.FieldInfoNotFound)
             
-            # Check if NS tag exists (only need to check first few variants)
-            if variant_count <= 10 and ns_tag in record.INFO:
-                has_ns_tag = True
+            reader = vcfpy.Reader(file_handle)
+            sample_names = reader.header.samples.names
             
-            coverage = get_coverage(record, ns_tag)
+            # Process all records while warnings are suppressed
+            for record in reader:
+                variant_count += 1
+                chrom = record.CHROM
+                pos = record.POS
+                variant_id = record.ID[0] if record.ID else f"{chrom}:{pos}"
+                
+                # Check if NS tag exists (only need to check first few variants)
+                if variant_count <= 10 and ns_tag in record.INFO:
+                    has_ns_tag = True
+                
+                coverage = get_coverage(record, ns_tag)
+                
+                # Store variant info
+                variant_info.append({
+                    'chrom': chrom,
+                    'pos': pos,
+                    'id': variant_id,
+                    'coverage': coverage,
+                    'index': len(variant_info)
+                })
+                
+                # Skip variants not meeting coverage requirement
+                if coverage < min_coverage:
+                    continue
+                
+                # Extract RAD fragment ID
+                rad_id = extract_rad_id(variant_id, id_pattern)
+                if rad_id:
+                    group_id = f"rad_{rad_id}"
+                    rad_groups[group_id].append((chrom, pos, variant_id, coverage, len(variant_info) - 1))
+                else:
+                    unknown_ids += 1
             
-            # Store variant info
-            variant_info.append({
-                'chrom': chrom,
-                'pos': pos,
-                'id': variant_id,
-                'coverage': coverage,
-                'index': len(variant_info)
-            })
-            
-            # Skip variants not meeting coverage requirement
-            if coverage < min_coverage:
-                continue
-            
-            # Extract RAD fragment ID
-            rad_id = extract_rad_id(variant_id, id_pattern)
-            if rad_id:
-                group_id = f"rad_{rad_id}"
-                rad_groups[group_id].append((chrom, pos, variant_id, coverage, len(variant_info) - 1))
-            else:
-                unknown_ids += 1
-        
-        reader.close()
+            reader.close()
         
     except Exception as e:
         sys.exit(f"Error reading VCF file: {e}")
@@ -203,17 +210,21 @@ def write_output(vcf_file, variant_info, selected_indices, output_file):
         output_handle = open(output_file, 'w')
     
     try:
-        reader = vcfpy.Reader(input_handle)
-        writer = vcfpy.Writer(output_handle, reader.header)
-        
-        current_index = 0
-        for record in reader:
-            if current_index in selected_set:
-                writer.write_record(record)
-            current_index += 1
-        
-        reader.close()
-        writer.close()
+        # ALSO suppress warnings when reading/writing the output
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=vcfpy.exceptions.FieldInfoNotFound)
+            
+            reader = vcfpy.Reader(input_handle)
+            writer = vcfpy.Writer(output_handle, reader.header)
+            
+            current_index = 0
+            for record in reader:
+                if current_index in selected_set:
+                    writer.write_record(record)
+                current_index += 1
+            
+            reader.close()
+            writer.close()
         
     except Exception as e:
         sys.exit(f"Error writing output VCF: {e}")

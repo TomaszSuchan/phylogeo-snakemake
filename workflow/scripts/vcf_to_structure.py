@@ -10,9 +10,6 @@ try:
 except ImportError:
     sys.exit("Error: This script requires vcfpy. Please install with:\npip install vcfpy")
 
-# Suppress vcfpy warnings about missing contig length fields (common in RAD-seq data)
-warnings.filterwarnings("ignore", message="Field \"length\" not found in header line contig.*", module="vcfpy")
-
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Convert VCF file to Structure format.')
     parser.add_argument('--vcf', required=True, help='Input VCF file (.vcf or .vcf.gz)')
@@ -44,10 +41,12 @@ def convert_to_structure(vcf_file, output_file):
     sample_names = []
     
     try:
-        reader = vcfpy.Reader(file_handle)
-        sample_names = reader.header.samples.names
-        sample_n = len(sample_names)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=vcfpy.exceptions.FieldInfoNotFound)
+            reader = vcfpy.Reader(file_handle)
+            sample_names = reader.header.samples.names
         
+        sample_n = len(sample_names)
         print(f"Found {sample_n} samples in VCF file.")
         
         # Process each variant
