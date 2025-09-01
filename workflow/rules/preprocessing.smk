@@ -3,27 +3,32 @@ import os
 # Rule to compress and index VCF if necessary
 rule bgzip_vcf:
     input:
-        prefix=lambda wc: config["ipyrad_prefix"]
+        # Dynamically pick existing file: .vcf.gz preferred, fallback to .vcf
+        vcf=lambda wc: (
+            config["ipyrad_prefix"] + ".vcf.gz"
+            if os.path.exists(config["ipyrad_prefix"] + ".vcf.gz")
+            else config["ipyrad_prefix"] + ".vcf"
+        )
     output:
         vcf="filtered_data/original.vcf.gz",
         index="filtered_data/original.vcf.gz.csi"
     conda:
         "../envs/bcftools.yaml"
     shell:
-        """
-        if [[ -f {input.prefix}.vcf.gz ]]; then
-            echo "Found compressed VCF, copying and indexing..."
-            cp {input.prefix}.vcf.gz {output.vcf}
-        elif [[ -f {input.prefix}.vcf ]]; then
-            echo "Found uncompressed VCF, compressing and indexing..."
-            bgzip -c {input.prefix}.vcf > {output.vcf}
+        r"""
+        # If input is already gzipped, copy it
+        if [[ "{input.vcf}" == *.vcf.gz ]]; then
+            echo "Found compressed VCF, copying..."
+            cp {input.vcf} {output.vcf}
         else
-            echo "ERROR: No VCF file found for prefix {input.prefix}" >&2
-            exit 1
+            echo "Found uncompressed VCF, compressing..."
+            bgzip -c {input.vcf} > {output.vcf}
         fi
 
+        # Always index
         bcftools index -f {output.vcf}
         """
+
 # Rule to select only biallelic SNPs with MAC>1 from VCF
 rule select_biallelic_snps:
     input:
