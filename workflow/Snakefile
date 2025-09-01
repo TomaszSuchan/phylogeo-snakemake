@@ -4,23 +4,79 @@ configfile: "config/config.yaml"
 # Include rule files
 include: "rules/preprocessing.smk"
 include: "rules/faststructure.smk"
-#include: "rules/admixture.smk"
+include: "rules/admixture.smk"
 include: "rules/pcaone.smk"
 include: "rules/pixy.smk"
 include: "rules/structure.smk"
 
+def get_all_targets():
+    """
+    Build list of target files based on enabled analyses in config.
+    This keeps the main Snakefile clean and makes it easy to 
+    enable/disable analyses by editing the config file.
+    """
+    targets = []
+    analyses = config.get("analyses", {})
+    
+    # FastStructure targets
+    if analyses.get("faststructure", False):
+        targets.extend([
+            expand("results/faststructure/faststructure.{k}.meanQ", 
+                   k=config["k_values"]),
+            expand("results/faststructure/faststructure.{k}.meanP", 
+                   k=config["k_values"]),
+            "results/faststructure/chooseK_results.txt"
+        ])
+    
+    # ADMIXTURE targets
+    if analyses.get("admixture", False):
+        targets.extend([
+            expand("results/admixture/admixture.K{k}.Q", 
+                   k=config["k_values"]),
+            expand("results/admixture/admixture.K{k}.P", 
+                   k=config["k_values"])
+        ])
+    
+    # STRUCTURE targets
+    if analyses.get("structure", False):
+        n_reps = config["structure"].get("replicates", 1)
+        targets.extend([
+            expand("results/structure/structure.K{k}.R{r}_f", 
+                   k=config["k_values"], 
+                   r=range(1, n_reps + 1))
+        ])
+    
+    # PCAone targets (standard)
+    if analyses.get("pcaone", False):
+        targets.extend([
+            "results/pcaone/PCA.eigvecs",
+            "results/pcaone/PCA.eigvals"
+        ])
+
+    # PCAone targets (EMU)
+    if analyses.get("pcaone_emu", False):
+        targets.extend([
+            "results/pcaone_EMU/PCA_EMU.eigvecs",
+            "results/pcaone_EMU/PCA_EMU.eigvals"
+        ])
+
+    # PCAone targets (with coverage thresholds)
+    if analyses.get("pcaone_mincov", False):
+        targets.extend([
+            expand("results/pcaone_mincov{mincov}/PCA.eigvecs", 
+                   mincov=config["PCA"]["mincov_thresholds"]),
+            expand("results/pcaone_mincov{mincov}/PCA.eigvals", 
+                   mincov=config["PCA"]["mincov_thresholds"])
+        ])
+    
+    # Pixy targets
+    if analyses.get("pixy", False):
+        # Add pixy targets here when implemented
+        pass
+    
+    return targets
+
 # Main target rule
 rule all:
     input:
-        #expand("results/admixture/admixture.K{k}.Q", k=config["k_values"]),
-        #expand("results/admixture/admixture.K{k}.P", k=config["k_values"]),
-        expand("results/faststructure/faststructure.{k}.meanQ", k=config["k_values"]),
-        expand("results/faststructure/faststructure.{k}.meanP", k=config["k_values"]),
-        "results/faststructure/chooseK_results.txt",
-        expand("results/structure/structure.K{k}.R{r}_f", k=config["k_values"], r=list(range(1, config["structure"].get("replicates", 1) + 1))),
-        "results/pcaone_EMU/PCA_EMU.eigvecs",
-        "results/pcaone_EMU/PCA_EMU.eigvals",
-        "results/pcaone/PCA.eigvecs",
-        "results/pcaone/PCA.eigvals",
-        expand("results/pcaone_mincov{mincov}/PCA.eigvecs", mincov=config["PCA"]["mincov_thresholds"]),
-        expand("results/pcaone_mincov{mincov}/PCA.eigvals", mincov=config["PCA"]["mincov_thresholds"])
+        get_all_targets()

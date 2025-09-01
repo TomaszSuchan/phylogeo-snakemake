@@ -1,6 +1,16 @@
 ## Input ipyrad file prefix (without extension)
 ipyrad_prefix: "test_data/Belenois_aurota_rmoutgroup"
 
+## Analysis selection - set to true/false to enable/disable
+analyses:
+  structure: true
+  faststructure: true
+  admixture: false
+  pcaone: true
+  pcaone_emu: false
+  pcaone_mincov: true
+  pixy: false
+
 
 ## Population Structure Analysis
 
@@ -20,13 +30,12 @@ k_values: [2, 3]
 
 # Structure parameters
 structure:
-  replicates: 10      # number of replicates for structure
+  replicates: 2      # number of replicates for structure
 
 # Optional fastStructure parameters (defaults shown)
 faststructure:
   tol: "10e-6"        # convergence criterion
   prior: "simple"     # prior choice: simple or logistic
-
 
 
 ## PCA
