@@ -11,7 +11,7 @@ def get_ustr_info(ustr_file):
             if nloci == 0:  # first data line
                 # Count loci from first line (excluding individual name and pop info)
                 parts = line.strip().split('\t')
-                nloci = len(parts) - 5  # subtract individual name and population columns
+                nloci = len(parts) - 6  # subtract individual name and population columns
             nind += 1
     
     nind = nind // 2  # each individual has 2 lines in STRUCTURE format
@@ -21,7 +21,7 @@ def get_ustr_info(ustr_file):
 # Rule for structure
 rule structure:
     input:
-        ustr = vcf_to_structure.output.str
+        ustr = rules.vcf_to_structure.output.str
     output:
         stroutput = "results/structure/structure.K{k}.R{r}_f"
     params:
