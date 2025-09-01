@@ -4,10 +4,11 @@ import os
 rule bgzip_vcf:
     input:
         # Snakemake selects the first existing file from this list
-        vcf=[
-            config["ipyrad_prefix"] + ".vcf.gz",
-            config["ipyrad_prefix"] + ".vcf"
-        ]
+        vcf=lambda wc: (
+            config["ipyrad_prefix"] + ".vcf.gz"
+            if os.path.exists(config["ipyrad_prefix"] + ".vcf.gz")
+            else config["ipyrad_prefix"] + ".vcf"
+        )
     output:
         vcf="filtered_data/original.vcf.gz",
         index="filtered_data/original.vcf.gz.csi"
