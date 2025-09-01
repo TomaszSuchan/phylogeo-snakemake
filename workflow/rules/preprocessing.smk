@@ -3,12 +3,11 @@ import os
 # Rule to compress and index VCF if necessary
 rule bgzip_vcf:
     input:
-        # Dynamically pick existing file: .vcf.gz preferred, fallback to .vcf
-        vcf=lambda wc: (
-            config["ipyrad_prefix"] + ".vcf.gz"
-            if os.path.exists(config["ipyrad_prefix"] + ".vcf.gz")
-            else config["ipyrad_prefix"] + ".vcf"
-        )
+        # Snakemake selects the first existing file from this list
+        vcf=[
+            config["ipyrad_prefix"] + ".vcf.gz",
+            config["ipyrad_prefix"] + ".vcf"
+        ]
     output:
         vcf="filtered_data/original.vcf.gz",
         index="filtered_data/original.vcf.gz.csi"
@@ -16,11 +15,23 @@ rule bgzip_vcf:
         "../envs/bcftools.yaml"
     threads: 1
     resources:
-        mem_mb = 4000,
-        time = "10:00"
+        mem_mb=4000,
+        time="10:00"
     shell:
-        """
-        bcftools sort {input.vcf} -Oz -o {output.vcf}
+        r"""
+        # Detect input extension
+        ext="${{input.vcf##*.}}"
+
+        if [[ "$ext" == "vcf.gz" ]]; then
+            echo "Input is gzipped, sorting with bcftools..."
+            bcftools index -f {input.vcf}
+            bcftools sort {input.vcf} -Oz -o {output.vcf}
+        else
+            echo "Input is uncompressed, compressing and sorting..."
+            bcftools sort {input.vcf} -Oz -o {output.vcf}
+        fi
+
+        # Index the output
         bcftools index -f {output.vcf}
         """
 
