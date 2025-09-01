@@ -14,10 +14,10 @@ rule pcaone_emu:
         bfile_prefix = lambda wildcards, input: input.bed.replace('.bed', '')
     conda:
         "../envs/pcaone.yaml"
-    threads: 1
+    threads: 12
     resources:
         mem_mb = 8000,
-        time = "1:00:00"
+        time = "72:00:00"
     shell:
         """
         mkdir -p $(dirname {params.output_prefix}) && \
