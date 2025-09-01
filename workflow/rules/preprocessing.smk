@@ -19,9 +19,10 @@ rule bgzip_vcf:
         mem_mb=4000,
         time="10:00"
     shell:
-        r"""
-        # Detect input extension
-        ext="${{input.vcf##*.}}"
+        """
+        # Detect extension
+        input_vcf="{input.vcf}"
+        ext="${{input_vcf##*.}}"
 
         if [[ "$ext" == "vcf.gz" ]]; then
             echo "Input is gzipped, sorting with bcftools..."
