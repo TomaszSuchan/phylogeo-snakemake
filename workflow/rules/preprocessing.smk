@@ -14,6 +14,10 @@ rule bgzip_vcf:
         index="filtered_data/original.vcf.gz.csi"
     conda:
         "../envs/bcftools.yaml"
+    threads: 1
+    resources:
+        mem_mb = 4000,
+        time = "10:00"
     shell:
         r"""
         # If input is already gzipped, copy it
