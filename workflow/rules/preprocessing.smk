@@ -55,7 +55,7 @@ rule thin_vcf:
         time = "10:00"
     shell:
         """
-        python3 workflow/scripts/thin_ipyrad_vcf.py \
+        python workflow/scripts/thin_ipyrad_vcf.py \
             --vcf {input.vcf} \
             --out {output.thinned_vcf} \
             --min-coverage {params.min_coverage} \
@@ -104,7 +104,7 @@ rule vcf_to_structure:
         time = "10:00"
     shell:
         """
-        python3 workflow/scripts/vcf_to_structure.py \
+        python workflow/scripts/vcf_to_structure.py \
             --vcf {input.vcf} \
             --out {output.str}
         """
