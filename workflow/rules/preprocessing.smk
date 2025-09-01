@@ -19,17 +19,8 @@ rule bgzip_vcf:
         mem_mb = 4000,
         time = "10:00"
     shell:
-        r"""
-        # If input is already gzipped, copy it
-        if [[ "{input.vcf}" == *.vcf.gz ]]; then
-            echo "Found compressed VCF, copying..."
-            cp {input.vcf} {output.vcf}
-        else
-            echo "Found uncompressed VCF, compressing..."
-            bgzip -c {input.vcf} > {output.vcf}
-        fi
-
-        # Always index
+        """
+        bcftools sort {input.vcf} -Oz -o {output.vcf}
         bcftools index -f {output.vcf}
         """
 
