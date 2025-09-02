@@ -1,17 +1,31 @@
 import os
 
-# Rule to compress and index VCF if necessary
-rule bgzip_vcf:
+# Rule to sort input vcf
+rule sort_vcf:
+    input:
+        # Use Snakemake's automatic file selection with multiple possible inputs
+        vcf=ancient(expand("{prefix}.vcf{ext}", 
+                          prefix=config["ipyrad_prefix"],
+                          ext=["", ".gz"]))
+    output:
+        vcf="filtered_data/raw_sorted.vcf.gz",
+    conda:
+        "../envs/vcftools.yaml"
+    threads: 1
+    resources:
+        mem_mb=4000,
+        time="20:00"
+    shell:
+        """
+        vcf-sort {input.vcf[0]} | bgzip -c > {output.vcf}
+        """
+
+rule index_vcf:
     input:
         # Snakemake selects the first existing file from this list
-        vcf=lambda wc: (
-            config["ipyrad_prefix"] + ".vcf.gz"
-            if os.path.exists(config["ipyrad_prefix"] + ".vcf.gz")
-            else config["ipyrad_prefix"] + ".vcf"
-        )
+        vcf=rules.sort_vcf.output.vcf
     output:
-        vcf="filtered_data/original.vcf.gz",
-        index="filtered_data/original.vcf.gz.csi"
+        index="filtered_data/raw_sorted.vcf.gz.csi"
     conda:
         "../envs/bcftools.yaml"
     threads: 1
@@ -20,28 +34,14 @@ rule bgzip_vcf:
         time="10:00"
     shell:
         """
-        # Detect extension
-        input_vcf="{input.vcf}"
-        ext="${{input_vcf##*.}}"
-
-        if [[ "$ext" == "vcf.gz" ]]; then
-            echo "Input is gzipped, sorting with bcftools..."
-            bcftools index -f {input.vcf}
-            bcftools sort {input.vcf} -Oz -o {output.vcf}
-        else
-            echo "Input is uncompressed, compressing and sorting..."
-            bcftools sort {input.vcf} -Oz -o {output.vcf}
-        fi
-
-        # Index the output
-        bcftools index -f {output.vcf}
+        bcftools index -f {input.vcf}
         """
 
 # Rule to select only biallelic SNPs with MAC>1 from VCF
 rule select_biallelic_snps:
     input:
-        vcf = rules.bgzip_vcf.output.vcf,
-        index = rules.bgzip_vcf.output.index
+        vcf = rules.sort_vcf.output.vcf,
+        index = rules.index_vcf.output.index
     output:
         biallelic_vcf = "filtered_data/biallelic_snps.vcf.gz"
     conda:
