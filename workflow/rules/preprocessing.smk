@@ -19,7 +19,7 @@ rule sort_vcf:
         time="20:00"
     shell:
         """
-        vcf-sort {input.vcf[0]} | bgzip -c > {output.vcf}
+        vcf-sort {input.vcf} | bgzip -c > {output.vcf}
         """
 
 rule index_vcf:
