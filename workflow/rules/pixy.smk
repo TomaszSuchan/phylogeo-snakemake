@@ -1,8 +1,8 @@
 rule prepare_invariant_vcf:
     input:
         loci = config["ipyrad_prefix"] + ".loci",
-        vcf_gz = rules.bgzip_vcf.output.vcf,
-        index = rules.bgzip_vcf.output.index
+        vcf = rules.sort_vcf.output.vcf,
+        index = rules.index_vcf.output.index
     output:
         invariant_vcf = "filtered_data/invariant_sites.vcf.gz"
     conda:
@@ -16,7 +16,7 @@ rule prepare_invariant_vcf:
         python workflow/scripts/extract_invariant_vcf.py {input.loci} -o filtered_data/invariant_sites.vcf
         bgzip filtered_data/invariant_sites.vcf
         bcftools index invariant_sites.vcf.gz
-        bcftools concat invariant_sites.vcf.gz {input.vcf_gz} -Oz -a -o {output.invariant_vcf}
+        bcftools concat invariant_sites.vcf.gz {input.vcf} -Oz -a -o {output.invariant_vcf}
         bcftools index {output.invariant_vcf}
         """
 
