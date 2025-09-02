@@ -4,9 +4,11 @@ import os
 rule sort_vcf:
     input:
         # Use Snakemake's automatic file selection with multiple possible inputs
-        vcf=ancient(expand("{prefix}.vcf{ext}", 
-                          prefix=config["ipyrad_prefix"],
-                          ext=["", ".gz"]))
+        vcf=lambda wildcards: (
+            f"{config['ipyrad_prefix']}.vcf.gz"
+            if os.path.exists(f"{config['ipyrad_prefix']}.vcf.gz")
+            else f"{config['ipyrad_prefix']}.vcf"
+        )
     output:
         vcf="filtered_data/raw_sorted.vcf.gz",
     conda:
