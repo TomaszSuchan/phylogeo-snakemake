@@ -1,6 +1,9 @@
+name: faststructure
 channels:
-  - conda-forge
   - bioconda
-  - defaults
+  - conda-forge
 dependencies:
- - faststructure=1.0
+  - python=3.7
+  - numpy=1.16
+  - scipy=1.2
+  - faststructure=1.0
