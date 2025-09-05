@@ -35,7 +35,7 @@ rule structure:
     threads: 1
     resources:
         mem_mb = 8000,
-        time = "72:00:00"
+        walltime = "72:00:00"
     shell:
         """
         structure \
