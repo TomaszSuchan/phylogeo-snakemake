@@ -14,6 +14,10 @@ rule pcaone_emu:
         bfile_prefix = lambda wildcards, input: input.bed.replace('.bed', '')
     conda:
         "../envs/pcaone.yaml"
+    threads: config["resources"]["pcaone_emu"]["threads"]
+    resources:
+        mem_mb = config["resources"]["pcaone_emu"]["mem_mb"],
+        time = config["resources"]["pcaone_emu"]["runtime"]
     threads: 12
     resources:
         mem_mb = 8000,
@@ -44,6 +48,10 @@ rule pcaone:
         bfile_prefix = lambda wildcards, input: input.bed.replace('.bed', '')
     conda:
         "../envs/pcaone.yaml"
+    threads: config["resources"]["pcaone"]["threads"]
+    resources:
+        mem_mb = config["resources"]["pcaone"]["mem_mb"],
+        time = config["resources"]["pcaone"]["runtime"]
     threads: 1
     resources:
         mem_mb = 8000,
@@ -72,10 +80,10 @@ rule pcaone_mincov:
         bfile_prefix = lambda wildcards: f"filtered_data/biallelic_snps_thinned_mincov{wildcards.mincov}"
     conda:
         "../envs/pcaone.yaml"
-    threads: 1
+    threads: config["resources"]["pcaone"]["threads"]
     resources:
-        mem_mb = 8000,
-        time = "1:00:00"
+        mem_mb = config["resources"]["pcaone"]["mem_mb"],
+        time = config["resources"]["pcaone"]["runtime"]
     shell:
         """
         mkdir -p $(dirname {params.output_prefix}) && \

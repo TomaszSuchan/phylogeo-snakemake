@@ -7,10 +7,10 @@ rule prepare_invariant_vcf:
         invariant_vcf = "filtered_data/invariant_sites.vcf.gz"
     conda:
         "../envs/bcftools.yaml"
-    threads: 1
+    threads: config["resources"]["default"]["threads"]
     resources:
-        mem_mb = 4000,
-        time = "10:00"
+        mem_mb = config["resources"]["default"]["mem_mb"],
+        time = config["resources"]["default"]["runtime"]
     shell:
         """
         python workflow/scripts/extract_invariant_vcf.py {input.loci} -o filtered_data/invariant_sites.vcf
@@ -34,10 +34,10 @@ rule pixy:
         output_prefix = ""
     conda:
         "../envs/pixy.yaml"
-    threads: 24
+    threads: config["resources"]["pixy"]["threads"]
     resources:
-        mem_mb = 8000,
-        time = "10:00:00"
+        mem_mb = config["resources"]["pixy"]["mem_mb"],
+        time = config["resources"]["pixy"]["runtime"]
     shell:
         """
         mkdir -p {params.output_folder}

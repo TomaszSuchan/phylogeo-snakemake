@@ -12,10 +12,11 @@ analyses:
   pixy: false
 
 
-## Population Structure Analysis
+## Preprocessing parameters
 
-# The VCF file will is first filtered for bilallelic SNPs with MAC>1.
-# Then the resulting VCF is thinned (one SNP per RAD fragment is kept).
+# Many analyses require unlinkesd SNPs (one SNP per RAD fragment).
+# The VCF file will is first filtered for bilallelic SNPs with MAC>1
+# and then thinned to one SNP per RAD fragment using the parameters below.
 
 # VCF thinning parameters (defaults shown):
 vcf_thinning:
@@ -25,20 +26,23 @@ vcf_thinning:
   ns_tag: "NS"             # INFO field tag for number of samples with data
   id_pattern: "loc(\\d+)_" # regex pattern to extract RAD fragment ID
 
-# K values to test for population structure (Structure, fastStructure and admixture):
-k_values: [2, 3]
 
-# Structure parameters
+## Population Structure Analysis
+
+# Common K values to test for population structure (Structure, fastStructure and admixture):
+k_values: [1, 2, 3]
+
+## Structure parameters
 structure:
   replicates: 2      # number of replicates for structure
 
-# Optional fastStructure parameters (defaults shown)
+## FastStructure parameters (defaults shown)
 faststructure:
   tol: "10e-6"        # convergence criterion
   prior: "simple"     # prior choice: simple or logistic
 
 
-## PCA
+## PCA parameters
 
 # SVD method SVD method to be applied.
 # Options are
@@ -55,3 +59,39 @@ PCA:
 pixy:
   stats: "pi fst dxy"  # statistics to compute, options: pi, fst, dxy
   window_size: 10000  # size of the sliding window in bp
+
+
+## Analysis resources
+
+# Define computational resources for different analysis steps.
+# Memory is in MB and threads is the number of CPU threads.
+# Runtime is in minutes.
+resources:
+  default: # default resources for simple steps like file conversion
+    threads: 1
+    mem_mb: 8000
+    runtime: 10
+  structure:
+    threads: 1
+    mem_mb: 8000
+    runtime: 1440
+  faststructure:
+    threads: 4
+    mem_mb: 8000
+    runtime: 120
+  admixture:
+    threads: 4
+    mem_mb: 16000
+    runtime: 1440
+  pcaone:
+    threads: 1
+    mem_mb: 8000
+    runtime: 60
+  pcaone_emu:
+    threads: 12
+    mem_mb: 8000
+    runtime: 1440
+  pixy:
+    threads: 24
+    mem_mb: 8000
+    runtime: 600

@@ -11,10 +11,10 @@ rule admixture:
         output_dir = "results/admixture/"
     conda:
         "../envs/admixture.yaml"
-    threads: 4
+    threads: config["resources"]["admixture"]["threads"]
     resources:
-        mem_mb = 8000,
-        time = "72:00:00"
+        mem_mb = config["resources"]["admixture"]["mem_mb"],
+        time = config["resources"]["admixture"]["runtime"]
     shell:
         """
         cd {params.output_dir}

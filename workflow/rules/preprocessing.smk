@@ -13,10 +13,10 @@ rule sort_vcf:
         vcf="filtered_data/raw_sorted.vcf.gz",
     conda:
         "../envs/vcftools.yaml"
-    threads: 1
+    threads: config["resources"]["default"]["threads"]
     resources:
-        mem_mb=4000,
-        time="20:00"
+        mem_mb = config["resources"]["default"]["mem_mb"],
+        runtime = config["resources"]["mapping"]["runtime"]
     shell:
         """
         vcf-sort {input.vcf} | bgzip -c > {output.vcf}
@@ -30,10 +30,10 @@ rule index_vcf:
         index="filtered_data/raw_sorted.vcf.gz.csi"
     conda:
         "../envs/bcftools.yaml"
-    threads: 1
+    threads: config["resources"]["default"]["threads"]
     resources:
-        mem_mb=4000,
-        time="10:00"
+        mem_mb = config["resources"]["default"]["mem_mb"],
+        runtime = config["resources"]["mapping"]["runtime"]
     shell:
         """
         bcftools index -f {input.vcf}
@@ -48,10 +48,10 @@ rule select_biallelic_snps:
         biallelic_vcf = "filtered_data/biallelic_snps.vcf.gz"
     conda:
         "../envs/bcftools.yaml"
-    threads: 1
+    threads: config["resources"]["default"]["threads"]
     resources:
-        mem_mb = 4000,
-        time = "10:00"
+        mem_mb = config["resources"]["default"]["mem_mb"],
+        runtime = config["resources"]["mapping"]["runtime"]
     shell:
         """
         bcftools view -i 'MAC > 1' -m2 -M2 \
@@ -73,10 +73,10 @@ rule thin_vcf:
         id_pattern = config["vcf_thinning"].get("id_pattern", r"loc(\d+)_")
     conda:
         "../envs/vcfpy.yaml"
-    threads: 1
+    threads: config["resources"]["default"]["threads"]
     resources:
-        mem_mb = 4000,
-        time = "10:00"
+        mem_mb = config["resources"]["default"]["mem_mb"],
+        runtime = config["resources"]["mapping"]["runtime"]
     shell:
         """
         python workflow/scripts/thin_ipyrad_vcf.py \
@@ -101,10 +101,10 @@ rule vcf_to_plink:
         output_prefix = "filtered_data/biallelic_snps_thinned"
     conda:
         "../envs/plink.yaml"
-    threads: 1
+    threads: config["resources"]["default"]["threads"]
     resources:
-        mem_mb = 4000,
-        time = "10:00"
+        mem_mb = config["resources"]["default"]["mem_mb"],
+        runtime = config["resources"]["mapping"]["runtime"]
     shell:
         """
         plink --vcf {input.vcf} \
@@ -122,10 +122,10 @@ rule vcf_to_structure:
         str = "filtered_data/biallelic_snps_thinned.str"
     conda:
         "../envs/vcfpy.yaml"
-    threads: 1
+    threads: config["resources"]["default"]["threads"]
     resources:
-        mem_mb = 4000,
-        time = "10:00"
+        mem_mb = config["resources"]["default"]["mem_mb"],
+        runtime = config["resources"]["mapping"]["runtime"]
     shell:
         """
         python workflow/scripts/vcf_to_structure.py \
@@ -143,6 +143,10 @@ rule filter_missing_vcf:
         mincov = lambda wc: "{:.6f}".format(max(0.0, min(1.0, 1.0 - float(wc.mincov))))
     conda:
         "../envs/bcftools.yaml"
+    threads: config["resources"]["default"]["threads"]
+    resources:
+        mem_mb = config["resources"]["default"]["mem_mb"],
+        runtime = config["resources"]["mapping"]["runtime"]
     shell:
         """
         bcftools view -i 'F_MISSING<{params.mincov}' {input.vcf} -Oz -o {output.vcf}
@@ -161,6 +165,10 @@ rule missing_vcf_to_plink:
         output_prefix = "filtered_data/biallelic_snps_thinned_mincov{mincov}"
     conda:
         "../envs/plink.yaml"
+    threads: config["resources"]["default"]["threads"]
+    resources:
+        mem_mb = config["resources"]["default"]["mem_mb"],
+        runtime = config["resources"]["mapping"]["runtime"]
     shell:
         """
         plink --vcf {input.vcf} \

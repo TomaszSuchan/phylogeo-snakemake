@@ -14,10 +14,10 @@ rule faststructure:
         prior = config["faststructure"].get("prior", "simple")
     conda:
         "../envs/faststructure.yaml"
-    threads: 4
+    threads: config["resources"]["faststructure"]["threads"]
     resources:
-        mem_mb = 8000,
-        time = "2:00:00"
+        mem_mb = config["resources"]["faststructure"]["mem_mb"],
+        time = config["resources"]["faststructure"]["runtime"]
     shell:
         """
         structure.py \
@@ -39,10 +39,10 @@ rule faststructure_chooseK:
         input_prefix =  "results/faststructure/faststructure",
     conda:
         "../envs/faststructure.yaml"
-    threads: 1
+    threads: config["resources"]["default"]["threads"]
     resources:
-        mem_mb = 2000,
-        time = "10:00"
+        mem_mb = config["resources"]["default"]["mem_mb"],
+        time = config["resources"]["default"]["runtime"]
     shell:
         """
         chooseK.py \

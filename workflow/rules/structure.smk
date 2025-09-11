@@ -32,10 +32,10 @@ rule structure:
         basename = lambda wildcards: f"results/structure/structure.K{wildcards.k}.R{wildcards.r}"
     conda:
         "../envs/structure.yaml"
-    threads: 1
+    threads: config["resources"]["structure"]["threads"]
     resources:
-        mem_mb = 8000,
-        runtime = 72000
+        mem_mb = config["resources"]["structure"]["mem_mb"],
+        runtime = config["resources"]["structure"]["runtime"]
     shell:
         """
         structure \
