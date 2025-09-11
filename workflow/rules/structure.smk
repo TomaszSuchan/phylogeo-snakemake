@@ -47,8 +47,3 @@ rule structure:
             -i {input.ustr} \
             -o {params.basename}
         """
-
-# Rule to run structure for all K values  
-rule run_structure:
-    input:
-        expand("results/structure/structure.K{k}.R{r}_f", k=config["k_values"], r=list(range(1, config["structure"].get("replicates", 1) + 1)))

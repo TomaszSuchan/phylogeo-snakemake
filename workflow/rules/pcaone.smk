@@ -92,11 +92,3 @@ rule pcaone_mincov:
         --bfile {params.bfile_prefix} \
         --out {params.output_prefix}
         """
-
-# Rule to run PCAone analyses
-rule run_PCAone:
-    input:
-        rules.pcaone_emu.output,
-        rules.pcaone.output,
-        expand("results/pcaone_mincov{mincov}/PCA.eigvecs", mincov=config["PCA"]["mincov_thresholds"]),
-        expand("results/pcaone_mincov{mincov}/PCA.eigvals", mincov=config["PCA"]["mincov_thresholds"])

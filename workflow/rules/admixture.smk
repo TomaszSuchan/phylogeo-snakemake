@@ -20,9 +20,3 @@ rule admixture:
         cd {params.output_dir}
         admixture --cv -j{threads} ../../{input.bed} {wildcards.k} | tee log{wildcards.k}.out
         """
-
-# Rule to run ADMIXTURE for all K values  
-rule run_admixture:
-    input:
-        expand("results/admixture/admixture.K{k}.Q", k=config["k_values"]),
-        expand("results/admixture/admixture.K{k}.P", k=config["k_values"])

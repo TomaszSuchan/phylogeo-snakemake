@@ -177,15 +177,3 @@ rule missing_vcf_to_plink:
               --allow-extra-chr \
               --double-id
         """
-
-# Rule to run complete preprocessing pipeline
-rule run_preprocessing:
-    input:
-        rules.vcf_to_plink.output.bed,
-        rules.vcf_to_structure.output.str,
-        expand("filtered_data/biallelic_snps_thinned_mincov{mincov}.bed",
-               mincov=config["PCA"]["mincov_thresholds"]),
-        expand("filtered_data/biallelic_snps_thinned_mincov{mincov}.bim",
-               mincov=config["PCA"]["mincov_thresholds"]),
-        expand("filtered_data/biallelic_snps_thinned_mincov{mincov}.fam",
-               mincov=config["PCA"]["mincov_thresholds"])

@@ -49,11 +49,3 @@ rule faststructure_chooseK:
             --input={params.input_prefix} \
             > {output}
         """
-
-# Rule to run fastStructure for all K values
-rule run_faststructure:
-    input:
-        rules.faststructure.output.meanQ,
-        rules.faststructure.output.meanP,
-        rules.faststructure_chooseK.output
-
