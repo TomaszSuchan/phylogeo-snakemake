@@ -87,7 +87,7 @@ resources:
     mem_mb: 16000
     runtime: 1440
   pcaone:
-    threads: 8
+    threads: 12
     mem_mb: 8000
     runtime: 60
   pcaone_emu:
