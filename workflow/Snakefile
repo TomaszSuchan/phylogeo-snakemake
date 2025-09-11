@@ -71,8 +71,18 @@ def get_all_targets():
     
     # Pixy targets
     if analyses.get("pixy", False):
-        # Add pixy targets here when implemented
-        pass
+        targets.extend([
+            "results/pixy_output/pi.txt",
+            "results/pixy_output/fst.txt",
+            "results/pixy_output/dxy.txt"
+        ])
+    
+    # Relatedness targets
+    if analyses.get("relatedness", False):
+        targets.extend([
+            "results/relatedness/relatedness.txt",
+            "results/relatedness/relatedness2.txt"
+        ])
     
     return targets
 
