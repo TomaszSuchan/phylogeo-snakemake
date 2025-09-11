@@ -16,7 +16,7 @@ rule sort_vcf:
     threads: config["resources"]["default"]["threads"]
     resources:
         mem_mb = config["resources"]["default"]["mem_mb"],
-        runtime = config["resources"]["mapping"]["runtime"]
+        runtime = config["resources"]["default"]["runtime"]
     shell:
         """
         vcf-sort {input.vcf} | bgzip -c > {output.vcf}
@@ -33,7 +33,7 @@ rule index_vcf:
     threads: config["resources"]["default"]["threads"]
     resources:
         mem_mb = config["resources"]["default"]["mem_mb"],
-        runtime = config["resources"]["mapping"]["runtime"]
+        runtime = config["resources"]["default"]["runtime"]
     shell:
         """
         bcftools index -f {input.vcf}
@@ -51,7 +51,7 @@ rule select_biallelic_snps:
     threads: config["resources"]["default"]["threads"]
     resources:
         mem_mb = config["resources"]["default"]["mem_mb"],
-        runtime = config["resources"]["mapping"]["runtime"]
+        runtime = config["resources"]["default"]["runtime"]
     shell:
         """
         bcftools view -i 'MAC > 1' -m2 -M2 \
@@ -76,7 +76,7 @@ rule thin_vcf:
     threads: config["resources"]["default"]["threads"]
     resources:
         mem_mb = config["resources"]["default"]["mem_mb"],
-        runtime = config["resources"]["mapping"]["runtime"]
+        runtime = config["resources"]["default"]["runtime"]
     shell:
         """
         python workflow/scripts/thin_ipyrad_vcf.py \
@@ -104,7 +104,7 @@ rule vcf_to_plink:
     threads: config["resources"]["default"]["threads"]
     resources:
         mem_mb = config["resources"]["default"]["mem_mb"],
-        runtime = config["resources"]["mapping"]["runtime"]
+        runtime = config["resources"]["default"]["runtime"]
     shell:
         """
         plink --vcf {input.vcf} \
@@ -125,7 +125,7 @@ rule vcf_to_structure:
     threads: config["resources"]["default"]["threads"]
     resources:
         mem_mb = config["resources"]["default"]["mem_mb"],
-        runtime = config["resources"]["mapping"]["runtime"]
+        runtime = config["resources"]["default"]["runtime"]
     shell:
         """
         python workflow/scripts/vcf_to_structure.py \
@@ -146,7 +146,7 @@ rule filter_missing_vcf:
     threads: config["resources"]["default"]["threads"]
     resources:
         mem_mb = config["resources"]["default"]["mem_mb"],
-        runtime = config["resources"]["mapping"]["runtime"]
+        runtime = config["resources"]["default"]["runtime"]
     shell:
         """
         bcftools view -i 'F_MISSING<{params.mincov}' {input.vcf} -Oz -o {output.vcf}
@@ -168,7 +168,7 @@ rule missing_vcf_to_plink:
     threads: config["resources"]["default"]["threads"]
     resources:
         mem_mb = config["resources"]["default"]["mem_mb"],
-        runtime = config["resources"]["mapping"]["runtime"]
+        runtime = config["resources"]["default"]["runtime"]
     shell:
         """
         plink --vcf {input.vcf} \
