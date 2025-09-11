@@ -24,7 +24,6 @@ rule pcaone_emu:
         time = "72:00:00"
     shell:
         """
-        mkdir -p $(dirname {params.output_prefix}) && \
         pcaone --threads {threads} \
         -d {params.SVD_method} \
         --emu \
@@ -58,7 +57,6 @@ rule pcaone:
         time = "1:00:00"
     shell:
         """
-        mkdir -p $(dirname {params.output_prefix}) && \
         pcaone --threads {threads} \
         -d {params.SVD_method} \
         --bfile {params.bfile_prefix} \
@@ -86,7 +84,6 @@ rule pcaone_mincov:
         time = config["resources"]["pcaone"]["runtime"]
     shell:
         """
-        mkdir -p $(dirname {params.output_prefix}) && \
         pcaone --threads {threads} \
         -d {params.SVD_method} \
         --bfile {params.bfile_prefix} \
