@@ -6,10 +6,10 @@ analysis_name: "Sample_analysis"
 
 ## Analysis selection - set to true/false to enable/disable
 analyses:
-  structure: falsse
-  faststructure: true
+  structure: false
+  faststructure: false
   admixture: false
-  pcaone: true
+  pcaone: false
   pcaone_emu: false
   pcaone_mincov: false
   pixy: false
@@ -87,7 +87,7 @@ resources:
     mem_mb: 16000
     runtime: 1440
   pcaone:
-    threads: 1
+    threads: 8
     mem_mb: 8000
     runtime: 60
   pcaone_emu:
