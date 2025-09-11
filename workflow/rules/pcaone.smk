@@ -5,11 +5,11 @@ rule pcaone_emu:
         bim = rules.vcf_to_plink.output.bim,
         fam = rules.vcf_to_plink.output.fam
     output:
-        pcaone_eigenvectors = "results/pcaone_EMU/PCA_EMU.eigvecs",
-        pcaone_eigenvalues = "results/pcaone_EMU/PCA_EMU.eigvals"
+        pcaone_eigenvectors = config["analysis_name"] + "/pcaone_EMU/PCA_EMU.eigvecs",
+        pcaone_eigenvalues = config["analysis_name"] + "/pcaone_EMU/PCA_EMU.eigvals"
     params:
         SVD_method = config.get("SVD_method", 3),
-        output_prefix = "results/pcaone_EMU/PCA_EMU",
+        output_prefix = config["analysis_name"] + "/pcaone_EMU/PCA_EMU",
         # Get the bfile prefix (remove .bed extension)
         bfile_prefix = lambda wildcards, input: input.bed.replace('.bed', '')
     conda:
@@ -39,11 +39,11 @@ rule pcaone:
         bim = rules.vcf_to_plink.output.bim,
         fam = rules.vcf_to_plink.output.fam
     output:
-        pcaone_eigenvectors = "results/pcaone/PCA.eigvecs",
-        pcaone_eigenvalues = "results/pcaone/PCA.eigvals"
+        pcaone_eigenvectors = config["analysis_name"] + "/pcaone/PCA.eigvecs",
+        pcaone_eigenvalues = config["analysis_name"] + "/pcaone/PCA.eigvals"
     params:
         SVD_method = config["PCA"].get("SVD_method", 3),
-        output_prefix = "results/pcaone/PCA",
+        output_prefix = config["analysis_name"] + "/pcaone/PCA",
         # Get the bfile prefix (remove .bed extension)
         bfile_prefix = lambda wildcards, input: input.bed.replace('.bed', '')
     conda:
@@ -68,16 +68,16 @@ rule pcaone:
 # Rule to run PCAone for each mincov data threshold
 rule pcaone_mincov:
     input:
-        bed = "filtered_data/biallelic_snps_thinned_mincov{mincov}.bed",
-        bim = "filtered_data/biallelic_snps_thinned_mincov{mincov}.bim",
-        fam = "filtered_data/biallelic_snps_thinned_mincov{mincov}.fam"
+        bed = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned_mincov{mincov}.bed",
+        bim = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned_mincov{mincov}.bim",
+        fam = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned_mincov{mincov}.fam"
     output:
-        pcaone_eigenvectors = "results/pcaone_mincov{mincov}/PCA.eigvecs",
-        pcaone_eigenvalues = "results/pcaone_mincov{mincov}/PCA.eigvals"
+        pcaone_eigenvectors = config["analysis_name"] + "/pcaone_mincov{mincov}/PCA.eigvecs",
+        pcaone_eigenvalues = config["analysis_name"] + "/pcaone_mincov{mincov}/PCA.eigvals"
     params:
         SVD_method = config["PCA"].get("SVD_method", 3),
-        output_prefix = lambda wildcards: f"results/pcaone_mincov{wildcards.mincov}/PCA",
-        bfile_prefix = lambda wildcards: f"filtered_data/biallelic_snps_thinned_mincov{wildcards.mincov}"
+        output_prefix = lambda wildcards: f"{config['analysis_name']}/pcaone_mincov{wildcards.mincov}/PCA",
+        bfile_prefix = lambda wildcards: f"{config['analysis_name']}/filtered_data/biallelic_snps_thinned_mincov{wildcards.mincov}"
     conda:
         "../envs/pcaone.yaml"
     threads: config["resources"]["pcaone"]["threads"]

@@ -21,19 +21,19 @@ def get_all_targets():
     # FastStructure targets
     if analyses.get("faststructure", False):
         targets.extend([
-            expand("results/faststructure/faststructure.{k}.meanQ", 
+            expand(config["analysis_name"] + "/faststructure/faststructure.{k}.meanQ", 
                    k=config["k_values"]),
-            expand("results/faststructure/faststructure.{k}.meanP", 
+            expand(config["analysis_name"] + "/faststructure/faststructure.{k}.meanP", 
                    k=config["k_values"]),
-            "results/faststructure/chooseK_results.txt"
+            config["analysis_name"] + "/faststructure/chooseK_results.txt"
         ])
     
     # ADMIXTURE targets
     if analyses.get("admixture", False):
         targets.extend([
-            expand("results/admixture/admixture.K{k}.Q", 
+            expand(config["analysis_name"] + "/admixture/admixture.K{k}.Q", 
                    k=config["k_values"]),
-            expand("results/admixture/admixture.K{k}.P", 
+            expand(config["analysis_name"] + "/admixture/admixture.K{k}.P", 
                    k=config["k_values"])
         ])
     
@@ -41,7 +41,7 @@ def get_all_targets():
     if analyses.get("structure", False):
         n_reps = config["structure"].get("replicates", 1)
         targets.extend([
-            expand("results/structure/structure.K{k}.R{r}_f", 
+            expand(config["analysis_name"] + "/structure/structure.K{k}.R{r}_f", 
                    k=config["k_values"], 
                    r=range(1, n_reps + 1))
         ])
@@ -49,39 +49,39 @@ def get_all_targets():
     # PCAone targets (standard)
     if analyses.get("pcaone", False):
         targets.extend([
-            "results/pcaone/PCA.eigvecs",
-            "results/pcaone/PCA.eigvals"
+            config["analysis_name"] + "/pcaone/PCA.eigvecs",
+            config["analysis_name"] + "/pcaone/PCA.eigvals"
         ])
 
     # PCAone targets (EMU)
     if analyses.get("pcaone_emu", False):
         targets.extend([
-            "results/pcaone_EMU/PCA_EMU.eigvecs",
-            "results/pcaone_EMU/PCA_EMU.eigvals"
+            config["analysis_name"] + "/pcaone_EMU/PCA_EMU.eigvecs",
+            config["analysis_name"] + "/pcaone_EMU/PCA_EMU.eigvals"
         ])
 
     # PCAone targets (with coverage thresholds)
     if analyses.get("pcaone_mincov", False):
         targets.extend([
-            expand("results/pcaone_mincov{mincov}/PCA.eigvecs", 
+            expand(config["analysis_name"] + "/pcaone_mincov{mincov}/PCA.eigvecs", 
                    mincov=config["PCA"]["mincov_thresholds"]),
-            expand("results/pcaone_mincov{mincov}/PCA.eigvals", 
+            expand(config["analysis_name"] + "/pcaone_mincov{mincov}/PCA.eigvals", 
                    mincov=config["PCA"]["mincov_thresholds"])
         ])
     
     # Pixy targets
     if analyses.get("pixy", False):
         targets.extend([
-            "results/pixy_output/pi.txt",
-            "results/pixy_output/fst.txt",
-            "results/pixy_output/dxy.txt"
+            config["analysis_name"] + "/pixy/pi.txt",
+            config["analysis_name"] + "/pixy/fst.txt",
+            config["analysis_name"] + "/pixy/dxy.txt"
         ])
     
     # Relatedness targets
     if analyses.get("relatedness", False):
         targets.extend([
-            "results/relatedness/relatedness.txt",
-            "results/relatedness/relatedness2.txt"
+            config["analysis_name"] + "/relatedness/relatedness.txt",
+            config["analysis_name"] + "/relatedness/relatedness2.txt"
         ])
     
     return targets

@@ -4,7 +4,7 @@ rule prepare_invariant_vcf:
         vcf = rules.sort_vcf.output.vcf,
         index = rules.index_vcf.output.index
     output:
-        invariant_vcf = "filtered_data/invariant_sites.vcf.gz"
+        invariant_vcf = config["analysis_name"] + "/filtered_data/invariant_sites.vcf.gz"
     conda:
         "../envs/bcftools.yaml"
     threads: config["resources"]["default"]["threads"]
@@ -13,10 +13,10 @@ rule prepare_invariant_vcf:
         time = config["resources"]["default"]["runtime"]
     shell:
         """
-        python workflow/scripts/extract_invariant_vcf.py {input.loci} -o filtered_data/invariant_sites.vcf
-        bgzip filtered_data/invariant_sites.vcf
-        bcftools index invariant_sites.vcf.gz
-        bcftools concat invariant_sites.vcf.gz {input.vcf} -Oz -a -o {output.invariant_vcf}
+        python workflow/scripts/extract_invariant_vcf.py {input.loci} -o {config['analysis_name']}/filtered_data/invariant_sites_only.vcf
+        bgzip {config['analysis_name']}/filtered_data/invariant_sites_only.vcf
+        bcftools index {config['analysis_name']}/filtered_data/invariant_sites_only.vcf.gz
+        bcftools concat {config['analysis_name']}/filtered_data/invariant_sites_only.vcf.gz {input.vcf} -Oz -a -o {output.invariant_vcf}
         bcftools index {output.invariant_vcf}
         """
 
@@ -25,12 +25,12 @@ rule pixy:
         vcf = rules.prepare_invariant_vcf.output.invariant_vcf,
         popmap = "data/popmap.txt"
     output:
-        pi = "results/pixy_output/pi.txt",
-        fst =  "results/pixy_output/fst.txt",
-        dxy =  "results/pixy_output/dxy.txt"
+        pi = config["analysis_name"] + "/pixy/pi.txt",
+        fst = config["analysis_name"] + "/pixy/fst.txt",
+        dxy = config["analysis_name"] + "/pixy/dxy.txt"
     params:
         window_size = config["pixy"].get("window_size", 10000),
-        output_folder = "results/pixy_output/",
+        output_folder = config["analysis_name"] + "/pixy/",
         output_prefix = ""
     conda:
         "../envs/pixy.yaml"

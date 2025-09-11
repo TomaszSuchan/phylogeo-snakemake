@@ -1,14 +1,17 @@
 ## Input ipyrad file prefix (without extension)
 ipyrad_prefix: "test_data/Belenois_aurota_rmoutgroup"
 
+## Analysis name (for output files and directories)
+analysis_name: "Sample_analysis"
+
 ## Analysis selection - set to true/false to enable/disable
 analyses:
-  structure: true
+  structure: falsse
   faststructure: true
   admixture: false
   pcaone: true
   pcaone_emu: false
-  pcaone_mincov: true
+  pcaone_mincov: false
   pixy: false
 
 

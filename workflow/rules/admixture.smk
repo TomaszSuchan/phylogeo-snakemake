@@ -5,10 +5,10 @@ rule admixture:
         bim = rules.vcf_to_plink.output.bim,
         fam = rules.vcf_to_plink.output.fam
     output:
-        Q = "results/admixture/admixture.K{k}.Q",
-        P = "results/admixture/admixture.K{k}.P"
+        Q = config["analysis_name"] + "/admixture/admixture.K{k}.Q",
+        P = config["analysis_name"] + "/admixture/admixture.K{k}.P"
     params:
-        output_dir = "results/admixture/"
+        output_dir = config["analysis_name"] + "/admixture/"
     conda:
         "../envs/admixture.yaml"
     threads: config["resources"]["admixture"]["threads"]

@@ -23,13 +23,13 @@ rule structure:
     input:
         ustr = rules.vcf_to_structure.output.str
     output:
-        stroutput = "results/structure/structure.K{k}.R{r}_f"
+        stroutput = config["analysis_name"] + "/structure/structure.K{k}.R{r}_f"
     params:
         mainparams = "data/mainparams",
         extraparams = "data/extraparams",
         nind = lambda wildcards, input: get_ustr_info(input.ustr)[0],
         nloci = lambda wildcards, input: get_ustr_info(input.ustr)[1],
-        basename = lambda wildcards: f"results/structure/structure.K{wildcards.k}.R{wildcards.r}"
+        basename = lambda wildcards: f"{config['analysis_name']}/structure/structure.K{wildcards.k}.R{wildcards.r}"
     conda:
         "../envs/structure.yaml"
     threads: config["resources"]["structure"]["threads"]

@@ -10,7 +10,7 @@ rule sort_vcf:
             else f"{config['ipyrad_prefix']}.vcf"
         )
     output:
-        vcf="filtered_data/raw_sorted.vcf.gz",
+        vcf=config["analysis_name"] + "/filtered_data/raw_sorted.vcf.gz",
     conda:
         "../envs/vcftools.yaml"
     threads: config["resources"]["default"]["threads"]
@@ -27,7 +27,7 @@ rule index_vcf:
         # Snakemake selects the first existing file from this list
         vcf=rules.sort_vcf.output.vcf
     output:
-        index="filtered_data/raw_sorted.vcf.gz.csi"
+        index=config["analysis_name"] + "/filtered_data/raw_sorted.vcf.gz.csi"
     conda:
         "../envs/bcftools.yaml"
     threads: config["resources"]["default"]["threads"]
@@ -45,7 +45,7 @@ rule select_biallelic_snps:
         vcf = rules.sort_vcf.output.vcf,
         index = rules.index_vcf.output.index
     output:
-        biallelic_vcf = "filtered_data/biallelic_snps.vcf.gz"
+        biallelic_vcf = config["analysis_name"] + "/filtered_data/biallelic_snps.vcf.gz"
     conda:
         "../envs/bcftools.yaml"
     threads: config["resources"]["default"]["threads"]
@@ -64,7 +64,7 @@ rule thin_vcf:
     input:
         vcf = rules.select_biallelic_snps.output.biallelic_vcf
     output:
-        thinned_vcf = "filtered_data/biallelic_snps_thinned.vcf.gz"
+        thinned_vcf = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned.vcf.gz"
     params:
         min_coverage = config["vcf_thinning"].get("min_coverage", 0),
         method = config["vcf_thinning"].get("method", "max_coverage"),
@@ -94,11 +94,11 @@ rule vcf_to_plink:
     input:
         vcf = rules.thin_vcf.output.thinned_vcf
     output:
-        bed = "filtered_data/biallelic_snps_thinned.bed",
-        bim = "filtered_data/biallelic_snps_thinned.bim", 
-        fam = "filtered_data/biallelic_snps_thinned.fam"
+        bed = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned.bed",
+        bim = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned.bim",
+        fam = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned.fam"
     params:
-        output_prefix = "filtered_data/biallelic_snps_thinned"
+        output_prefix = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned"
     conda:
         "../envs/plink.yaml"
     threads: config["resources"]["default"]["threads"]
@@ -119,7 +119,7 @@ rule vcf_to_structure:
     input:
         vcf = rules.thin_vcf.output.thinned_vcf
     output:
-        str = "filtered_data/biallelic_snps_thinned.str"
+        str = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned.str"
     conda:
         "../envs/vcfpy.yaml"
     threads: config["resources"]["default"]["threads"]
@@ -138,7 +138,7 @@ rule filter_missing_vcf:
     input:
         vcf = rules.thin_vcf.output.thinned_vcf
     output:
-        vcf = "filtered_data/biallelic_snps_thinned_mincov{mincov}.vcf.gz"
+        vcf = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned_mincov{mincov}.vcf.gz"
     params:
         mincov = lambda wc: "{:.6f}".format(max(0.0, min(1.0, 1.0 - float(wc.mincov))))
     conda:
@@ -157,9 +157,9 @@ rule missing_vcf_to_plink:
     input:
         vcf = rules.filter_missing_vcf.output.vcf
     output:
-        bed = "filtered_data/biallelic_snps_thinned_mincov{mincov}.bed",
-        bim = "filtered_data/biallelic_snps_thinned_mincov{mincov}.bim",
-        fam = "filtered_data/biallelic_snps_thinned_mincov{mincov}.fam"
+        bed = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned_mincov{mincov}.bed",
+        bim = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned_mincov{mincov}.bim",
+        fam = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned_mincov{mincov}.fam"
     params:
         mincov = lambda wildcards: wildcards.mincov,
         output_prefix = "filtered_data/biallelic_snps_thinned_mincov{mincov}"

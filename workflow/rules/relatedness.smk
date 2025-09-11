@@ -7,7 +7,7 @@ rule relatedness:
         # Use Snakemake's automatic file selection with multiple possible inputs
         vcf=rules.sort_vcf.output.vcf
     output:
-        vcf="results/relatedness/out.relatedness",
+        vcf= config["analysis_name"] + "/relatedness/out.relatedness",
     conda:
         "../envs/vcftools.yaml"
     threads: config["resources"]["default"]["threads"]
@@ -28,7 +28,7 @@ rule relatedness2:
         # Use Snakemake's automatic file selection with multiple possible inputs
         vcf=rules.sort_vcf.output.vcf
     output:
-        vcf="results/relatedness/out.relatedness2",
+        vcf= config["analysis_name"] + "/relatedness/out.relatedness2",
     conda:
         "../envs/vcftools.yaml"
     threads: config["resources"]["default"]["threads"]
