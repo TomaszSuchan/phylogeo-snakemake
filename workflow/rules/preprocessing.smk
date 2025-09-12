@@ -51,7 +51,7 @@ rule select_biallelic_snps:
     output:
         biallelic_vcf = config["analysis_name"] + "/filtered_data/biallelic_snps.vcf.gz"
     log:
-        config["analysis_name"] + "/logs/select_biallelic_snps.log
+        config["analysis_name"] + "/logs/select_biallelic_snps.log"
     conda:
         "../envs/bcftools.yaml"
     threads: config["resources"]["default"]["threads"]
@@ -152,7 +152,7 @@ rule filter_missing_vcf:
     output:
         vcf = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned_mincov{mincov}.vcf.gz"
     log:
-        config["analysis_name"] + "/logs/filter_missing_vcf_{mincov}.log
+        config["analysis_name"] + "/logs/filter_missing_vcf_{mincov}.log"
     params:
         mincov = lambda wc: "{:.6f}".format(max(0.0, min(1.0, 1.0 - float(wc.mincov))))
     conda:
