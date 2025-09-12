@@ -9,6 +9,8 @@ rule pcaone_emu:
         pcaone_eigenvalues = config["analysis_name"] + "/pcaone_EMU/PCA_EMU.eigvals"
     log:
         config["analysis_name"] + "/logs/pcaone_emu.log"
+    benchmark:
+        config["analysis_name"] + "/benchmarks/pcaone_emu.txt"
     params:
         SVD_method = config.get("SVD_method", 3),
         output_prefix = config["analysis_name"] + "/pcaone_EMU/PCA_EMU",
@@ -44,6 +46,8 @@ rule pcaone:
         pcaone_eigenvalues = config["analysis_name"] + "/pcaone/PCA.eigvals"
     log:
         config["analysis_name"] + "/logs/pcaone.log"
+    benchmark:
+        config["analysis_name"] + "/benchmarks/pcaone.txt"
     params:
         SVD_method = config["PCA"].get("SVD_method", 3),
         output_prefix = config["analysis_name"] + "/pcaone/PCA",
@@ -78,6 +82,8 @@ rule pcaone_mincov:
         pcaone_eigenvalues = config["analysis_name"] + "/pcaone_mincov{mincov}/PCA.eigvals"
     log:
         config["analysis_name"] + "/logs/pcaone_mincov_{mincov}.log"
+    benchmark:
+        config["analysis_name"] + "/benchmarks/pcaone_mincov_{mincov}.txt"
     params:
         SVD_method = config["PCA"].get("SVD_method", 3),
         output_prefix = lambda wildcards: f"{config['analysis_name']}/pcaone_mincov{wildcards.mincov}/PCA",

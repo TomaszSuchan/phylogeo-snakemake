@@ -9,6 +9,8 @@ rule admixture:
         P = config["analysis_name"] + "/admixture/admixture.K{k}.P"
     log:
         config["analysis_name"] + "/logs/admixture.K{k}.log"
+    benchmark:
+        config["analysis_name"] + "/benchmarks/admixture.K{k}.txt"
     params:
         output_dir = config["analysis_name"] + "/admixture/"
     conda:

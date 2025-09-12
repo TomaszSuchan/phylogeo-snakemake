@@ -7,6 +7,8 @@ rule prepare_invariant_vcf:
         invariant_vcf = config["analysis_name"] + "/filtered_data/invariant_sites.vcf.gz"
     log:
         config["analysis_name"] + "/logs/prepare_invariant_vcf.log"
+    benchmark:
+        config["analysis_name"] + "/benchmarks/prepare_invariant_vcf.txt"
     conda:
         "../envs/bcftools.yaml"
     threads: config["resources"]["default"]["threads"]
@@ -32,6 +34,8 @@ rule pixy:
         dxy = config["analysis_name"] + "/pixy/dxy.txt"
     log:
         config["analysis_name"] + "/logs/pixy.log"
+    benchmark:
+        config["analysis_name"] + "/benchmarks/pixy.txt"
     params:
         window_size = config["pixy"].get("window_size", 10000),
         output_folder = config["analysis_name"] + "/pixy/",

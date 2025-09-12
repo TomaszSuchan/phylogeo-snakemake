@@ -9,6 +9,8 @@ rule faststructure:
         meanP = config["analysis_name"] + "/faststructure/faststructure.{k}.meanP"
     log:
         config["analysis_name"] + "/logs/faststructure.{k}.log"
+    benchmark:
+        config["analysis_name"] + "/benchmarks/faststructure.{k}.txt"
     params:
         input_prefix = rules.vcf_to_plink.params.output_prefix,
         output_prefix = config["analysis_name"] + "/faststructure/faststructure",

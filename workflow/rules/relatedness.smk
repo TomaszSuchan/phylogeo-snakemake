@@ -10,6 +10,8 @@ rule relatedness:
         vcf= config["analysis_name"] + "/relatedness/out.relatedness"
     log:
         config["analysis_name"] + "/logs/relatedness.log"
+    benchmark:
+        config["analysis_name"] + "/benchmarks/relatedness.txt"
     conda:
         "../envs/vcftools.yaml"
     threads: config["resources"]["default"]["threads"]
@@ -33,6 +35,8 @@ rule relatedness2:
         vcf= config["analysis_name"] + "/relatedness/out.relatedness2"
     log:
         config["analysis_name"] + "/logs/relatedness2.log"
+    benchmark:
+        config["analysis_name"] + "/benchmarks/relatedness2.txt"
     conda:
         "../envs/vcftools.yaml"
     threads: config["resources"]["default"]["threads"]

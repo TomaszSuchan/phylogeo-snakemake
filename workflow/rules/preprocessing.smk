@@ -13,6 +13,8 @@ rule sort_vcf:
         vcf=config["analysis_name"] + "/filtered_data/raw_sorted.vcf.gz"
     log:
         config["analysis_name"] + "/logs/sort_vcf.log"
+    benchmark:
+        config["analysis_name"] + "/benchmarks/sort_vcf.txt"
     conda:
         "../envs/vcftools.yaml"
     threads: config["resources"]["default"]["threads"]
@@ -32,6 +34,8 @@ rule index_vcf:
         index=config["analysis_name"] + "/filtered_data/raw_sorted.vcf.gz.csi"
     log:
         config["analysis_name"] + "/logs/index_vcf.log"
+    benchmark:
+        config["analysis_name"] + "/benchmarks/index_vcf.txt"
     conda:
         "../envs/bcftools.yaml"
     threads: config["resources"]["default"]["threads"]
@@ -52,6 +56,8 @@ rule select_biallelic_snps:
         biallelic_vcf = config["analysis_name"] + "/filtered_data/biallelic_snps.vcf.gz"
     log:
         config["analysis_name"] + "/logs/select_biallelic_snps.log"
+    benchmark:
+        config["analysis_name"] + "/benchmarks/select_biallelic_snps.txt"
     conda:
         "../envs/bcftools.yaml"
     threads: config["resources"]["default"]["threads"]
@@ -73,6 +79,8 @@ rule thin_vcf:
         thinned_vcf = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned.vcf.gz"
     log:
         config["analysis_name"] + "/logs/thin_vcf.log"
+    benchmark:
+        config["analysis_name"] + "/benchmarks/thin_vcf.txt"
     params:
         min_coverage = config["vcf_thinning"].get("min_coverage", 0),
         method = config["vcf_thinning"].get("method", "max_coverage"),
@@ -107,6 +115,8 @@ rule vcf_to_plink:
         fam = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned.fam"
     log:
         config["analysis_name"] + "/logs/vcf_to_plink.log"
+    benchmark:
+        config["analysis_name"] + "/benchmarks/vcf_to_plink.txt"
     params:
         output_prefix = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned"
     conda:
@@ -132,6 +142,8 @@ rule vcf_to_structure:
         str = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned.str"
     log:
         config["analysis_name"] + "/logs/vcf_to_structure.log"
+    benchmark:
+        config["analysis_name"] + "/benchmarks/vcf_to_structure.txt"
     conda:
         "../envs/vcfpy.yaml"
     threads: config["resources"]["default"]["threads"]
@@ -153,6 +165,8 @@ rule filter_missing_vcf:
         vcf = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned_mincov{mincov}.vcf.gz"
     log:
         config["analysis_name"] + "/logs/filter_missing_vcf_{mincov}.log"
+    benchmark:
+        config["analysis_name"] + "/benchmarks/filter_missing_vcf_{mincov}.txt
     params:
         mincov = lambda wc: "{:.6f}".format(max(0.0, min(1.0, 1.0 - float(wc.mincov))))
     conda:
@@ -176,6 +190,8 @@ rule missing_vcf_to_plink:
         fam = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned_mincov{mincov}.fam"
     log:
         config["analysis_name"] + "/logs/missing_vcf_to_plink_{mincov}.log"
+    benchmark:
+        config["analysis_name"] + "/benchmarks/missing_vcf_to_plink_{mincov}.txt"
     params:
         mincov = lambda wildcards: wildcards.mincov,
         output_prefix = "filtered_data/biallelic_snps_thinned_mincov{mincov}"

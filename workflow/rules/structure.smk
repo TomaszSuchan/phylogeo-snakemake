@@ -24,6 +24,8 @@ rule structure:
         ustr = rules.vcf_to_structure.output.str
     output:
         stroutput = config["analysis_name"] + "/structure/structure.K{k}.R{r}_f"
+    benchmark:
+        config["analysis_name"] + "/benchmarks/structure.K{k}.R{r}.txt"
     params:
         mainparams = "data/mainparams",
         extraparams = "data/extraparams",
