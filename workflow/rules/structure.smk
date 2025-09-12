@@ -57,7 +57,7 @@ rule plot_aligned_k:
             r=range(1, config["structure"].get("replicates", 1) + 1)
         )
     output:
-        config["analysis_name"] + "/structure/plots/K{k}_aligned.png"
+        config["analysis_name"] + "/structure/plots/K{k}_aligned.pdf"
     conda:
         "../envs/r-pophelper.yaml"
     script:

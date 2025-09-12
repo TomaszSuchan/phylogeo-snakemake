@@ -44,7 +44,7 @@ def get_all_targets():
             expand(config["analysis_name"] + "/structure/structure.K{k}.R{r}_f", 
                    k=config["k_values"], 
                    r=range(1, n_reps + 1)),
-            expand(config["analysis_name"] + "/structure/plots/K{k}_aligned.png", 
+            expand(config["analysis_name"] + "/structure/plots/K{k}_aligned.pdf", 
                    k=config["k_values"])
 
         ])
