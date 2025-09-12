@@ -73,10 +73,10 @@ rule thin_vcf:
         id_pattern = config["vcf_thinning"].get("id_pattern", r"loc(\d+)_")
     conda:
         "../envs/vcfpy.yaml"
-    threads: config["resources"]["default"]["threads"]
+    threads: config["resources"]["default-long"]["threads"]
     resources:
-        mem_mb = config["resources"]["default"]["mem_mb"],
-        runtime = config["resources"]["default"]["runtime"]
+        mem_mb = config["resources"]["default-long"]["mem_mb"],
+        runtime = config["resources"]["default-long"]["runtime"]
     shell:
         """
         python workflow/scripts/thin_ipyrad_vcf.py \

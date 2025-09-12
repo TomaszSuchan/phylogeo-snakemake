@@ -6,7 +6,7 @@ analysis_name: "Sample_analysis"
 
 ## Analysis selection - set to true/false to enable/disable
 analyses:
-  structure: false
+  structure: true
   faststructure: false
   admixture: false
   pcaone: false
@@ -37,7 +37,7 @@ k_values: [1, 2, 3]
 
 ## Structure parameters
 structure:
-  replicates: 2      # number of replicates for structure
+  replicates: 2       # number of replicates for structure
 
 ## FastStructure parameters (defaults shown)
 faststructure:
@@ -74,6 +74,10 @@ resources:
     threads: 1
     mem_mb: 8000
     runtime: 10
+  default-long: # default resources for longer steps like filtering
+    threads: 1
+    mem_mb: 8000
+    runtime: 60
   structure:
     threads: 1
     mem_mb: 8000
