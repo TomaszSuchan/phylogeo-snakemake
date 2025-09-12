@@ -58,7 +58,9 @@ rule plot_aligned_k:
         )
     output:
         config["analysis_name"] + "/structure/plots/K{k}_aligned.pdf"
+    log:
+        config["analysis_name"] + "/logs/plot_k_aligned_K{k}.log"
     conda:
         "../envs/r-pophelper.yaml"
     script:
-        "../scripts/plot_k_aligned.R"
+        "../scripts/plot_k_aligned.R &> {log}"

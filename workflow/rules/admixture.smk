@@ -7,6 +7,8 @@ rule admixture:
     output:
         Q = config["analysis_name"] + "/admixture/admixture.K{k}.Q",
         P = config["analysis_name"] + "/admixture/admixture.K{k}.P"
+    log:
+        config["analysis_name"] + "/logs/admixture.K{k}.log"
     params:
         output_dir = config["analysis_name"] + "/admixture/"
     conda:
@@ -18,5 +20,5 @@ rule admixture:
     shell:
         """
         cd {params.output_dir}
-        admixture --cv -j{threads} ../../{input.bed} {wildcards.k} | tee log{wildcards.k}.out
+        admixture --cv -j{threads} ../../{input.bed} {wildcards.k} &> {log}
         """

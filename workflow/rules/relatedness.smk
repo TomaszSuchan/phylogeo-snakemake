@@ -7,7 +7,9 @@ rule relatedness:
         # Use Snakemake's automatic file selection with multiple possible inputs
         vcf=rules.sort_vcf.output.vcf
     output:
-        vcf= config["analysis_name"] + "/relatedness/out.relatedness",
+        vcf= config["analysis_name"] + "/relatedness/out.relatedness"
+    log:
+        config["analysis_name"] + "/logs/relatedness.log"
     conda:
         "../envs/vcftools.yaml"
     threads: config["resources"]["default"]["threads"]
@@ -16,7 +18,7 @@ rule relatedness:
         runtime = config["resources"]["default"]["runtime"]
     shell:
         """
-        vcftools --gzvcf {input.vcf} --relatedness
+        vcftools --gzvcf {input.vcf} --relatedness &> {log}
         """
 
 # Rule to get among sample relatedness unadjusted Ajk statistic based 
@@ -28,7 +30,9 @@ rule relatedness2:
         # Use Snakemake's automatic file selection with multiple possible inputs
         vcf=rules.sort_vcf.output.vcf
     output:
-        vcf= config["analysis_name"] + "/relatedness/out.relatedness2",
+        vcf= config["analysis_name"] + "/relatedness/out.relatedness2"
+    log:
+        config["analysis_name"] + "/logs/relatedness2.log"
     conda:
         "../envs/vcftools.yaml"
     threads: config["resources"]["default"]["threads"]
@@ -37,5 +41,5 @@ rule relatedness2:
         runtime = config["resources"]["default"]["runtime"]
     shell:
         """
-        vcftools --gzvcf {input.vcf} --relatedness2
+        vcftools --gzvcf {input.vcf} --relatedness2 &> {log}
         """

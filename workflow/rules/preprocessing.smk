@@ -10,7 +10,9 @@ rule sort_vcf:
             else f"{config['ipyrad_prefix']}.vcf"
         )
     output:
-        vcf=config["analysis_name"] + "/filtered_data/raw_sorted.vcf.gz",
+        vcf=config["analysis_name"] + "/filtered_data/raw_sorted.vcf.gz"
+    log:
+        config["analysis_name"] + "/logs/sort_vcf.log"
     conda:
         "../envs/vcftools.yaml"
     threads: config["resources"]["default"]["threads"]
@@ -19,7 +21,7 @@ rule sort_vcf:
         runtime = config["resources"]["default"]["runtime"]
     shell:
         """
-        vcf-sort {input.vcf} | bgzip -c > {output.vcf}
+        vcf-sort {input.vcf} | bgzip -c > {output.vcf} &> {log}
         """
 
 rule index_vcf:
@@ -28,6 +30,8 @@ rule index_vcf:
         vcf=rules.sort_vcf.output.vcf
     output:
         index=config["analysis_name"] + "/filtered_data/raw_sorted.vcf.gz.csi"
+    log:
+        config["analysis_name"] + "/logs/index_vcf.log"
     conda:
         "../envs/bcftools.yaml"
     threads: config["resources"]["default"]["threads"]
@@ -36,7 +40,7 @@ rule index_vcf:
         runtime = config["resources"]["default"]["runtime"]
     shell:
         """
-        bcftools index -f {input.vcf}
+        bcftools index -f {input.vcf} &> {log}
         """
 
 # Rule to select only biallelic SNPs with MAC>1 from VCF
@@ -46,6 +50,8 @@ rule select_biallelic_snps:
         index = rules.index_vcf.output.index
     output:
         biallelic_vcf = config["analysis_name"] + "/filtered_data/biallelic_snps.vcf.gz"
+    log:
+        config["analysis_name"] + "/logs/select_biallelic_snps.log
     conda:
         "../envs/bcftools.yaml"
     threads: config["resources"]["default"]["threads"]
@@ -56,7 +62,7 @@ rule select_biallelic_snps:
         """
         bcftools view -i 'MAC > 1' -m2 -M2 \
         -v snps {input.vcf} \
-        -Oz -o {output.biallelic_vcf}
+        -Oz -o {output.biallelic_vcf} &> {log}
         """
 
 # Rule to thin VCF using the custom script
@@ -65,6 +71,8 @@ rule thin_vcf:
         vcf = rules.select_biallelic_snps.output.biallelic_vcf
     output:
         thinned_vcf = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned.vcf.gz"
+    log:
+        config["analysis_name"] + "/logs/thin_vcf.log"
     params:
         min_coverage = config["vcf_thinning"].get("min_coverage", 0),
         method = config["vcf_thinning"].get("method", "max_coverage"),
@@ -86,7 +94,7 @@ rule thin_vcf:
             --method {params.method} \
             --ties {params.ties} \
             --ns-tag {params.ns_tag} \
-            --id-pattern '{params.id_pattern}'
+            --id-pattern '{params.id_pattern}' &> {log}
         """
 
 # Rule to convert thinned VCF to PLINK format
@@ -97,6 +105,8 @@ rule vcf_to_plink:
         bed = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned.bed",
         bim = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned.bim",
         fam = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned.fam"
+    log:
+        config["analysis_name"] + "/logs/vcf_to_plink.log"
     params:
         output_prefix = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned"
     conda:
@@ -111,7 +121,7 @@ rule vcf_to_plink:
               --make-bed \
               --out {params.output_prefix} \
               --allow-extra-chr \
-              --double-id
+              --double-id &> {log}
         """
 
 # Rule to convert thinned VCF to STRUCTURE format
@@ -120,6 +130,8 @@ rule vcf_to_structure:
         vcf = rules.thin_vcf.output.thinned_vcf
     output:
         str = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned.str"
+    log:
+        config["analysis_name"] + "/logs/vcf_to_structure.log"
     conda:
         "../envs/vcfpy.yaml"
     threads: config["resources"]["default"]["threads"]
@@ -130,7 +142,7 @@ rule vcf_to_structure:
         """
         python workflow/scripts/vcf_to_structure.py \
             --vcf {input.vcf} \
-            --out {output.str}
+            --out {output.str} &> {log}
         """
 
 # Rule to filter VCF for missing data threshold and convert to PLINK
@@ -139,6 +151,8 @@ rule filter_missing_vcf:
         vcf = rules.thin_vcf.output.thinned_vcf
     output:
         vcf = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned_mincov{mincov}.vcf.gz"
+    log:
+        config["analysis_name"] + "/logs/filter_missing_vcf_{mincov}.log
     params:
         mincov = lambda wc: "{:.6f}".format(max(0.0, min(1.0, 1.0 - float(wc.mincov))))
     conda:
@@ -149,7 +163,7 @@ rule filter_missing_vcf:
         runtime = config["resources"]["default"]["runtime"]
     shell:
         """
-        bcftools view -i 'F_MISSING<{params.mincov}' {input.vcf} -Oz -o {output.vcf}
+        bcftools view -i 'F_MISSING<{params.mincov}' {input.vcf} -Oz -o {output.vcf} &> {log}
         """
 
 # Rule to filter VCF for missing data threshold and convert to PLINK
@@ -160,6 +174,8 @@ rule missing_vcf_to_plink:
         bed = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned_mincov{mincov}.bed",
         bim = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned_mincov{mincov}.bim",
         fam = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned_mincov{mincov}.fam"
+    log:
+        config["analysis_name"] + "/logs/missing_vcf_to_plink_{mincov}.log"
     params:
         mincov = lambda wildcards: wildcards.mincov,
         output_prefix = "filtered_data/biallelic_snps_thinned_mincov{mincov}"
@@ -175,5 +191,5 @@ rule missing_vcf_to_plink:
               --make-bed \
               --out {params.output_prefix} \
               --allow-extra-chr \
-              --double-id
+              --double-id &> {log}
         """

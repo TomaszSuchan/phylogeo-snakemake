@@ -7,6 +7,8 @@ rule pcaone_emu:
     output:
         pcaone_eigenvectors = config["analysis_name"] + "/pcaone_EMU/PCA_EMU.eigvecs",
         pcaone_eigenvalues = config["analysis_name"] + "/pcaone_EMU/PCA_EMU.eigvals"
+    log:
+        config["analysis_name"] + "/logs/pcaone_emu.log"
     params:
         SVD_method = config.get("SVD_method", 3),
         output_prefix = config["analysis_name"] + "/pcaone_EMU/PCA_EMU",
@@ -28,7 +30,7 @@ rule pcaone_emu:
         -d {params.SVD_method} \
         --emu \
         --bfile {params.bfile_prefix} \
-        --out {params.output_prefix}
+        --out {params.output_prefix} &> {log}
         """
 
 # Rule to run PCAone analysis
@@ -40,6 +42,8 @@ rule pcaone:
     output:
         pcaone_eigenvectors = config["analysis_name"] + "/pcaone/PCA.eigvecs",
         pcaone_eigenvalues = config["analysis_name"] + "/pcaone/PCA.eigvals"
+    log:
+        config["analysis_name"] + "/logs/pcaone.log"
     params:
         SVD_method = config["PCA"].get("SVD_method", 3),
         output_prefix = config["analysis_name"] + "/pcaone/PCA",
@@ -60,7 +64,7 @@ rule pcaone:
         pcaone --threads {threads} \
         -d {params.SVD_method} \
         --bfile {params.bfile_prefix} \
-        --out {params.output_prefix}
+        --out {params.output_prefix} &> {log}
         """
 
 # Rule to run PCAone for each mincov data threshold
@@ -72,6 +76,8 @@ rule pcaone_mincov:
     output:
         pcaone_eigenvectors = config["analysis_name"] + "/pcaone_mincov{mincov}/PCA.eigvecs",
         pcaone_eigenvalues = config["analysis_name"] + "/pcaone_mincov{mincov}/PCA.eigvals"
+    log:
+        config["analysis_name"] + "/logs/pcaone_mincov_{mincov}.log"
     params:
         SVD_method = config["PCA"].get("SVD_method", 3),
         output_prefix = lambda wildcards: f"{config['analysis_name']}/pcaone_mincov{wildcards.mincov}/PCA",
@@ -87,5 +93,5 @@ rule pcaone_mincov:
         pcaone --threads {threads} \
         -d {params.SVD_method} \
         --bfile {params.bfile_prefix} \
-        --out {params.output_prefix}
+        --out {params.output_prefix} &> {log}
         """

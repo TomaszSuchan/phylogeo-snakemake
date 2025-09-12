@@ -5,6 +5,8 @@ rule prepare_invariant_vcf:
         index = rules.index_vcf.output.index
     output:
         invariant_vcf = config["analysis_name"] + "/filtered_data/invariant_sites.vcf.gz"
+    log:
+        config["analysis_name"] + "/logs/prepare_invariant_vcf.log"
     conda:
         "../envs/bcftools.yaml"
     threads: config["resources"]["default"]["threads"]
@@ -13,10 +15,10 @@ rule prepare_invariant_vcf:
         time = config["resources"]["default"]["runtime"]
     shell:
         """
-        python workflow/scripts/extract_invariant_vcf.py {input.loci} -o {config['analysis_name']}/filtered_data/invariant_sites_only.vcf
-        bgzip {config['analysis_name']}/filtered_data/invariant_sites_only.vcf
-        bcftools index {config['analysis_name']}/filtered_data/invariant_sites_only.vcf.gz
-        bcftools concat {config['analysis_name']}/filtered_data/invariant_sites_only.vcf.gz {input.vcf} -Oz -a -o {output.invariant_vcf}
+        python workflow/scripts/extract_invariant_vcf.py {input.loci} -o {config['analysis_name']}/filtered_data/invariant_sites_only.vcf &> {log}
+        bgzip {config['analysis_name']}/filtered_data/invariant_sites_only.vcf  >> {log} 2>&1
+        bcftools index {config['analysis_name']}/filtered_data/invariant_sites_only.vcf.gz  >> {log} 2>&1
+        bcftools concat {config['analysis_name']}/filtered_data/invariant_sites_only.vcf.gz {input.vcf} -Oz -a -o {output.invariant_vcf}  >> {log} 2>&1
         bcftools index {output.invariant_vcf}
         """
 
@@ -28,6 +30,8 @@ rule pixy:
         pi = config["analysis_name"] + "/pixy/pi.txt",
         fst = config["analysis_name"] + "/pixy/fst.txt",
         dxy = config["analysis_name"] + "/pixy/dxy.txt"
+    log:
+        config["analysis_name"] + "/logs/pixy.log"
     params:
         window_size = config["pixy"].get("window_size", 10000),
         output_folder = config["analysis_name"] + "/pixy/",
@@ -43,5 +47,5 @@ rule pixy:
         mkdir -p {params.output_folder}
         pixy --stats pi fst dxy --vcf {input.vcf} --populations {input.popmap} \
              --n_cores {threads} --window_size {params.window_size} \
-             --output_folder {params.output_folder}
+             --output_folder {params.output_folder} &> {log}
         """

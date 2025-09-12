@@ -7,6 +7,8 @@ rule faststructure:
     output:
         meanQ = config["analysis_name"] + "/faststructure/faststructure.{k}.meanQ",
         meanP = config["analysis_name"] + "/faststructure/faststructure.{k}.meanP"
+    log:
+        config["analysis_name"] + "/logs/faststructure.{k}.log"
     params:
         input_prefix = rules.vcf_to_plink.params.output_prefix,
         output_prefix = config["analysis_name"] + "/faststructure/faststructure",
@@ -26,7 +28,7 @@ rule faststructure:
             --output={params.output_prefix} \
             --tol={params.tol} \
             --prior={params.prior} \
-            --cv=0
+            --cv=0 &> {log}
         """
 
 # Rule to choose optimal K for fastStructure
