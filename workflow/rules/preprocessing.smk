@@ -21,7 +21,7 @@ rule sort_vcf:
         runtime = config["resources"]["default"]["runtime"]
     shell:
         """
-        vcf-sort {input.vcf} | bgzip -c > {output.vcf} &> {log}
+        vcf-sort {input.vcf} 2> {log} | bgzip -c > {output.vcf}
         """
 
 rule index_vcf:
