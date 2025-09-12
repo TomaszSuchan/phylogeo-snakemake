@@ -47,3 +47,18 @@ rule structure:
             -i {input.ustr} \
             -o {params.basename}
         """
+
+# Plot aligned K values
+rule plot_aligned_k:
+    input:
+        lambda wildcards: expand(
+            config["analysis_name"] + "/structure/structure.K{k}.R{r}_f",
+            k=wildcards.k,
+            r=range(1, config["structure"].get("replicates", 1) + 1)
+        )
+    output:
+        config["analysis_name"] + "/structure/plots/K{k}_aligned.png"
+    conda:
+        "../envs/r-pophelper.yaml"
+    script:
+        "../scripts/plot_k_aligned.R"
