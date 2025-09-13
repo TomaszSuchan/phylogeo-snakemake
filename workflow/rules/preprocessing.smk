@@ -205,7 +205,7 @@ rule missing_vcf_to_plink:
     shell:
         """
         # Count unique chromosomes/scaffolds
-        chr_count=$(zgrep -v '^#' file.vcf.gz | cut -f1 | sort -u | wc -l)
+        chr_count=$(zgrep -v '^#' {input.vcf} | cut -f1 | sort -u | wc -l)
         
         # Run PLINK with dynamic chr-set
         plink --vcf {input.vcf} \
