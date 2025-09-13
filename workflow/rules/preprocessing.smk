@@ -166,7 +166,7 @@ rule filter_missing_vcf:
     log:
         config["analysis_name"] + "/logs/filter_missing_vcf_{mincov}.log"
     benchmark:
-        config["analysis_name"] + "/benchmarks/filter_missing_vcf_{mincov}.txt
+        config["analysis_name"] + "/benchmarks/filter_missing_vcf_{mincov}.txt"
     params:
         mincov = lambda wc: "{:.6f}".format(max(0.0, min(1.0, 1.0 - float(wc.mincov))))
     conda:
