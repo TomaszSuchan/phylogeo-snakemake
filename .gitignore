@@ -8,5 +8,6 @@ tmp/
 test_data
 filtered_data/
 results/
+data/popmap.txt
 .DS_Store
 seed.txt
