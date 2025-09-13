@@ -89,7 +89,7 @@ resources:
   admixture:
     threads: 4
     mem_mb: 16000
-    runtime: 1440
+    runtime: 10
   pcaone:
     threads: 12
     mem_mb: 8000
