@@ -12,7 +12,7 @@ rule pcaone_emu:
     benchmark:
         config["analysis_name"] + "/benchmarks/pcaone_emu.txt"
     params:
-        SVD_method = config.get("SVD_method", 3),
+        SVD_method = config["PCAone"].get("SVD_method", 3),
         output_prefix = config["analysis_name"] + "/pcaone_EMU/PCA_EMU",
         # Get the bfile prefix (remove .bed extension)
         bfile_prefix = lambda wildcards, input: input.bed.replace('.bed', '')
@@ -49,7 +49,7 @@ rule pcaone:
     benchmark:
         config["analysis_name"] + "/benchmarks/pcaone.txt"
     params:
-        SVD_method = config["PCA"].get("SVD_method", 3),
+        SVD_method = config["PCAone"].get("SVD_method", 3),
         output_prefix = config["analysis_name"] + "/pcaone/PCA",
         # Get the bfile prefix (remove .bed extension)
         bfile_prefix = lambda wildcards, input: input.bed.replace('.bed', '')
@@ -78,14 +78,14 @@ rule pcaone_mincov:
         bim = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned_mincov{mincov}.bim",
         fam = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned_mincov{mincov}.fam"
     output:
-        pcaone_eigenvectors = config["analysis_name"] + "/pcaone_mincov{mincov}/PCA.eigvecs",
-        pcaone_eigenvalues = config["analysis_name"] + "/pcaone_mincov{mincov}/PCA.eigvals"
+        pcaone_eigenvectors = config["analysis_name"] + "/pcaone_mincov{mincov}/PCA_mincov{mincov}.eigvecs",
+        pcaone_eigenvalues = config["analysis_name"] + "/pcaone_mincov{mincov}/PCA_mincov{mincov}.eigvals"
     log:
         config["analysis_name"] + "/logs/pcaone_mincov_{mincov}.log"
     benchmark:
         config["analysis_name"] + "/benchmarks/pcaone_mincov_{mincov}.txt"
     params:
-        SVD_method = config["PCA"].get("SVD_method", 3),
+        SVD_method = config["PCAone"].get("SVD_method", 3),
         output_prefix = lambda wildcards: f"{config['analysis_name']}/pcaone_mincov{wildcards.mincov}/PCA",
         bfile_prefix = lambda wildcards: f"{config['analysis_name']}/filtered_data/biallelic_snps_thinned_mincov{wildcards.mincov}"
     conda:

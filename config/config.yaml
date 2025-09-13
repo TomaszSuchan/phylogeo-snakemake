@@ -10,17 +10,19 @@ analyses:
   faststructure: false
   admixture: false
   pcaone: false
+  vcf2pcacluster: false
   pcaone_emu: false
   pcaone_mincov: false
   pixy: false
+  relatedness: false
 
 
 ## Preprocessing parameters
-
+#
 # Many analyses require unlinkesd SNPs (one SNP per RAD fragment).
 # The VCF file will is first filtered for bilallelic SNPs with MAC>1
 # and then thinned to one SNP per RAD fragment using the parameters below.
-
+#
 # VCF thinning parameters (defaults shown):
 vcf_thinning:
   min_coverage: 0          # minimum number of samples with data
@@ -31,7 +33,6 @@ vcf_thinning:
 
 
 ## Population Structure Analysis
-
 # Common K values to test for population structure (Structure, fastStructure and admixture):
 k_values: [1, 2, 3]
 
@@ -45,18 +46,39 @@ faststructure:
   prior: "simple"     # prior choice: simple or logistic
 
 
-## PCA parameters
-
+## PCAone parameters
+#
 # SVD method SVD method to be applied.
 # Options are
 # 0: the Implicitly Restarted Arnoldi Method (IRAM);
 # 1: the Yu's single-pass Randomized SVD with power iterations;
 # 2: the accurate window-based Randomized SVD method (PCAone), recommended for big data;
 # 3: the full Singular Value Decomposition (default).
-PCA:
-  mincov_thresholds: [0.5, 0.6, 0.7, 0.8, 0.9]
+#
+# Minimum coverage thresholds to filter VCF for missing data before PCAone analysis.
+# The VCF will be filtered for each threshold in the list and PCAone will be run
+# on each filtered dataset.
+PCAone:
+  miss: [0.1, 0.2, 0.2, 0.2, 0.5] # list of maximum missing data thresholds (F_MISSING<mincov)
   SVD_method: 3  
 
+
+## VCF2PCACluster parameters
+#
+# 
+vcf2pcacluster:
+  cluster_method: "Kmean"  # clustering method: EM/Kmean/DBSCAN/None
+  PCnum: 10     # number of principal components to use
+  SNP_filtering:
+    MAF: [0, 0.001, 0.01, 0.05]   # List of min minor allele frequency filters [0.001]
+    Miss: [0.3, 0.4, 0.5]  # list of max ratio of miss allele filter [0.25] but in this pipeline [0.5], might fail if too low
+    Het: 1.00   # Max ratio of het allele filter [1.00]
+    HWE: 0      # Exact test of Hardy-Weinberg Equilibrium for SNP Pvalue[0]
+    Fchr: ""    # Filter the chromosome
+  KinshipMethod: 1 # Method of Kinship [1-5],defaut [1]
+		               # 1:Normalized_IBS[(Yang/BaldingNicolsKinship]
+		               # 2:Centered_IBS(VanRaden)
+		               # 3:IBSKinshipImpute 4:IBSKinship 5:p_dis
 
 ## Pixy parameters
 pixy:
@@ -65,7 +87,7 @@ pixy:
 
 
 ## Analysis resources
-
+#
 # Define computational resources for different analysis steps.
 # Memory is in MB and threads is the number of CPU threads.
 # Runtime is in minutes.
@@ -95,6 +117,10 @@ resources:
     mem_mb: 8000
     runtime: 10
   pcaone_emu:
+    threads: 12
+    mem_mb: 8000
+    runtime: 10
+  vcf2pcacluster:
     threads: 12
     mem_mb: 8000
     runtime: 10

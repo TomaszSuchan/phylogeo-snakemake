@@ -67,10 +67,21 @@ def get_all_targets():
     # PCAone targets (with coverage thresholds)
     if analyses.get("pcaone_mincov", False):
         targets.extend([
-            expand(config["analysis_name"] + "/pcaone_mincov{mincov}/PCA.eigvecs", 
-                   mincov=config["PCA"]["mincov_thresholds"]),
-            expand(config["analysis_name"] + "/pcaone_mincov{mincov}/PCA.eigvals", 
-                   mincov=config["PCA"]["mincov_thresholds"])
+            expand(config["analysis_name"] + "/pcaone_mincov{mincov}/PCA_mincov{mincov}.eigvecs", 
+                   mincov=config["PCAone"].get("mincov", 0.5)),
+            expand(config["analysis_name"] + "/pcaone_mincov{mincov}/PCA_mincov{mincov}.eigvals", 
+                   mincov=config["PCAone"].get("mincov", 0.5))
+        ])
+    
+    # VCF2PCACluster targets
+    if analyses.get("vcf2pcacluster", False):
+        targets.extend([
+            expand(config["analysis_name"] + "/vcf2pcacluster_mincov{mincov}_MAF{MAF}/vcf2pcacluster_mincov{mincov}_MAF{MAF}.eigvecs",
+                    mincov=config["vcf2pcacluster"]["SNP_filtering"].get("Miss", [0.5]),
+                    MAF=config["vcf2pcacluster"]["SNP_filtering"].get("MAF", [0])),
+            expand(config["analysis_name"] + "/vcf2pcacluster_mincov{mincov}_MAF{MAF}/vcf2pcacluster_mincov{mincov}_MAF{MAF}.eigvals",
+                   mincov=config["vcf2pcacluster"]["SNP_filtering"].get("Miss", [0.5]),
+                   MAF=config["vcf2pcacluster"]["SNP_filtering"].get("MAF", [0]))
         ])
     
     # Pixy targets

@@ -1,0 +1,43 @@
+# Rule for VCF2PCAcluster
+rule vcf2pcacluster:
+    input:
+        vcf = rules.thin_vcf.output.vcf
+    output:
+        pcaone_eigenvectors = config["analysis_name"] + "/vcf2pcacluster_mincov{mincov}_MAF{MAF}/vcf2pcacluster_mincov{mincov}_MAF{MAF}.eigvecs",
+        pcaone_eigenvalues = config["analysis_name"] + "/vcf2pcacluster_mincov{mincov}_MAF{MAF}/vcf2pcacluster_mincov{mincov}_MAF{MAF}.eigvals"
+    log:
+        config["analysis_name"] + "/logs/vcf2pcacluster.log"
+    benchmark:
+        config["analysis_name"] + "/benchmarks/vcf2pcacluster.txt"
+    params:
+        bin="workflow/bin/VCF2PCACluster",
+        output_prefix = lambda wildcards: (
+            f"{config['analysis_name']}/vcf2pcacluster_mincov{wildcards.mincov}_MAF{wildcards.MAF}/"
+            f"vcf2pcacluster_mincov{wildcards.mincov}_MAF{wildcards.MAF}"
+        ),
+        MAF = lambda wildcards: wildcards.MAF,
+        Miss = lambda wildcards: wildcards.mincov,
+        cluster_method = config["vcf2pcacluster"].get("cluster_method", "Kmean"),
+        Het = config["vcf2pcacluster"]["SNP_filtering"].get("Het", 1.00),
+        HWE = config["vcf2pcacluster"]["SNP_filtering"].get("HWE", 0),
+        Fchr = config["vcf2pcacluster"]["SNP_filtering"].get("Fchr", ""),
+        KinshipMethod = config["vcf2pcacluster"].get("KinshipMethod", 1)
+    threads: config["resources"]["vcf2pcacluster"]["threads"]
+    resources:
+        mem_mb = config["resources"]["vcf2pcacluster"]["mem_mb"],
+        time = config["resources"]["vcf2pcacluster"]["runtime"]
+    shell:
+        """
+        {params.bin} -InVCF {input.vcf} \
+        -OutPut {params.output_prefix} \
+        -Threads {threads} \
+        -Miss {params.Miss} \
+        -ClusterMethod {params.cluster_method} \
+        -MAF {params.MAF} \
+        -Het {params.Het} \
+        -HWE {params.HWE} \
+        -Fchr {params.Fchr} \
+        -KinshipMethod {params.KinshipMethod} \
+        &> {log}
+        """
+    ignore_errors: True
