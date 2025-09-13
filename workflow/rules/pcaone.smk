@@ -13,6 +13,7 @@ rule pcaone_emu:
         config["analysis_name"] + "/benchmarks/pcaone_emu.txt"
     params:
         SVD_method = config["PCAone"].get("SVD_method", 3),
+        PCnum = config["PCAone"].get("PCnum", 10),
         output_prefix = config["analysis_name"] + "/pcaone_EMU/PCA_EMU",
         # Get the bfile prefix (remove .bed extension)
         bfile_prefix = lambda wildcards, input: input.bed.replace('.bed', '')
@@ -30,6 +31,7 @@ rule pcaone_emu:
         """
         PCAone --threads {threads} \
         -d {params.SVD_method} \
+        --pc {params.PCnum} \
         --emu \
         --bfile {params.bfile_prefix} \
         --out {params.output_prefix} &> {log}
@@ -50,6 +52,7 @@ rule pcaone:
         config["analysis_name"] + "/benchmarks/pcaone.txt"
     params:
         SVD_method = config["PCAone"].get("SVD_method", 3),
+        PCnum = config["PCAone"].get("PCnum", 10),
         output_prefix = config["analysis_name"] + "/pcaone/PCA",
         # Get the bfile prefix (remove .bed extension)
         bfile_prefix = lambda wildcards, input: input.bed.replace('.bed', '')
@@ -67,6 +70,7 @@ rule pcaone:
         """
         PCAone --threads {threads} \
         -d {params.SVD_method} \
+        --pc {params.PCnum} \
         --bfile {params.bfile_prefix} \
         --out {params.output_prefix} &> {log}
         """
@@ -86,6 +90,7 @@ rule pcaone_mincov:
         config["analysis_name"] + "/benchmarks/pcaone_mincov_{mincov}.txt"
     params:
         SVD_method = config["PCAone"].get("SVD_method", 3),
+        PCnum = config["PCAone"].get("PCnum", 10),
         output_prefix = lambda wildcards: f"{config['analysis_name']}/pcaone_mincov{wildcards.mincov}/PCA",
         bfile_prefix = lambda wildcards: f"{config['analysis_name']}/filtered_data/biallelic_snps_thinned_mincov{wildcards.mincov}"
     conda:
@@ -98,6 +103,7 @@ rule pcaone_mincov:
         """
         PCAone --threads {threads} \
         -d {params.SVD_method} \
+        --pc {params.PCnum} \
         --bfile {params.bfile_prefix} \
         --out {params.output_prefix} &> {log}
         """

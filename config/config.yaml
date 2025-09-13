@@ -60,7 +60,8 @@ faststructure:
 # on each filtered dataset.
 PCAone:
   miss: [0.1, 0.2, 0.2, 0.2, 0.5] # list of maximum missing data thresholds (F_MISSING<mincov)
-  SVD_method: 3  
+  SVD_method: 3 # SVD method to use [0-3]
+  PCnum: 10     # number of principal components to compute
 
 
 ## VCF2PCACluster parameters
