@@ -106,6 +106,7 @@ rule thin_vcf:
         """
 
 # Rule to convert thinned VCF to PLINK format
+# renames chromosomes to "0" for downstream compatibility with "--allow-extra-chr 0"
 rule vcf_to_plink:
     input:
         vcf = rules.thin_vcf.output.thinned_vcf
@@ -130,7 +131,7 @@ rule vcf_to_plink:
         plink --vcf {input.vcf} \
               --make-bed \
               --out {params.output_prefix} \
-              --allow-extra-chr \
+              --allow-extra-chr 0 \
               --double-id &> {log}
         """
 
@@ -181,7 +182,7 @@ rule filter_missing_vcf:
         """
 
 # Rule to filter VCF for missing data threshold and convert to PLINK
-# renames chromosomes to integers for downstream compatibility
+# renames chromosomes to "0" for downstream compatibility with "--allow-extra-chr 0"
 rule missing_vcf_to_plink:
     input:
         vcf = rules.filter_missing_vcf.output.vcf
@@ -195,7 +196,7 @@ rule missing_vcf_to_plink:
         config["analysis_name"] + "/benchmarks/missing_vcf_to_plink_{mincov}.txt"
     params:
         mincov = lambda wildcards: wildcards.mincov,
-        output_prefix = "filtered_data/biallelic_snps_thinned_mincov{mincov}"
+        output_prefix = config["analysis_name"] + "filtered_data/biallelic_snps_thinned_mincov{mincov}"
     conda:
         "../envs/plink.yaml"
     threads: config["resources"]["default"]["threads"]
