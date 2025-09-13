@@ -3,8 +3,8 @@ rule vcf2pcacluster:
     input:
         vcf = rules.thin_vcf.output.vcf
     output:
-        pcaone_eigenvectors = config["analysis_name"] + "/vcf2pcacluster_mincov{mincov}_MAF{MAF}/vcf2pcacluster_mincov{mincov}_MAF{MAF}.eigvecs",
-        pcaone_eigenvalues = config["analysis_name"] + "/vcf2pcacluster_mincov{mincov}_MAF{MAF}/vcf2pcacluster_mincov{mincov}_MAF{MAF}.eigvals"
+        pcaone_eigenvectors = config["analysis_name"] + "/vcf2pcacluster_miss{miss}_MAF{MAF}/vcf2pcacluster_miss{miss}_MAF{MAF}.eigvecs",
+        pcaone_eigenvalues = config["analysis_name"] + "/vcf2pcacluster_miss{miss}_MAF{MAF}/vcf2pcacluster_miss{miss}_MAF{MAF}.eigvals"
     log:
         config["analysis_name"] + "/logs/vcf2pcacluster.log"
     benchmark:
@@ -12,16 +12,18 @@ rule vcf2pcacluster:
     params:
         bin="workflow/bin/VCF2PCACluster",
         output_prefix = lambda wildcards: (
-            f"{config['analysis_name']}/vcf2pcacluster_mincov{wildcards.mincov}_MAF{wildcards.MAF}/"
-            f"vcf2pcacluster_mincov{wildcards.mincov}_MAF{wildcards.MAF}"
+            f"{config['analysis_name']}/vcf2pcacluster_miss{wildcards.miss}_MAF{wildcards.MAF}/"
+            f"vcf2pcacluster_miss{wildcards.miss}_MAF{wildcards.MAF}"
         ),
         MAF = lambda wildcards: wildcards.MAF,
-        Miss = lambda wildcards: wildcards.mincov,
+        Miss = lambda wildcards: wildcards.miss,
         cluster_method = config["vcf2pcacluster"].get("cluster_method", "Kmean"),
         Het = config["vcf2pcacluster"]["SNP_filtering"].get("Het", 1.00),
         HWE = config["vcf2pcacluster"]["SNP_filtering"].get("HWE", 0),
         Fchr = config["vcf2pcacluster"]["SNP_filtering"].get("Fchr", ""),
-        KinshipMethod = config["vcf2pcacluster"].get("KinshipMethod", 1)
+        KinshipMethod = config["vcf2pcacluster"].get("KinshipMethod", 1),
+        PCnum = config["vcf2pcacluster"].get("PCnum", 10)
+
     threads: config["resources"]["vcf2pcacluster"]["threads"]
     resources:
         mem_mb = config["resources"]["vcf2pcacluster"]["mem_mb"],
@@ -31,6 +33,7 @@ rule vcf2pcacluster:
         {params.bin} -InVCF {input.vcf} \
         -OutPut {params.output_prefix} \
         -Threads {threads} \
+        -PCnum {PCnum} \
         -Miss {params.Miss} \
         -ClusterMethod {params.cluster_method} \
         -MAF {params.MAF} \

@@ -163,13 +163,13 @@ rule filter_missing_vcf:
     input:
         vcf = rules.thin_vcf.output.vcf
     output:
-        vcf = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned_mincov{mincov}.vcf.gz"
+        vcf = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned_miss{miss}.vcf.gz"
     log:
-        config["analysis_name"] + "/logs/filter_missing_vcf_{mincov}.log"
+        config["analysis_name"] + "/logs/filter_missing_vcf_{miss}.log"
     benchmark:
-        config["analysis_name"] + "/benchmarks/filter_missing_vcf_{mincov}.txt"
+        config["analysis_name"] + "/benchmarks/filter_missing_vcf_{miss}.txt"
     params:
-        mincov = config["PCAone"].get("miss", [0.5])
+        miss = lambda wildcards: wildcards.miss
     conda:
         "../envs/bcftools.yaml"
     threads: config["resources"]["default"]["threads"]
@@ -178,7 +178,7 @@ rule filter_missing_vcf:
         runtime = config["resources"]["default"]["runtime"]
     shell:
         """
-        bcftools view -i 'F_MISSING<{params.mincov}' {input.vcf} -Oz -o {output.vcf} &> {log}
+        bcftools view -i 'F_MISSING<{params.miss}' {input.vcf} -Oz -o {output.vcf} &> {log}
         """
 
 # Rule to filter VCF for missing data threshold and convert to PLINK
@@ -187,16 +187,16 @@ rule missing_vcf_to_plink:
     input:
         vcf = rules.filter_missing_vcf.output.vcf
     output:
-        bed = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned_mincov{mincov}.bed",
-        bim = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned_mincov{mincov}.bim",
-        fam = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned_mincov{mincov}.fam"
+        bed = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned_miss{miss}.bed",
+        bim = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned_miss{miss}.bim",
+        fam = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned_miss{miss}.fam"
     log:
-        config["analysis_name"] + "/logs/missing_vcf_to_plink_{mincov}.log"
+        config["analysis_name"] + "/logs/missing_vcf_to_plink_{miss}.log"
     benchmark:
-        config["analysis_name"] + "/benchmarks/missing_vcf_to_plink_{mincov}.txt"
+        config["analysis_name"] + "/benchmarks/missing_vcf_to_plink_{miss}.txt"
     params:
-        mincov = lambda wildcards: wildcards.mincov,
-        output_prefix = config["analysis_name"] + "filtered_data/biallelic_snps_thinned_mincov{mincov}"
+        miss = lambda wildcards: wildcards.miss,
+        output_prefix = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned_miss{miss}"
     conda:
         "../envs/plink.yaml"
     threads: config["resources"]["default"]["threads"]
@@ -205,7 +205,6 @@ rule missing_vcf_to_plink:
         runtime = config["resources"]["default"]["runtime"]
     shell:
         """
-        # Run PLINK with dynamic chr-set
         plink --vcf {input.vcf} \
               --make-bed \
               --out {params.output_prefix} \
