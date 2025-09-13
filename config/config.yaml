@@ -12,7 +12,7 @@ analyses:
   pcaone: false
   vcf2pcacluster: false
   pcaone_emu: false
-  pcaone_mincov: false
+  pcaone_mincov: true
   pixy: false
   relatedness: false
 
@@ -59,7 +59,7 @@ faststructure:
 # The VCF will be filtered for each threshold in the list and PCAone will be run
 # on each filtered dataset.
 PCAone:
-  miss: [0.1, 0.2, 0.2, 0.2, 0.5] # list of maximum missing data thresholds (F_MISSING<mincov)
+  miss: [0.1, 0.2, 0.2, 0.3, 0.4, 0.5] # list of maximum missing data thresholds (F_MISSING<mincov)
   SVD_method: 3 # SVD method to use [0-3]
   PCnum: 10     # number of principal components to compute
 
@@ -77,9 +77,9 @@ vcf2pcacluster:
     HWE: 0      # Exact test of Hardy-Weinberg Equilibrium for SNP Pvalue[0]
     Fchr: ""    # Filter the chromosome
   KinshipMethod: 1 # Method of Kinship [1-5],defaut [1]
-		               # 1:Normalized_IBS[(Yang/BaldingNicolsKinship]
-		               # 2:Centered_IBS(VanRaden)
-		               # 3:IBSKinshipImpute 4:IBSKinship 5:p_dis
+                   # 1:Normalized_IBS[(Yang/BaldingNicolsKinship]
+                   # 2:Centered_IBS(VanRaden)
+                   # 3:IBSKinshipImpute 4:IBSKinship 5:p_dis
 
 ## Pixy parameters
 pixy:
