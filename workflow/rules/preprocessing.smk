@@ -76,7 +76,7 @@ rule thin_vcf:
     input:
         vcf = rules.select_biallelic_snps.output.biallelic_vcf
     output:
-        thinned_vcf = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned.vcf.gz"
+        vcf = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned.vcf.gz"
     log:
         config["analysis_name"] + "/logs/thin_vcf.log"
     benchmark:
@@ -97,7 +97,7 @@ rule thin_vcf:
         """
         python workflow/scripts/thin_ipyrad_vcf.py \
             --vcf {input.vcf} \
-            --out {output.thinned_vcf} \
+            --out {output.vcf} \
             --min-coverage {params.min_coverage} \
             --method {params.method} \
             --ties {params.ties} \
@@ -109,7 +109,7 @@ rule thin_vcf:
 # renames chromosomes to "0" for downstream compatibility with "--allow-extra-chr 0"
 rule vcf_to_plink:
     input:
-        vcf = rules.thin_vcf.output.thinned_vcf
+        vcf = rules.thin_vcf.output.vcf
     output:
         bed = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned.bed",
         bim = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned.bim",
@@ -138,7 +138,7 @@ rule vcf_to_plink:
 # Rule to convert thinned VCF to STRUCTURE format
 rule vcf_to_structure:
     input:
-        vcf = rules.thin_vcf.output.thinned_vcf
+        vcf = rules.thin_vcf.output.vcf
     output:
         str = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned.str"
     log:
@@ -161,7 +161,7 @@ rule vcf_to_structure:
 # Rule to filter VCF for missing data threshold and convert to PLINK
 rule filter_missing_vcf:
     input:
-        vcf = rules.thin_vcf.output.thinned_vcf
+        vcf = rules.thin_vcf.output.vcf
     output:
         vcf = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned_mincov{mincov}.vcf.gz"
     log:
