@@ -181,6 +181,7 @@ rule filter_missing_vcf:
         """
 
 # Rule to filter VCF for missing data threshold and convert to PLINK
+# renames chromosomes to integers for downstream compatibility
 rule missing_vcf_to_plink:
     input:
         vcf = rules.filter_missing_vcf.output.vcf
@@ -203,9 +204,14 @@ rule missing_vcf_to_plink:
         runtime = config["resources"]["default"]["runtime"]
     shell:
         """
+        # Count unique chromosomes/scaffolds
+        chr_count=$(zgrep -v '^#' file.vcf.gz | cut -f1 | sort -u | wc -l)
+        
+        # Run PLINK with dynamic chr-set
         plink --vcf {input.vcf} \
               --make-bed \
               --out {params.output_prefix} \
               --allow-extra-chr \
+              --chr-set $chr_count \
               --double-id &> {log}
         """

@@ -24,3 +24,15 @@ rule admixture:
         cd {params.output_dir}
         admixture --cv -j{threads} ../../{input.bed} {wildcards.k} &> {log}
         """
+
+# Rule to choose optimal K for admixture
+rule admixture_chooseK:
+    input:
+        expand(config["analysis_name"] + "/admixture/admixture.K{k}.Q", k=config["k_values"])
+    output:
+        config["analysis_name"] + "/admixture/chooseK_results.txt"
+    shell:
+        """
+        echo "Choose the lowest cross-validation (CV) error:" > {output}
+        grep -h 'CV' {config[analysis_name]}/admixture/admixture.K*.log >> {output} \
+        """

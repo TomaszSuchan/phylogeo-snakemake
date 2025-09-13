@@ -34,7 +34,8 @@ def get_all_targets():
             expand(config["analysis_name"] + "/admixture/admixture.K{k}.Q", 
                    k=config["k_values"]),
             expand(config["analysis_name"] + "/admixture/admixture.K{k}.P", 
-                   k=config["k_values"])
+                   k=config["k_values"]),
+            config["analysis_name"] + "/admixture/chooseK_results.txt"
         ])
     
     # STRUCTURE targets
