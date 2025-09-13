@@ -64,5 +64,9 @@ rule plot_aligned_k:
         config["analysis_name"] + "/logs/plot_k_aligned_K{k}.log"
     conda:
         "../envs/r-pophelper.yaml"
+    threads: config["resources"]["default"]["threads"]
+    resources:
+        mem_mb = config["resources"]["default"]["mem_mb"],
+        runtime = config["resources"]["default"]["runtime"]
     script:
         "../scripts/plot_k_aligned.R"
