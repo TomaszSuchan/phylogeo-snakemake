@@ -6,6 +6,8 @@ include: "rules/preprocessing.smk"
 include: "rules/faststructure.smk"
 include: "rules/admixture.smk"
 include: "rules/pcaone.smk"
+include: "rules/vcf2pcacluster.smk"
+include: "rules/relatedness.smk"
 include: "rules/pixy.smk"
 include: "rules/structure.smk"
 
@@ -65,24 +67,33 @@ def get_all_targets():
         ])
 
     # PCAone targets (with coverage thresholds)
-    if analyses.get("pcaone_mincov", False):
+    if analyses.get("pcaone_miss", False):
         targets.extend([
-            expand(config["analysis_name"] + "/pcaone_mincov{mincov}/PCA_mincov{mincov}.eigvecs", 
-                   mincov=config["PCAone"].get("mincov", 0.5)),
-            expand(config["analysis_name"] + "/pcaone_mincov{mincov}/PCA_mincov{mincov}.eigvals", 
-                   mincov=config["PCAone"].get("mincov", 0.5))
+            expand(config["analysis_name"] + "/pcaone_miss{miss}/PCA_miss{miss}.eigvecs", 
+                   miss=config["PCAone"].get("miss", 0.5)),
+            expand(config["analysis_name"] + "/pcaone_miss{miss}/PCA_miss{miss}.eigvals", 
+                   miss=config["PCAone"].get("miss", 0.5))
         ])
     
     # VCF2PCACluster targets
     if analyses.get("vcf2pcacluster", False):
-        targets.extend([
-            expand(config["analysis_name"] + "/vcf2pcacluster_mincov{mincov}_MAF{MAF}/vcf2pcacluster_mincov{mincov}_MAF{MAF}.eigvecs",
-                    mincov=config["vcf2pcacluster"]["SNP_filtering"].get("Miss", [0.5]),
-                    MAF=config["vcf2pcacluster"]["SNP_filtering"].get("MAF", [0])),
-            expand(config["analysis_name"] + "/vcf2pcacluster_mincov{mincov}_MAF{MAF}/vcf2pcacluster_mincov{mincov}_MAF{MAF}.eigvals",
-                   mincov=config["vcf2pcacluster"]["SNP_filtering"].get("Miss", [0.5]),
-                   MAF=config["vcf2pcacluster"]["SNP_filtering"].get("MAF", [0]))
-        ])
+        miss_values = config["vcf2pcacluster"]["SNP_filtering"].get("Miss", [0.5])
+        maf_values = config["vcf2pcacluster"]["SNP_filtering"].get("MAF", [0])
+        
+        targets.extend(
+            expand(
+                config["analysis_name"] + "/vcf2pcacluster_miss{miss}_MAF{MAF}/vcf2pcacluster_miss{miss}_MAF{MAF}.eigenvec",
+                miss=miss_values,
+                MAF=maf_values
+            )
+        )
+        targets.extend(
+            expand(
+                config["analysis_name"] + "/vcf2pcacluster_miss{miss}_MAF{MAF}/vcf2pcacluster_miss{miss}_MAF{MAF}.eigenval",
+                miss=miss_values,
+                MAF=maf_values
+            )
+        )
     
     # Pixy targets
     if analyses.get("pixy", False):

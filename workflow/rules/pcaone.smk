@@ -82,8 +82,8 @@ rule pcaone_miss:
         bim = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned_miss{miss}.bim",
         fam = config["analysis_name"] + "/filtered_data/biallelic_snps_thinned_miss{miss}.fam"
     output:
-        pcaone_eigenvectors = config["analysis_name"] + "/pcaone_miss{miss}/PCA_miss{miss}.eigvecs",
-        pcaone_eigenvalues = config["analysis_name"] + "/pcaone_miss{miss}/PCA_miss{miss}.eigvals"
+        eigenvectors = config["analysis_name"] + "/pcaone_miss{miss}/PCA_miss{miss}.eigvecs",
+        eigenvalues = config["analysis_name"] + "/pcaone_miss{miss}/PCA_miss{miss}.eigvals"
     log:
         config["analysis_name"] + "/logs/pcaone_miss_{miss}.log"
     benchmark:

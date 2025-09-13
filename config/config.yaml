@@ -10,9 +10,9 @@ analyses:
   faststructure: false
   admixture: false
   pcaone: false
-  vcf2pcacluster: false
+  vcf2pcacluster: true
   pcaone_emu: false
-  pcaone_mincov: true
+  pcaone_miss: false
   pixy: false
   relatedness: false
 
