@@ -208,6 +208,6 @@ rule missing_vcf_to_plink:
         plink --vcf {input.vcf} \
               --make-bed \
               --out {params.output_prefix} \
-              --allow-extra-chr 0\
+              --allow-extra-chr 0 \
               --double-id &> {log}
         """
