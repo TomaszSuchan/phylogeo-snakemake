@@ -204,14 +204,10 @@ rule missing_vcf_to_plink:
         runtime = config["resources"]["default"]["runtime"]
     shell:
         """
-        # Count unique chromosomes/scaffolds
-        chr_count=$(zgrep -v '^#' {input.vcf} | cut -f1 | sort -u | wc -l)
-        
         # Run PLINK with dynamic chr-set
         plink --vcf {input.vcf} \
               --make-bed \
               --out {params.output_prefix} \
-              --allow-extra-chr \
-              --chr-set $chr_count \
+              --allow-extra-chr 0\
               --double-id &> {log}
         """
