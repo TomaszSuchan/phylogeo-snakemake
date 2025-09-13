@@ -65,4 +65,4 @@ rule plot_aligned_k:
     conda:
         "../envs/r-pophelper.yaml"
     script:
-        "../scripts/plot_k_aligned.R &> {log}"
+        "../scripts/plot_k_aligned.R"
