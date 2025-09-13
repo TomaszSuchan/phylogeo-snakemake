@@ -31,9 +31,9 @@ def get_all_targets():
     # ADMIXTURE targets
     if analyses.get("admixture", False):
         targets.extend([
-            expand(config["analysis_name"] + "/admixture/admixture.K{k}.Q", 
+            expand(config["analysis_name"] + "/admixture/biallelic_snps_thinned.{k}.Q", 
                    k=config["k_values"]),
-            expand(config["analysis_name"] + "/admixture/admixture.K{k}.P", 
+            expand(config["analysis_name"] + "/admixture/biallelic_snps_thinned.{k}.P", 
                    k=config["k_values"]),
             config["analysis_name"] + "/admixture/chooseK_results.txt"
         ])
