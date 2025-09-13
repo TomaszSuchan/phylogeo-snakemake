@@ -28,7 +28,7 @@ rule pcaone_emu:
         time = "72:00:00"
     shell:
         """
-        pcaone --threads {threads} \
+        PCAone --threads {threads} \
         -d {params.SVD_method} \
         --emu \
         --bfile {params.bfile_prefix} \
@@ -65,7 +65,7 @@ rule pcaone:
         time = "1:00:00"
     shell:
         """
-        pcaone --threads {threads} \
+        PCAone --threads {threads} \
         -d {params.SVD_method} \
         --bfile {params.bfile_prefix} \
         --out {params.output_prefix} &> {log}
@@ -96,7 +96,7 @@ rule pcaone_mincov:
         time = config["resources"]["pcaone"]["runtime"]
     shell:
         """
-        pcaone --threads {threads} \
+        PCAone --threads {threads} \
         -d {params.SVD_method} \
         --bfile {params.bfile_prefix} \
         --out {params.output_prefix} &> {log}
