@@ -17,10 +17,10 @@ rule prepare_invariant_vcf:
         time = config["resources"]["default"]["runtime"]
     shell:
         """
-        python workflow/scripts/extract_invariant_vcf.py {input.loci} -o {config['analysis_name']}/filtered_data/invariant_sites_only.vcf &> {log}
-        bgzip {config['analysis_name']}/filtered_data/invariant_sites_only.vcf  >> {log} 2>&1
-        bcftools index {config['analysis_name']}/filtered_data/invariant_sites_only.vcf.gz  >> {log} 2>&1
-        bcftools concat {config['analysis_name']}/filtered_data/invariant_sites_only.vcf.gz {input.vcf} -Oz -a -o {output.invariant_vcf}  >> {log} 2>&1
+        python workflow/scripts/extract_invariant_vcf.py {input.loci} -o {config[analysis_name]}/filtered_data/invariant_sites_only.vcf &> {log}
+        bgzip {config[analysis_name]}/filtered_data/invariant_sites_only.vcf  >> {log} 2>&1
+        bcftools index {config[analysis_name]}/filtered_data/invariant_sites_only.vcf.gz  >> {log} 2>&1
+        bcftools concat {config[analysis_name]}/filtered_data/invariant_sites_only.vcf.gz {input.vcf} -Oz -a -o {output.invariant_vcf}  >> {log} 2>&1
         bcftools index {output.invariant_vcf}
         """
 
@@ -52,4 +52,30 @@ rule pixy:
         pixy --stats pi fst dxy --vcf {input.vcf} --populations {input.popmap} \
              --n_cores {threads} --window_size {params.window_size} \
              --output_folder {params.output_folder} &> {log}
+        """
+
+rule pixy_summary:
+    input:
+        pi = rules.pixy.output.pi,
+        fst = rules.pixy.output.fst,
+        dxy = rules.pixy.output.dxy
+    output:
+        summary = config["analysis_name"] + "/pixy/pixy_summary.tsv"
+    log:
+        config["analysis_name"] + "/logs/pixy_summary.log"
+    benchmark:
+        config["analysis_name"] + "/benchmarks/pixy_summary.txt"
+    conda:
+        "../envs/stats.yaml"   # contains R (tidyverse/boot) or Python (pandas/numpy)
+    threads: 1
+    resources:
+        mem_mb = config["resources"]["default"]["mem_mb"],
+        time = config["resources"]["default"]["runtime"]
+    shell:
+        """
+        python workflow/scripts/pixy_summary.py \
+            --pi {input.pi} \
+            --fst {input.fst} \
+            --dxy {input.dxy} \
+            --output {output.summary} &> {log}
         """
