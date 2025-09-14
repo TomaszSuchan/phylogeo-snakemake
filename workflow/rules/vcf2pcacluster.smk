@@ -8,7 +8,6 @@ rule vcf2pcacluster:
     log:
         config["analysis_name"] + "/logs/vcf2pcacluster_miss{miss}_MAF{MAF}.log"
     params:
-        bin="workflow/bin/VCF2PCACluster",
         output_prefix=lambda wildcards: (
             f"{config['analysis_name']}/vcf2pcacluster_miss{wildcards.miss}_MAF{wildcards.MAF}/"
             f"vcf2pcacluster_miss{wildcards.miss}_MAF{wildcards.MAF}"
@@ -30,7 +29,8 @@ rule vcf2pcacluster:
         time=config["resources"]["vcf2pcacluster"]["runtime"]
     shell:
         """
-        {params.bin} -InVCF {input.vcf} \
+        test -x {VCF2PCACLUSTER} || {{ echo "ERROR: VCF2PCACluster not found at {VCF2PCACLUSTER}" >&2; exit 1; }}
+        VCF2PCACluster -InVCF {input.vcf} \
         -OutPut {params.output_prefix} \
         -Threads {threads} \
         -PCnum {params.PCnum} \
