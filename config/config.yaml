@@ -4,16 +4,19 @@ ipyrad_prefix: "test_data/Belenois_aurota_rmoutgroup"
 ## Analysis name (for output files and directories)
 analysis_name: "Sample_analysis"
 
+## Population assignment - individual in the 1st column, population in the 2nd column
+popdata: "data/popmap.txt"
+
 ## Analysis selection - set to true/false to enable/disable
 analyses:
   structure: false
   faststructure: false
   admixture: false
   pcaone: false
-  vcf2pcacluster: true
+  vcf2pcacluster: false
   pcaone_emu: false
   pcaone_miss: false
-  pixy: false
+  pixy: true
   relatedness: false
 
 
