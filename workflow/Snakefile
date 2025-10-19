@@ -98,9 +98,9 @@ def get_all_targets():
     # Pixy targets
     if analyses.get("pixy", False):
         targets.extend([
-            config["analysis_name"] + "/pixy/pi.txt",
-            config["analysis_name"] + "/pixy/fst.txt",
-            config["analysis_name"] + "/pixy/dxy.txt"
+            config["analysis_name"] + "/pixy/pixy_pi-summary.txt",
+            config["analysis_name"] + "/pixy/pixy_fst-summary.txt",
+            config["analysis_name"] + "/pixy/pixy_dxy-summary.txt"
         ])
     
     # Relatedness targets
