@@ -87,7 +87,7 @@ rule merge_invariant_sites:
 rule pixy:
     input:
         vcf = rules.merge_invariant_sites.output.merged_vcf,
-        popmap = config["popdata"]
+        popmap = rules.generate_popmap.output
     output:
         pi = config["analysis_name"] + "/pixy/pixy_pi.txt",
         fst = config["analysis_name"] + "/pixy/pixy_fst.txt",
