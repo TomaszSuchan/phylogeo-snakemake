@@ -108,8 +108,8 @@ def get_all_targets():
     # Relatedness targets
     if analyses.get("relatedness", False):
         targets.extend([
-            config["analysis_name"] + "/relatedness/relatedness.txt",
-            config["analysis_name"] + "/relatedness/relatedness2.txt"
+            config["analysis_name"] + "/relatedness/out.relatedness",
+            config["analysis_name"] + "/relatedness/out.relatedness2"
         ])
     
     return targets
