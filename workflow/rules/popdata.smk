@@ -17,10 +17,10 @@ rule generate_popmap:
     run:
         import os
         import subprocess
-
+        
         popdata_file = config.get("popdata", "")
         separator = config.get("popseparator", "-")
-
+        
         if popdata_file and os.path.exists(popdata_file):
             # Case 1: Use existing popdata file
             shell("cp {popdata_file} {output.popmap}")
@@ -32,7 +32,7 @@ rule generate_popmap:
                 capture_output=True, text=True, check=True
             )
             samples = result.stdout.strip().split("\n")
-
+            
             with open(output.popmap, "w") as f:
                 for s in samples:
                     if separator in s:
