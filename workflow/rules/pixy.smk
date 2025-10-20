@@ -105,7 +105,7 @@ rule pixy:
     threads: config["resources"]["pixy"]["threads"]
     resources:
         mem_mb = config["resources"]["pixy"]["mem_mb"],
-        time = config["resources"]["pixy"]["runtime"]
+        runtime = config["resources"]["pixy"]["runtime"]
     shell:
         """
         mkdir -p {params.output_folder}
