@@ -4,8 +4,12 @@ ipyrad_prefix: "test_data/Belenois_aurota_rmoutgroup"
 ## Analysis name (for output files and directories)
 analysis_name: "Sample_analysis"
 
-## Population assignment - individual in the 1st column, population in the 2nd column
+## Population assignment:
+# either a file with individual in the 1st column, population in the 2nd column
 popdata: "data/popmap.txt"
+# or a separator to extract population codes from individual IDs
+popseparator: "-" # e.g. "ind1-pop1", separator is "-"
+# (if both popdata and popseparator are provided, popdata file takes precedence)
 
 ## Analysis selection - set to true/false to enable/disable
 analyses:

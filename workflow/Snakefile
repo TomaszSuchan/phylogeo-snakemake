@@ -10,6 +10,7 @@ include: "rules/vcf2pcacluster.smk"
 include: "rules/relatedness.smk"
 include: "rules/pixy.smk"
 include: "rules/structure.smk"
+include: "rules/popdata.smk"
 
 def get_all_targets():
     """
