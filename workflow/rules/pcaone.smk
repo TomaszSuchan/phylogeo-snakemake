@@ -125,4 +125,4 @@ rule plot_pca:
         "../envs/r-plot.yaml"
     group: "plots"
     script:
-        "scripts/plot_pca.R"
+        "../scripts/plot_pca.R"
