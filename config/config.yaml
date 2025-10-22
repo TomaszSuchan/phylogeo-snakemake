@@ -82,7 +82,11 @@ PCAone:
   miss: [0.1, 0.2, 0.2, 0.3, 0.4, 0.5] # list of maximum missing data thresholds (F_MISSING<mincov)
   SVD_method: 3 # SVD method to use [0-3]
   PCnum: 10     # number of principal components to compute
-
+# PCA plot params:
+pca:
+  pc1: "PC1"
+  pc2: "PC2"
+  color_by: ["Population", "Region"]  # columns in popdata to color points by
 
 ## VCF2PCACluster parameters
 #

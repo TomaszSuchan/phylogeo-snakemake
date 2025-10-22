@@ -45,6 +45,7 @@ rule pcaone:
         fam = rules.vcf_to_plink.output.fam
     output:
         pcaone_eigenvectors = config["analysis_name"] + "/pcaone/PCA.eigvecs",
+        pcaone_eigenvectors2 = config["analysis_name"] + "/pcaone/PCA.eigvecs2", 
         pcaone_eigenvalues = config["analysis_name"] + "/pcaone/PCA.eigvals"
     log:
         config["analysis_name"] + "/logs/pcaone.log"
@@ -107,3 +108,31 @@ rule pcaone_miss:
         --bfile {params.bfile_prefix} \
         --out {params.output_prefix} &> {log}
         """
+
+# Rule to plot PCA
+rule plot_pca:
+    input:
+        eigvecs=rules.pcaone.output.pcaone_eigenvectors,
+        eigvals=rules.pcaone.output.pcaone_eigenvalues2,
+        popdata=rules.generate_popdata.output.popdata
+    output:
+        "{analysis}/final_plots/PCA{color_by}.eigvecs"
+    params:
+        pc1=config["pca_plot"]["pc1"],
+        pc2=config["pca_plot"]["pc2"],
+        color_by=config["pca_plot"]["color_by"]
+    script:
+        "scripts/plot_pca.R"
+
+rule plot_pca:
+    input:
+        eigvecs=rules.pcaone.output.pcaone_eigenvectors,
+        eigvals=rules.pcaone.output.pcaone_eigenvalues2,
+        popdata=rules.generate_popdata.output.popdata
+    output:
+        "{analysis}/final_plots/PCA{color_by}.eigvecs"
+    params:
+        pc1=config["pca_plot"]["pc1"],
+        pc2=config["pca_plot"]["pc2"]
+    script:
+        "scripts/plot_pca.R"

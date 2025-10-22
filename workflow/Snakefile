@@ -21,6 +21,8 @@ def get_all_targets():
     """
     targets = []
     analyses = config.get("analyses", {})
+    PCA_groupings = config["pca_plot"]["color_by"]
+
     
     # FastStructure targets
     if analyses.get("faststructure", False):
@@ -58,7 +60,10 @@ def get_all_targets():
     if analyses.get("pcaone", False):
         targets.extend([
             config["analysis_name"] + "/pcaone/PCA.eigvecs",
-            config["analysis_name"] + "/pcaone/PCA.eigvals"
+            config["analysis_name"] + "/pcaone/PCA.eigvals",
+            expand("{analysis}/final_plots/PCA-{color_by}.eigvecs",
+                analysis=config["analysis_name"],
+                color_by=PCA_groupings)
         ])
 
     # PCAone targets (EMU)
