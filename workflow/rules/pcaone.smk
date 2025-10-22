@@ -123,16 +123,3 @@ rule plot_pca:
         color_by=config["pca_plot"]["color_by"]
     script:
         "scripts/plot_pca.R"
-
-rule plot_pca:
-    input:
-        eigvecs=rules.pcaone.output.pcaone_eigenvectors,
-        eigvals=rules.pcaone.output.pcaone_eigenvalues2,
-        popdata=rules.generate_popdata.output.popdata
-    output:
-        "{analysis}/final_plots/PCA{color_by}.eigvecs"
-    params:
-        pc1=config["pca_plot"]["pc1"],
-        pc2=config["pca_plot"]["pc2"]
-    script:
-        "scripts/plot_pca.R"
