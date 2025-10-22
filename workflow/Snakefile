@@ -118,7 +118,7 @@ def get_all_targets():
         ])
     
     # General targets
-    targets.extend ([popdata=config["analysis_name"] + "/popdata.txt"])
+    targets.extend ([config["analysis_name"] + "/popdata.txt"])
 
     return targets
 
