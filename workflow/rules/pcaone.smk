@@ -121,5 +121,8 @@ rule plot_pca:
         pc1=config["pca_plot"]["pc1"],
         pc2=config["pca_plot"]["pc2"],
         color_by=config["pca_plot"]["color_by"]
+    conda:
+        "../envs/r-plot.yaml"
+    group: "plots"
     script:
         "scripts/plot_pca.R"

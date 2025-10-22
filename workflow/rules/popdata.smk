@@ -16,6 +16,7 @@ rule generate_popmap:
     resources:
         mem_mb=config["resources"]["default"]["mem_mb"],
         runtime=config["resources"]["default"]["runtime"]
+    group: "plots"
     shell:
         r"""
         if [ -n "{params.popmap}" ] && [ -f "{params.popmap}" ]; then
@@ -46,6 +47,7 @@ rule generate_popdata:
     resources:
         mem_mb=config["resources"]["default"]["mem_mb"],
         runtime=config["resources"]["default"]["runtime"]
+    group: "plots"
     run:
         import pandas as pd
 
