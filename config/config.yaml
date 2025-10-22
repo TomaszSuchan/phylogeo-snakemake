@@ -83,7 +83,7 @@ PCAone:
   SVD_method: 3 # SVD method to use [0-3]
   PCnum: 10     # number of principal components to compute
 # PCA plot params:
-pca:
+pca_plot:
   pc1: "PC1"
   pc2: "PC2"
   color_by: ["Population", "Region"]  # columns in popdata to color points by
