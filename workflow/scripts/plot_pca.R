@@ -1,7 +1,7 @@
 # scripts/run_plot_pca.R
 
 # Load your R package (linked as submodule)
-devtools::load_all("external/rpkgname")
+devtools::load_all("external/phylogeographeR")
 
 # Snakemake inputs and params
 eigvecs_file <- snakemake@input[["eigvecs"]]
