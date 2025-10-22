@@ -21,7 +21,7 @@ merged_df = pd.merge(popmap_df, popdata_df, left_on="Population", right_on="Popu
 merged_df = merged_df.rename(columns={"Individual_x": "Individual"})
 
 # Select relevant columns: individual, population, latitude, longitude, and any additional columns
-output_columns = ["Individual", "Population"] + list(merged_df.columns[3:])
+output_columns = ["Individual", "Population"] + list(merged_df.columns[2:])
 final_popdata_df = merged_df[output_columns]
 
 # Save the final popdata file
