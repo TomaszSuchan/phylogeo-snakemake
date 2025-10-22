@@ -11,7 +11,7 @@ output_file  <- snakemake@output[[1]]
 
 pc1 <- as.numeric(snakemake@params[["pc1"]])
 pc2 <- as.numeric(snakemake@params[["pc2"]])
-color_by_name <- snakemake@params[["color_by"]]  # <-- column name from config
+color_by_name <- as.character(snakemake@params[["color_by"]])
 
 # Read inputs
 eigenvecs2 <- read.table(eigvecs_file)
