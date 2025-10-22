@@ -41,7 +41,7 @@ rule generate_popdata:
     benchmark:
         config["analysis_name"] + "/benchmarks/generate_popdata.txt"
     conda:
-        "../envs/python.yaml"
+        "../envs/pandas.yaml"
     threads: config["resources"]["default"]["threads"]
     resources:
         mem_mb=config["resources"]["default"]["mem_mb"],
