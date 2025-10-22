@@ -3,3 +3,4 @@ channels:
 dependencies:
   - r-base
   - r-ggplot2
+  - r-devtools

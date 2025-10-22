@@ -117,6 +117,9 @@ def get_all_targets():
             config["analysis_name"] + "/relatedness/out.relatedness2"
         ])
     
+    # General targets
+    targets.extend ([popdata=config["analysis_name"] + "/popdata.txt"])
+
     return targets
 
 # Main target rule
