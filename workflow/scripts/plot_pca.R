@@ -1,32 +1,70 @@
-# Load R packages
+# Load libraries
 library(RColorBrewer)
 library(ggplot2)
-source("external/phylogeographeR/R/plot_PCA.R")
 
-# Snakemake inputs and params
+# Debug: working directory
+message("Working directory: ", getwd())
+
+# Debug: check if Snakemake object exists
+if (!exists("snakemake")) {
+  stop("Snakemake object not found! This script should be run via Snakemake.")
+}
+
+# Debug: print Snakemake inputs, outputs, and params
+message("Snakemake inputs:")
+print(snakemake@input)
+message("Snakemake outputs:")
+print(snakemake@output)
+message("Snakemake params:")
+print(snakemake@params)
+
+# Source custom function
+plot_pca_path <- "external/phylogeographeR/R/plot_PCA.R"
+if (!file.exists(plot_pca_path)) {
+  stop(paste("plot_PCA.R not found at", plot_pca_path))
+}
+source(plot_pca_path)
+message("plot_PCA.R loaded successfully")
+
+# Read Snakemake inputs
 eigvecs_file <- snakemake@input[["eigvecs"]]
 eigvals_file <- snakemake@input[["eigvals"]]
 popdata_file <- snakemake@input[["popdata"]]
 output_file  <- snakemake@output[[1]]
 
+# Debug: check input files exist
+message("eigvecs_file exists? ", file.exists(eigvecs_file))
+message("eigvals_file exists? ", file.exists(eigvals_file))
+message("popdata_file exists? ", file.exists(popdata_file))
+
+# Read parameters and coerce types safely
 pc1 <- as.numeric(snakemake@params[["pc1"]])
 pc2 <- as.numeric(snakemake@params[["pc2"]])
 color_by_name <- as.character(snakemake@params[["color_by"]])
 
-# Read inputs
+# Debug: check param values
+message("pc1 = ", pc1)
+message("pc2 = ", pc2)
+message("color_by_name = ", color_by_name)
+
+# Read input data
 eigenvecs2 <- read.table(eigvecs_file)
 individuals <- eigenvecs2$V1
 eigenvecs <- eigenvecs2[, -c(1,2)]
 eigenvals <- scan(eigvals_file)
 popdata <- read.table(popdata_file, header = TRUE)
 
-# Convert color_by from column name to index (as required by plot_pca)
+# Debug: show columns in popdata
+message("popdata columns: ", paste(names(popdata), collapse = ", "))
+
+# Convert color_by from column name to index
 if (!color_by_name %in% names(popdata)) {
   stop(paste("Column", color_by_name, "not found in popdata"))
 }
 color_by_index <- which(names(popdata) == color_by_name)
+message("color_by_index = ", color_by_index)
 
-# Generate PCA plot using your package function
+# Generate PCA plot
 plt_pca <- plot_pca(
   individuals = individuals,
   eigenvecs = eigenvecs,
@@ -37,5 +75,10 @@ plt_pca <- plot_pca(
   pc2 = pc2
 )
 
-# Save the plot
+# Debug: check plot object
+message("Generated PCA plot object: ", class(plt_pca))
+
+# Save plot
+dir.create(dirname(output_file), recursive = TRUE, showWarnings = FALSE)
 ggplot2::ggsave(output_file, plt_pca, width = 6, height = 5, dpi = 300)
+message("Plot saved to ", output_file)
