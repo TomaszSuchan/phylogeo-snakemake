@@ -116,7 +116,7 @@ rule plot_pca:
         eigvals=rules.pcaone.output.pcaone_eigenvalues,
         popdata=rules.generate_popdata.output.popdata
     output:
-        "{analysis}/final_plots/PCA{color_by}.eigvecs"
+        "{analysis}/final_plots/PCA-{color_by}.pdf"
     params:
         pc1=config["pca_plot"]["pc1"],
         pc2=config["pca_plot"]["pc2"],

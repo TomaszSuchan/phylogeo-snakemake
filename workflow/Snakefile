@@ -61,7 +61,7 @@ def get_all_targets():
         targets.extend([
             config["analysis_name"] + "/pcaone/PCA.eigvecs",
             config["analysis_name"] + "/pcaone/PCA.eigvals",
-            expand("{analysis}/final_plots/PCA-{color_by}.eigvecs",
+            expand("{analysis}/final_plots/PCA-{color_by}.pdf",
                 analysis=config["analysis_name"],
                 color_by=PCA_groupings)
         ])
