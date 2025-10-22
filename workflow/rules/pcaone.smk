@@ -123,6 +123,5 @@ rule plot_pca:
         color_by=config["pca_plot"]["color_by"]
     conda:
         "../envs/r-plot.yaml"
-    group: "plots"
     script:
         "../scripts/plot_pca.R"
