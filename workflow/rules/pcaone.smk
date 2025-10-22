@@ -118,10 +118,9 @@ rule plot_pca:
     output:
         "{analysis}/final_plots/PCA-{color_by}.pdf"
     params:
-        pc1=config["pca_plot"]["pc1"],
-        pc2=config["pca_plot"]["pc2"]
-    wildcards:
-        color_by=lambda wc: wc.color_by 
+        pc1 = config["pca_plot"]["pc1"],
+        pc2 = config["pca_plot"]["pc2"],
+        color_by = lambda wildcards: wildcards.color_by 
     conda:
         "../envs/r-plot.yaml"
     script:
