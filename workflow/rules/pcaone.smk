@@ -112,8 +112,8 @@ rule pcaone_miss:
 # Rule to plot PCA
 rule plot_pca:
     input:
-        eigvecs=rules.pcaone.output.pcaone_eigenvectors,
-        eigvals=rules.pcaone.output.pcaone_eigenvalues2,
+        eigvecs=rules.pcaone.output.pcaone_eigenvectors2,
+        eigvals=rules.pcaone.output.pcaone_eigenvalues,
         popdata=rules.generate_popdata.output.popdata
     output:
         "{analysis}/final_plots/PCA{color_by}.eigvecs"
