@@ -1,7 +1,9 @@
 # scripts/run_plot_pca.R
 
-# Load your R package (linked as submodule)
-devtools::load_all("external/phylogeographeR")
+# Load R package
+library(RColorBrewer)
+library(ggplot2)
+source("external/phylogeographeR/R/plot_pca.R")
 
 # Snakemake inputs and params
 eigvecs_file <- snakemake@input[["eigvecs"]]
