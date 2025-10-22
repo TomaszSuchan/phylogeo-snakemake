@@ -23,6 +23,7 @@ def get_all_targets():
     analyses = config.get("analyses", {})
     PCA_groupings = config["pca_plot"]["color_by"]
 
+
     
     # FastStructure targets
     if analyses.get("faststructure", False):
