@@ -32,7 +32,7 @@ plt_pca <- plot_pca(
   eigenvecs = eigenvecs,
   eigenvals = eigenvals,
   popdata = popdata,
-  color_by = color_by_index,  # <-- numeric index
+  color_by = color_by_index,
   pc1 = pc1,
   pc2 = pc2
 )
