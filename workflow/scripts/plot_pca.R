@@ -1,6 +1,4 @@
-# scripts/run_plot_pca.R
-
-# Load R package
+# Load R packages
 library(RColorBrewer)
 library(ggplot2)
 source("external/phylogeographeR/R/plot_PCA.R")
@@ -13,7 +11,7 @@ output_file  <- snakemake@output[[1]]
 
 pc1 <- as.numeric(snakemake@params[["pc1"]])
 pc2 <- as.numeric(snakemake@params[["pc2"]])
-color_by <- as.numeric(snakemake@params[["color_by"]])
+color_by <- snakemake@params[["color_by"]]
 
 # Read inputs
 eigenvecs2 <- read.table(eigvecs_file)
@@ -24,11 +22,11 @@ popdata <- read.table(popdata_file, header = TRUE)
 
 # Generate PCA plot using your package function
 plt_pca <- plot_pca(
-  individuals,
-  eigenvecs,
-  eigenvals,
-  popdata,
-  color_by = color_by,
+  individuals = individuals,
+  eigenvecs = eigenvecs,
+  eigenvals = eigenvals,
+  popdata = popdata,
+  color_by = color_by,  # now column name (string)
   pc1 = pc1,
   pc2 = pc2
 )
