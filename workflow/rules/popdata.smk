@@ -4,7 +4,7 @@ rule generate_popmap:
     output:
         popmap=config["analysis_name"] + "/popmap.txt"
     params:
-        popdata=config.get("popdata", ""),
+        popmap=config.get("popmap", ""),
         separator=config.get("popseparator", "-")
     log:
         config["analysis_name"] + "/logs/generate_popmap.log"
@@ -18,8 +18,8 @@ rule generate_popmap:
         runtime=config["resources"]["default"]["runtime"]
     shell:
         r"""
-        if [ -n "{params.popdata}" ] && [ -f "{params.popdata}" ]; then
-            cp {params.popdata} {output.popmap}
+        if [ -n "{params.popmap}" ] && [ -f "{params.popmap}" ]; then
+            cp {params.popmap} {output.popmap}
         else
             bcftools query -l {input.vcf} | \
             awk -v sep="{params.separator}" '{{ 
@@ -29,3 +29,39 @@ rule generate_popmap:
             }}' > {output.popmap}
         fi
         """
+
+rule generate_popdata:
+    input:
+        popdata=config["popdata"],
+        popmap=rules.generate_popmap.output.popmap 
+    output:
+        popdata=config["analysis_name"] + "/popdata.txt"
+    log:
+        config["analysis_name"] + "/logs/generate_popdata.log"
+    benchmark:
+        config["analysis_name"] + "/benchmarks/generate_popdata.txt"
+    conda:
+        "../envs/python.yaml"
+    threads: config["resources"]["default"]["threads"]
+    resources:
+        mem_mb=config["resources"]["default"]["mem_mb"],
+        runtime=config["resources"]["default"]["runtime"]
+    run:
+        import pandas as pd
+
+        # Read the provided popdata file
+        popdata_df = pd.read_csv(input.popdata, sep="\t", header=None)
+
+        # Read the generated popmap file
+        popmap_df = pd.read_csv(input.popmap, sep="\t", header=None, names=["individual", "population"])
+
+        # Merge to ensure consistency
+        merged_df = pd.merge(popmap_df, popdata_df, left_on="population", right_on=0, how="left")
+
+
+        # Select relevant columns: individual, population, latitude, longitude, and any additional columns
+        output_columns = ["individual", "population"] + list(merged_df.columns[3:])
+        final_popdata_df = merged_df[output_columns]
+
+        # Save the final popdata file
+        final_popdata_df.to_csv(output.popdata, sep="\t", header=False, index=False)
