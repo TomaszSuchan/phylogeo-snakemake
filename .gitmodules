@@ -1,0 +1,3 @@
+[submodule "external/phylogeographeR"]
+	path = external/phylogeographeR
+	url = https://github.com/TomaszSuchan/phylogeographeR.git
