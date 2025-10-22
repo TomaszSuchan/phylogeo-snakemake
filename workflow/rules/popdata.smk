@@ -56,12 +56,15 @@ rule generate_popdata:
         popmap_df = pd.read_csv(input.popmap, sep="\t", header=None, names=["Individual", "Population"])
 
         # Merge to ensure consistency
-        merged_df = pd.merge(popmap_df, popdata_df, left_on="Population", right_on=0, how="left")
+        merged_df = pd.merge(popmap_df, popdata_df, left_on="Population", right_on="Population", how="left")
 
 
         # Select relevant columns: individual, population, latitude, longitude, and any additional columns
         output_columns = ["Individual", "Population"] + list(merged_df.columns[3:])
         final_popdata_df = merged_df[output_columns]
+        
+        # Rename the 'Individual_x' column back to 'Individual'
+        final_popdata_df = final_popdata_df.rename(columns={"Individual_x": "Individual"})
 
         # Save the final popdata file
         final_popdata_df.to_csv(output.popdata, sep="\t", header=True, index=False)
