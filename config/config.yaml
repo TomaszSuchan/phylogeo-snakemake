@@ -4,12 +4,25 @@ ipyrad_prefix: "test_data/Belenois_aurota_rmoutgroup"
 ## Analysis name (for output files and directories)
 analysis_name: "Sample_analysis"
 
-## Population assignment:
-# either a file with individual in the 1st column, population in the 2nd column
-popdata: "data/popmap.txt"
+## Population assignment
+# Either a file with individual in the 1st column, population in the 2nd column
+#popmap: "data/popmap.txt"
 # or a separator to extract population codes from individual IDs
 popseparator: "-" # e.g. "ind1-pop1", separator is "-"
 # (if both popdata and popseparator are provided, popdata file takes precedence)
+
+## Population data file
+# This is used for analyses that incorporate geographic information,
+# such as plotting structure results on a map or coloring PCA plots by geography.
+# A file with the following columns:
+# - population
+# - latitude (x coordinate; decimal degrees)
+# - longitude (y coordinate; decimal degrees)
+# - optional additional columns with population stratification (e.g. region, mountain range, etc.)
+# Example:
+# pop1 52.23 21.01 region1
+# pop2 51.50 -0.13 region2
+popdata: data/popdata.txt
 
 ## Analysis selection - set to true/false to enable/disable
 analyses:
@@ -21,7 +34,7 @@ analyses:
   pcaone_emu: false
   pcaone_miss: false
   pixy: true
-  relatedness: false
+  relatedness: true
 
 
 ## Preprocessing parameters
