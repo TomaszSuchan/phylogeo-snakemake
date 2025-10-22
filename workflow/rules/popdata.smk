@@ -64,4 +64,4 @@ rule generate_popdata:
         final_popdata_df = merged_df[output_columns]
 
         # Save the final popdata file
-        final_popdata_df.to_csv(output.popdata, sep="\t", header=False, index=False)
+        final_popdata_df.to_csv(output.popdata, sep="\t", header=True, index=False)
