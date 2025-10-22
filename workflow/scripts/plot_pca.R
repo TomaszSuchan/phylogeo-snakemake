@@ -3,7 +3,7 @@
 # Load R package
 library(RColorBrewer)
 library(ggplot2)
-source("external/phylogeographeR/R/plot_pca.R")
+source("external/phylogeographeR/R/plot_PCA.R")
 
 # Snakemake inputs and params
 eigvecs_file <- snakemake@input[["eigvecs"]]
