@@ -2,7 +2,7 @@
 ipyrad_prefix: "test_data/Belenois_aurota_rmoutgroup"
 
 ## Analysis name (for output files and directories)
-analysis_name: "Sample_analysis"
+analysis_name: "Rgl_RAD-filtTatra"
 
 ## Population assignment
 # Either a file with individual in the 1st column, population in the 2nd column
@@ -29,12 +29,12 @@ analyses:
   structure: false
   faststructure: false
   admixture: false
-  pcaone: false
+  pcaone: true
   vcf2pcacluster: false
   pcaone_emu: false
   pcaone_miss: false
-  pixy: true
-  relatedness: true
+  pixy: false
+  relatedness: false
 
 
 ## Preprocessing parameters
@@ -84,8 +84,8 @@ PCAone:
   PCnum: 10     # number of principal components to compute
 # PCA plot params:
 pca_plot:
-  pc1: "PC1"
-  pc2: "PC2"
+  pc1: "1"
+  pc2: "2"
   color_by: ["Population", "Region"]  # columns in popdata to color points by
 
 ## VCF2PCACluster parameters
@@ -140,7 +140,7 @@ resources:
   pcaone:
     threads: 12
     mem_mb: 8000
-    runtime: 10
+    runtime: 30
   pcaone_emu:
     threads: 12
     mem_mb: 8000
