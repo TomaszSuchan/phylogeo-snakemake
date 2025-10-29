@@ -21,7 +21,7 @@ rule faststructure:
     threads: config["resources"]["faststructure"]["threads"]
     resources:
         mem_mb = config["resources"]["faststructure"]["mem_mb"],
-        time = config["resources"]["faststructure"]["runtime"]
+        runtime = config["resources"]["faststructure"]["runtime"]
     shell:
         """
         structure.py \
@@ -46,7 +46,7 @@ rule faststructure_chooseK:
     threads: config["resources"]["default"]["threads"]
     resources:
         mem_mb = config["resources"]["default"]["mem_mb"],
-        time = config["resources"]["default"]["runtime"]
+        runtime = config["resources"]["default"]["runtime"]
     shell:
         """
         chooseK.py \

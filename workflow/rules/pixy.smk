@@ -13,7 +13,7 @@ rule prepare_invariant_vcf:
     threads: config["resources"]["default"]["threads"]
     resources:
         mem_mb = config["resources"]["default"]["mem_mb"],
-        time = config["resources"]["default"]["runtime"]
+        runtime = config["resources"]["default"]["runtime"]
     shell:
         """
         python workflow/scripts/extract_invariant_vcf.py {input.loci} -o {output.invariant_vcf} &> {log}
@@ -33,7 +33,7 @@ rule prepare_invariant_vcf_gz:
     threads: config["resources"]["default"]["threads"]
     resources:
         mem_mb = config["resources"]["default"]["mem_mb"],
-        time = config["resources"]["default"]["runtime"]
+        runtime = config["resources"]["default"]["runtime"]
     shell:
         """
         bgzip {input.vcf} &> {log}
@@ -53,7 +53,7 @@ rule prepare_invariant_vcf_gz_index:
     threads: config["resources"]["default"]["threads"]
     resources:
         mem_mb = config["resources"]["default"]["mem_mb"],
-        time = config["resources"]["default"]["runtime"]
+        runtime = config["resources"]["default"]["runtime"]
     shell:
         """
         bcftools index {input.vcf}  &> {log}
@@ -77,7 +77,7 @@ rule merge_invariant_sites:
     threads: config["resources"]["default"]["threads"]
     resources:
         mem_mb = config["resources"]["default"]["mem_mb"],
-        time = config["resources"]["default"]["runtime"]
+        runtime = config["resources"]["default"]["runtime"]
     shell:
         """
         bcftools concat {input.vcf_inv} {input.vcf_var} -Oz -a -o {output.merged_vcf}  >> {log} 2>&1
@@ -132,7 +132,7 @@ rule pixy_summary:
     threads: 1
     resources:
         mem_mb = config["resources"]["default"]["mem_mb"],
-        time = config["resources"]["default"]["runtime"]
+        runtime = config["resources"]["default"]["runtime"]
     shell:
         """
         python workflow/scripts/pixy_summary.py \

@@ -22,11 +22,11 @@ rule pcaone_emu:
     threads: config["resources"]["pcaone_emu"]["threads"]
     resources:
         mem_mb = config["resources"]["pcaone_emu"]["mem_mb"],
-        time = config["resources"]["pcaone_emu"]["runtime"]
+        runtime = config["resources"]["pcaone_emu"]["runtime"]
     threads: 12
     resources:
         mem_mb = 8000,
-        time = "72:00:00"
+        runtime = "72:00:00"
     shell:
         """
         PCAone --threads {threads} \
@@ -62,11 +62,11 @@ rule pcaone:
     threads: config["resources"]["pcaone"]["threads"]
     resources:
         mem_mb = config["resources"]["pcaone"]["mem_mb"],
-        time = config["resources"]["pcaone"]["runtime"]
+        runtime = config["resources"]["pcaone"]["runtime"]
     threads: 1
     resources:
         mem_mb = 8000,
-        time = "1:00:00"
+        runtime = "1:00:00"
     shell:
         """
         PCAone --threads {threads} \
@@ -99,7 +99,7 @@ rule pcaone_miss:
     threads: config["resources"]["pcaone"]["threads"]
     resources:
         mem_mb = config["resources"]["pcaone"]["mem_mb"],
-        time = config["resources"]["pcaone"]["runtime"]
+        runtime = config["resources"]["pcaone"]["runtime"]
     shell:
         """
         PCAone --threads {threads} \

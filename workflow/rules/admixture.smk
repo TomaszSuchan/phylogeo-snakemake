@@ -19,7 +19,7 @@ rule admixture:
     threads: config["resources"]["admixture"]["threads"]
     resources:
         mem_mb = config["resources"]["admixture"]["mem_mb"],
-        time = config["resources"]["admixture"]["runtime"]
+        runtime = config["resources"]["admixture"]["runtime"]
     shell:
         """
         mkdir -p {params.output_dir}
