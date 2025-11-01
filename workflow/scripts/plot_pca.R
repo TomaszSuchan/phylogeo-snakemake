@@ -29,7 +29,7 @@ message("plot_PCA.R loaded successfully")
 # Read Snakemake inputs
 eigvecs_file <- snakemake@input[["eigvecs"]]
 eigvals_file <- snakemake@input[["eigvals"]]
-popdata_file <- snakemake@input[["popdata"]]
+popdata_file <- snakemake@input[["indpopdata"]]
 output_file  <- snakemake@output[[1]]
 
 # Debug: check input files exist

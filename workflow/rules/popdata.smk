@@ -2,20 +2,20 @@ rule generate_popmap:
     input:
         vcf=rules.sort_vcf.output.vcf
     output:
-        popmap=config["analysis_name"] + "/popmap.txt"
+        popmap="{project}/popmap.txt"
     params:
-        popmap=config.get("popmap", ""),
-        separator=config.get("popseparator", "-")
+        popmap=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("popmap", ""),
+        separator=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("popseparator", "-")
     log:
-        config["analysis_name"] + "/logs/generate_popmap.log"
+        "{project}/logs/generate_popmap.log"
     benchmark:
-        config["analysis_name"] + "/benchmarks/generate_popmap.txt"
+        "{project}/benchmarks/generate_popmap.txt"
     conda:
         "../envs/bcftools.yaml"
-    threads: config["resources"]["default"]["threads"]
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
-        mem_mb=config["resources"]["default"]["mem_mb"],
-        runtime=config["resources"]["default"]["runtime"]
+        mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
     shell:
         r"""
         if [ -n "{params.popmap}" ] && [ -f "{params.popmap}" ]; then
@@ -32,19 +32,20 @@ rule generate_popmap:
 
 rule generate_popdata:
     input:
-        popdata=config["popdata"],
         popmap=rules.generate_popmap.output.popmap
     output:
-        popdata=config["analysis_name"] + "/popdata.txt"
+        indpopdata="{project}/indpopdata.txt"
+    params:
+        popdata=lambda wildcards: config["projects"][wildcards.project]["parameters"]["popdata"],
     log:
-        config["analysis_name"] + "/logs/generate_popdata.log"
+        "{project}/logs/generate_popdata.log"
     benchmark:
-        config["analysis_name"] + "/benchmarks/generate_popdata.txt"
+        "{project}/benchmarks/generate_popdata.txt"
     conda:
         "../envs/pandas.yaml"
-    threads: config["resources"]["default"]["threads"]
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
-        mem_mb=config["resources"]["default"]["mem_mb"],
-        runtime=config["resources"]["default"]["runtime"]
+        mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
     script:
         "../scripts/generate_popdata.py"

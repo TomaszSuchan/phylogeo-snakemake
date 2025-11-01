@@ -23,9 +23,9 @@ rule structure:
     input:
         ustr = rules.vcf_to_structure.output.str
     output:
-        stroutput = config["analysis_name"] + "/structure/structure.K{k}.R{r}_f"
+        stroutput = "{project}/structure/structure.K{k}.R{r}_f"
     benchmark:
-        config["analysis_name"] + "/benchmarks/structure.K{k}.R{r}.txt"
+        "{project}/benchmarks/structure.K{k}.R{r}.txt"
     params:
         mainparams = "data/mainparams",
         extraparams = "data/extraparams",
@@ -34,10 +34,10 @@ rule structure:
         basename = lambda wildcards: f"{config['analysis_name']}/structure/structure.K{wildcards.k}.R{wildcards.r}"
     conda:
         "../envs/structure.yaml"
-    threads: config["resources"]["structure"]["threads"]
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["structure"]["threads"]
     resources:
-        mem_mb = config["resources"]["structure"]["mem_mb"],
-        runtime = config["resources"]["structure"]["runtime"]
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["structure"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["structure"]["runtime"]
     shell:
         """
         structure \
@@ -54,19 +54,20 @@ rule structure:
 rule plot_aligned_k:
     input:
         lambda wildcards: expand(
-            config["analysis_name"] + "/structure/structure.K{k}.R{r}_f",
-            k=wildcards.k,
-            r=range(1, config["structure"].get("replicates", 1) + 1)
+            "{project}/structure/structure.K{k}.R{r}_f",
+            project=wildcards.project,
+            k=config["projects"][wildcards.project]["parameters"]["k_values"],
+            r=range(1, k=config["projects"][wildcards.project]["parameters"]["structure"].get("replicates", 1) + 1)
         )
     output:
-        config["analysis_name"] + "/structure/plots/K{k}_aligned.pdf"
+        "{project}/structure/plots/K{k}_aligned.pdf"
     log:
-        config["analysis_name"] + "/logs/plot_k_aligned_K{k}.log"
+        "{project}/logs/plot_k_aligned_K{k}.log"
     conda:
         "../envs/r-pophelper.yaml"
-    threads: config["resources"]["default"]["threads"]
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
-        mem_mb = config["resources"]["default"]["mem_mb"],
-        runtime = config["resources"]["default"]["runtime"]
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
     script:
         "../scripts/plot_k_aligned.R"

@@ -5,23 +5,23 @@ rule faststructure:
         bim = rules.vcf_to_plink.output.bim,
         fam = rules.vcf_to_plink.output.fam
     output:
-        meanQ = config["analysis_name"] + "/faststructure/faststructure.{k}.meanQ",
-        meanP = config["analysis_name"] + "/faststructure/faststructure.{k}.meanP"
+        meanQ = "{project}/faststructure/faststructure.{k}.meanQ",
+        meanP = "{project}/faststructure/faststructure.{k}.meanP"
     log:
-        config["analysis_name"] + "/logs/faststructure.{k}.log"
+        "{project}/logs/faststructure.{k}.log"
     benchmark:
-        config["analysis_name"] + "/benchmarks/faststructure.{k}.txt"
+        "{project}/benchmarks/faststructure.{k}.txt"
     params:
         input_prefix = rules.vcf_to_plink.params.output_prefix,
-        output_prefix = config["analysis_name"] + "/faststructure/faststructure",
-        tol = config["faststructure"].get("tol", "10e-6"),
-        prior = config["faststructure"].get("prior", "simple")
+        output_prefix = "{project}/faststructure/faststructure",
+        tol = lambda wildcards:  config["projects"][wildcards.project]["parameters"]["faststructure"].get("tol", "10e-6"),
+        prior = lambda wildcards: config["projects"][wildcards.project]["parameters"]["faststructure"].get("prior", "simple")
     conda:
         "../envs/faststructure.yaml"
-    threads: config["resources"]["faststructure"]["threads"]
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["faststructure"]["threads"]
     resources:
-        mem_mb = config["resources"]["faststructure"]["mem_mb"],
-        runtime = config["resources"]["faststructure"]["runtime"]
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["faststructure"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["faststructure"]["runtime"]
     shell:
         """
         structure.py \
@@ -36,17 +36,21 @@ rule faststructure:
 # Rule to choose optimal K for fastStructure
 rule faststructure_chooseK:
     input:
-        expand(config["analysis_name"] + "/faststructure/faststructure.{k}.meanQ", k=config["k_values"])
+        lambda wildcards: expand(
+            "{project}/faststructure/faststructure.{k}.meanQ", 
+            project=wildcards.project,
+            k=config["projects"][wildcards.project]["parameters"]["k_values"]
+        )
     output:
-        config["analysis_name"] + "/faststructure/chooseK_results.txt"
+        "{project}/faststructure/chooseK_results.txt"
     params:
-        input_prefix =  config["analysis_name"] + "/faststructure/faststructure",
+        input_prefix =  "{project}/faststructure/faststructure",
     conda:
         "../envs/faststructure.yaml"
-    threads: config["resources"]["default"]["threads"]
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
-        mem_mb = config["resources"]["default"]["mem_mb"],
-        runtime = config["resources"]["default"]["runtime"]
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
     shell:
         """
         chooseK.py \

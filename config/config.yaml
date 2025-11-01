@@ -1,155 +1,166 @@
-## Input ipyrad file prefix (without extension)
-ipyrad_prefix: "test_data/Belenois_aurota_rmoutgroup"
-
-## Analysis name (for output files and directories)
-analysis_name: "Rgl_RAD-filtTatra"
-
-## Population assignment
-# Either a file with individual in the 1st column, population in the 2nd column
-#popmap: "data/popmap.txt"
-# or a separator to extract population codes from individual IDs
-popseparator: "-" # e.g. "ind1-pop1", separator is "-"
-# (if both popdata and popseparator are provided, popdata file takes precedence)
-
-## Population data file
-# This is used for analyses that incorporate geographic information,
-# such as plotting structure results on a map or coloring PCA plots by geography.
-# A file with the following columns:
-# - population
-# - latitude (x coordinate; decimal degrees)
-# - longitude (y coordinate; decimal degrees)
-# - optional additional columns with population stratification (e.g. region, mountain range, etc.)
-# Example:
-# pop1 52.23 21.01 region1
-# pop2 51.50 -0.13 region2
-popdata: data/popdata.txt
-
-## Analysis selection - set to true/false to enable/disable
-analyses:
-  structure: false
-  faststructure: false
-  admixture: false
-  pcaone: true
-  vcf2pcacluster: false
-  pcaone_emu: false
-  pcaone_miss: false
-  pixy: false
-  relatedness: false
-
-
-## Preprocessing parameters
-#
-# Many analyses require unlinkesd SNPs (one SNP per RAD fragment).
-# The VCF file will is first filtered for bilallelic SNPs with MAC>1
-# and then thinned to one SNP per RAD fragment using the parameters below.
-#
-# VCF thinning parameters (defaults shown):
-vcf_thinning:
-  min_coverage: 0          # minimum number of samples with data
-  method: "max_coverage"   # selection method: random, max_coverage, or weighted
-  ties: "random"           # handle ties in max_coverage: first or random
-  ns_tag: "NS"             # INFO field tag for number of samples with data
-  id_pattern: "loc(\\d+)_" # regex pattern to extract RAD fragment ID
-
-
-## Population Structure Analysis
-# Common K values to test for population structure (Structure, fastStructure and admixture):
-k_values: [1, 2, 3]
-
-## Structure parameters
-structure:
-  replicates: 2       # number of replicates for structure
-
-## FastStructure parameters (defaults shown)
-faststructure:
-  tol: "10e-6"        # convergence criterion
-  prior: "simple"     # prior choice: simple or logistic
-
-
-## PCAone parameters
-#
-# SVD method SVD method to be applied.
-# Options are
-# 0: the Implicitly Restarted Arnoldi Method (IRAM);
-# 1: the Yu's single-pass Randomized SVD with power iterations;
-# 2: the accurate window-based Randomized SVD method (PCAone), recommended for big data;
-# 3: the full Singular Value Decomposition (default).
-#
-# Minimum coverage thresholds to filter VCF for missing data before PCAone analysis.
-# The VCF will be filtered for each threshold in the list and PCAone will be run
-# on each filtered dataset.
-PCAone:
-  miss: [0.1, 0.2, 0.2, 0.3, 0.4, 0.5] # list of maximum missing data thresholds (F_MISSING<mincov)
-  SVD_method: 3 # SVD method to use [0-3]
-  PCnum: 10     # number of principal components to compute
-# PCA plot params:
-pca_plot:
-  pc1: "1"
-  pc2: "2"
-  color_by: ["Population", "Region"]  # columns in popdata to color points by
-
-## VCF2PCACluster parameters
-#
-# 
-vcf2pcacluster:
-  cluster_method: "Kmean"  # clustering method: EM/Kmean/DBSCAN/None
-  PCnum: 10     # number of principal components to use
-  SNP_filtering:
-    MAF: [0, 0.001, 0.01, 0.05]   # List of min minor allele frequency filters [0.001]
-    Miss: [0.3, 0.4, 0.5]  # list of max ratio of miss allele filter [0.25] but in this pipeline [0.5], might fail if too low
-    Het: 1.00   # Max ratio of het allele filter [1.00]
-    HWE: 0      # Exact test of Hardy-Weinberg Equilibrium for SNP Pvalue[0]
-    Fchr: ""    # Filter the chromosome
-  KinshipMethod: 1 # Method of Kinship [1-5],defaut [1]
-                   # 1:Normalized_IBS[(Yang/BaldingNicolsKinship]
-                   # 2:Centered_IBS(VanRaden)
-                   # 3:IBSKinshipImpute 4:IBSKinship 5:p_dis
-
-## Pixy parameters
-pixy:
-  stats: "pi fst dxy"  # statistics to compute, options: pi, fst, dxy
-  window_size: 10000  # size of the sliding window in bp
-
-
-## Analysis resources
-#
-# Define computational resources for different analysis steps.
-# Memory is in MB and threads is the number of CPU threads.
-# Runtime is in minutes.
-resources:
-  default: # default resources for simple steps like file conversion
-    threads: 1
-    mem_mb: 8000
-    runtime: 10
-  default-long: # default resources for longer steps like filtering
-    threads: 1
-    mem_mb: 8000
-    runtime: 60
+# Global parameters for all projects
+parameters: &global_params 
+  # Either a file with individual in the 1st column, population in the 2nd column
+  #popmap: "data/popmap.txt"
+  # or a separator to extract population codes from individual IDs
+  popseparator: "-" # e.g. "ind1-pop1", separator is "-"
+  # (if both popdata and popseparator are provided, popdata file takes precedence)
+  
+  ## Population data file
+  # This is used for analyses that incorporate geographic information,
+  # such as plotting structure results on a map or coloring PCA plots by geography.
+  # A file with the following columns:
+  # - population
+  # - latitude (x coordinate; decimal degrees)
+  # - longitude (y coordinate; decimal degrees)
+  # - optional additional columns with population stratification (e.g. region, mountain range, etc.)
+  # Example:
+  # pop1 52.23 21.01 region1
+  # pop2 51.50 -0.13 region2
+  popdata: data/popdata.txt
+  
+  ## Preprocessing parameters
+  #
+  # Many analyses require unlinkesd SNPs (one SNP per RAD fragment).
+  # The VCF file will is first filtered for bilallelic SNPs with MAC>1
+  # and then thinned to one SNP per RAD fragment using the parameters below.
+  #
+  # VCF thinning parameters (defaults shown):
+  vcf_thinning:
+    min_coverage: 0          # minimum number of samples with data
+    method: "max_coverage"   # selection method: random, max_coverage, or weighted
+    ties: "random"           # handle ties in max_coverage: first or random
+    ns_tag: "NS"             # INFO field tag for number of samples with data
+    id_pattern: "loc(\\d+)_" # regex pattern to extract RAD fragment ID
+  
+  ## Population Structure Analysis
+  # Common K values to test for population structure (Structure, fastStructure and admixture):
+  k_values: [1, 2, 3]
+  
+  ## Structure parameters
   structure:
-    threads: 1
-    mem_mb: 8000
-    runtime: 1440
+    replicates: 2       # number of replicates for structure
+  
+  ## FastStructure parameters (defaults shown)
   faststructure:
-    threads: 4
-    mem_mb: 8000
-    runtime: 120
-  admixture:
-    threads: 4
-    mem_mb: 16000
-    runtime: 10
-  pcaone:
-    threads: 12
-    mem_mb: 8000
-    runtime: 30
-  pcaone_emu:
-    threads: 12
-    mem_mb: 8000
-    runtime: 10
+    tol: "10e-6"        # convergence criterion
+    prior: "simple"     # prior choice: simple or logistic
+  
+  ## PCAone parameters
+  #
+  # SVD method SVD method to be applied.
+  # Options are
+  # 0: the Implicitly Restarted Arnoldi Method (IRAM);
+  # 1: the Yu's single-pass Randomized SVD with power iterations;
+  # 2: the accurate window-based Randomized SVD method (PCAone), recommended for big data;
+  # 3: the full Singular Value Decomposition (default).
+  # Minimum coverage thresholds to filter VCF for missing data before PCAone analysis.
+  # The VCF will be filtered for each threshold in the list and PCAone will be run
+  # on each filtered dataset.
+  PCAone:
+    miss: [0.1, 0.2, 0.2, 0.3, 0.4, 0.5] # list of maximum missing data thresholds (F_MISSING<mincov)
+    SVD_method: 3 # SVD method to use [0-3]
+    PCnum: 10     # number of principal components to compute
+  # PCA plot params:
+  pca_plot:
+    pc1: "1"
+    pc2: "2"
+    color_by: ["Population", "Region"]  # columns in popdata to color points by
+  
+  ## VCF2PCACluster parameters
+  #
   vcf2pcacluster:
-    threads: 12
-    mem_mb: 8000
-    runtime: 10
+    cluster_method: "Kmean"  # clustering method: EM/Kmean/DBSCAN/None
+    PCnum: 10     # number of principal components to use
+    SNP_filtering:
+      MAF: [0, 0.001, 0.01, 0.05]   # List of min minor allele frequency filters [0.001]
+      Miss: [0.3, 0.4, 0.5]  # list of max ratio of miss allele filter [0.25] but in this pipeline [0.5], might fail if too low
+      Het: 1.00   # Max ratio of het allele filter [1.00]
+      HWE: 0      # Exact test of Hardy-Weinberg Equilibrium for SNP Pvalue[0]
+      Fchr: ""    # Filter the chromosome
+    KinshipMethod: 1 # Method of Kinship [1-5],defaut [1]
+                     # 1:Normalized_IBS[(Yang/BaldingNicolsKinship]
+                     # 2:Centered_IBS(VanRaden)
+                     # 3:IBSKinshipImpute 4:IBSKinship 5:p_dis
+  
+  ## Pixy parameters
   pixy:
-    threads: 24
-    mem_mb: 8000
-    runtime: 600
+    stats: "pi fst dxy"  # statistics to compute, options: pi, fst, dxy
+    window_size: 10000  # size of the sliding window in bp
+  
+  ## Analysis resources
+  #
+  # Define computational resources for different analysis steps.
+  # Memory is in MB and threads is the number of CPU threads.
+  # Runtime is in minutes.
+  resources:
+    default: # default resources for simple steps like file conversion
+      threads: 1
+      mem_mb: 8000
+      runtime: 10
+    default-long: # default resources for longer steps like filtering
+      threads: 1
+      mem_mb: 8000
+      runtime: 60
+    structure:
+      threads: 1
+      mem_mb: 8000
+      runtime: 1440
+    faststructure:
+      threads: 4
+      mem_mb: 8000
+      runtime: 120
+    admixture:
+      threads: 4
+      mem_mb: 16000
+      runtime: 10
+    pcaone:
+      threads: 12
+      mem_mb: 8000
+      runtime: 30
+    pcaone_emu:
+      threads: 12
+      mem_mb: 8000
+      runtime: 10
+    vcf2pcacluster:
+      threads: 12
+      mem_mb: 8000
+      runtime: 10
+    pixy:
+      threads: 24
+      mem_mb: 8000
+      runtime: 600
+
+# Projects configuration
+
+projects:
+  Dataset_1:
+    ipyrad_prefix: "test_data/test"
+    ## Analysis selection - set to true/false to enable/disable
+    analyses:
+      structure: false
+      faststructure: false
+      admixture: false
+      pcaone: true
+      vcf2pcacluster: false
+      pcaone_emu: false
+      pcaone_miss: false
+      pixy: false
+      relatedness: false
+    parameters:
+      <<: *global_params
+  Dataset_2:
+    ipyrad_prefix: "test_data/test"
+    ## Analysis selection - set to true/false to enable/disable
+    analyses:
+      structure: false
+      faststructure: false
+      admixture: false
+      pcaone: true
+      vcf2pcacluster: false
+      pcaone_emu: false
+      pcaone_miss: false
+      pixy: false
+      relatedness: false
+    parameters:
+      <<: *global_params

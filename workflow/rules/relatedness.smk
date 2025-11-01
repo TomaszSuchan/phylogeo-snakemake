@@ -7,17 +7,17 @@ rule relatedness:
         # Use Snakemake's automatic file selection with multiple possible inputs
         vcf=rules.sort_vcf.output.vcf
     output:
-        config["analysis_name"] + "/relatedness/out.relatedness"
+        "{project}/relatedness/out.relatedness"
     log:
-        config["analysis_name"] + "/logs/relatedness.log"
+        "{project}/logs/relatedness.log"
     benchmark:
-        config["analysis_name"] + "/benchmarks/relatedness.txt"
+        "{project}/benchmarks/relatedness.txt"
     conda:
         "../envs/vcftools.yaml"
-    threads: config["resources"]["default"]["threads"]
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
-        mem_mb = config["resources"]["default"]["mem_mb"],
-        runtime = config["resources"]["default"]["runtime"]
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
     shell:
         """
         vcftools --gzvcf {input.vcf} --relatedness --stdout > {output} 2> {log}
@@ -32,17 +32,17 @@ rule relatedness2:
         # Use Snakemake's automatic file selection with multiple possible inputs
         vcf=rules.sort_vcf.output.vcf
     output:
-        config["analysis_name"] + "/relatedness/out.relatedness2"
+        "{project}/relatedness/out.relatedness2"
     log:
-        config["analysis_name"] + "/logs/relatedness2.log"
+        "{project}/logs/relatedness2.log"
     benchmark:
-        config["analysis_name"] + "/benchmarks/relatedness2.txt"
+        "{project}/benchmarks/relatedness2.txt"
     conda:
         "../envs/vcftools.yaml"
-    threads: config["resources"]["default"]["threads"]
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
-        mem_mb = config["resources"]["default"]["mem_mb"],
-        runtime = config["resources"]["default"]["runtime"]
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
     shell:
         """
         vcftools --gzvcf {input.vcf} --relatedness2 --stdout > {output} 2> {log}

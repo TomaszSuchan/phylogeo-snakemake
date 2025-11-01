@@ -4,9 +4,9 @@ import pandas as pd
 import sys
 
 # Snakemake automatically passes input/output/log via the 'snakemake' object
-popdata_path = snakemake.input.popdata
+popdata_path = snakemake.params.popdata
 popmap_path = snakemake.input.popmap
-output_path = snakemake.output.popdata
+output_path = snakemake.output.indpopdata
 
 # Read the provided popdata file
 popdata_df = pd.read_csv(popdata_path, sep="\t", header=0)

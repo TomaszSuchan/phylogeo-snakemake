@@ -1,32 +1,35 @@
-# Rule for VCF2PCAcluster
+# Corrected VCF2PCAcluster rule for multi-project configuration
+
 rule vcf2pcacluster:
     input:
-        vcf=rules.thin_vcf.output.vcf
+        vcf="{project}/preprocessing/biallelic_snps_thinned.vcf.gz"  # Assuming this is the output from thin_vcf
     output:
-        eigenvectors=config["analysis_name"] + "/vcf2pcacluster_miss{miss}_MAF{MAF}/vcf2pcacluster_miss{miss}_MAF{MAF}.eigenvec",
-        eigenvalues=config["analysis_name"] + "/vcf2pcacluster_miss{miss}_MAF{MAF}/vcf2pcacluster_miss{miss}_MAF{MAF}.eigenval"
+        eigenvectors = "{project}/vcf2pcacluster_miss{miss}_MAF{MAF}/vcf2pcacluster_miss{miss}_MAF{MAF}.eigenvec",
+        eigenvalues = "{project}/vcf2pcacluster_miss{miss}_MAF{MAF}/vcf2pcacluster_miss{miss}_MAF{MAF}.eigenval"
     log:
-        config["analysis_name"] + "/logs/vcf2pcacluster_miss{miss}_MAF{MAF}.log"
+        "{project}/logs/vcf2pcacluster_miss{miss}_MAF{MAF}.log"
     params:
+        # Use wildcards.project instead of config['analysis_name']
         output_prefix=lambda wildcards: (
-            f"{config['analysis_name']}/vcf2pcacluster_miss{wildcards.miss}_MAF{wildcards.MAF}/"
+            f"{wildcards.project}/vcf2pcacluster_miss{wildcards.miss}_MAF{wildcards.MAF}/"
             f"vcf2pcacluster_miss{wildcards.miss}_MAF{wildcards.MAF}"
         ),
         MAF=lambda wildcards: wildcards.MAF,
         Miss=lambda wildcards: wildcards.miss,
-        cluster_method=config["vcf2pcacluster"].get("cluster_method", "Kmean"),
-        Het=config["vcf2pcacluster"]["SNP_filtering"].get("Het", 1.0),
-        HWE=config["vcf2pcacluster"]["SNP_filtering"].get("HWE", 0),
-        Fchr=config["vcf2pcacluster"]["SNP_filtering"].get("Fchr", ""),
-        KinshipMethod=config["vcf2pcacluster"].get("KinshipMethod", 1),
-        PCnum=config["vcf2pcacluster"].get("PCnum", 10)
+        # Access project-specific parameters
+        cluster_method=lambda wildcards: config["projects"][wildcards.project]["parameters"]["vcf2pcacluster"].get("cluster_method", "Kmean"),
+        Het=lambda wildcards: config["projects"][wildcards.project]["parameters"]["vcf2pcacluster"]["SNP_filtering"].get("Het", 1.0),
+        HWE=lambda wildcards: config["projects"][wildcards.project]["parameters"]["vcf2pcacluster"]["SNP_filtering"].get("HWE", 0),
+        Fchr=lambda wildcards: config["projects"][wildcards.project]["parameters"]["vcf2pcacluster"]["SNP_filtering"].get("Fchr", ""),
+        KinshipMethod=lambda wildcards: config["projects"][wildcards.project]["parameters"]["vcf2pcacluster"].get("KinshipMethod", 1),
+        PCnum=lambda wildcards: config["projects"][wildcards.project]["parameters"]["vcf2pcacluster"].get("PCnum", 10)
     wildcard_constraints:
         miss=r"\d+\.?\d*",  # Matches decimal numbers
         MAF=r"\d+\.?\d*"     # Matches decimal numbers
-    threads: config["resources"]["vcf2pcacluster"]["threads"]
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["vcf2pcacluster"]["threads"]
     resources:
-        mem_mb=config["resources"]["vcf2pcacluster"]["mem_mb"],
-        time=config["resources"]["vcf2pcacluster"]["runtime"]
+        mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["vcf2pcacluster"]["mem_mb"],
+        runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["vcf2pcacluster"]["runtime"]
     shell:
         """
         test -x {VCF2PCACLUSTER} || {{ echo "ERROR: VCF2PCACluster not found at {VCF2PCACLUSTER}" >&2; exit 1; }}
