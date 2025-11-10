@@ -29,6 +29,7 @@ def get_all_targets():
         
         # Get project-specific parameters
         k_values = params.get("k_values", [1, 2, 3])
+        n_reps = params.get("structure", {}).get("replicates", 1)
         PCA_groupings = params.get("pca_plot", {}).get("color_by", ["Population"])
         
         # FastStructure targets
@@ -53,10 +54,9 @@ def get_all_targets():
         
         # STRUCTURE targets
         if analyses.get("structure", False):
-            n_reps = params.get("structure", {}).get("replicates", 1)
             targets.extend([
                 expand(project + "/structure/structure.K{k}.R{r}_f", 
-                       k=k_values, 
+                       k=k_values,
                        r=range(1, n_reps + 1)),
                 expand(project + "/structure/plots/K{k}_aligned.pdf", 
                        k=k_values)
