@@ -31,7 +31,7 @@ rule structure:
         extraparams = "data/extraparams",
         nind = lambda wildcards, input: get_ustr_info(input.ustr)[0],
         nloci = lambda wildcards, input: get_ustr_info(input.ustr)[1],
-        basename = lambda wildcards: f"{config['analysis_name']}/structure/structure.K{wildcards.k}.R{wildcards.r}"
+        basename = lambda wildcards: f"{config['projects'][wildcards.project]}/structure/structure.K{wildcards.k}.R{wildcards.r}"
     conda:
         "../envs/structure.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["structure"]["threads"]
@@ -57,7 +57,7 @@ rule plot_aligned_k:
             "{project}/structure/structure.K{k}.R{r}_f",
             project=wildcards.project,
             k=config["projects"][wildcards.project]["parameters"]["k_values"],
-            r=range(1, k=config["projects"][wildcards.project]["parameters"]["structure"].get("replicates", 1) + 1)
+            r=range(1, config["projects"][wildcards.project]["parameters"]["structure"].get("replicates", 1) + 1)
         )
     output:
         "{project}/structure/plots/K{k}_aligned.pdf"
