@@ -38,6 +38,8 @@ parameters: &global_params
   k_values: [1, 2, 3]
   
   ## Structure parameters
+  # More run parameters can be tweaked by modifying `data/mainparams` and `data/extraparams`
+  # Numbers of individuals and loci are automatically inferred from .ustr file so this does not need to be changed.
   structure:
     replicates: 2       # number of replicates for structure
   
@@ -138,10 +140,10 @@ projects:
     ipyrad_prefix: "test_data/test"
     ## Analysis selection - set to true/false to enable/disable
     analyses:
-      structure: false
-      faststructure: false
-      admixture: false
-      pcaone: true
+      structure: true
+      faststructure: true
+      admixture: true
+      pcaone: false
       vcf2pcacluster: false
       pcaone_emu: false
       pcaone_miss: false
@@ -156,7 +158,7 @@ projects:
       structure: false
       faststructure: false
       admixture: false
-      pcaone: true
+      pcaone: false
       vcf2pcacluster: false
       pcaone_emu: false
       pcaone_miss: false

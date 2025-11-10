@@ -30,7 +30,7 @@ Parameters (from `config["projects"][project_name]["parameters"]["vcf_thinning"]
 
 **Structure** (enabled with `config["projects"][project_name]["analyses"]["structure"]: true`)
 
-Bayesian clustering analysis using STRUCTURE. Requires `data/mainparams` and `data/extraparams` configuration files.
+Bayesian clustering analysis using STRUCTURE. Requires `data/mainparams` and `data/extraparams` configuration files - run parameters can be tweaked by modifying these files. Numbers of individuals and loci are automatically inferred from .ustr file so this does not need to be changed.
 
 Parameters (from `config["projects"][project_name]["parameters"]`):
 - `k_values` <LIST[INTEGER]>: List of K values (number of populations) to test (e.g., `[1, 2, 3]`)
