@@ -2,17 +2,17 @@
 
 rule vcf2pcacluster:
     input:
-        vcf="{project}/preprocessing/biallelic_snps_thinned.vcf.gz"  # Assuming this is the output from thin_vcf
+        vcf=rules.thin_vcf.output.vcf  # Use the output from thin_vcf rule
     output:
-        eigenvectors = "{project}/vcf2pcacluster_miss{miss}_MAF{MAF}/vcf2pcacluster_miss{miss}_MAF{MAF}.eigenvec",
-        eigenvalues = "{project}/vcf2pcacluster_miss{miss}_MAF{MAF}/vcf2pcacluster_miss{miss}_MAF{MAF}.eigenval"
+        eigenvectors = "results/{project}/vcf2pcacluster_miss{miss}_MAF{MAF}/{project}.vcf2pcacluster_miss{miss}_MAF{MAF}.eigenvec",
+        eigenvalues = "results/{project}/vcf2pcacluster_miss{miss}_MAF{MAF}/{project}.vcf2pcacluster_miss{miss}_MAF{MAF}.eigenval"
     log:
-        "{project}/logs/vcf2pcacluster_miss{miss}_MAF{MAF}.log"
+        "logs/{project}/vcf2pcacluster_miss{miss}_MAF{MAF}.log"
     params:
         # Use wildcards.project instead of config['analysis_name']
         output_prefix=lambda wildcards: (
-            f"{wildcards.project}/vcf2pcacluster_miss{wildcards.miss}_MAF{wildcards.MAF}/"
-            f"vcf2pcacluster_miss{wildcards.miss}_MAF{wildcards.MAF}"
+            f"results/{wildcards.project}/vcf2pcacluster_miss{wildcards.miss}_MAF{wildcards.MAF}/"
+            f"{wildcards.project}.vcf2pcacluster_miss{wildcards.miss}_MAF{wildcards.MAF}"
         ),
         MAF=lambda wildcards: wildcards.MAF,
         Miss=lambda wildcards: wildcards.miss,

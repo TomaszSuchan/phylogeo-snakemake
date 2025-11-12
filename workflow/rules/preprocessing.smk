@@ -9,11 +9,11 @@ rule sort_vcf:
           else f"{config['projects'][wildcards.project]['ipyrad_prefix']}.vcf"
       )
     output:
-        vcf="{project}/filtered_data/raw_sorted.vcf.gz"
+        vcf="results/{project}/filtered_data/{project}.raw_sorted.vcf.gz"
     log:
-        "{project}/logs/sort_vcf.log"
+        "logs/{project}/sort_vcf.log"
     benchmark:
-        "{project}/benchmarks/sort_vcf.txt"
+        "benchmarks/{project}/sort_vcf.txt"
     conda:
         "../envs/vcftools.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -30,11 +30,11 @@ rule index_vcf:
         # Snakemake selects the first existing file from this list
         vcf=rules.sort_vcf.output.vcf
     output:
-        index="{project}/filtered_data/raw_sorted.vcf.gz.csi"
+        index="results/{project}/filtered_data/{project}.raw_sorted.vcf.gz.csi"
     log:
-        "{project}/logs/index_vcf.log"
+        "logs/{project}/index_vcf.log"
     benchmark:
-        "{project}/benchmarks/index_vcf.txt"
+        "benchmarks/{project}/index_vcf.txt"
     conda:
         "../envs/bcftools.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -52,11 +52,11 @@ rule select_biallelic_snps:
         vcf = rules.sort_vcf.output.vcf,
         index = rules.index_vcf.output.index
     output:
-        biallelic_vcf = "{project}/filtered_data/biallelic_snps.vcf.gz"
+        biallelic_vcf = "results/{project}/filtered_data/{project}.biallelic_snps.vcf.gz"
     log:
-        "{project}/logs/select_biallelic_snps.log"
+        "logs/{project}/select_biallelic_snps.log"
     benchmark:
-        "{project}/benchmarks/select_biallelic_snps.txt"
+        "benchmarks/{project}/select_biallelic_snps.txt"
     conda:
         "../envs/bcftools.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -75,11 +75,11 @@ rule thin_vcf:
     input:
         vcf = rules.select_biallelic_snps.output.biallelic_vcf
     output:
-        vcf = "{project}/filtered_data/biallelic_snps_thinned.vcf.gz"
+        vcf = "results/{project}/filtered_data/{project}.biallelic_snps_thinned.vcf.gz"
     log:
-        "{project}/logs/thin_vcf.log"
+        "logs/{project}/thin_vcf.log"
     benchmark:
-        "{project}/benchmarks/thin_vcf.txt"
+        "benchmarks/{project}/thin_vcf.txt"
     params:
         min_coverage = lambda wildcards: config["projects"][wildcards.project]["parameters"]["vcf_thinning"].get("min_coverage", 0),
         method = lambda wildcards: config["projects"][wildcards.project]["parameters"]["vcf_thinning"].get("method", "max_coverage"),
@@ -110,15 +110,15 @@ rule vcf_to_plink:
     input:
         vcf = rules.thin_vcf.output.vcf
     output:
-        bed = "{project}/filtered_data/biallelic_snps_thinned.bed",
-        bim = "{project}/filtered_data/biallelic_snps_thinned.bim",
-        fam = "{project}/filtered_data/biallelic_snps_thinned.fam"
+        bed = "results/{project}/filtered_data/{project}.biallelic_snps_thinned.bed",
+        bim = "results/{project}/filtered_data/{project}.biallelic_snps_thinned.bim",
+        fam = "results/{project}/filtered_data/{project}.biallelic_snps_thinned.fam"
     log:
-        "{project}/logs/vcf_to_plink.log"
+        "logs/{project}/vcf_to_plink.log"
     benchmark:
-        "{project}/benchmarks/vcf_to_plink.txt"
+        "benchmarks/{project}/vcf_to_plink.txt"
     params:
-        output_prefix = "{project}/filtered_data/biallelic_snps_thinned"
+        output_prefix = "results/{project}/filtered_data/{project}.biallelic_snps_thinned"
     conda:
         "../envs/plink.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -139,11 +139,11 @@ rule vcf_to_structure:
     input:
         vcf = rules.thin_vcf.output.vcf
     output:
-        str = "{project}/filtered_data/biallelic_snps_thinned.str"
+        str = "results/{project}/filtered_data/{project}.biallelic_snps_thinned.str"
     log:
-        "{project}/logs/vcf_to_structure.log"
+        "logs/{project}/vcf_to_structure.log"
     benchmark:
-        "{project}/benchmarks/vcf_to_structure.txt"
+        "benchmarks/{project}/vcf_to_structure.txt"
     conda:
         "../envs/vcfpy.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -162,11 +162,11 @@ rule filter_missing_vcf:
     input:
         vcf = rules.thin_vcf.output.vcf
     output:
-        vcf = "{project}/filtered_data/biallelic_snps_thinned_miss{miss}.vcf.gz"
+        vcf = "results/{project}/filtered_data/{project}.biallelic_snps_thinned_miss{miss}.vcf.gz"
     log:
-        "{project}/logs/filter_missing_vcf_{miss}.log"
+        "logs/{project}/filter_missing_vcf_{miss}.log"
     benchmark:
-        "{project}/benchmarks/filter_missing_vcf_{miss}.txt"
+        "benchmarks/{project}/filter_missing_vcf_{miss}.txt"
     params:
         miss = lambda wildcards: wildcards.miss
     conda:
@@ -186,16 +186,16 @@ rule missing_vcf_to_plink:
     input:
         vcf = rules.filter_missing_vcf.output.vcf
     output:
-        bed = "{project}/filtered_data/biallelic_snps_thinned_miss{miss}.bed",
-        bim = "{project}/filtered_data/biallelic_snps_thinned_miss{miss}.bim",
-        fam = "{project}/filtered_data/biallelic_snps_thinned_miss{miss}.fam"
+        bed = "results/{project}/filtered_data/{project}.biallelic_snps_thinned_miss{miss}.bed",
+        bim = "results/{project}/filtered_data/{project}.biallelic_snps_thinned_miss{miss}.bim",
+        fam = "results/{project}/filtered_data/{project}.biallelic_snps_thinned_miss{miss}.fam"
     log:
-        "{project}/logs/missing_vcf_to_plink_{miss}.log"
+        "logs/{project}/missing_vcf_to_plink_{miss}.log"
     benchmark:
-        "{project}/benchmarks/missing_vcf_to_plink_{miss}.txt"
+        "benchmarks/{project}/missing_vcf_to_plink_{miss}.txt"
     params:
         miss = lambda wildcards: wildcards.miss,
-        output_prefix = "{project}/filtered_data/biallelic_snps_thinned_miss{miss}"
+        output_prefix = "results/{project}/filtered_data/{project}.biallelic_snps_thinned_miss{miss}"
     conda:
         "../envs/plink.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]

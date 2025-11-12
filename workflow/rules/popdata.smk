@@ -7,9 +7,9 @@ rule generate_popmap:
         popmap=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("popmap", ""),
         separator=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("popseparator", "-")
     log:
-        "{project}/logs/generate_popmap.log"
+        "logs/{project}/generate_popmap.log"
     benchmark:
-        "{project}/benchmarks/generate_popmap.txt"
+        "benchmarks/{project}/generate_popmap.txt"
     conda:
         "../envs/bcftools.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -38,9 +38,9 @@ rule generate_popdata:
     params:
         popdata=lambda wildcards: config["projects"][wildcards.project]["parameters"]["popdata"],
     log:
-        "{project}/logs/generate_popdata.log"
+        "logs/{project}/generate_popdata.log"
     benchmark:
-        "{project}/benchmarks/generate_popdata.txt"
+        "benchmarks/{project}/generate_popdata.txt"
     conda:
         "../envs/pandas.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]

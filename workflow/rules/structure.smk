@@ -23,15 +23,15 @@ rule structure:
     input:
         ustr = rules.vcf_to_structure.output.str
     output:
-        stroutput = "{project}/structure/structure.K{k}.R{r}_f"
+        stroutput = "results/{project}/structure/{project}.structure.K{k}.R{r}_f"
     benchmark:
-        "{project}/benchmarks/structure.K{k}.R{r}.txt"
+        "benchmarks/{project}/structure.K{k}.R{r}.txt"
     params:
         mainparams = "data/mainparams",
         extraparams = "data/extraparams",
         nind = lambda wildcards, input: get_ustr_info(input.ustr)[0],
         nloci = lambda wildcards, input: get_ustr_info(input.ustr)[1],
-        basename = lambda wildcards: f"{config['projects'][wildcards.project]}/structure/structure.K{wildcards.k}.R{wildcards.r}"
+        basename = lambda wildcards: f"results/{wildcards.project}/structure/{wildcards.project}.structure.K{wildcards.k}.R{wildcards.r}"
     conda:
         "../envs/structure.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["structure"]["threads"]
@@ -54,15 +54,15 @@ rule structure:
 rule plot_aligned_k:
     input:
         lambda wildcards: expand(
-            "{project}/structure/structure.K{k}.R{r}_f",
+            "results/{project}/structure/{project}.structure.K{k}.R{r}_f",
             project=wildcards.project,
             k=config["projects"][wildcards.project]["parameters"]["k_values"],
             r=range(1, config["projects"][wildcards.project]["parameters"]["structure"].get("replicates", 1) + 1)
         )
     output:
-        "{project}/structure/plots/K{k}_aligned.pdf"
+        "results/{project}/structure/plots/{project}.K_aligned.pdf"
     log:
-        "{project}/logs/plot_k_aligned_K{k}.log"
+        "logs/{project}/plot_K_aligned.log"
     conda:
         "../envs/r-pophelper.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]

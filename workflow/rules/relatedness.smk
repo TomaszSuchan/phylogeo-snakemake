@@ -7,11 +7,11 @@ rule relatedness:
         # Use Snakemake's automatic file selection with multiple possible inputs
         vcf=rules.sort_vcf.output.vcf
     output:
-        "{project}/relatedness/out.relatedness"
+        "results/{project}/relatedness/{project}.relatedness"
     log:
-        "{project}/logs/relatedness.log"
+        "logs/{project}/relatedness.log"
     benchmark:
-        "{project}/benchmarks/relatedness.txt"
+        "benchmarks/{project}/relatedness.txt"
     conda:
         "../envs/vcftools.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -32,11 +32,11 @@ rule relatedness2:
         # Use Snakemake's automatic file selection with multiple possible inputs
         vcf=rules.sort_vcf.output.vcf
     output:
-        "{project}/relatedness/out.relatedness2"
+        "results/{project}/relatedness/{project}.relatedness2"
     log:
-        "{project}/logs/relatedness2.log"
+        "logs/{project}/relatedness2.log"
     benchmark:
-        "{project}/benchmarks/relatedness2.txt"
+        "benchmarks/{project}/relatedness2.txt"
     conda:
         "../envs/vcftools.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]

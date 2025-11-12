@@ -3,11 +3,11 @@ rule prepare_invariant_vcf:
         loci = lambda wildcards: config["projects"][wildcards.project]["ipyrad_prefix"] + ".loci",
         index = rules.index_vcf.output.index
     output:
-        invariant_vcf = "{project}/filtered_data/invariant_sites.vcf"
+        invariant_vcf = "results/{project}/filtered_data/{project}.invariant_sites.vcf"
     log:
-        "{project}/logs/prepare_invariant_vcf.log"
+        "logs/{project}/prepare_invariant_vcf.log"
     benchmark:
-        "{project}/benchmarks/prepare_invariant_vcf.txt"
+        "benchmarks/{project}/prepare_invariant_vcf.txt"
     conda:
         "../envs/vcfpy.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -23,11 +23,11 @@ rule prepare_invariant_vcf_gz:
     input:
         vcf = rules.prepare_invariant_vcf.output.invariant_vcf
     output:
-        vcf = "{project}/filtered_data/invariant_sites.vcf.gz"
+        vcf = "results/{project}/filtered_data/{project}.invariant_sites.vcf.gz"
     log:
-        "{project}/logs/prepare_invariant_vcf_gz.log"
+        "logs/{project}/prepare_invariant_vcf_gz.log"
     benchmark:
-        "{project}/benchmarks/prepare_invariant_vcf_gz.txt"
+        "benchmarks/{project}/prepare_invariant_vcf_gz.txt"
     conda:
         "../envs/bcftools.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -43,11 +43,11 @@ rule prepare_invariant_vcf_gz_index:
     input:
         vcf = rules.prepare_invariant_vcf_gz.output.vcf
     output:
-        index = "{project}/filtered_data/invariant_sites.vcf.gz.csi"
+        index = "results/{project}/filtered_data/{project}.invariant_sites.vcf.gz.csi"
     log:
-        "{project}/logs/prepare_invariant_vcf_gz_index.log"
+        "logs/{project}/prepare_invariant_vcf_gz_index.log"
     benchmark:
-        "{project}/benchmarks/prepare_invariant_vcf_gz_index.txt"
+        "benchmarks/{project}/prepare_invariant_vcf_gz_index.txt"
     conda:
         "../envs/bcftools.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -66,12 +66,12 @@ rule merge_invariant_sites:
         vcf_inv = rules.prepare_invariant_vcf_gz.output.vcf,
         vcf_inv_index = rules.prepare_invariant_vcf_gz_index.output.index
     output:
-        merged_vcf = "{project}/filtered_data/merged_invariant_sites.vcf.gz",
-        index = "{project}/filtered_data/merged_invariant_sites.vcf.gz.csi"
+        merged_vcf = "results/{project}/filtered_data/{project}.merged_invariant_sites.vcf.gz",
+        index = "results/{project}/filtered_data/{project}.merged_invariant_sites.vcf.gz.csi"
     log:
-        "{project}/logs/merge_invariant_sites.log"
+        "logs/{project}/merge_invariant_sites.log"
     benchmark:
-        "{project}/benchmarks/merge_invariant_sites.txt"
+        "benchmarks/{project}/merge_invariant_sites.txt"
     conda:
         "../envs/bcftools.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -89,17 +89,17 @@ rule pixy:
         vcf = rules.merge_invariant_sites.output.merged_vcf,
         popmap = rules.generate_popmap.output
     output:
-        pi = "{project}/pixy/pixy_pi.txt",
-        fst = "{project}/pixy/pixy_fst.txt",
-        dxy = "{project}/pixy/pixy_dxy.txt"
+        pi = "results/{project}/pixy/{project}.pixy_pi.txt",
+        fst = "results/{project}/pixy/{project}.pixy_fst.txt",
+        dxy = "results/{project}/pixy/{project}.pixy_dxy.txt"
     log:
-        "{project}/logs/pixy.log"
+        "logs/{project}/pixy.log"
     benchmark:
-        "{project}/benchmarks/pixy.txt"
+        "benchmarks/{project}/pixy.txt"
     params:
         window_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("window_size", 10000),
-        output_folder = "{project}/pixy/",
-        output_prefix = ""
+        output_folder = "results/{project}/pixy/",
+        output_prefix = "{project}."
     conda:
         "../envs/pixy.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["pixy"]["threads"]
@@ -111,7 +111,7 @@ rule pixy:
         mkdir -p {params.output_folder}
         pixy --stats pi fst dxy --vcf {input.vcf} --populations {input.popmap} \
              --n_cores {threads} --window_size {params.window_size} \
-             --output_folder {params.output_folder} &> {log}
+             --output_folder {params.output_folder} --output_prefix {params.output_prefix} &> {log}
         """
 
 rule pixy_summary:
@@ -120,13 +120,13 @@ rule pixy_summary:
         fst = rules.pixy.output.fst,
         dxy = rules.pixy.output.dxy
     output:
-        pi = "{project}/pixy/pixy_pi-summary.txt",
-        fst = "{project}/pixy/pixy_fst-summary.txt",
-        dxy = "{project}/pixy/pixy_dxy-summary.txt"
+        pi = "results/{project}/pixy/{project}.pixy_pi-summary.txt",
+        fst = "results/{project}/pixy/{project}.pixy_fst-summary.txt",
+        dxy = "results/{project}/pixy/{project}.pixy_dxy-summary.txt"
     log:
-        "{project}/logs/pixy_summary.log"
+        "logs/{project}/pixy_summary.log"
     benchmark:
-        "{project}/benchmarks/pixy_summary.txt"
+        "benchmarks/{project}/pixy_summary.txt"
     conda:
         "../envs/pandas.yaml"
     threads: 1

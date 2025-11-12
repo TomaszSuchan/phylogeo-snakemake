@@ -14,7 +14,7 @@ print(slist)
 slist_aligned <- alignK(slist)
 
 # Plot
-p <- plotQ(slist_aligned, imgoutput="join", returnplot=TRUE, exportplot=FALSE, basesize=11)
+p <- plotQ(slist_aligned, imgoutput="join", returnplot=TRUE, exportplot=FALSE, basesize=11, splabangle=0)
 
 # Save the plot
 n_reps <- length(slist_aligned)

@@ -5,15 +5,15 @@ rule faststructure:
         bim = rules.vcf_to_plink.output.bim,
         fam = rules.vcf_to_plink.output.fam
     output:
-        meanQ = "{project}/faststructure/faststructure.{k}.meanQ",
-        meanP = "{project}/faststructure/faststructure.{k}.meanP"
+        meanQ = "results/{project}/faststructure/{project}.faststructure.{k}.meanQ",
+        meanP = "results/{project}/faststructure/{project}.faststructure.{k}.meanP"
     log:
-        "{project}/logs/faststructure.{k}.log"
+        "logs/{project}/faststructure.{k}.log"
     benchmark:
-        "{project}/benchmarks/faststructure.{k}.txt"
+        "benchmarks/{project}/faststructure.{k}.txt"
     params:
         input_prefix = rules.vcf_to_plink.params.output_prefix,
-        output_prefix = "{project}/faststructure/faststructure",
+        output_prefix = "results/{project}/faststructure/{project}.faststructure",
         tol = lambda wildcards:  config["projects"][wildcards.project]["parameters"]["faststructure"].get("tol", "10e-6"),
         prior = lambda wildcards: config["projects"][wildcards.project]["parameters"]["faststructure"].get("prior", "simple")
     conda:
@@ -37,14 +37,14 @@ rule faststructure:
 rule faststructure_chooseK:
     input:
         lambda wildcards: expand(
-            "{project}/faststructure/faststructure.{k}.meanQ", 
+            "results/{project}/faststructure/{project}.faststructure.{k}.meanQ",
             project=wildcards.project,
             k=config["projects"][wildcards.project]["parameters"]["k_values"]
         )
     output:
-        "{project}/faststructure/chooseK_results.txt"
+        "results/{project}/faststructure/{project}.chooseK_results.txt"
     params:
-        input_prefix =  "{project}/faststructure/faststructure",
+        input_prefix =  "results/{project}/faststructure/{project}.faststructure",
     conda:
         "../envs/faststructure.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]

@@ -5,16 +5,16 @@ rule pcaone_emu:
         bim = rules.vcf_to_plink.output.bim,
         fam = rules.vcf_to_plink.output.fam
     output:
-        pcaone_eigenvectors = "{project}/pcaone_EMU/PCA_EMU.eigvecs",
-        pcaone_eigenvalues = "{project}/pcaone_EMU/PCA_EMU.eigvals"
+        pcaone_eigenvectors = "results/{project}/pcaone_EMU/{project}.PCA_EMU.eigvecs",
+        pcaone_eigenvalues = "results/{project}/pcaone_EMU/{project}.PCA_EMU.eigvals"
     log:
-        "{project}/logs/pcaone_emu.log"
+        "logs/{project}/pcaone_emu.log"
     benchmark:
-        "{project}/benchmarks/pcaone_emu.txt"
+        "benchmarks/{project}/pcaone_emu.txt"
     params:
         SVD_method = lambda wildcards: config["projects"][wildcards.project]["parameters"]["PCAone"].get("SVD_method", 3),
         PCnum = lambda wildcards: config["projects"][wildcards.project]["parameters"]["PCAone"].get("PCnum", 10),
-        output_prefix = "{project}/pcaone_EMU/PCA_EMU",
+        output_prefix = "results/{project}/pcaone_EMU/{project}.PCA_EMU",
         # Get the bfile prefix (remove .bed extension)
         bfile_prefix = lambda wildcards, input: input.bed.replace('.bed', '')
     conda:
@@ -40,17 +40,17 @@ rule pcaone:
         bim = rules.vcf_to_plink.output.bim,
         fam = rules.vcf_to_plink.output.fam
     output:
-        pcaone_eigenvectors = "{project}/pcaone/PCA.eigvecs",
-        pcaone_eigenvectors2 = "{project}/pcaone/PCA.eigvecs2",
-        pcaone_eigenvalues = "{project}/pcaone/PCA.eigvals"
+        pcaone_eigenvectors = "results/{project}/pcaone/{project}.PCA.eigvecs",
+        pcaone_eigenvectors2 = "results/{project}/pcaone/{project}.PCA.eigvecs2",
+        pcaone_eigenvalues = "results/{project}/pcaone/{project}.PCA.eigvals"
     log:
-        "{project}/logs/pcaone.log"
+        "logs/{project}/pcaone.log"
     benchmark:
-        "{project}/benchmarks/pcaone.txt"
+        "benchmarks/{project}/pcaone.txt"
     params:
         SVD_method = lambda wildcards: config["projects"][wildcards.project]["parameters"]["PCAone"].get("SVD_method", 3),
         PCnum = lambda wildcards: config["projects"][wildcards.project]["parameters"]["PCAone"].get("PCnum", 10),
-        output_prefix = "{project}/pcaone/PCA",
+        output_prefix = "results/{project}/pcaone/{project}.PCA",
         # Get the bfile prefix (remove .bed extension)
         bfile_prefix = lambda wildcards, input: input.bed.replace('.bed', '')
     conda:
@@ -71,21 +71,21 @@ rule pcaone:
 # Rule to run PCAone for each miss data threshold
 rule pcaone_miss:
     input:
-        bed = "{project}/filtered_data/biallelic_snps_thinned_miss{miss}.bed",
-        bim = "{project}/filtered_data/biallelic_snps_thinned_miss{miss}.bim",
-        fam = "{project}/filtered_data/biallelic_snps_thinned_miss{miss}.fam"
+        bed = "results/{project}/filtered_data/{project}.biallelic_snps_thinned_miss{miss}.bed",
+        bim = "results/{project}/filtered_data/{project}.biallelic_snps_thinned_miss{miss}.bim",
+        fam = "results/{project}/filtered_data/{project}.biallelic_snps_thinned_miss{miss}.fam"
     output:
-        eigenvectors = "{project}/pcaone_miss{miss}/PCA_miss{miss}.eigvecs",
-        eigenvalues = "{project}/pcaone_miss{miss}/PCA_miss{miss}.eigvals"
+        eigenvectors = "results/{project}/pcaone_miss{miss}/{project}.PCA_miss{miss}.eigvecs",
+        eigenvalues = "results/{project}/pcaone_miss{miss}/{project}.PCA_miss{miss}.eigvals"
     log:
-        "{project}/logs/pcaone_miss_{miss}.log"
+        "logs/{project}/pcaone_miss_{miss}.log"
     benchmark:
-        "{project}/benchmarks/pcaone_miss_{miss}.txt"
+        "benchmarks/{project}/pcaone_miss_{miss}.txt"
     params:
         SVD_method = lambda wildcards: config["projects"][wildcards.project]["parameters"]["PCAone"].get("SVD_method", 3),
         PCnum = lambda wildcards: config["projects"][wildcards.project]["parameters"]["PCAone"].get("PCnum", 10),
-        output_prefix = lambda wildcards: f"{config['analysis_name']}/pcaone_miss{wildcards.miss}/PCA",
-        bfile_prefix = lambda wildcards: f"{config['analysis_name']}/filtered_data/biallelic_snps_thinned_miss{wildcards.miss}"
+        output_prefix = lambda wildcards: f"results/{wildcards.project}/pcaone_miss{wildcards.miss}/{wildcards.project}.PCA",
+        bfile_prefix = lambda wildcards: f"results/{wildcards.project}/filtered_data/{wildcards.project}.biallelic_snps_thinned_miss{wildcards.miss}"
     conda:
         "../envs/pcaone.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["pcaone"]["threads"]
@@ -108,7 +108,7 @@ rule plot_pca:
         eigvals=rules.pcaone.output.pcaone_eigenvalues,
         indpopdata=rules.generate_popdata.output.indpopdata
     output:
-        "{project}/final_plots/PCA-{color_by}.pdf"
+        "results/{project}/pcaone/plots/{project}.PCA-{color_by}.pdf"
     params:
         pc1 = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pca_plot"]["pc1"],
         pc2 = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pca_plot"]["pc2"],
