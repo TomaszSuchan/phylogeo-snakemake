@@ -1,10 +1,12 @@
-# Global parameters for all projects
+##########################################
+### Global parameters for all projects ###
+##########################################
 parameters: &global_params 
   # Either a file with individual in the 1st column, population in the 2nd column
-  #popmap: "data/popmap.txt"
+  popmap: "data/popmap.txt"
   # or a separator to extract population codes from individual IDs
   popseparator: "-" # e.g. "ind1-pop1", separator is "-"
-  # (if both popdata and popseparator are provided, popdata file takes precedence)
+  # (if both popdata and popseparator are provided, popmap file takes precedence)
   
   ## Population data file
   # This is used for analyses that incorporate geographic information,
@@ -89,6 +91,18 @@ parameters: &global_params
   pixy:
     stats: "pi fst dxy"  # statistics to compute, options: pi, fst, dxy
     window_size: 10000  # size of the sliding window in bp
+
+  ## Trimal parameters for alignment trimming before phylogenetic inference
+  trimal:
+    gt: 0.95        # gap threshold for trimming alignments (0-1 where 0=no gaps, 1=no trimming)
+
+  ## IQ-TREE parameters
+  iqtree:
+    model: "MFP"      # substitution model, MFP for ModelFinder Plus
+    bootstraps: 1000  # number of ultrafast bootstrap replicates
+    robust-phy: 0.95 # robustness threshold for phylogenetic inference (0-1)
+    # outgroup: "sample1,sample2"  # optional: comma-separated list of outgroup taxa
+    support_threshold: 70  # minimum bootstrap support value to display on tree (0-100)
   
   ## Analysis resources
   #
@@ -132,23 +146,31 @@ parameters: &global_params
       threads: 24
       mem_mb: 8000
       runtime: 600
+    iqtree:
+      threads: 12
+      mem_mb: 8000
+      runtime: 720
 
-# Projects configuration
-
+##############################
+### Projects configuration ###
+##############################
 projects:
   Dataset_1:
     ipyrad_prefix: "test_data/test"
     ## Analysis selection - set to true/false to enable/disable
     analyses:
-      structure: true
-      faststructure: true
-      admixture: true
+      structure: false
+      faststructure: false
+      admixture: false
       pcaone: false
       vcf2pcacluster: false
       pcaone_emu: false
       pcaone_miss: false
       pixy: false
       relatedness: false
+      iqtree: false
+      iqtree_trimal: false
+      iqtree_robust: false
     parameters:
       <<: *global_params
   Dataset_2:
@@ -164,5 +186,8 @@ projects:
       pcaone_miss: false
       pixy: false
       relatedness: false
+      iqtree: false
+      iqtree_trimal: false
+      iqtree_robust: false
     parameters:
       <<: *global_params
