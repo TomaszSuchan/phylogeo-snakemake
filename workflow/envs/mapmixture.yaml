@@ -1,0 +1,11 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - r-base>=4.2
+  - r-devtools
+  - r-ggplot2
+  - r-sf
+  - r-terra
+  - r-tidyverse
