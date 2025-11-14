@@ -2,7 +2,7 @@ rule generate_popmap:
     input:
         vcf=rules.sort_vcf.output.vcf
     output:
-        popmap="{project}/popmap.txt"
+        popmap="results/{project}/popmap.txt"
     params:
         popmap=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("popmap", ""),
         separator=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("popseparator", "-")
@@ -34,7 +34,7 @@ rule generate_popdata:
     input:
         popmap=rules.generate_popmap.output.popmap
     output:
-        indpopdata="{project}/indpopdata.txt"
+        indpopdata="results/{project}/indpopdata.txt"
     params:
         popdata=lambda wildcards: config["projects"][wildcards.project]["parameters"]["popdata"],
     log:

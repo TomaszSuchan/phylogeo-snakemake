@@ -11,5 +11,7 @@ results/
 data/popmap.txt
 .DS_Store
 seed.txt
-Sample_analysis/
-Rgl_RAD-filtTatra
+Dataset_1/
+Dataset_2/
+data/popmap.txt
+data/popdata.txt

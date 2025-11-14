@@ -12,16 +12,16 @@ output_path = snakemake.output.indpopdata
 popdata_df = pd.read_csv(popdata_path, sep="\t", header=0)
 
 # Read the generated popmap file
-popmap_df = pd.read_csv(popmap_path, sep="\t", header=None, names=["Individual", "Population"])
+popmap_df = pd.read_csv(popmap_path, sep="\t", header=None, names=["Ind", "Site"])
 
 # Merge to ensure consistency
-merged_df = pd.merge(popmap_df, popdata_df, left_on="Population", right_on="Population", how="left")
+merged_df = pd.merge(popmap_df, popdata_df, left_on="Site", right_on="Site", how="left")
 
 # Rename the 'Individual_x' column back to 'Individual' (if exists)
-merged_df = merged_df.rename(columns={"Individual_x": "Individual"})
+merged_df = merged_df.rename(columns={"Ind_x": "Ind"})
 
 # Select relevant columns: individual, population, latitude, longitude, and any additional columns
-output_columns = ["Individual", "Population"] + list(merged_df.columns[2:])
+output_columns = ["Ind", "Site"] + list(merged_df.columns[2:])
 final_popdata_df = merged_df[output_columns]
 
 # Save the final popdata file

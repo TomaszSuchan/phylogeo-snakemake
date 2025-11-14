@@ -12,13 +12,14 @@ parameters: &global_params
   # This is used for analyses that incorporate geographic information,
   # such as plotting structure results on a map or coloring PCA plots by geography.
   # A file with the following columns:
-  # - population
-  # - latitude (x coordinate; decimal degrees)
-  # - longitude (y coordinate; decimal degrees)
+  # - Site (population)
+  # - Lat (latitude - x coordinate; decimal degrees)
+  # - Lon (longitude - y coordinate; decimal degrees)
   # - optional additional columns with population stratification (e.g. region, mountain range, etc.)
   # Example:
-  # pop1 52.23 21.01 region1
-  # pop2 51.50 -0.13 region2
+  # Site Lat  Lon Region
+  # pop1  52.23 21.01 region1
+  # pop2  51.50 -0.13 region2
   popdata: data/popdata.txt
   
   ## Preprocessing parameters
@@ -37,8 +38,37 @@ parameters: &global_params
   
   ## Population Structure Analysis
   # Common K values to test for population structure (Structure, fastStructure and admixture):
-  k_values: [1, 2, 3]
-  
+  k_values: [1, 2, 3, 4, 5]
+
+  ## Mapmixture plotting parameters
+  # These parameters control the appearance of map-based structure plots
+  width: 10                       # plot width in inches
+  height: 8                       # plot height in inches
+  dpi: 300                        # dots per inch (resolution)
+  boundary: NULL                  # map boundaries, e.g. c(xmin=-15, xmax=16, ymin=40, ymax=62)
+  crs: 4326                       # coordinate reference system (4326 = WGS84 lat/lon)
+  basemap: NULL                   # optional basemap object
+  pie_size: 1                     # size of pie charts on map
+  pie_border: 0.2                 # thickness of pie chart borders
+  pie_border_col: "black"         # color of pie chart borders
+  pie_opacity: 1                  # opacity of pie charts (0-1)
+  land_colour: "#d9d9d9"          # color for land masses
+  sea_colour: "#deebf7"           # color for water bodies
+  expand: FALSE                   # expand map to fill plotting area (TRUE/FALSE)
+  arrow: TRUE                     # show north arrow (TRUE/FALSE)
+  arrow_size: 1                   # size of north arrow
+  arrow_position: "tl"            # position of north arrow (tl/tr/bl/br)
+  scalebar: TRUE                  # show scale bar (TRUE/FALSE)
+  scalebar_size: 1                # size of scale bar
+  scalebar_position: "tl"         # position of scale bar (tl/tr/bl/br)
+  legend: FALSE                   # show legend (TRUE/FALSE)
+  plot_title: ""                  # title for the plot
+  axis_title_size: 10             # font size for axis titles
+  axis_text_size: 8               # font size for axis text
+  basemap_border: TRUE            # show border around basemap (TRUE/FALSE)
+  basemap_border_col: "black"     # color of basemap border
+  basemap_border_lwd: 0.1         # line width of basemap border
+
   ## Structure parameters
   # More run parameters can be tweaked by modifying `data/mainparams` and `data/extraparams`
   # Numbers of individuals and loci are automatically inferred from .ustr file so this does not need to be changed.
@@ -159,9 +189,9 @@ projects:
     ipyrad_prefix: "test_data/test"
     ## Analysis selection - set to true/false to enable/disable
     analyses:
-      structure: false
-      faststructure: false
-      admixture: false
+      structure: true
+      faststructure: true
+      admixture: true
       pcaone: false
       vcf2pcacluster: false
       pcaone_emu: false

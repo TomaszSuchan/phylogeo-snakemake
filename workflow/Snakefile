@@ -12,6 +12,7 @@ include: "rules/relatedness.smk"
 include: "rules/pixy.smk"
 include: "rules/structure.smk"
 include: "rules/iqtree.smk"
+include: "rules/mapmixture.smk"
 
 def get_all_targets():
     """
@@ -40,7 +41,9 @@ def get_all_targets():
                        k=k_values),
                 expand("results/" + project + "/faststructure/" + project + ".faststructure.{k}.meanP",
                        k=k_values),
-                "results/" + project + "/faststructure/" + project + ".chooseK_results.txt"
+                "results/" + project + "/faststructure/" + project + ".chooseK_results.txt",
+                expand("results/" + project + "/faststructure/" + project + ".faststructure.K{k}.map.pdf",
+                       k=k_values)
             ])
 
         # ADMIXTURE targets
@@ -50,7 +53,9 @@ def get_all_targets():
                        k=k_values),
                 expand("results/" + project + "/admixture/" + project + ".biallelic_snps_thinned.{k}.P",
                        k=k_values),
-                "results/" + project + "/admixture/" + project + ".chooseK_results.txt"
+                "results/" + project + "/admixture/" + project + ".chooseK_results.txt",
+                expand("results/" + project + "/admixture/" + project + ".admixture.K{k}.map.pdf",
+                       k=k_values)
             ])
 
         # STRUCTURE targets
@@ -59,9 +64,13 @@ def get_all_targets():
                 expand("results/" + project + "/structure/" + project + ".structure.K{k}.R{r}_f",
                        k=k_values,
                        r=range(1, n_reps + 1)),
-                "results/" + project + "/structure/plots/" + project + ".K_aligned.pdf"
+                "results/" + project + "/structure/" + project + ".K_aligned.pdf",
+                expand("results/" + project + "/structure/" + project + ".structure.K{k}.Qmatrix.txt",
+                       k=k_values),
+                expand("results/" + project + "/structure/" + project + ".structure.K{k}.map.pdf",
+                       k=k_values)
             ])
-        
+
         # PCAone targets (standard)
         if analyses.get("pcaone", False):
             targets.extend([
