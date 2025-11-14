@@ -41,7 +41,7 @@ def get_all_targets():
                        k=k_values),
                 expand("results/" + project + "/faststructure/" + project + ".faststructure.{k}.meanP",
                        k=k_values),
-                "results/" + project + "/faststructure/" + project + ".chooseK_results.txt",
+                "results/" + project + "/faststructure/" + project + ".faststructure.chooseK_results.txt",
                 expand("results/" + project + "/faststructure/" + project + ".faststructure.K{k}.map.pdf",
                        k=k_values)
             ])
@@ -53,7 +53,7 @@ def get_all_targets():
                        k=k_values),
                 expand("results/" + project + "/admixture/" + project + ".biallelic_snps_thinned.{k}.P",
                        k=k_values),
-                "results/" + project + "/admixture/" + project + ".chooseK_results.txt",
+                "results/" + project + "/admixture/" + project + ".admixture.chooseK_results.txt",
                 expand("results/" + project + "/admixture/" + project + ".admixture.K{k}.map.pdf",
                        k=k_values)
             ])

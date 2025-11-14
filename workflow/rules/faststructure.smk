@@ -42,7 +42,7 @@ rule faststructure_chooseK:
             k=config["projects"][wildcards.project]["parameters"]["k_values"]
         )
     output:
-        "results/{project}/faststructure/{project}.chooseK_results.txt"
+        "results/{project}/faststructure/{project}.faststructure.chooseK_results.txt"
     params:
         input_prefix =  "results/{project}/faststructure/{project}.faststructure",
     conda:

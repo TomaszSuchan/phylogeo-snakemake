@@ -37,7 +37,7 @@ rule admixture_chooseK:
             k=config["projects"][wildcards.project]["parameters"]["k_values"]
         )
     output:
-        "results/{project}/admixture/{project}.chooseK_results.txt"
+        "results/{project}/admixture/{project}.admixture.chooseK_results.txt"
     shell:
         """
         echo "Choose the lowest cross-validation (CV) error:" > {output}
