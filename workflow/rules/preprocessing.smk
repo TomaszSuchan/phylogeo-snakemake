@@ -157,7 +157,7 @@ rule vcf_to_structure:
             --out {output.str} &> {log}
         """
 
-# Rule to filter VCF for missing data threshold and convert to PLINK
+# Rule to filter VCF for missing data threshold
 rule filter_missing_vcf:
     input:
         vcf = rules.thin_vcf.output.vcf
@@ -180,7 +180,7 @@ rule filter_missing_vcf:
         bcftools view -i 'F_MISSING<{params.miss}' {input.vcf} -Oz -o {output.vcf} &> {log}
         """
 
-# Rule to filter VCF for missing data threshold and convert to PLINK
+# Rule to convert to PLINK VCFs filtered for missing data threshold
 # renames chromosomes to "0" for downstream compatibility with "--allow-extra-chr 0"
 rule missing_vcf_to_plink:
     input:
@@ -209,30 +209,4 @@ rule missing_vcf_to_plink:
               --out {params.output_prefix} \
               --allow-extra-chr 0 \
               --double-id &> {log}
-        """
-
-# Rule to generate comprehensive VCF assembly statistics
-rule vcf_assembly_stats:
-    input:
-        vcf = rules.sort_vcf.output.vcf
-    output:
-        report = "results/{project}/qc/{project}.assembly_stats.txt"
-    log:
-        "logs/{project}/vcf_assembly_stats.log"
-    benchmark:
-        "benchmarks/{project}/vcf_assembly_stats.txt"
-    params:
-        id_pattern = lambda wildcards: config["projects"][wildcards.project]["parameters"]["vcf_thinning"].get("id_pattern", r"loc(\d+)_")
-    conda:
-        "../envs/vcfpy.yaml"
-    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
-    resources:
-        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
-        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
-    shell:
-        """
-        python workflow/scripts/vcf_assembly_stats.py \
-            --vcf {input.vcf} \
-            --out {output.report} \
-            --id-pattern '{params.id_pattern}' &> {log}
         """
