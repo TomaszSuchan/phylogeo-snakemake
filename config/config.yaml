@@ -133,7 +133,19 @@ parameters: &global_params
     robust-phy: 0.95 # robustness threshold for phylogenetic inference (0-1)
     # outgroup: "sample1,sample2"  # optional: comma-separated list of outgroup taxa
     support_threshold: 70  # minimum bootstrap support value to display on tree (0-100)
-  
+
+  ## Whoa QC parameters
+  # Whoa analyzes heterozygote miscall rates to assess genotyping accuracy
+  whoa:
+    min_bin: 1000  # minimum bin size for read depth categorization (higher = fewer bins)
+
+  ## Replicate QC parameters
+  # Analyzes technical replicates to assess genotyping error rates
+  # Requires a separate assembly with replicate pairs
+  # Use a separate project entry with its own ipyrad_prefix pointing to the replicate assembly
+  replicate_qc:
+    suffix: "_repl"  # Suffix pattern in replicate sample names (e.g., "_repl" for "sample_repl04a")
+
   ## Analysis resources
   #
   # Define computational resources for different analysis steps.
@@ -189,9 +201,9 @@ projects:
     ipyrad_prefix: "test_data/test"
     ## Analysis selection - set to true/false to enable/disable
     analyses:
-      structure: true
-      faststructure: true
-      admixture: true
+      structure: false
+      faststructure: false
+      admixture: false
       pcaone: false
       vcf2pcacluster: false
       pcaone_emu: false
@@ -201,6 +213,8 @@ projects:
       iqtree: false
       iqtree_trimal: false
       iqtree_robust: false
+      whoa: true  # Genotyping accuracy QC analysis
+      replicate_qc: false  # Technical replicate error rate analysis
     parameters:
       <<: *global_params
   Dataset_2:
@@ -219,5 +233,7 @@ projects:
       iqtree: false
       iqtree_trimal: false
       iqtree_robust: false
+      whoa: false
+      replicate_qc: false
     parameters:
       <<: *global_params

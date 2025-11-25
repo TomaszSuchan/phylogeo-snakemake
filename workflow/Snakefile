@@ -3,6 +3,7 @@ configfile: "config/config.yaml"
 
 # Include rule files
 include: "rules/preprocessing.smk"
+include: "rules/qc.smk"
 include: "rules/popdata.smk"
 include: "rules/faststructure.smk"
 include: "rules/admixture.smk"
@@ -156,6 +157,20 @@ def get_all_targets():
 
         # VCF assembly statistics targets
         targets.extend(["results/" + project + "/qc/" + project + ".assembly_stats.txt"])
+
+        # Whoa QC targets
+        if analyses.get("whoa", False):
+            targets.extend([
+                "results/" + project + "/qc/" + project + ".whoa_posteriors.rds",
+                "results/" + project + "/qc/" + project + ".whoa_plot.pdf",
+                "results/" + project + "/qc/" + project + ".whoa_report.txt"
+            ])
+
+        # Replicate analysis targets
+        if analyses.get("replicate_qc", False):
+            targets.extend([
+                "results/" + project + "/qc/" + project + ".replicate_analysis.txt"
+            ])
 
     return targets
 
