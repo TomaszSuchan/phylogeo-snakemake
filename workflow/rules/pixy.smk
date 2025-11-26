@@ -99,7 +99,7 @@ rule pixy:
     params:
         window_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("window_size", 10000),
         output_folder = "results/{project}/pixy/",
-        output_prefix = "{project}."
+        output_prefix = "{project}.pixy"
     conda:
         "../envs/pixy.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["pixy"]["threads"]
