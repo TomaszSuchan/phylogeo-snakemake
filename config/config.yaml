@@ -139,6 +139,11 @@ parameters: &global_params
   whoa:
     min_bin: 1000  # minimum bin size for read depth categorization (higher = fewer bins)
 
+  ## Hardy-Weinberg equilibrium test parameters
+  # Tests for deviations from HWE which may indicate genotyping errors or selection
+  hw_qc:
+    alpha: 0.05  # significance threshold for HWE test
+
   ## Replicate QC parameters
   # Analyzes technical replicates to assess genotyping error rates
   # Requires a separate assembly with replicate pairs
@@ -151,7 +156,7 @@ parameters: &global_params
   # Define computational resources for different analysis steps.
   # Memory is in MB and threads is the number of CPU threads.
   # Runtime is in minutes.
-  resources:
+  resources: &global_resources
     default: # default resources for simple steps like file conversion
       threads: 1
       mem_mb: 8000
@@ -213,8 +218,9 @@ projects:
       iqtree: false
       iqtree_trimal: false
       iqtree_robust: false
-      whoa: true  # Genotyping accuracy QC analysis
-      replicate_qc: false  # Technical replicate error rate analysis
+      qc_whoa: true  # Genotyping accuracy QC analysis
+      qc_hw: true  # Hardy-Weinberg equilibrium test
+      qc_replicate: false  # Technical replicate error rate analysis
     parameters:
       <<: *global_params
   Dataset_2:
@@ -233,7 +239,8 @@ projects:
       iqtree: false
       iqtree_trimal: false
       iqtree_robust: false
-      whoa: false
-      replicate_qc: false
+      qc_whoa: false
+      qc_hw: false
+      qc_replicate: false
     parameters:
       <<: *global_params
