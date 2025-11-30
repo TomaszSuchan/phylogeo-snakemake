@@ -82,7 +82,6 @@ cat(strrep("=", 80), "\n")
 cat("WHOA: Genotyping Accuracy QC Report\n")
 cat(strrep("=", 80), "\n\n")
 
-cat("Analysis Date:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n")
 cat("Input VCF:", opt$vcf, "\n")
 cat("minBin parameter:", opt$`min-bin`, "\n\n")
 
