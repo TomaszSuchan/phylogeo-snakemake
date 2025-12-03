@@ -23,13 +23,14 @@ plot_pca <- function(individuals, eigenvecs, eigenvals, popdata, color_by = 2, p
 
   # Create data frame with PC scores
   pca_df <- data.frame(
-    Individual = individuals,
+    Ind = individuals,
     PC1 = eigenvecs[, pc1],
     PC2 = eigenvecs[, pc2]
   )
 
-  # Merge with population data
-  plot_df <- merge(pca_df, popdata, by = "Individual")
+  # Merge with population data (use first column of popdata for merging)
+  ind_col <- colnames(popdata)[1]
+  plot_df <- merge(pca_df, popdata, by.x = "Ind", by.y = ind_col)
 
   # Calculate variance explained
   var_exp <- eigenvals / sum(eigenvals) * 100
