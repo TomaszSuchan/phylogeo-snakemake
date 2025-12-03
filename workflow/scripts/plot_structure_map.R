@@ -107,9 +107,10 @@ cat(sprintf("Found %d unique sites in qmatrix_with_data\n", length(sites_in_qmat
 
 # Filter popdata to keep only sites that are in qmatrix_with_data
 popdata <- popdata %>%
-  filter(Site %in% sites_in_qmatrix)
+  filter(Site %in% sites_in_qmatrix) %>%
+  distinct(Site, .keep_all = TRUE)
 
-cat(sprintf("After filtering, popdata contains %d sites\n", nrow(popdata)))
+cat(sprintf("After filtering and removing duplicates, popdata contains %d sites\n", nrow(popdata)))
 
 # Check whether all sites from qmatrix_with_data have data in popdata
 sites_in_popdata <- unique(popdata$Site)
@@ -123,20 +124,6 @@ if (length(missing_sites) > 0) {
 }
 
 cat("All sites from qmatrix_with_data have corresponding data in popdata\n")
-
-# Debug: check for extra sites in popdata
-extra_sites <- setdiff(sites_in_popdata, sites_in_qmatrix)
-if (length(extra_sites) > 0) {
-  cat(sprintf("Found %d extra sites in popdata that are not in qmatrix: %s\n",
-              length(extra_sites), paste(head(extra_sites, 10), collapse = ", ")))
-  cat("Filtering popdata to only include sites in qmatrix\n")
-  # Ensure exact match - no extra sites
-  popdata <- popdata %>%
-    filter(Site %in% sites_in_qmatrix)
-  # Recalculate after filtering
-  sites_in_popdata <- unique(popdata$Site)
-  cat(sprintf("After removing extra sites, popdata contains %d sites\n", length(sites_in_popdata)))
-}
 
 # Debug: print first few sites from each
 cat("\nFirst 10 sites in qmatrix_with_data:\n")
