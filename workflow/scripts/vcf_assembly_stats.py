@@ -9,6 +9,7 @@ import gzip
 import re
 from collections import defaultdict, Counter
 import sys
+import numpy as np
 
 
 def parse_vcf_line(line):
@@ -87,7 +88,12 @@ def analyze_vcf(vcf_file, id_pattern):
 
     # Info field stats
     ns_values = []  # Number of samples with data
-    dp_values = []  # Total depth
+    dp_values = []  # INFO DP field values (for comparison)
+    info_dp_description = None  # Store the DP field description from header
+
+    # Per-variant depth statistics (calculated from FORMAT DP)
+    variant_mean_depths = []  # Mean depth per variant across samples
+    variant_depth_std = []  # Standard deviation of depth per variant
 
     # Per-sample depth tracking
     sample_depths = defaultdict(list)  # Track depth per sample
@@ -111,11 +117,19 @@ def analyze_vcf(vcf_file, id_pattern):
         for line in f:
             line = line.strip()
 
-            # Parse header to get sample names
+            # Parse header to get sample names and INFO field descriptions
             if line.startswith('#CHROM'):
                 fields = line.split('\t')
                 if len(fields) > 9:
                     sample_names = fields[9:]
+                continue
+
+            # Capture INFO DP field description
+            if line.startswith('##INFO=<ID=DP,'):
+                # Extract description field
+                desc_match = re.search(r'Description="([^"]+)"', line)
+                if desc_match:
+                    info_dp_description = desc_match.group(1)
                 continue
 
             # Skip other header lines
@@ -151,6 +165,9 @@ def analyze_vcf(vcf_file, id_pattern):
             missing, total, missing_prop = calculate_missing_data(variant['samples'])
             missing_data_per_variant.append(missing_prop)
 
+            # Collect depths for this variant to calculate mean and SD
+            variant_depths_this_site = []
+
             # Per-sample missing data and genotype analysis
             for i, sample_gt in enumerate(variant['samples']):
                 sample_name = sample_names[i] if i < len(sample_names) else f"Sample_{i}"
@@ -180,8 +197,17 @@ def analyze_vcf(vcf_file, id_pattern):
                                 try:
                                     depth = int(gt_fields[dp_idx])
                                     sample_depths[sample_name].append(depth)
+                                    variant_depths_this_site.append(depth)
                                 except (ValueError, IndexError):
                                     pass
+
+            # Calculate mean and standard deviation of depth for this variant
+            if variant_depths_this_site:
+                variant_mean_depths.append(np.mean(variant_depths_this_site))
+                if len(variant_depths_this_site) > 1:
+                    variant_depth_std.append(np.std(variant_depths_this_site, ddof=1))
+                else:
+                    variant_depth_std.append(0.0)
 
             # Parse INFO field
             info_dict = parse_info_field(variant['info'])
@@ -190,6 +216,8 @@ def analyze_vcf(vcf_file, id_pattern):
                     ns_values.append(int(info_dict['NS']))
                 except ValueError:
                     pass
+            # NOTE: DP in INFO field is typically the sum of depths across all samples,
+            # not the mean. This is why total DP values are higher than per-sample depths.
             if 'DP' in info_dict:
                 try:
                     dp_values.append(int(info_dict['DP']))
@@ -232,6 +260,9 @@ def analyze_vcf(vcf_file, id_pattern):
         'sample_hom_sites': dict(sample_hom_sites),
         'ns_values': ns_values,
         'dp_values': dp_values,
+        'info_dp_description': info_dp_description,
+        'variant_mean_depths': variant_mean_depths,
+        'variant_depth_std': variant_depth_std,
         'snp_types': snp_types,
         'biallelic_count': biallelic_count,
         'multiallelic_count': multiallelic_count,
@@ -239,13 +270,16 @@ def analyze_vcf(vcf_file, id_pattern):
     }
 
 
-def write_report(stats, output_file):
+def write_report(stats, output_file, vcf_file=None):
     """Write comprehensive statistics report."""
 
     with open(output_file, 'w') as f:
         f.write("=" * 80 + "\n")
         f.write("VCF ASSEMBLY STATISTICS REPORT\n")
         f.write("=" * 80 + "\n\n")
+
+        if vcf_file:
+            f.write(f"Input VCF: {vcf_file}\n\n")
 
         # Overall variant counts
         f.write("VARIANT COUNTS\n")
@@ -339,13 +373,38 @@ def write_report(stats, output_file):
             f.write(f"Min NS: {min(stats['ns_values'])}\n")
             f.write(f"Max NS: {max(stats['ns_values'])}\n\n")
 
-        # Depth (DP) stats
-        if stats['dp_values']:
-            f.write("TOTAL DEPTH (DP)\n")
+        # Mean depth per variant (calculated from FORMAT DP)
+        if stats['variant_mean_depths']:
+            f.write("MEAN DEPTH PER VARIANT (calculated from FORMAT DP)\n")
             f.write("-" * 80 + "\n")
-            f.write(f"Mean DP: {sum(stats['dp_values']) / len(stats['dp_values']):.2f}\n")
-            f.write(f"Min DP: {min(stats['dp_values'])}\n")
-            f.write(f"Max DP: {max(stats['dp_values'])}\n\n")
+            f.write(f"Overall mean depth: {np.mean(stats['variant_mean_depths']):.2f}x\n")
+            f.write(f"Overall SD: {np.std(stats['variant_mean_depths']):.2f}x\n")
+            f.write(f"Min mean depth: {min(stats['variant_mean_depths']):.2f}x\n")
+            f.write(f"Max mean depth: {max(stats['variant_mean_depths']):.2f}x\n")
+            if stats['variant_depth_std']:
+                f.write(f"\nMean within-variant SD: {np.mean(stats['variant_depth_std']):.2f}x\n")
+            f.write("\n")
+
+        # INFO DP field (for comparison if available)
+        if stats['dp_values']:
+            f.write("INFO DP FIELD (for comparison)\n")
+            f.write("-" * 80 + "\n")
+            if stats['info_dp_description']:
+                f.write(f"VCF header description: {stats['info_dp_description']}\n\n")
+            f.write(f"Mean INFO DP: {np.mean(stats['dp_values']):.2f}\n")
+            f.write(f"Min INFO DP: {min(stats['dp_values'])}\n")
+            f.write(f"Max INFO DP: {max(stats['dp_values'])}\n")
+            # Calculate ratio to help understand if it's sum or mean
+            if stats['variant_mean_depths'] and stats['ns_values']:
+                mean_ratio = np.mean(stats['dp_values']) / np.mean(stats['variant_mean_depths'])
+                mean_ns = np.mean(stats['ns_values'])
+                f.write(f"\nRatio INFO_DP / FORMAT_DP_mean: {mean_ratio:.2f}\n")
+                f.write(f"Mean number of samples with data: {mean_ns:.2f}\n")
+                if abs(mean_ratio - mean_ns) < 1.0:
+                    f.write("INFO DP appears to be the SUM of depths across samples\n")
+                elif abs(mean_ratio - 1.0) < 0.2:
+                    f.write("INFO DP appears to be the MEAN depth across samples\n")
+            f.write("\n")
 
         # SNP types
         if stats['snp_types']:
@@ -522,7 +581,7 @@ def main():
     stats = analyze_vcf(args.vcf, args.id_pattern)
 
     print(f"Writing report to: {args.out}", file=sys.stderr)
-    write_report(stats, args.out)
+    write_report(stats, args.out, vcf_file=args.vcf)
 
     print("Analysis complete!", file=sys.stderr)
 
