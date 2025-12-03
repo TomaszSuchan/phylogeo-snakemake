@@ -42,8 +42,22 @@ def get_all_targets():
                        k=k_values),
                 expand("results/" + project + "/faststructure/" + project + ".faststructure.{k}.meanP",
                        k=k_values),
-                "results/" + project + "/faststructure/" + project + ".faststructure.chooseK_results.txt",
-                expand("results/" + project + "/faststructure/" + project + ".faststructure.K{k}.map.pdf",
+                "results/" + project + "/faststructure/" + project + ".faststructure.chooseK_results.txt"
+            ])
+            # Only add map plots if popdata is specified
+            popdata = params.get("popdata")
+            if popdata and popdata != "NULL" and popdata != "":
+                targets.extend([
+                    expand("results/" + project + "/faststructure/plots/" + project + ".faststructure.K{k}.map.pdf",
+                           k=k_values),
+                    expand("results/" + project + "/faststructure/plots/" + project + ".faststructure.K{k}.map.rds",
+                           k=k_values)
+                ])
+            # Always add barplots
+            targets.extend([
+                expand("results/" + project + "/faststructure/plots/" + project + ".faststructure.K{k}.barplot.pdf",
+                       k=k_values),
+                expand("results/" + project + "/faststructure/plots/" + project + ".faststructure.K{k}.barplot.rds",
                        k=k_values)
             ])
 
@@ -54,8 +68,22 @@ def get_all_targets():
                        k=k_values),
                 expand("results/" + project + "/admixture/" + project + ".biallelic_snps_thinned.{k}.P",
                        k=k_values),
-                "results/" + project + "/admixture/" + project + ".admixture.chooseK_results.txt",
-                expand("results/" + project + "/admixture/" + project + ".admixture.K{k}.map.pdf",
+                "results/" + project + "/admixture/" + project + ".admixture.chooseK_results.txt"
+            ])
+            # Only add map plots if popdata is specified
+            popdata = params.get("popdata")
+            if popdata and popdata != "NULL" and popdata != "":
+                targets.extend([
+                    expand("results/" + project + "/admixture/plots/" + project + ".admixture.K{k}.map.pdf",
+                           k=k_values),
+                    expand("results/" + project + "/admixture/plots/" + project + ".admixture.K{k}.map.rds",
+                           k=k_values)
+                ])
+            # Always add barplots
+            targets.extend([
+                expand("results/" + project + "/admixture/plots/" + project + ".admixture.K{k}.barplot.pdf",
+                       k=k_values),
+                expand("results/" + project + "/admixture/plots/" + project + ".admixture.K{k}.barplot.rds",
                        k=k_values)
             ])
 
@@ -67,8 +95,22 @@ def get_all_targets():
                        r=range(1, n_reps + 1)),
                 "results/" + project + "/structure/" + project + ".K_aligned.pdf",
                 expand("results/" + project + "/structure/" + project + ".structure.K{k}.Qmatrix.txt",
+                       k=k_values)
+            ])
+            # Only add map plots if popdata is specified
+            popdata = params.get("popdata")
+            if popdata and popdata != "NULL" and popdata != "":
+                targets.extend([
+                    expand("results/" + project + "/structure/plots/" + project + ".structure.K{k}.map.pdf",
+                           k=k_values),
+                    expand("results/" + project + "/structure/plots/" + project + ".structure.K{k}.map.rds",
+                           k=k_values)
+                ])
+            # Always add barplots
+            targets.extend([
+                expand("results/" + project + "/structure/plots/" + project + ".structure.K{k}.barplot.pdf",
                        k=k_values),
-                expand("results/" + project + "/structure/" + project + ".structure.K{k}.map.pdf",
+                expand("results/" + project + "/structure/plots/" + project + ".structure.K{k}.barplot.rds",
                        k=k_values)
             ])
 
@@ -141,8 +183,8 @@ def get_all_targets():
                 "results/" + project + "/iqtree/" + project + ".iqtree.treefile",
                 "results/" + project + "/iqtree/" + project + ".iqtree.iqtree",
                 "results/" + project + "/iqtree/" + project + ".iqtree.log",
-                "results/" + project + "/iqtree/" + project + ".tree_plot.pdf",
-                "results/" + project + "/iqtree/" + project + ".tree_plot.rds"
+                "results/" + project + "/iqtree/plots/" + project + ".tree_plot.pdf",
+                "results/" + project + "/iqtree/plots/" + project + ".tree_plot.rds"
             ])
 
         # IQtree robust targets
@@ -151,15 +193,15 @@ def get_all_targets():
                 "results/" + project + "/iqtree_robust/" + project + ".iqtree_robust.treefile",
                 "results/" + project + "/iqtree_robust/" + project + ".iqtree_robust.iqtree",
                 "results/" + project + "/iqtree_robust/" + project + ".iqtree_robust.log",
-                "results/" + project + "/iqtree_robust/" + project + ".tree_plot.pdf",
-                "results/" + project + "/iqtree_robust/" + project + ".tree_plot.rds"
+                "results/" + project + "/iqtree_robust/plots/" + project + ".tree_plot.pdf",
+                "results/" + project + "/iqtree_robust/plots/" + project + ".tree_plot.rds"
             ])
 
         # VCF assembly statistics targets
         targets.extend(["results/" + project + "/qc/" + project + ".assembly_stats.txt"])
 
         # Whoa QC targets
-        if analyses.get("whoa", False):
+        if analyses.get("qc_whoa", False):
             targets.extend([
                 "results/" + project + "/qc/" + project + ".whoa_posteriors.rds",
                 "results/" + project + "/qc/" + project + ".whoa_plot.pdf",
@@ -167,9 +209,16 @@ def get_all_targets():
             ])
 
         # Replicate analysis targets
-        if analyses.get("replicate_qc", False):
+        if analyses.get("qc_replicate", False):
             targets.extend([
                 "results/" + project + "/qc/" + project + ".replicate_analysis.txt"
+            ])
+
+        # Hardy-Weinberg equilibrium test targets
+        if analyses.get("qc_hw", False):
+            targets.extend([
+                "results/" + project + "/qc/" + project + ".hardy.hwe",
+                "results/" + project + "/qc/" + project + ".hardy_report.txt"
             ])
 
     return targets
