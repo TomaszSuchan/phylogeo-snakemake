@@ -59,8 +59,8 @@ rule plot_tree:
     input:
         treefile=rules.iqtree.output.treefile
     output:
-        pdf="results/{project}/iqtree/{project}.tree_plot.pdf",
-        rds="results/{project}/iqtree/{project}.tree_plot.rds"
+        pdf="results/{project}/iqtree/plots/{project}.tree_plot.pdf",
+        rds="results/{project}/iqtree/plots/{project}.tree_plot.rds"
     benchmark:
         "benchmarks/{project}/plot_tree.txt"
     params:
@@ -79,8 +79,8 @@ rule plot_tree_robust:
     input:
         treefile="results/{project}/iqtree_robust/{project}.iqtree_robust.treefile"
     output:
-        pdf="results/{project}/iqtree_robust/{project}.tree_plot.pdf",
-        rds="results/{project}/iqtree_robust/{project}.tree_plot.rds"
+        pdf="results/{project}/iqtree_robust/plots/{project}.tree_plot.pdf",
+        rds="results/{project}/iqtree_robust/plots/{project}.tree_plot.rds"
     benchmark:
         "benchmarks/{project}/plot_tree_robust.txt"
     params:
