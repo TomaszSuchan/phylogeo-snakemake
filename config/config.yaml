@@ -105,8 +105,8 @@ parameters: &global_params
     PCnum: 10     # number of principal components to compute
   # PCA plot params:
   pca_plot:
-    pc1: "1"
-    pc2: "2"
+    pc_max: 4  # maximum PC axis number - will generate all combinations up to this value
+               # e.g., pc_max=4 generates: 1/2, 2/3, 3/4, 1/3, 2/4, 1/4
     color_by: ["Population", "Region"]  # columns in popdata to color points by
   
   ## VCF2PCACluster parameters
@@ -226,8 +226,8 @@ projects:
       iqtree: false
       iqtree_trimal: false
       iqtree_robust: false
-      qc_whoa: true  # Genotyping accuracy QC analysis
-      qc_hw: true  # Hardy-Weinberg equilibrium test
+      qc_whoa: false  # Genotyping accuracy QC analysis
+      qc_hw: false  # Hardy-Weinberg equilibrium test
       qc_replicate: false  # Technical replicate error rate analysis
     parameters:
       <<: *global_params

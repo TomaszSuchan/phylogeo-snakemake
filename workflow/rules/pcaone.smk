@@ -108,10 +108,10 @@ rule plot_pca:
         eigvals=rules.pcaone.output.pcaone_eigenvalues,
         indpopdata=rules.generate_popdata.output.indpopdata
     output:
-        "results/{project}/pcaone/plots/{project}.PCA-{color_by}.pdf"
+        "results/{project}/pcaone/plots/{project}.PCA-PC{pc1}_PC{pc2}-{color_by}.pdf"
     params:
-        pc1 = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pca_plot"]["pc1"],
-        pc2 = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pca_plot"]["pc2"],
+        pc1 = lambda wildcards: wildcards.pc1,
+        pc2 = lambda wildcards: wildcards.pc2,
         color_by = lambda wildcards: wildcards.color_by
     conda:
         "../envs/r-plot.yaml"
