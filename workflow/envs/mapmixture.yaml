@@ -9,3 +9,5 @@ dependencies:
   - r-sf
   - r-terra
   - r-tidyverse
+  - r-stringi
+  - icu
