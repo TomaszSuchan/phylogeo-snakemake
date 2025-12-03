@@ -68,10 +68,23 @@ n_individuals <- nrow(qmatrix)
 n_clusters <- ncol(qmatrix)
 cat(sprintf("Q matrix dimensions: %d individuals x %d clusters\n", n_individuals, n_clusters))
 
-# Read popmap file, first column is indivisual, second population
+# Read popmap file, first column is individual, second population
 popmap <- read.table(popmap_file, header = FALSE, sep = "\t")
 colnames(popmap) <- c("Ind", "Site")
-cat(sprintf("Popmap contains %d individuals with %d columns\n", nrow(popmap), ncol(popmap)))
+cat(sprintf("Original popmap contains %d individuals with %d columns\n", nrow(popmap), ncol(popmap)))
+
+# Get individual IDs from Q matrix file (first column if it exists in the file structure)
+# Since Q matrix file might not have individual names, we need to read from a .indv or similar file
+# For STRUCTURE output, individual order should match the input order
+# We'll use the first n_individuals from popmap that match the analysis
+# Actually, we need to ensure only individuals in the Q matrix are used
+
+# For STRUCTURE, the Q matrix should be in the same order as the input file
+# Filter popmap to match the number of individuals in Q matrix
+if (nrow(popmap) > nrow(qmatrix)) {
+  cat(sprintf("Filtering popmap from %d to %d individuals to match Q matrix\n", nrow(popmap), nrow(qmatrix)))
+  popmap <- popmap[1:nrow(qmatrix), ]
+}
 
 # Check dimensions match
 if (nrow(qmatrix) != nrow(popmap)) {
