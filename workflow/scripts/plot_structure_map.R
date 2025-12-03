@@ -12,7 +12,13 @@ qmatrix_file <- snakemake@input[["qmatrix"]]
 popmap_file <- snakemake@input[["popmap"]]
 popdata_file <- snakemake@params[["popdata"]]
 output_plot <- snakemake@output[["plot"]]
+output_plot_rds <- snakemake@output[["plot_rds"]]
 output_prefix <- snakemake@params[["output_prefix"]]
+
+# Check if popdata file exists and is not NULL
+if (is.null(popdata_file) || popdata_file == "NULL" || popdata_file == "" || !file.exists(popdata_file)) {
+  stop("ERROR: popdata file not found or not specified. Map plotting requires a popdata file with geographic coordinates. Please specify 'popdata' in your config.yaml under parameters.")
+}
 
 # Plot dimension parameters
 width <- as.numeric(snakemake@params[["width"]])
@@ -145,4 +151,7 @@ ggsave(
   dpi = dpi,
   device = "pdf"
 )
+
+# Save the ggplot object as RDS
+saveRDS(p, file = output_plot_rds)
 
