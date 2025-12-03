@@ -1,6 +1,8 @@
 # Load libraries
 library(RColorBrewer)
 library(ggplot2)
+library(viridis)
+library(scales)
 
 # Debug: working directory
 message("Working directory: ", getwd())
@@ -18,8 +20,9 @@ print(snakemake@output)
 message("Snakemake params:")
 print(snakemake@params)
 
-# Simple PCA plotting function
-plot_pca <- function(individuals, eigenvecs, eigenvals, popdata, color_by = 2, pc1 = 1, pc2 = 2) {
+# Enhanced PCA plotting function with missing data support
+plot_pca <- function(individuals, eigenvecs, eigenvals, popdata,
+                     indmiss = NULL, color_by_name = NULL, pc1 = 1, pc2 = 2) {
 
   # Create data frame with PC scores
   pca_df <- data.frame(
@@ -28,24 +31,60 @@ plot_pca <- function(individuals, eigenvecs, eigenvals, popdata, color_by = 2, p
     PC2 = eigenvecs[, pc2]
   )
 
-  # Merge with population data (use first column of popdata for merging)
-  ind_col <- colnames(popdata)[1]
-  plot_df <- merge(pca_df, popdata, by.x = "Ind", by.y = ind_col)
-
   # Calculate variance explained
   var_exp <- eigenvals / sum(eigenvals) * 100
 
-  # Create plot
-  color_col <- colnames(popdata)[color_by]
+  # Check if we should color by missing data
+  if (!is.null(color_by_name) && color_by_name == "missing") {
+    # Color by missing data rate
+    if (is.null(indmiss)) {
+      stop("color_by='missing' but no missing data provided")
+    }
 
-  p <- ggplot(plot_df, aes(x = PC1, y = PC2, color = .data[[color_col]])) +
-    geom_point(size = 3, alpha = 0.7) +
-    labs(
-      x = sprintf("PC%d (%.1f%%)", pc1, var_exp[pc1]),
-      y = sprintf("PC%d (%.1f%%)", pc2, var_exp[pc2]),
-      color = color_col
-    ) +
-    theme_bw()
+    plot_df <- merge(pca_df, indmiss[, c("INDV", "F_MISS")],
+                     by.x = "Ind", by.y = "INDV", all.x = TRUE)
+
+    # Check for samples without missing data info
+    if (any(is.na(plot_df$F_MISS))) {
+      warning(sprintf("%d samples lack missing data information", sum(is.na(plot_df$F_MISS))))
+    }
+
+    p <- ggplot(plot_df, aes(x = PC1, y = PC2, color = F_MISS)) +
+      geom_point(size = 3, alpha = 0.7) +
+      scale_color_viridis_c(
+        name = "Missing Data",
+        labels = scales::percent,
+        option = "plasma",
+        direction = -1  # Higher missing = warmer colors
+      ) +
+      labs(
+        x = sprintf("PC%d (%.1f%%)", pc1, var_exp[pc1]),
+        y = sprintf("PC%d (%.1f%%)", pc2, var_exp[pc2])
+      ) +
+      theme_bw() +
+      theme(legend.position = "right")
+
+  } else {
+    # Original categorical coloring by population metadata
+    ind_col <- colnames(popdata)[1]
+    plot_df <- merge(pca_df, popdata, by.x = "Ind", by.y = ind_col)
+
+    # Get color column - handle both name and index
+    if (!is.null(color_by_name) && color_by_name %in% names(popdata)) {
+      color_col <- color_by_name
+    } else {
+      stop(paste("Column", color_by_name, "not found in popdata"))
+    }
+
+    p <- ggplot(plot_df, aes(x = PC1, y = PC2, color = .data[[color_col]])) +
+      geom_point(size = 3, alpha = 0.7) +
+      labs(
+        x = sprintf("PC%d (%.1f%%)", pc1, var_exp[pc1]),
+        y = sprintf("PC%d (%.1f%%)", pc2, var_exp[pc2]),
+        color = color_col
+      ) +
+      theme_bw()
+  }
 
   return(p)
 }
@@ -58,6 +97,22 @@ eigvals_file <- snakemake@input[["eigvals"]]
 popdata_file <- snakemake@input[["indpopdata"]]
 output_pdf   <- snakemake@output[["pdf"]]
 output_rds   <- snakemake@output[["rds"]]
+
+# Read optional missing data input
+indmiss_file <- NULL
+
+if ("indmiss" %in% names(snakemake@input)) {
+  indmiss_input <- snakemake@input[["indmiss"]]
+  # Check if input is non-empty (Snakemake passes empty list [] when not needed)
+  if (length(indmiss_input) > 0 && indmiss_input != "") {
+    indmiss_file <- indmiss_input
+    message("Missing data file specified: ", indmiss_file)
+  } else {
+    message("No missing data file provided (empty input)")
+  }
+} else {
+  message("No 'indmiss' input in snakemake object")
+}
 
 # Debug: check input files exist
 message("eigvecs_file exists? ", file.exists(eigvecs_file))
@@ -81,15 +136,18 @@ eigenvecs <- eigenvecs2[, -c(1,2)]
 eigenvals <- scan(eigvals_file)
 popdata <- read.table(popdata_file, header = TRUE)
 
+# Read missing data if available
+indmiss <- NULL
+if (!is.null(indmiss_file) && file.exists(indmiss_file)) {
+  message("Reading missing data from: ", indmiss_file)
+  indmiss <- read.table(indmiss_file, header = TRUE, stringsAsFactors = FALSE)
+  message("Missing data loaded: ", nrow(indmiss), " individuals")
+  message("Columns: ", paste(names(indmiss), collapse = ", "))
+}
+
 # Debug: show columns in popdata
 message("popdata columns: ", paste(names(popdata), collapse = ", "))
-
-# Convert color_by from column name to index
-if (!color_by_name %in% names(popdata)) {
-  stop(paste("Column", color_by_name, "not found in popdata"))
-}
-color_by_index <- which(names(popdata) == color_by_name)
-message("color_by_index = ", color_by_index)
+message("Requested color_by column: ", color_by_name)
 
 # Generate PCA plot
 plt_pca <- plot_pca(
@@ -97,7 +155,8 @@ plt_pca <- plot_pca(
   eigenvecs = eigenvecs,
   eigenvals = eigenvals,
   popdata = popdata,
-  color_by = color_by_index,
+  indmiss = indmiss,
+  color_by_name = color_by_name,
   pc1 = pc1,
   pc2 = pc2
 )

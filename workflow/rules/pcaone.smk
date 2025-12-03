@@ -108,7 +108,14 @@ rule plot_pca:
     input:
         eigvecs=rules.pcaone.output.pcaone_eigenvectors2,
         eigvals=rules.pcaone.output.pcaone_eigenvalues,
-        indpopdata=rules.generate_popdata.output.indpopdata
+        indpopdata=rules.generate_popdata.output.indpopdata,
+        # Optional missing data input
+        indmiss=lambda wildcards: (
+            "results/{}/filtered_data/{}.biallelic_snps_thinned.imiss".format(wildcards.project, wildcards.project)
+            if (wildcards.color_by == "missing" and
+                config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("include_missing", False))
+            else []
+        )
     output:
         pdf="results/{project}/pcaone/plots/{project}.PCA-PC{pc1}_PC{pc2}-{color_by}.pdf",
         rds="results/{project}/pcaone/plots/{project}.PCA-PC{pc1}_PC{pc2}-{color_by}.rds"
@@ -131,7 +138,14 @@ rule plot_pca_emu:
     input:
         eigvecs=rules.pcaone_emu.output.pcaone_eigenvectors2,
         eigvals=rules.pcaone_emu.output.pcaone_eigenvalues,
-        indpopdata=rules.generate_popdata.output.indpopdata
+        indpopdata=rules.generate_popdata.output.indpopdata,
+        # Optional missing data input (same as plot_pca)
+        indmiss=lambda wildcards: (
+            "results/{}/filtered_data/{}.biallelic_snps_thinned.imiss".format(wildcards.project, wildcards.project)
+            if (wildcards.color_by == "missing" and
+                config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("include_missing", False))
+            else []
+        )
     output:
         pdf="results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-PC{pc1}_PC{pc2}-{color_by}.pdf",
         rds="results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-PC{pc1}_PC{pc2}-{color_by}.rds"
@@ -154,7 +168,14 @@ rule plot_pca_miss:
     input:
         eigvecs=rules.pcaone_miss.output.eigenvectors2,
         eigvals=rules.pcaone_miss.output.eigenvalues,
-        indpopdata=rules.generate_popdata.output.indpopdata
+        indpopdata=rules.generate_popdata.output.indpopdata,
+        # Optional missing data input (uses miss-specific file)
+        indmiss=lambda wildcards: (
+            "results/{}/filtered_data/{}.biallelic_snps_thinned_miss{}.imiss".format(wildcards.project, wildcards.project, wildcards.miss)
+            if (wildcards.color_by == "missing" and
+                config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("include_missing", False))
+            else []
+        )
     output:
         pdf="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-{color_by}.pdf",
         rds="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-{color_by}.rds"

@@ -4,3 +4,5 @@ dependencies:
   - r-base
   - r-ggplot2
   - r-devtools
+  - r-viridis
+  - r-scales

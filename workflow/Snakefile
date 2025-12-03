@@ -133,6 +133,9 @@ def get_all_targets():
                 "results/" + project + "/pcaone/" + project + ".PCA.eigvecs",
                 "results/" + project + "/pcaone/" + project + ".PCA.eigvals"
             ])
+            # Add missing data calculation target
+            if params.get("pca_plot", {}).get("include_missing", False):
+                targets.append("results/" + project + "/filtered_data/" + project + ".biallelic_snps_thinned.imiss")
             # Add plot targets for each PC combination and color grouping
             for pc1, pc2 in pca_combinations:
                 for color_by in PCA_groupings:
@@ -147,6 +150,9 @@ def get_all_targets():
                 "results/" + project + "/pcaone_EMU/" + project + ".PCA_EMU.eigvecs",
                 "results/" + project + "/pcaone_EMU/" + project + ".PCA_EMU.eigvals"
             ])
+            # Add missing data calculation target (reuses same .imiss as pcaone)
+            if params.get("pca_plot", {}).get("include_missing", False):
+                targets.append("results/" + project + "/filtered_data/" + project + ".biallelic_snps_thinned.imiss")
             # Add plot targets for each PC combination and color grouping
             for pc1, pc2 in pca_combinations:
                 for color_by in PCA_groupings:
@@ -164,6 +170,12 @@ def get_all_targets():
                 expand("results/" + project + "/pcaone_miss{miss}/" + project + ".PCA_miss{miss}.eigvals",
                        miss=miss_values)
             ])
+            # Add missing data calculation targets for each threshold
+            if params.get("pca_plot", {}).get("include_missing", False):
+                targets.extend([
+                    expand("results/" + project + "/filtered_data/" + project + ".biallelic_snps_thinned_miss{miss}.imiss",
+                           miss=miss_values)
+                ])
             # Add plot targets for each miss value, PC combination, and color grouping
             for miss in miss_values:
                 for pc1, pc2 in pca_combinations:

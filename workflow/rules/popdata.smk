@@ -49,3 +49,49 @@ rule generate_popdata:
         runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
     script:
         "../scripts/generate_popdata.py"
+
+
+
+rule calculate_missing_indv:
+    input:
+        vcf = rules.thin_vcf.output.vcf
+    output:
+        imiss = "results/{project}/filtered_data/{project}.biallelic_snps_thinned.imiss"
+    log:
+        "logs/{project}/calculate_missing_indv.log"
+    params:
+        out_prefix = lambda wildcards: f"results/{wildcards.project}/filtered_data/{wildcards.project}.biallelic_snps_thinned"
+    conda:
+        "../envs/vcftools.yaml"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    shell:
+        """
+        vcftools --gzvcf {input.vcf} \
+                 --missing-indv \
+                 --out {params.out_prefix} &> {log}
+        """
+
+rule calculate_missing_indv_miss:
+    input:
+        vcf = rules.filter_missing_vcf.output.vcf
+    output:
+        imiss = "results/{project}/filtered_data/{project}.biallelic_snps_thinned_miss{miss}.imiss"
+    log:
+        "logs/{project}/calculate_missing_indv_miss_{miss}.log"
+    params:
+        out_prefix = lambda wildcards: f"results/{wildcards.project}/filtered_data/{wildcards.project}.biallelic_snps_thinned_miss{wildcards.miss}"
+    conda:
+        "../envs/vcftools.yaml"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    shell:
+        """
+        vcftools --gzvcf {input.vcf} \
+                 --missing-indv \
+                 --out {params.out_prefix} &> {log}
+        """
