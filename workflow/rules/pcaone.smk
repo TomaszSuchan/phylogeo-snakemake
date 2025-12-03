@@ -112,8 +112,7 @@ rule plot_pca:
         # Optional missing data input
         indmiss=lambda wildcards: (
             "results/{}/filtered_data/{}.biallelic_snps_thinned.imiss".format(wildcards.project, wildcards.project)
-            if (wildcards.color_by == "missing" and
-                config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("include_missing", False))
+            if config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("include_missing", False)
             else []
         )
     output:
@@ -142,8 +141,7 @@ rule plot_pca_emu:
         # Optional missing data input (same as plot_pca)
         indmiss=lambda wildcards: (
             "results/{}/filtered_data/{}.biallelic_snps_thinned.imiss".format(wildcards.project, wildcards.project)
-            if (wildcards.color_by == "missing" and
-                config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("include_missing", False))
+            if config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("include_missing", False)
             else []
         )
     output:
@@ -172,8 +170,7 @@ rule plot_pca_miss:
         # Optional missing data input (uses miss-specific file)
         indmiss=lambda wildcards: (
             "results/{}/filtered_data/{}.biallelic_snps_thinned_miss{}.imiss".format(wildcards.project, wildcards.project, wildcards.miss)
-            if (wildcards.color_by == "missing" and
-                config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("include_missing", False))
+            if config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("include_missing", False)
             else []
         )
     output:
