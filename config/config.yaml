@@ -69,6 +69,13 @@ parameters: &global_params
     basemap_border: TRUE            # show border around basemap (TRUE/FALSE)
     basemap_border_col: "black"     # color of basemap border
     basemap_border_lwd: 0.1         # line width of basemap border
+    # Structure barplot parameters (based on mapmixture defaults)
+    cluster_cols: NULL              # list of colors for clusters, e.g. ["#f1a340", "#998ec3"]
+    site_dividers: TRUE             # show dividers between sites
+    divider_width: 0.4              # width of site dividers
+    site_order: NULL                # custom site order as list, e.g. ["Site1", "Site2", "Site3"]
+    flip_axis: FALSE                # flip barplot axis
+
 
   ## Structure parameters
   # More run parameters can be tweaked by modifying `data/mainparams` and `data/extraparams`
