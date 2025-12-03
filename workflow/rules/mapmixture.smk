@@ -18,7 +18,8 @@ rule mapmixture_structure:
         popmap = rules.generate_popmap.output.popmap,
         install = rules.install_mapmixture.output
     output:
-        plot = "results/{project}/structure/{project}.structure.K{k}.map.pdf"
+        plot = "results/{project}/structure/plots/{project}.structure.K{k}.map.pdf",
+        plot_rds = "results/{project}/structure/plots/{project}.structure.K{k}.map.rds"
     params:
         popdata=lambda wildcards: config["projects"][wildcards.project]["parameters"]["popdata"],
         output_prefix = "results/{project}/structure/{project}.structure.K{k}",
@@ -66,7 +67,8 @@ rule mapmixture_faststructure:
         popmap = rules.generate_popmap.output.popmap,
         install = rules.install_mapmixture.output
     output:
-        plot = "results/{project}/faststructure/{project}.faststructure.K{k}.map.pdf"
+        plot = "results/{project}/faststructure/plots/{project}.faststructure.K{k}.map.pdf",
+        plot_rds = "results/{project}/faststructure/plots/{project}.faststructure.K{k}.map.rds"
     params:
         popdata=lambda wildcards: config["projects"][wildcards.project]["parameters"]["popdata"],
         output_prefix = "results/{project}/faststructure/{project}.faststructure.K{k}",
@@ -114,7 +116,8 @@ rule mapmixture_admixture:
         popmap = rules.generate_popmap.output.popmap,
         install = rules.install_mapmixture.output
     output:
-        plot = "results/{project}/admixture/{project}.admixture.K{k}.map.pdf"
+        plot = "results/{project}/admixture/plots/{project}.admixture.K{k}.map.pdf",
+        plot_rds = "results/{project}/admixture/plots/{project}.admixture.K{k}.map.rds"
     params:
         popdata=lambda wildcards: config["projects"][wildcards.project]["parameters"]["popdata"],
         output_prefix = "results/{project}/admixture/{project}.admixture.K{k}",
@@ -154,3 +157,93 @@ rule mapmixture_admixture:
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
     script:
         "../scripts/plot_structure_map.R"
+
+# Rule to generate structure barplots from STRUCTURE results
+rule barplot_structure:
+    input:
+        qmatrix = "results/{project}/structure/{project}.structure.K{k}.Qmatrix.txt",
+        popmap = rules.generate_popmap.output.popmap,
+        install = rules.install_mapmixture.output
+    output:
+        barplot = "results/{project}/structure/plots/{project}.structure.K{k}.barplot.pdf",
+        barplot_rds = "results/{project}/structure/plots/{project}.structure.K{k}.barplot.rds"
+    params:
+        output_prefix = "results/{project}/structure/{project}.structure.K{k}",
+        width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("barplot_width", 10),
+        height = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("barplot_height", 6),
+        dpi = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("dpi", 300),
+        cluster_cols = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("cluster_cols", "NULL"),
+        site_dividers = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("site_dividers", True),
+        divider_width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("divider_width", 0.4),
+        site_order = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("site_order", "NULL"),
+        flip_axis = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("flip_axis", False)
+    log:
+        "logs/{project}/structure_barplot.K{k}.log"
+    conda:
+        "../envs/mapmixture.yaml"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    script:
+        "../scripts/plot_structure_barplots.R"
+
+# Rule to generate structure barplots from fastStructure results
+rule barplot_faststructure:
+    input:
+        qmatrix = "results/{project}/faststructure/{project}.faststructure.{k}.meanQ",
+        popmap = rules.generate_popmap.output.popmap,
+        install = rules.install_mapmixture.output
+    output:
+        barplot = "results/{project}/faststructure/plots/{project}.faststructure.K{k}.barplot.pdf",
+        barplot_rds = "results/{project}/faststructure/plots/{project}.faststructure.K{k}.barplot.rds"
+    params:
+        output_prefix = "results/{project}/faststructure/{project}.faststructure.K{k}",
+        width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("barplot_width", 10),
+        height = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("barplot_height", 6),
+        dpi = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("dpi", 300),
+        cluster_cols = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("cluster_cols", "NULL"),
+        site_dividers = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("site_dividers", True),
+        divider_width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("divider_width", 0.4),
+        site_order = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("site_order", "NULL"),
+        flip_axis = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("flip_axis", False)
+    log:
+        "logs/{project}/faststructure_barplot.K{k}.log"
+    conda:
+        "../envs/mapmixture.yaml"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    script:
+        "../scripts/plot_structure_barplots.R"
+
+# Rule to generate structure barplots from ADMIXTURE results
+rule barplot_admixture:
+    input:
+        qmatrix = "results/{project}/admixture/{project}.biallelic_snps_thinned.{k}.Q",
+        popmap = rules.generate_popmap.output.popmap,
+        install = rules.install_mapmixture.output
+    output:
+        barplot = "results/{project}/admixture/plots/{project}.admixture.K{k}.barplot.pdf",
+        barplot_rds = "results/{project}/admixture/plots/{project}.admixture.K{k}.barplot.rds"
+    params:
+        output_prefix = "results/{project}/admixture/{project}.admixture.K{k}",
+        width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("barplot_width", 10),
+        height = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("barplot_height", 6),
+        dpi = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("dpi", 300),
+        cluster_cols = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("cluster_cols", "NULL"),
+        site_dividers = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("site_dividers", True),
+        divider_width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("divider_width", 0.4),
+        site_order = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("site_order", "NULL"),
+        flip_axis = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("flip_axis", False)
+    log:
+        "logs/{project}/admixture_barplot.K{k}.log"
+    conda:
+        "../envs/mapmixture.yaml"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    script:
+        "../scripts/plot_structure_barplots.R"
