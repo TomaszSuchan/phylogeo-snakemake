@@ -8,6 +8,6 @@ dependencies:
   - r-ggplot2=3.4.0
   - r-sf
   - r-terra
-  - icu>=75
-  - r-stringi>=1.8
   - r-tidyverse
+  - r-stringi
+  - icu
