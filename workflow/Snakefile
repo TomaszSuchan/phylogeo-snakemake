@@ -131,13 +131,15 @@ def get_all_targets():
         if analyses.get("pcaone", False):
             targets.extend([
                 "results/" + project + "/pcaone/" + project + ".PCA.eigvecs",
-                "results/" + project + "/pcaone/" + project + ".PCA.eigvals",
-                expand("results/{project}/pcaone/plots/{project}.PCA-PC{pc1}_PC{pc2}-{color_by}.pdf",
-                    project=project,
-                    pc1=[combo[0] for combo in pca_combinations],
-                    pc2=[combo[1] for combo in pca_combinations],
-                    color_by=PCA_groupings)
+                "results/" + project + "/pcaone/" + project + ".PCA.eigvals"
             ])
+            # Add plot targets for each PC combination and color grouping
+            for pc1, pc2 in pca_combinations:
+                for color_by in PCA_groupings:
+                    targets.extend([
+                        f"results/{project}/pcaone/plots/{project}.PCA-PC{pc1}_PC{pc2}-{color_by}.pdf",
+                        f"results/{project}/pcaone/plots/{project}.PCA-PC{pc1}_PC{pc2}-{color_by}.rds"
+                    ])
 
         # PCAone targets (EMU)
         if analyses.get("pcaone_emu", False):
@@ -145,6 +147,13 @@ def get_all_targets():
                 "results/" + project + "/pcaone_EMU/" + project + ".PCA_EMU.eigvecs",
                 "results/" + project + "/pcaone_EMU/" + project + ".PCA_EMU.eigvals"
             ])
+            # Add plot targets for each PC combination and color grouping
+            for pc1, pc2 in pca_combinations:
+                for color_by in PCA_groupings:
+                    targets.extend([
+                        f"results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-PC{pc1}_PC{pc2}-{color_by}.pdf",
+                        f"results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-PC{pc1}_PC{pc2}-{color_by}.rds"
+                    ])
 
         # PCAone targets (with coverage thresholds)
         if analyses.get("pcaone_miss", False):
@@ -155,6 +164,14 @@ def get_all_targets():
                 expand("results/" + project + "/pcaone_miss{miss}/" + project + ".PCA_miss{miss}.eigvals",
                        miss=miss_values)
             ])
+            # Add plot targets for each miss value, PC combination, and color grouping
+            for miss in miss_values:
+                for pc1, pc2 in pca_combinations:
+                    for color_by in PCA_groupings:
+                        targets.extend([
+                            f"results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-{color_by}.pdf",
+                            f"results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-{color_by}.rds"
+                        ])
         
         # VCF2PCACluster targets
         if analyses.get("vcf2pcacluster", False):
