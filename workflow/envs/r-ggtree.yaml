@@ -2,8 +2,8 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - r-base>=4.0
-  - r-ggplot2=3.4.0
+  - r-base
+  - r-ggplot2
   - bioconductor-ggtree
   - bioconductor-treeio
   - r-ape

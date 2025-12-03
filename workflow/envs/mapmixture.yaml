@@ -3,11 +3,10 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - r-base>=4.2
+  - r-base
   - r-devtools
-  - r-ggplot2=3.4.0
+  - r-ggplot2
   - r-sf
   - r-terra
   - r-tidyverse
   - r-stringi
-  - icu
