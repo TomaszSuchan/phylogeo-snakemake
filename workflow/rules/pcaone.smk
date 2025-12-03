@@ -6,6 +6,7 @@ rule pcaone_emu:
         fam = rules.vcf_to_plink.output.fam
     output:
         pcaone_eigenvectors = "results/{project}/pcaone_EMU/{project}.PCA_EMU.eigvecs",
+        pcaone_eigenvectors2 = "results/{project}/pcaone_EMU/{project}.PCA_EMU.eigvecs2",
         pcaone_eigenvalues = "results/{project}/pcaone_EMU/{project}.PCA_EMU.eigvals"
     log:
         "logs/{project}/pcaone_emu.log"
@@ -76,6 +77,7 @@ rule pcaone_miss:
         fam = "results/{project}/filtered_data/{project}.biallelic_snps_thinned_miss{miss}.fam"
     output:
         eigenvectors = "results/{project}/pcaone_miss{miss}/{project}.PCA_miss{miss}.eigvecs",
+        eigenvectors2 = "results/{project}/pcaone_miss{miss}/{project}.PCA_miss{miss}.eigvecs2",
         eigenvalues = "results/{project}/pcaone_miss{miss}/{project}.PCA_miss{miss}.eigvals"
     log:
         "logs/{project}/pcaone_miss_{miss}.log"
@@ -108,7 +110,44 @@ rule plot_pca:
         eigvals=rules.pcaone.output.pcaone_eigenvalues,
         indpopdata=rules.generate_popdata.output.indpopdata
     output:
-        "results/{project}/pcaone/plots/{project}.PCA-PC{pc1}_PC{pc2}-{color_by}.pdf"
+        pdf="results/{project}/pcaone/plots/{project}.PCA-PC{pc1}_PC{pc2}-{color_by}.pdf",
+        rds="results/{project}/pcaone/plots/{project}.PCA-PC{pc1}_PC{pc2}-{color_by}.rds"
+    params:
+        pc1 = lambda wildcards: wildcards.pc1,
+        pc2 = lambda wildcards: wildcards.pc2,
+        color_by = lambda wildcards: wildcards.color_by
+    conda:
+        "../envs/r-plot.yaml"
+    script:
+        "../scripts/plot_pca.R"
+
+# Rule to plot PCA EMU
+rule plot_pca_emu:
+    input:
+        eigvecs=rules.pcaone_emu.output.pcaone_eigenvectors2,
+        eigvals=rules.pcaone_emu.output.pcaone_eigenvalues,
+        indpopdata=rules.generate_popdata.output.indpopdata
+    output:
+        pdf="results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-PC{pc1}_PC{pc2}-{color_by}.pdf",
+        rds="results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-PC{pc1}_PC{pc2}-{color_by}.rds"
+    params:
+        pc1 = lambda wildcards: wildcards.pc1,
+        pc2 = lambda wildcards: wildcards.pc2,
+        color_by = lambda wildcards: wildcards.color_by
+    conda:
+        "../envs/r-plot.yaml"
+    script:
+        "../scripts/plot_pca.R"
+
+# Rule to plot PCA for each miss threshold
+rule plot_pca_miss:
+    input:
+        eigvecs=rules.pcaone_miss.output.eigenvectors2,
+        eigvals=rules.pcaone_miss.output.eigenvalues,
+        indpopdata=rules.generate_popdata.output.indpopdata
+    output:
+        pdf="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-{color_by}.pdf",
+        rds="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-{color_by}.rds"
     params:
         pc1 = lambda wildcards: wildcards.pc1,
         pc2 = lambda wildcards: wildcards.pc2,

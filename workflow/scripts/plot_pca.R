@@ -30,7 +30,8 @@ message("plot_PCA.R loaded successfully")
 eigvecs_file <- snakemake@input[["eigvecs"]]
 eigvals_file <- snakemake@input[["eigvals"]]
 popdata_file <- snakemake@input[["indpopdata"]]
-output_file  <- snakemake@output[[1]]
+output_pdf   <- snakemake@output[["pdf"]]
+output_rds   <- snakemake@output[["rds"]]
 
 # Debug: check input files exist
 message("eigvecs_file exists? ", file.exists(eigvecs_file))
@@ -78,7 +79,12 @@ plt_pca <- plot_pca(
 # Debug: check plot object
 message("Generated PCA plot object: ", class(plt_pca))
 
-# Save plot
-dir.create(dirname(output_file), recursive = TRUE, showWarnings = FALSE)
-ggplot2::ggsave(output_file, plt_pca, width = 6, height = 5, dpi = 300)
-message("Plot saved to ", output_file)
+# Save PDF
+dir.create(dirname(output_pdf), recursive = TRUE, showWarnings = FALSE)
+ggplot2::ggsave(output_pdf, plt_pca, width = 6, height = 5, dpi = 300)
+message("PDF saved to ", output_pdf)
+
+# Save RDS (ggplot2 object)
+dir.create(dirname(output_rds), recursive = TRUE, showWarnings = FALSE)
+saveRDS(plt_pca, output_rds)
+message("RDS saved to ", output_rds)
