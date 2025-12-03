@@ -40,11 +40,23 @@ cat(sprintf("Q matrix dimensions: %d individuals x %d clusters\n", n_individuals
 # Read popmap file, first column is individual, second population
 popmap <- read.table(popmap_file, header = FALSE, sep = "\t")
 colnames(popmap) <- c("Ind", "Site")
-cat(sprintf("Popmap contains %d individuals with %d columns\n", nrow(popmap), ncol(popmap)))
+cat(sprintf("Original popmap contains %d individuals with %d columns\n", nrow(popmap), ncol(popmap)))
+
+# Remove duplicate individuals (keep first occurrence)
+popmap <- popmap %>%
+  distinct(Ind, .keep_all = TRUE)
+
+cat(sprintf("After removing duplicates, popmap contains %d individuals\n", nrow(popmap)))
+
+# Filter popmap to match the number of individuals in Q matrix
+if (nrow(popmap) > nrow(qmatrix)) {
+  cat(sprintf("Filtering popmap from %d to %d individuals to match Q matrix\n", nrow(popmap), nrow(qmatrix)))
+  popmap <- popmap[1:nrow(qmatrix), ]
+}
 
 # Check dimensions match
 if (nrow(qmatrix) != nrow(popmap)) {
-  stop(sprintf("Q matrix has %d individuals but popmap has %d individuals",
+  stop(sprintf("BŁĄD: Q matrix has %d individuals but popmap has %d individuals",
                nrow(qmatrix), nrow(popmap)))
 }
 
