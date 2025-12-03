@@ -116,11 +116,45 @@ sites_in_popdata <- unique(popdata$Site)
 missing_sites <- setdiff(sites_in_qmatrix, sites_in_popdata)
 
 if (length(missing_sites) > 0) {
-  warning(sprintf("Warning: %d sites from qmatrix_with_data are missing in popdata: %s",
-                  length(missing_sites), paste(missing_sites, collapse = ", ")))
-} else {
-  cat("All sites from qmatrix_with_data have corresponding data in popdata\n")
+  cat(sprintf("ERROR: %d sites from qmatrix_with_data are missing in popdata:\n", length(missing_sites)))
+  cat(paste(missing_sites, collapse = "\n"))
+  cat("\n")
+  stop("Sites in Q matrix are missing from popdata file")
 }
+
+cat("All sites from qmatrix_with_data have corresponding data in popdata\n")
+
+# Debug: check for extra sites in popdata
+extra_sites <- setdiff(sites_in_popdata, sites_in_qmatrix)
+if (length(extra_sites) > 0) {
+  cat(sprintf("Found %d extra sites in popdata that are not in qmatrix: %s\n",
+              length(extra_sites), paste(head(extra_sites, 10), collapse = ", ")))
+  cat("Filtering popdata to only include sites in qmatrix\n")
+  # Ensure exact match - no extra sites
+  popdata <- popdata %>%
+    filter(Site %in% sites_in_qmatrix)
+  # Recalculate after filtering
+  sites_in_popdata <- unique(popdata$Site)
+  cat(sprintf("After removing extra sites, popdata contains %d sites\n", length(sites_in_popdata)))
+}
+
+# Debug: print first few sites from each
+cat("\nFirst 10 sites in qmatrix_with_data:\n")
+print(head(sites_in_qmatrix, 10))
+cat("\nFirst 10 sites in popdata:\n")
+print(head(sites_in_popdata, 10))
+
+# Final validation: ensure sites match exactly
+if (!setequal(sites_in_qmatrix, sites_in_popdata)) {
+  cat("\nERROR: Site mismatch detected!\n")
+  cat(sprintf("Sites in qmatrix but not in popdata: %s\n",
+              paste(setdiff(sites_in_qmatrix, sites_in_popdata), collapse = ", ")))
+  cat(sprintf("Sites in popdata but not in qmatrix: %s\n",
+              paste(setdiff(sites_in_popdata, sites_in_qmatrix), collapse = ", ")))
+  stop("Site names do not match between qmatrix and popdata")
+}
+
+cat(sprintf("\nValidation passed: %d sites match between qmatrix and popdata\n", length(sites_in_qmatrix)))
 
 # Run mapmixture with all parameters
 p <- mapmixture(
