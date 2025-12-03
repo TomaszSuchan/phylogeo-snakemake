@@ -116,6 +116,7 @@ rule plot_pca:
         pc1 = lambda wildcards: wildcards.pc1,
         pc2 = lambda wildcards: wildcards.pc2,
         color_by = lambda wildcards: wildcards.color_by
+    group: "plot_pca"
     conda:
         "../envs/r-plot.yaml"
     script:
@@ -134,6 +135,7 @@ rule plot_pca_emu:
         pc1 = lambda wildcards: wildcards.pc1,
         pc2 = lambda wildcards: wildcards.pc2,
         color_by = lambda wildcards: wildcards.color_by
+    group: "plot_pca"
     conda:
         "../envs/r-plot.yaml"
     script:
@@ -152,6 +154,7 @@ rule plot_pca_miss:
         pc1 = lambda wildcards: wildcards.pc1,
         pc2 = lambda wildcards: wildcards.pc2,
         color_by = lambda wildcards: wildcards.color_by
+    group: "plot_pca"
     conda:
         "../envs/r-plot.yaml"
     script:
