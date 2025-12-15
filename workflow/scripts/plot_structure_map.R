@@ -116,14 +116,19 @@ cat(sprintf("After filtering, popdata contains %d individuals\n", nrow(popdata))
 # Create Site names based on coordinates to group individuals at same location
 # This allows mapmixture to aggregate individuals at the same coordinates into one pie chart
 popdata <- popdata %>%
-  mutate(Site = paste0("Loc_", round(Lat, 6), "_", round(Lon, 6)))
+  mutate(Site_coord = paste0("Loc_", round(Lat, 6), "_", round(Lon, 6)))
 
 # Update qmatrix_with_data to use the same coordinate-based Site names
+# The left_join will create Site.x (original) and Site_coord, then we clean up
 qmatrix_with_data <- qmatrix_with_data %>%
-  left_join(popdata %>% select(Ind, Site), by = "Ind") %>%
-  select(Site, Ind, everything()) %>%
-  select(-Site.x) %>%
-  rename(Site = Site.y)
+  left_join(popdata %>% select(Ind, Site_coord), by = "Ind") %>%
+  select(-Site) %>%  # Remove original Site column
+  rename(Site = Site_coord) %>%
+  select(Site, Ind, everything())
+
+# Also rename Site_coord to Site in popdata for consistency
+popdata <- popdata %>%
+  rename(Site = Site_coord)
 
 cat(sprintf("Created %d unique location-based sites from %d individuals\n",
             length(unique(popdata$Site)), nrow(popdata)))
