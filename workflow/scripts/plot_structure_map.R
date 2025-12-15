@@ -99,42 +99,25 @@ colnames(qmatrix_with_data)[2] <- "Ind"
 colnames(qmatrix_with_data) <- gsub("V", "Cluster", colnames(qmatrix_with_data))
 
 # Read indpopdata (generated file has columns: Ind, Site, Lat, Lon, ...)
-# Select only the columns we need: Ind, Lat, Lon
+# The Site column from indpopdata already represents the correct individual-location mapping
 indpopdata <- read.table(indpopdata_file, header = TRUE, sep = "\t")
-popdata <- indpopdata[, c("Ind", "Lat", "Lon")]
 
 # Get unique individuals from qmatrix_with_data
 inds_in_qmatrix <- unique(qmatrix_with_data$Ind)
 cat(sprintf("Found %d unique individuals in qmatrix_with_data\n", length(inds_in_qmatrix)))
 
-# Filter popdata to keep only individuals that are in qmatrix_with_data
-popdata <- popdata %>%
+# Filter indpopdata to keep only individuals that are in qmatrix_with_data
+indpopdata <- indpopdata %>%
   filter(Ind %in% inds_in_qmatrix)
 
-cat(sprintf("After filtering, popdata contains %d individuals\n", nrow(popdata)))
+cat(sprintf("After filtering, indpopdata contains %d individuals\n", nrow(indpopdata)))
 
-# Create Site names based on coordinates to group individuals at same location
-# This allows mapmixture to aggregate individuals at the same coordinates into one pie chart
-popdata <- popdata %>%
-  mutate(Site_coord = paste0("Loc_", round(Lat, 6), "_", round(Lon, 6)))
+# The qmatrix_with_data already has the correct Site from popmap (via indpopdata)
+# Just verify the Site names match between qmatrix_with_data and indpopdata
+cat(sprintf("qmatrix_with_data has %d unique sites\n", length(unique(qmatrix_with_data$Site))))
 
-# Update qmatrix_with_data to use the same coordinate-based Site names
-# The left_join will create Site.x (original) and Site_coord, then we clean up
-qmatrix_with_data <- qmatrix_with_data %>%
-  left_join(popdata %>% select(Ind, Site_coord), by = "Ind") %>%
-  select(-Site) %>%  # Remove original Site column
-  rename(Site = Site_coord) %>%
-  select(Site, Ind, everything())
-
-# Also rename Site_coord to Site in popdata for consistency
-popdata <- popdata %>%
-  rename(Site = Site_coord)
-
-cat(sprintf("Created %d unique location-based sites from %d individuals\n",
-            length(unique(popdata$Site)), nrow(popdata)))
-
-# Now create coords_df with unique sites and their coordinates
-coords_df <- popdata %>%
+# Create coords_df with unique sites and their coordinates from indpopdata
+coords_df <- indpopdata %>%
   select(Site, Lat, Lon) %>%
   distinct(Site, .keep_all = TRUE)
 
