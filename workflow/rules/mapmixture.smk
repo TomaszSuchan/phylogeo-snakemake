@@ -16,13 +16,12 @@ rule mapmixture_structure:
     input:
         qmatrix = "results/{project}/structure/{project}.structure.K{k}.Qmatrix.txt",
         popmap = rules.generate_popmap.output.popmap,
-        popdata = rules.generate_popdata.output.indpopdata,
+        indpopdata = rules.generate_popdata.output.indpopdata,
         install = rules.install_mapmixture.output
     output:
         plot = "results/{project}/structure/plots/{project}.structure.K{k}.map.pdf",
         plot_rds = "results/{project}/structure/plots/{project}.structure.K{k}.map.rds"
     params:
-        popdata=lambda wildcards: config["projects"][wildcards.project]["parameters"]["popdata"],
         output_prefix = "results/{project}/structure/{project}.structure.K{k}",
         width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("width", 10),
         height = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("height", 8),
@@ -66,13 +65,12 @@ rule mapmixture_faststructure:
     input:
         qmatrix = "results/{project}/faststructure/{project}.faststructure.{k}.meanQ",
         popmap = rules.generate_popmap.output.popmap,
-        popdata = rules.generate_popdata.output.indpopdata,
+        indpopdata = rules.generate_popdata.output.indpopdata,
         install = rules.install_mapmixture.output
     output:
         plot = "results/{project}/faststructure/plots/{project}.faststructure.K{k}.map.pdf",
         plot_rds = "results/{project}/faststructure/plots/{project}.faststructure.K{k}.map.rds"
     params:
-        popdata=lambda wildcards: config["projects"][wildcards.project]["parameters"]["popdata"],
         output_prefix = "results/{project}/faststructure/{project}.faststructure.K{k}",
         width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("width", 10),
         height = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("height", 8),
@@ -116,13 +114,12 @@ rule mapmixture_admixture:
     input:
         qmatrix = "results/{project}/admixture/{project}.biallelic_snps_thinned.{k}.Q",
         popmap = rules.generate_popmap.output.popmap,
-        popdata = rules.generate_popdata.output.indpopdata,
+        indpopdata = rules.generate_popdata.output.indpopdata,
         install = rules.install_mapmixture.output
     output:
         plot = "results/{project}/admixture/plots/{project}.admixture.K{k}.map.pdf",
         plot_rds = "results/{project}/admixture/plots/{project}.admixture.K{k}.map.rds"
     params:
-        popdata=lambda wildcards: config["projects"][wildcards.project]["parameters"]["popdata"],
         output_prefix = "results/{project}/admixture/{project}.admixture.K{k}",
         width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("width", 10),
         height = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("height", 8),

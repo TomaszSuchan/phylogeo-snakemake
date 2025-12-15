@@ -10,14 +10,14 @@ pdf(NULL)
 # Snakemake inputs/outputs
 qmatrix_file <- snakemake@input[["qmatrix"]]
 popmap_file <- snakemake@input[["popmap"]]
-popdata_file <- snakemake@params[["popdata"]]
+indpopdata_file <- snakemake@input[["indpopdata"]]  # Read from input (generated indpopdata)
 output_plot <- snakemake@output[["plot"]]
 output_plot_rds <- snakemake@output[["plot_rds"]]
 output_prefix <- snakemake@params[["output_prefix"]]
 
-# Check if popdata file exists and is not NULL
-if (is.null(popdata_file) || popdata_file == "NULL" || popdata_file == "" || !file.exists(popdata_file)) {
-  stop("ERROR: popdata file not found or not specified. Map plotting requires a popdata file with geographic coordinates. Please specify 'popdata' in your config.yaml under parameters.")
+# Check if indpopdata file exists and is not NULL
+if (is.null(indpopdata_file) || indpopdata_file == "NULL" || indpopdata_file == "" || !file.exists(indpopdata_file)) {
+  stop("ERROR: indpopdata file not found or not specified. Map plotting requires a popdata file with geographic coordinates. Please specify 'popdata' in your config.yaml under parameters.")
 }
 
 # Plot dimension parameters
@@ -98,55 +98,62 @@ colnames(qmatrix_with_data)[1] <- "Site"
 colnames(qmatrix_with_data)[2] <- "Ind"
 colnames(qmatrix_with_data) <- gsub("V", "Cluster", colnames(qmatrix_with_data))
 
-# Read popdata
-popdata <- read.table(popdata_file, header = TRUE, sep = "\t")[,c(1,2,3)]
+# Read indpopdata (generated file has columns: Ind, Site, Lat, Lon, ...)
+# Select only the columns we need: Ind, Lat, Lon
+indpopdata <- read.table(indpopdata_file, header = TRUE, sep = "\t")
+popdata <- indpopdata[, c("Ind", "Lat", "Lon")]
 
-# Get unique sites from qmatrix_with_data
-sites_in_qmatrix <- unique(qmatrix_with_data$Site)
-cat(sprintf("Found %d unique sites in qmatrix_with_data\n", length(sites_in_qmatrix)))
+# Get unique individuals from qmatrix_with_data
+inds_in_qmatrix <- unique(qmatrix_with_data$Ind)
+cat(sprintf("Found %d unique individuals in qmatrix_with_data\n", length(inds_in_qmatrix)))
 
-# Filter popdata to keep only sites that are in qmatrix_with_data
+# Filter popdata to keep only individuals that are in qmatrix_with_data
 popdata <- popdata %>%
-  filter(Site %in% sites_in_qmatrix) %>%
+  filter(Ind %in% inds_in_qmatrix)
+
+cat(sprintf("After filtering, popdata contains %d individuals\n", nrow(popdata)))
+
+# Create Site names based on coordinates to group individuals at same location
+# This allows mapmixture to aggregate individuals at the same coordinates into one pie chart
+popdata <- popdata %>%
+  mutate(Site = paste0("Loc_", round(Lat, 6), "_", round(Lon, 6)))
+
+# Update qmatrix_with_data to use the same coordinate-based Site names
+qmatrix_with_data <- qmatrix_with_data %>%
+  left_join(popdata %>% select(Ind, Site), by = "Ind") %>%
+  select(Site, Ind, everything()) %>%
+  select(-Site.x) %>%
+  rename(Site = Site.y)
+
+cat(sprintf("Created %d unique location-based sites from %d individuals\n",
+            length(unique(popdata$Site)), nrow(popdata)))
+
+# Now create coords_df with unique sites and their coordinates
+coords_df <- popdata %>%
+  select(Site, Lat, Lon) %>%
   distinct(Site, .keep_all = TRUE)
 
-cat(sprintf("After filtering and removing duplicates, popdata contains %d sites\n", nrow(popdata)))
+cat(sprintf("Coords dataframe has %d unique sites\n", nrow(coords_df)))
 
-# Check whether all sites from qmatrix_with_data have data in popdata
-sites_in_popdata <- unique(popdata$Site)
-missing_sites <- setdiff(sites_in_qmatrix, sites_in_popdata)
+# Validate that all sites from qmatrix_with_data have coordinates
+sites_in_qmatrix <- unique(qmatrix_with_data$Site)
+sites_in_coords <- unique(coords_df$Site)
+missing_sites <- setdiff(sites_in_qmatrix, sites_in_coords)
 
 if (length(missing_sites) > 0) {
-  cat(sprintf("ERROR: %d sites from qmatrix_with_data are missing in popdata:\n", length(missing_sites)))
+  cat(sprintf("ERROR: %d sites from qmatrix_with_data are missing in coords_df:\n", length(missing_sites)))
   cat(paste(missing_sites, collapse = "\n"))
   cat("\n")
-  stop("Sites in Q matrix are missing from popdata file")
+  stop("Sites in Q matrix are missing from coordinates file")
 }
 
-cat("All sites from qmatrix_with_data have corresponding data in popdata\n")
-
-# Debug: print first few sites from each
-cat("\nFirst 10 sites in qmatrix_with_data:\n")
-print(head(sites_in_qmatrix, 10))
-cat("\nFirst 10 sites in popdata:\n")
-print(head(sites_in_popdata, 10))
-
-# Final validation: ensure sites match exactly
-if (!setequal(sites_in_qmatrix, sites_in_popdata)) {
-  cat("\nERROR: Site mismatch detected!\n")
-  cat(sprintf("Sites in qmatrix but not in popdata: %s\n",
-              paste(setdiff(sites_in_qmatrix, sites_in_popdata), collapse = ", ")))
-  cat(sprintf("Sites in popdata but not in qmatrix: %s\n",
-              paste(setdiff(sites_in_popdata, sites_in_qmatrix), collapse = ", ")))
-  stop("Site names do not match between qmatrix and popdata")
-}
-
-cat(sprintf("\nValidation passed: %d sites match between qmatrix and popdata\n", length(sites_in_qmatrix)))
+cat(sprintf("\nValidation passed: %d unique sites with coordinates for %d individuals\n",
+            nrow(coords_df), nrow(qmatrix_with_data)))
 
 # Run mapmixture with all parameters
 p <- mapmixture(
   admixture_df = qmatrix_with_data,
-  coords_df = popdata,
+  coords_df = coords_df,
   boundary = if (length(boundary) == 0 || is.null(boundary) || boundary == "NULL") NULL else eval(parse(text = boundary)),
   crs = crs,
   basemap = if (length(basemap) == 0 || is.null(basemap) || basemap == "NULL") NULL else basemap,
