@@ -7,6 +7,11 @@ library(mapmixture)
 # Prevent creation of Rplots.pdf
 pdf(NULL)
 
+# Redirect all output to log file
+log_file <- file(snakemake@log[[1]], open = "wt")
+sink(log_file, type = "output")
+sink(log_file, type = "message")
+
 # Snakemake inputs/outputs
 qmatrix_file <- snakemake@input[["qmatrix"]]
 popmap_file <- snakemake@input[["popmap"]]
@@ -260,4 +265,9 @@ message(sprintf("Final map includes:\n"))
 message(sprintf("  - %d sites\n", nrow(coords_df)))
 message(sprintf("  - %d individuals\n", nrow(qmatrix_with_data)))
 message(sprintf("  - %d genetic clusters (K)\n", n_clusters))
+
+# Close log file sinks
+sink(type = "message")
+sink(type = "output")
+close(log_file)
 
