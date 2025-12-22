@@ -1,7 +1,7 @@
 # Load libraries
 library(RColorBrewer)
 library(ggplot2)
-library(viridis)
+library(RColorBrewer)
 library(scales)
 
 # Debug: working directory
@@ -22,7 +22,8 @@ print(snakemake@params)
 
 # Enhanced PCA plotting function with missing data support
 plot_pca <- function(individuals, eigenvecs, eigenvals, popdata,
-                     indmiss = NULL, color_by_name = NULL, pc1 = 1, pc2 = 2) {
+                     indmiss = NULL, color_by_name = NULL, pc1 = 1, pc2 = 2,
+                     pca_colors = NULL) {
 
   # Create data frame with PC scores
   pca_df <- data.frame(
@@ -49,13 +50,13 @@ plot_pca <- function(individuals, eigenvecs, eigenvals, popdata,
       warning(sprintf("%d samples lack missing data information", sum(is.na(plot_df$F_MISS))))
     }
 
-    p <- ggplot(plot_df, aes(x = PC1, y = PC2, color = F_MISS)) +
-      geom_point(size = 3, alpha = 0.7) +
-      scale_color_viridis_c(
+    p <- ggplot(plot_df, aes(x = PC1, y = PC2, fill = F_MISS)) +
+      geom_point(size = 3, alpha = 0.7, pch = 21, color = "black") +
+      scale_fill_distiller(
         name = "Missing Data",
         labels = scales::percent,
-        option = "plasma",
-        direction = -1  # Higher missing = warmer colors
+        palette = "YlOrBr",
+        direction = 1  # Higher missing = darker colors
       ) +
       labs(
         x = sprintf("PC%d (%.1f%%)", pc1, var_exp[pc1]),
@@ -67,7 +68,25 @@ plot_pca <- function(individuals, eigenvecs, eigenvals, popdata,
   } else {
     # Original categorical coloring by population metadata
     ind_col <- colnames(popdata)[1]
-    plot_df <- merge(pca_df, popdata, by.x = "Ind", by.y = ind_col)
+
+    # Debug: show sample counts before merge
+    message(sprintf("PCA samples: %d, Popdata samples: %d", nrow(pca_df), nrow(popdata)))
+
+    plot_df <- merge(pca_df, popdata, by.x = "Ind", by.y = ind_col, all.x = TRUE)
+
+    message(sprintf("After merge: %d samples", nrow(plot_df)))
+
+    # Check for samples without metadata
+    if (any(is.na(plot_df[[2]]))) {  # Check if any metadata columns are NA
+      n_missing <- sum(is.na(plot_df[[2]]))
+      missing_samples <- plot_df$Ind[is.na(plot_df[[2]])]
+      warning(sprintf("%d samples lack population metadata and will be excluded from plot:", n_missing))
+      warning(paste(head(missing_samples, 10), collapse = ", "))
+      if (n_missing > 10) warning(sprintf("... and %d more", n_missing - 10))
+      # Remove samples without metadata
+      plot_df <- plot_df[!is.na(plot_df[[2]]), ]
+      message(sprintf("After removing samples without metadata: %d samples", nrow(plot_df)))
+    }
 
     # Get color column - handle both name and index
     if (!is.null(color_by_name) && color_by_name %in% names(popdata)) {
@@ -76,14 +95,66 @@ plot_pca <- function(individuals, eigenvecs, eigenvals, popdata,
       stop(paste("Column", color_by_name, "not found in popdata"))
     }
 
-    p <- ggplot(plot_df, aes(x = PC1, y = PC2, color = .data[[color_col]])) +
-      geom_point(size = 3, alpha = 0.7) +
+    # Check unique values in color column (including NA and empty strings)
+    unique_vals <- unique(plot_df[[color_col]])
+    message(sprintf("Unique values in '%s': %s", color_col, paste(unique_vals, collapse = ", ")))
+    message(sprintf("Number of unique values: %d", length(unique_vals)))
+
+    # Remove NA values from the color column and warn user
+    na_mask <- is.na(plot_df[[color_col]])
+    if (any(na_mask)) {
+      n_na <- sum(na_mask)
+      na_samples <- plot_df$Ind[na_mask]
+      warning(sprintf("%d samples have missing values in '%s' column and will be excluded:", n_na, color_col))
+      warning(paste(head(na_samples, 10), collapse = ", "))
+      if (n_na > 10) warning(sprintf("... and %d more", n_na - 10))
+      plot_df <- plot_df[!na_mask, ]
+    }
+
+    # Remove empty strings from the color column
+    empty_mask <- plot_df[[color_col]] == ""
+    if (any(empty_mask)) {
+      n_empty <- sum(empty_mask)
+      empty_samples <- plot_df$Ind[empty_mask]
+      warning(sprintf("%d samples have empty strings in '%s' column and will be excluded:", n_empty, color_col))
+      warning(paste(head(empty_samples, 10), collapse = ", "))
+      if (n_empty > 10) warning(sprintf("... and %d more", n_empty - 10))
+      plot_df <- plot_df[!empty_mask, ]
+    }
+
+    # Determine colors to use
+    n_categories <- length(unique(plot_df[[color_col]]))
+
+    if (!is.null(pca_colors) && length(pca_colors) > 0) {
+      # Use colors from config
+      if (n_categories > length(pca_colors)) {
+        # More categories than colors - interpolate using colorRampPalette
+        message(sprintf("PCA plot: %d categories but only %d colors defined. Interpolating additional colors.",
+                       n_categories, length(pca_colors)))
+        colors <- colorRampPalette(pca_colors)(n_categories)
+      } else {
+        # Use subset of defined colors
+        colors <- pca_colors[1:n_categories]
+      }
+    } else {
+      # Fallback to default ggplot2 colors if no colors provided
+      message("PCA plot: No colors defined in config. Using default ggplot2 colors.")
+      colors <- NULL
+    }
+
+    p <- ggplot(plot_df, aes(x = PC1, y = PC2, fill = .data[[color_col]])) +
+      geom_point(size = 3, alpha = 0.7, pch = 21, color = "black") +
       labs(
         x = sprintf("PC%d (%.1f%%)", pc1, var_exp[pc1]),
         y = sprintf("PC%d (%.1f%%)", pc2, var_exp[pc2]),
-        color = color_col
+        fill = color_col
       ) +
       theme_bw()
+
+    # Add color scale if colors were defined
+    if (!is.null(colors)) {
+      p <- p + scale_fill_manual(values = colors)
+    }
   }
 
   return(p)
@@ -123,24 +194,39 @@ message("popdata_file exists? ", file.exists(popdata_file))
 pc1 <- as.numeric(snakemake@params[["pc1"]])
 pc2 <- as.numeric(snakemake@params[["pc2"]])
 color_by_name <- as.character(snakemake@params[["color_by"]])
+# Unlist pca_colors in case it comes as a nested list from Snakemake
+pca_colors <- snakemake@params[["pca_colors"]]
+if (!is.null(pca_colors)) {
+  pca_colors <- unlist(pca_colors)
+}
 
 # Debug: check param values
 message("pc1 = ", pc1)
 message("pc2 = ", pc2)
 message("color_by_name = ", color_by_name)
+message("pca_colors class: ", class(pca_colors))
+message("pca_colors length: ", length(pca_colors))
+if (!is.null(pca_colors)) {
+  message("pca_colors = ", paste(pca_colors, collapse = ", "))
+}
 
 # Read input data
-eigenvecs2 <- read.table(eigvecs_file)
+# Read eigenvectors file - skip the #FID header line and use column positions
+eigenvecs2 <- read.table(eigvecs_file, sep = "\t", skip = 1)
 individuals <- eigenvecs2$V1
 eigenvecs <- eigenvecs2[, -c(1,2)]
 eigenvals <- scan(eigvals_file)
-popdata <- read.table(popdata_file, header = TRUE)
+popdata <- read.table(popdata_file, header = TRUE, sep = "\t")
+
+# Debug: show first few individuals
+message("First 5 individuals from eigvecs: ", paste(head(individuals, 5), collapse = ", "))
+message("First 5 individuals from popdata: ", paste(head(popdata[[1]], 5), collapse = ", "))
 
 # Read missing data if available
 indmiss <- NULL
 if (!is.null(indmiss_file) && file.exists(indmiss_file)) {
   message("Reading missing data from: ", indmiss_file)
-  indmiss <- read.table(indmiss_file, header = TRUE, stringsAsFactors = FALSE)
+  indmiss <- read.table(indmiss_file, header = TRUE, stringsAsFactors = FALSE, sep = "\t")
   message("Missing data loaded: ", nrow(indmiss), " individuals")
   message("Columns: ", paste(names(indmiss), collapse = ", "))
 }
@@ -158,7 +244,8 @@ plt_pca <- plot_pca(
   indmiss = indmiss,
   color_by_name = color_by_name,
   pc1 = pc1,
-  pc2 = pc2
+  pc2 = pc2,
+  pca_colors = pca_colors
 )
 
 # Debug: check plot object

@@ -121,7 +121,8 @@ rule plot_pca:
     params:
         pc1 = lambda wildcards: wildcards.pc1,
         pc2 = lambda wildcards: wildcards.pc2,
-        color_by = lambda wildcards: wildcards.color_by
+        color_by = lambda wildcards: wildcards.color_by,
+        pca_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pca_colors", None)
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
@@ -150,7 +151,8 @@ rule plot_pca_emu:
     params:
         pc1 = lambda wildcards: wildcards.pc1,
         pc2 = lambda wildcards: wildcards.pc2,
-        color_by = lambda wildcards: wildcards.color_by
+        color_by = lambda wildcards: wildcards.color_by,
+        pca_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pca_colors", None)
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
@@ -179,7 +181,8 @@ rule plot_pca_miss:
     params:
         pc1 = lambda wildcards: wildcards.pc1,
         pc2 = lambda wildcards: wildcards.pc2,
-        color_by = lambda wildcards: wildcards.color_by
+        color_by = lambda wildcards: wildcards.color_by,
+        pca_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pca_colors", None)
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
