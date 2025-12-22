@@ -107,3 +107,26 @@ rule plot_aligned_k:
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
     script:
         "../scripts/plot_k_aligned.R"
+
+# Plot Evanno deltaK
+rule plot_evanno:
+    input:
+        lambda wildcards: expand(
+            "results/{project}/structure/{project}.structure.K{k}.R{r}_f",
+            project=wildcards.project,
+            k=config["projects"][wildcards.project]["parameters"]["k_values"],
+            r=range(1, config["projects"][wildcards.project]["parameters"]["structure"].get("replicates", 1) + 1)
+        )
+    output:
+        pdf = "results/{project}/structure/plots/{project}.evanno_plot.pdf",
+        rds = "results/{project}/structure/plots/{project}.evanno_plot.rds"
+    log:
+        "logs/{project}/plot_evanno.log"
+    conda:
+        "../envs/r-pophelper.yaml"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    script:
+        "../scripts/plot_evanno.R"
