@@ -38,9 +38,45 @@ n_clusters <- ncol(qmatrix)
 cat(sprintf("Q matrix dimensions: %d individuals x %d clusters\n", n_individuals, n_clusters))
 
 # Read popmap file, first column is individual, second population
-popmap <- read.table(popmap_file, header = FALSE, sep = "\t")
-colnames(popmap) <- c("Ind", "Site")
-cat(sprintf("Original popmap contains %d individuals with %d columns\n", nrow(popmap), ncol(popmap)))
+cat(sprintf("Reading popmap file: %s\n", popmap_file))
+tryCatch({
+  popmap <- read.table(popmap_file, header = FALSE, sep = "\t", comment.char = "", fill = TRUE, blank.lines.skip = TRUE)
+  colnames(popmap) <- c("Ind", "Site")
+  cat(sprintf("Successfully read popmap: %d individuals with %d columns\n", nrow(popmap), ncol(popmap)))
+
+  # Check for lines with missing data
+  incomplete_lines <- which(is.na(popmap$Site) | popmap$Site == "")
+  if (length(incomplete_lines) > 0) {
+    cat(sprintf("WARNING: Found %d line(s) with missing Site column:\n", length(incomplete_lines)))
+    for (i in incomplete_lines[1:min(5, length(incomplete_lines))]) {
+      cat(sprintf("  Line %d: Individual='%s', Site='%s'\n", i, popmap$Ind[i], popmap$Site[i]))
+    }
+    if (length(incomplete_lines) > 5) {
+      cat(sprintf("  ... and %d more lines\n", length(incomplete_lines) - 5))
+    }
+    stop(sprintf("ERROR: Popmap file has %d incomplete line(s). Please check the file format.", length(incomplete_lines)))
+  }
+}, error = function(e) {
+  cat(sprintf("ERROR reading popmap file '%s'\n", popmap_file))
+  cat(sprintf("Error message: %s\n", e$message))
+  # Try to read line by line to find the problematic line
+  lines <- readLines(popmap_file)
+  cat(sprintf("Total lines in file: %d\n", length(lines)))
+  for (i in seq_along(lines)) {
+    fields <- strsplit(lines[i], "\t")[[1]]
+    if (length(fields) != 2) {
+      cat(sprintf("Line %d has %d field(s) instead of 2: '%s'\n", i, length(fields), lines[i]))
+      if (i <= 195 && i >= 185) {
+        cat(sprintf("  Context (lines %d-%d):\n", max(1, i-2), min(length(lines), i+2)))
+        for (j in max(1, i-2):min(length(lines), i+2)) {
+          cat(sprintf("    %d: '%s'\n", j, lines[j]))
+        }
+      }
+      stop(sprintf("Popmap file has malformed line %d", i))
+    }
+  }
+  stop(e$message)
+})
 
 # Remove duplicate individuals (keep first occurrence)
 popmap <- popmap %>%
@@ -69,21 +105,27 @@ colnames(qmatrix_with_data) <- gsub("V", "Cluster", colnames(qmatrix_with_data))
 # For barplots, we don't need popdata (geographic coordinates)
 # We only use the site information from the popmap file
 
-# Parse cluster_cols parameter
-# Snakemake automatically converts Python lists to R vectors
-if (is.null(cluster_cols)) {
-  cluster_cols_val <- NULL
-} else if (length(cluster_cols) == 1 && (cluster_cols == "NULL" || cluster_cols == "")) {
-  cluster_cols_val <- NULL
-} else if (is.vector(cluster_cols) || is.list(cluster_cols)) {
-  # Already a vector/list from Python list in config
-  cluster_cols_val <- unlist(cluster_cols)
+# Get color palette from config - subset first n_clusters colors
+# This uses cluster_cols if provided, otherwise falls back to structure_colors
+cat(sprintf("\n=== SETTING UP COLOR PALETTE ===\n"))
+if (!is.null(cluster_cols) && length(cluster_cols) > 0 &&
+    !(length(cluster_cols) == 1 && (cluster_cols == "NULL" || cluster_cols == ""))) {
+  # Use user-specified cluster_cols
+  if (is.vector(cluster_cols) || is.list(cluster_cols)) {
+    cluster_cols_val <- unlist(cluster_cols)
+  } else {
+    cluster_cols_val <- tryCatch(
+      eval(parse(text = cluster_cols)),
+      error = function(e) NULL
+    )
+  }
+  cat(sprintf("Using user-specified cluster colors: %s\n", paste(cluster_cols_val, collapse = ", ")))
 } else {
-  # Try to parse as R expression (backward compatibility)
-  cluster_cols_val <- tryCatch(
-    eval(parse(text = cluster_cols)),
-    error = function(e) NULL
-  )
+  # Use structure_colors from config and subset to n_clusters
+  structure_colors_full <- unlist(snakemake@params[["structure_colors"]])
+  cluster_cols_val <- structure_colors_full[1:n_clusters]
+  cat(sprintf("Using first %d colors from structure_colors palette: %s\n",
+              n_clusters, paste(cluster_cols_val, collapse = ", ")))
 }
 
 # Parse site_order parameter

@@ -48,7 +48,8 @@ rule mapmixture_structure:
         basemap_border = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("basemap_border", True),
         basemap_border_col = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("basemap_border_col", "black"),
         basemap_border_lwd = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("basemap_border_lwd", 0.1),
-        legend = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("legend", False)
+        legend = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("legend", False),
+        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", ["#66CCEE", "#EE6677", "#228833", "#CCBB44", "#AA3377", "#4477AA", "#BBBBBB", "#EE9988", "#88CCEE", "#CC6677"])
     log:
         "logs/{project}/mapmixture_structure.K{k}.log"
     conda:
@@ -97,7 +98,8 @@ rule mapmixture_faststructure:
         basemap_border = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("basemap_border", True),
         basemap_border_col = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("basemap_border_col", "black"),
         basemap_border_lwd = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("basemap_border_lwd", 0.1),
-        legend = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("legend", False)
+        legend = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("legend", False),
+        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", ["#66CCEE", "#EE6677", "#228833", "#CCBB44", "#AA3377", "#4477AA", "#BBBBBB", "#EE9988", "#88CCEE", "#CC6677"])
     log:
         "logs/{project}/mapmixture_faststructure.K{k}.log"
     conda:
@@ -146,7 +148,8 @@ rule mapmixture_admixture:
         basemap_border = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("basemap_border", True),
         basemap_border_col = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("basemap_border_col", "black"),
         basemap_border_lwd = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("basemap_border_lwd", 0.1),
-        legend = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("legend", False)
+        legend = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("legend", False),
+        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", ["#66CCEE", "#EE6677", "#228833", "#CCBB44", "#AA3377", "#4477AA", "#BBBBBB", "#EE9988", "#88CCEE", "#CC6677"])
     log:
         "logs/{project}/mapmixture_admixture.K{k}.log"
     conda:
@@ -176,7 +179,8 @@ rule barplot_structure:
         site_dividers = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("site_dividers", True),
         divider_width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("divider_width", 0.4),
         site_order = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("site_order", "NULL"),
-        flip_axis = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("flip_axis", False)
+        flip_axis = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("flip_axis", False),
+        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", ["#66CCEE", "#EE6677", "#228833", "#CCBB44", "#AA3377", "#4477AA", "#BBBBBB", "#EE9988", "#88CCEE", "#CC6677"])
     log:
         "logs/{project}/structure_barplot.K{k}.log"
     conda:
@@ -206,7 +210,8 @@ rule barplot_faststructure:
         site_dividers = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("site_dividers", True),
         divider_width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("divider_width", 0.4),
         site_order = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("site_order", "NULL"),
-        flip_axis = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("flip_axis", False)
+        flip_axis = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("flip_axis", False),
+        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", ["#66CCEE", "#EE6677", "#228833", "#CCBB44", "#AA3377", "#4477AA", "#BBBBBB", "#EE9988", "#88CCEE", "#CC6677"])
     log:
         "logs/{project}/faststructure_barplot.K{k}.log"
     conda:
@@ -236,7 +241,8 @@ rule barplot_admixture:
         site_dividers = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("site_dividers", True),
         divider_width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("divider_width", 0.4),
         site_order = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("site_order", "NULL"),
-        flip_axis = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("flip_axis", False)
+        flip_axis = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("flip_axis", False),
+        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", ["#66CCEE", "#EE6677", "#228833", "#CCBB44", "#AA3377", "#4477AA", "#BBBBBB", "#EE9988", "#88CCEE", "#CC6677"])
     log:
         "logs/{project}/admixture_barplot.K{k}.log"
     conda:
