@@ -87,7 +87,7 @@ rule thin_vcf:
         ns_tag = lambda wildcards: config["projects"][wildcards.project]["parameters"]["vcf_thinning"].get("ns_tag", "NS"),
         id_pattern = lambda wildcards: config["projects"][wildcards.project]["parameters"]["vcf_thinning"].get("id_pattern", r"loc(\d+)_")
     conda:
-        "../envs/vcfpy.yaml"
+        "../envs/python.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
@@ -145,7 +145,7 @@ rule vcf_to_structure:
     benchmark:
         "benchmarks/{project}/vcf_to_structure.txt"
     conda:
-        "../envs/vcfpy.yaml"
+        "../envs/python.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],

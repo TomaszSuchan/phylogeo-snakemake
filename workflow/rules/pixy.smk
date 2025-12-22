@@ -9,7 +9,7 @@ rule prepare_invariant_vcf:
     benchmark:
         "benchmarks/{project}/prepare_invariant_vcf.txt"
     conda:
-        "../envs/vcfpy.yaml"
+        "../envs/python.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
@@ -128,7 +128,7 @@ rule pixy_summary:
     benchmark:
         "benchmarks/{project}/pixy_summary.txt"
     conda:
-        "../envs/pandas.yaml"
+        "../envs/python.yaml"
     threads: 1
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
