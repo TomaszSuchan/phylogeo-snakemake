@@ -9,6 +9,21 @@ All settings are in `config/config.yaml`:
 - Global parameters (under top-level `parameters:`) are inherited by all projects unless overridden in `config["projects"][project_name]["parameters"]`
 - Enable/disable analyses per project in `config["projects"][project_name]["analyses"]`
 
+## Running
+
+Best is to use conda/mamba:
+```
+snakemake --use-conda --conda-frontend mamba
+```
+
+On HPC you need to specify the executor and resources, eg.:
+
+```
+snakemake --executor slurm --default-resource slurm_account=plgdryas-cpu slurm_partition=plgrid  --jobs 10 --use-conda
+```
+
+Other useful flags are `--rerun-incomplete`,  `--rerun-triggers mtime`. Add `-n` for a dry-run.
+
 ## Workflow
 
 ### Preprocessing
