@@ -25,7 +25,7 @@ rule relatedness:
 # Rule to get among sample relatedness unadjusted Ajk statistic based 
 # on the method of Manichaikul et al. (2010), doi:10.1093/bioinformatics/btq559.
 # Expectation: 1/2 for monozygous twins, 1/4 for full-sibs or parent-offspring,
-# 1/8 for d degree, 1/16 for third degree, and 0 for unrelated.
+# 1/8 for second degree, 1/16 for third degree, and 0 for unrelated.
 rule relatedness2:
     input:
         # Use Snakemake's automatic file selection with multiple possible inputs
