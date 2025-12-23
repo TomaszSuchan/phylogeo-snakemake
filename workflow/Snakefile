@@ -26,6 +26,7 @@ include: "rules/iqtree.smk"
 include: "rules/mapmixture.smk"
 include: "rules/genetic_distances.smk"
 include: "rules/mapi.smk"
+include: "rules/fineradstructure.smk"
 
 def get_all_targets():
     """
@@ -45,7 +46,8 @@ def get_all_targets():
         # Get project-specific parameters
         k_values = params.get("k_values", [1, 2, 3])
         n_reps = params.get("structure", {}).get("replicates", 1)
-        PCA_groupings = params.get("pca_plot", {}).get("color_by", ["Population"])
+        # Default to ["none"] if color_by not specified - will still generate all 6 plots (gray, labeled, missing)
+        PCA_groupings = params.get("pca_plot", {}).get("color_by", ["none"])
         pc_max = params.get("pca_plot", {}).get("pc_max", 2)
         pca_combinations = get_pca_combinations(pc_max)
         
@@ -136,16 +138,35 @@ def get_all_targets():
                 "results/" + project + "/pcaone/" + project + ".PCA.eigvecs",
                 "results/" + project + "/pcaone/" + project + ".PCA.eigvals"
             ])
-            # Add missing data calculation target
-            if params.get("pca_plot", {}).get("include_missing", False):
-                targets.append("results/" + project + "/filtered_data/" + project + ".biallelic_snps_thinned.imiss")
+            # Always add missing data calculation target
+            targets.append("results/" + project + "/filtered_data/" + project + ".biallelic_snps_thinned.imiss")
             # Add plot targets for each PC combination and color grouping
             for pc1, pc2 in pca_combinations:
                 for color_by in PCA_groupings:
+                    # Request colored plots (uses color_by)
                     targets.extend([
                         f"results/{project}/pcaone/plots/{project}.PCA-PC{pc1}_PC{pc2}-{color_by}.pdf",
                         f"results/{project}/pcaone/plots/{project}.PCA-PC{pc1}_PC{pc2}-{color_by}.rds"
                     ])
+                # Add labeled and missing plots once per PC combination (no color_by)
+                targets.extend([
+                    f"results/{project}/pcaone/plots/{project}.PCA-PC{pc1}_PC{pc2}-labeled.pdf",
+                    f"results/{project}/pcaone/plots/{project}.PCA-PC{pc1}_PC{pc2}-labeled.rds",
+                    f"results/{project}/pcaone/plots/{project}.PCA-PC{pc1}_PC{pc2}-missing.pdf",
+                    f"results/{project}/pcaone/plots/{project}.PCA-PC{pc1}_PC{pc2}-missing.rds"
+                ])
+            # Add facet plots (all PC combinations in one plot)
+            for color_by in PCA_groupings:
+                targets.extend([
+                    f"results/{project}/pcaone/plots/{project}.PCA-facet-{color_by}.pdf",
+                    f"results/{project}/pcaone/plots/{project}.PCA-facet-{color_by}.rds"
+                ])
+            targets.extend([
+                f"results/{project}/pcaone/plots/{project}.PCA-facet-labeled.pdf",
+                f"results/{project}/pcaone/plots/{project}.PCA-facet-labeled.rds",
+                f"results/{project}/pcaone/plots/{project}.PCA-facet-missing.pdf",
+                f"results/{project}/pcaone/plots/{project}.PCA-facet-missing.rds"
+            ])
 
         # PCAone targets (EMU)
         if analyses.get("pcaone_emu", False):
@@ -153,16 +174,23 @@ def get_all_targets():
                 "results/" + project + "/pcaone_EMU/" + project + ".PCA_EMU.eigvecs",
                 "results/" + project + "/pcaone_EMU/" + project + ".PCA_EMU.eigvals"
             ])
-            # Add missing data calculation target (reuses same .imiss as pcaone)
-            if params.get("pca_plot", {}).get("include_missing", False):
-                targets.append("results/" + project + "/filtered_data/" + project + ".biallelic_snps_thinned.imiss")
+            # Always add missing data calculation target (reuses same .imiss as pcaone)
+            targets.append("results/" + project + "/filtered_data/" + project + ".biallelic_snps_thinned.imiss")
             # Add plot targets for each PC combination and color grouping
             for pc1, pc2 in pca_combinations:
                 for color_by in PCA_groupings:
+                    # Request colored plots (uses color_by)
                     targets.extend([
                         f"results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-PC{pc1}_PC{pc2}-{color_by}.pdf",
                         f"results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-PC{pc1}_PC{pc2}-{color_by}.rds"
                     ])
+                # Add labeled and missing plots once per PC combination (no color_by)
+                targets.extend([
+                    f"results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-PC{pc1}_PC{pc2}-labeled.pdf",
+                    f"results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-PC{pc1}_PC{pc2}-labeled.rds",
+                    f"results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-PC{pc1}_PC{pc2}-missing.pdf",
+                    f"results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-PC{pc1}_PC{pc2}-missing.rds"
+                ])
 
         # PCAone targets (with coverage thresholds)
         if analyses.get("pcaone_miss", False):
@@ -173,20 +201,27 @@ def get_all_targets():
                 expand("results/" + project + "/pcaone_miss{miss}/" + project + ".PCA_miss{miss}.eigvals",
                        miss=miss_values)
             ])
-            # Add missing data calculation targets for each threshold
-            if params.get("pca_plot", {}).get("include_missing", False):
-                targets.extend([
-                    expand("results/" + project + "/filtered_data/" + project + ".biallelic_snps_thinned_miss{miss}.imiss",
-                           miss=miss_values)
-                ])
+            # Always add missing data calculation targets for each threshold
+            targets.extend([
+                expand("results/" + project + "/filtered_data/" + project + ".biallelic_snps_thinned_miss{miss}.imiss",
+                       miss=miss_values)
+            ])
             # Add plot targets for each miss value, PC combination, and color grouping
             for miss in miss_values:
                 for pc1, pc2 in pca_combinations:
                     for color_by in PCA_groupings:
+                        # Request colored plots (uses color_by)
                         targets.extend([
                             f"results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-{color_by}.pdf",
                             f"results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-{color_by}.rds"
                         ])
+                    # Add labeled and missing plots once per PC combination (no color_by)
+                    targets.extend([
+                        f"results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-labeled.pdf",
+                        f"results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-labeled.rds",
+                        f"results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-missing.pdf",
+                        f"results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-missing.rds"
+                    ])
         
         # VCF2PCACluster targets
         if analyses.get("vcf2pcacluster", False):
@@ -263,6 +298,15 @@ def get_all_targets():
                     "results/" + project + "/mapi/" + project + ".mapi_upper_tails.gpkg",
                     "results/" + project + "/mapi/" + project + ".mapi_lower_tails.gpkg"
                 ])
+
+        # fineRADstructure targets
+        if analyses.get("fineradstructure", False):
+            targets.extend([
+                "results/" + project + "/fineradstructure/" + project + ".input",
+                "results/" + project + "/fineradstructure/" + project + "_chunks.out",
+                "results/" + project + "/fineradstructure/" + project + "_chunks.mcmc.xml",
+                "results/" + project + "/fineradstructure/" + project + "_chunks.mcmcTree.xml"
+            ])
 
     return targets
 
