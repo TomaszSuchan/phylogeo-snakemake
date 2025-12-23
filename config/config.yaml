@@ -20,7 +20,7 @@ parameters: &global_params
   # Site Lat  Lon Region
   # pop1  52.23 21.01 region1
   # pop2  51.50 -0.13 region2
-  popdata: data/popdata.txt
+  popdata: "data/popdata.txt"
   
   ## Preprocessing parameters
   #
@@ -38,7 +38,7 @@ parameters: &global_params
   
   ## Population Structure Analysis
   # Common K values to test for population structure (Structure, fastStructure and admixture):
-  k_values: [1, 2, 3, 4, 5]
+  k_values: [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
   ## Mapmixture plotting parameters
   # These parameters control the appearance of map-based structure plots
@@ -75,13 +75,35 @@ parameters: &global_params
     divider_width: 0.4              # width of site dividers
     site_order: NULL                # custom site order as list, e.g. ["Site1", "Site2", "Site3"]
     flip_axis: FALSE                # flip barplot axis
+    # Structure color palette 
+    structure_colors:
+      - "#E41A1C"  # red
+      - "#377EB8"  # blue
+      - "#4DAF4A"  # green
+      - "#984EA3"  # purple
+      - "#FF7F00"  # orange
+      - "#FFFF33"  # yellow
+      - "#A65628"  # brown
+      - "#F781BF"  # pink
+      - "#999999"  # gray
+      - "#FFFFFF"  # white
+      - "#000000"  # black
 
+  ## MAPI parameters
+  # MAPI (Mapping Averaged Pairwise Information) identifies spatial patterns of genetic diversity
+  # by comparing genetic distances to geographic distances across a hexagonal grid
+  mapi:
+    n_permutations: 1000        # number of permutations for significance testing
+    grid_halfwidth: 100000      # grid cell halfwidth in meters (NULL for auto-estimation)
+    crs_projected: "EPSG:8857"  # projected CRS for distance calculations ("EPSG:8857" = Equal Earth, EPSG:3035 = ETRS89 / ETRS-LAEA Europe, EPSG:2180 = Poland CS2000)
+    crs_geographic: 4326        # geographic CRS for lat/lon coordinates (4326 = WGS84)
+    alpha: 0.05                 # significance level for upper/lower tail identification
 
   ## Structure parameters
   # More run parameters can be tweaked by modifying `data/mainparams` and `data/extraparams`
   # Numbers of individuals and loci are automatically inferred from .ustr file so this does not need to be changed.
   structure:
-    replicates: 2       # number of replicates for structure
+    replicates: 10       # number of replicates for structure
   
   ## FastStructure parameters (defaults shown)
   faststructure:
@@ -107,7 +129,21 @@ parameters: &global_params
   pca_plot:
     pc_max: 4  # maximum PC axis number - will generate all combinations up to this value
                # e.g., pc_max=4 generates: 1/2, 2/3, 3/4, 1/3, 2/4, 1/4
-    color_by: ["Population", "Region"]  # columns in popdata to color points by
+    color_by: ["Region"]  # columns in popdata to color points by (must match your popdata column names!)
+    include_missing: true  # set to true to calculate per-sample missing data from VCF files
+                          # when true and "missing" is in color_by list, creates missing-data-colored PCA plots
+    pca_colors:  # color palette for categorical variables in PCA plots
+      - "#E41A1C"  # red
+      - "#377EB8"  # blue
+      - "#4DAF4A"  # green
+      - "#984EA3"  # purple
+      - "#FF7F00"  # orange
+      - "#FFFF33"  # yellow
+      - "#A65628"  # brown
+      - "#F781BF"  # pink
+      - "#999999"  # gray
+      - "#FFFFFF"  # white
+      - "#000000"  # black
   
   ## VCF2PCACluster parameters
   #
@@ -130,6 +166,15 @@ parameters: &global_params
     stats: "pi fst dxy"  # statistics to compute, options: pi, fst, dxy
     window_size: 10000  # size of the sliding window in bp
 
+  ## fineRADstructure parameters
+  fineradstructure:
+    cluster:
+      mcmc_iterations: 1000000  # -x: number of MCMC iterations for clustering
+      burnin: 1000000           # -y: number of burn-in iterations
+      thinning: 1000            # -z: thinning interval (sample every z iterations)
+    tree:
+      mcmc_iterations: 10000    # -x: number of MCMC iterations for tree building
+
   ## Trimal parameters for alignment trimming before phylogenetic inference
   trimal:
     gt: 0.95        # gap threshold for trimming alignments (0-1 where 0=no gaps, 1=no trimming)
@@ -141,23 +186,6 @@ parameters: &global_params
     robust-phy: 0.95 # robustness threshold for phylogenetic inference (0-1)
     # outgroup: "sample1,sample2"  # optional: comma-separated list of outgroup taxa
     support_threshold: 70  # minimum bootstrap support value to display on tree (0-100)
-
-  ## Whoa QC parameters
-  # Whoa analyzes heterozygote miscall rates to assess genotyping accuracy
-  whoa:
-    min_bin: 1000  # minimum bin size for read depth categorization (higher = fewer bins)
-
-  ## Hardy-Weinberg equilibrium test parameters
-  # Tests for deviations from HWE which may indicate genotyping errors or selection
-  hw_qc:
-    alpha: 0.05  # significance threshold for HWE test
-
-  ## Replicate QC parameters
-  # Analyzes technical replicates to assess genotyping error rates
-  # Requires a separate assembly with replicate pairs
-  # Use a separate project entry with its own ipyrad_prefix pointing to the replicate assembly
-  replicate_qc:
-    suffix: "_repl"  # Suffix pattern in replicate sample names (e.g., "_repl" for "sample_repl04a")
 
   ## Analysis resources
   #
@@ -205,50 +233,34 @@ parameters: &global_params
       threads: 12
       mem_mb: 8000
       runtime: 720
+    mapi:
+      threads: 4
+      mem_mb: 16000
+      runtime: 240
 
 ##############################
 ### Projects configuration ###
 ##############################
 projects:
-  Dataset_1:
-    ipyrad_prefix: "test_data/test"
+  Vcardui_medium-497_filtered:
+    ipyrad_prefix: "/net/pr2/projects/plgrid/plggpam/Vcardui-global/medium-497_filtered"
     ## Analysis selection - set to true/false to enable/disable
     analyses:
-      structure: false
-      faststructure: false
-      admixture: false
-      pcaone: false
+      structure: true
+      faststructure: true
+      admixture: true
+      mapi: true
+      pcaone: true
       vcf2pcacluster: false
       pcaone_emu: false
       pcaone_miss: false
       pixy: false
-      relatedness: false
+      relatedness: true
       iqtree: false
       iqtree_trimal: false
       iqtree_robust: false
-      qc_whoa: false  # Genotyping accuracy QC analysis
-      qc_hw: false  # Hardy-Weinberg equilibrium test
-      qc_replicate: false  # Technical replicate error rate analysis
+      fineradstructure: false
     parameters:
       <<: *global_params
-  Dataset_2:
-    ipyrad_prefix: "test_data/test"
-    ## Analysis selection - set to true/false to enable/disable
-    analyses:
-      structure: false
-      faststructure: false
-      admixture: false
-      pcaone: false
-      vcf2pcacluster: false
-      pcaone_emu: false
-      pcaone_miss: false
-      pixy: false
-      relatedness: false
-      iqtree: false
-      iqtree_trimal: false
-      iqtree_robust: false
-      qc_whoa: false
-      qc_hw: false
-      qc_replicate: false
-    parameters:
-      <<: *global_params
+      popmap: "data/Vcardui-popmap.txt"
+      popdata: "data/Vcardui-popdata.txt"
