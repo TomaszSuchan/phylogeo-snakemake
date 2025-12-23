@@ -2,7 +2,7 @@ channels:
   - conda-forge
 dependencies:
   - r-base
-  - r-ggplot2
+  - r-ggplot2 >=4.0
   - r-devtools
-  - r-viridis
+  - r-rcolorbrewer
   - r-scales
