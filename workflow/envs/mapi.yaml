@@ -2,4 +2,10 @@ channels:
   - conda-forge
   - defaults
 dependencies:
- - mapi=1.1.4
+  - r-base
+  - r-mapi=1.1.4
+  - r-sf
+  - r-ggplot2
+  - r-rnaturalearth
+  - r-rnaturalearthdata
+  - r-rcolorbrewer
