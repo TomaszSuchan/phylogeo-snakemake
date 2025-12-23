@@ -19,7 +19,7 @@ snakemake --use-conda --conda-frontend mamba
 On HPC you need to specify the executor and resources, eg.:
 
 ```
-snakemake --executor slurm --default-resource slurm_account=plgdryas-cpu slurm_partition=plgrid  --jobs 10 --use-conda
+snakemake --executor slurm --default-resource slurm_account=plgdryas-cpu slurm_partition=plgrid  --use-conda --conda-frontend mamba --jobs 10
 ```
 
 Other useful flags are `--rerun-incomplete`,  `--rerun-triggers mtime`. Add `-n` for a dry-run.
