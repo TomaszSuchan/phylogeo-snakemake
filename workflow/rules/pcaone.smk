@@ -86,7 +86,7 @@ rule pcaone_miss:
     params:
         SVD_method = lambda wildcards: config["projects"][wildcards.project]["parameters"]["PCAone"].get("SVD_method", 3),
         PCnum = lambda wildcards: config["projects"][wildcards.project]["parameters"]["PCAone"].get("PCnum", 10),
-        output_prefix = lambda wildcards: f"results/{wildcards.project}/pcaone_miss{wildcards.miss}/{wildcards.project}.PCA",
+        output_prefix = lambda wildcards: f"results/{wildcards.project}/pcaone_miss{wildcards.miss}/{wildcards.project}.PCA_miss{wildcards.miss}",
         bfile_prefix = lambda wildcards: f"results/{wildcards.project}/filtered_data/{wildcards.project}.biallelic_snps_thinned_miss{wildcards.miss}"
     conda:
         "../envs/pcaone.yaml"
