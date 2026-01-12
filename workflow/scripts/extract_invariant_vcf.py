@@ -54,6 +54,11 @@ def find_invariant_sites(sequences, verbose=False):
     # Valid nucleotides (excluding ALL ambiguity codes)
     valid_nucs = {'A', 'T', 'G', 'C'}
     
+    # IUPAC ambiguity codes: any of these makes a site variable
+    # R=purine, Y=pyrimidine, S=strong, W=weak, K=keto, M=amino,
+    # B=not A, D=not C, H=not G, V=not T, N=any
+    ambiguity_codes = {'R', 'Y', 'S', 'W', 'K', 'M', 'B', 'D', 'H', 'V', 'N'}
+    
     # Track statistics for debugging
     position_stats = []
     
@@ -61,12 +66,19 @@ def find_invariant_sites(sequences, verbose=False):
         # Get all valid nucleotides at this position
         nucs_at_pos = []
         invalid_count = 0
+        ambiguous_chars = []  # Track ambiguity codes at this position
         
         # Check ALL samples at this position
         for sample_id, seq in sequences.items():
             if pos < len(seq):
-                if seq[pos] in valid_nucs:
-                    nucs_at_pos.append(seq[pos])
+                char = seq[pos]
+                if char in valid_nucs:
+                    nucs_at_pos.append(char)
+                elif char in ambiguity_codes:
+                    ambiguous_chars.append(char)
+                    invalid_count += 1
+                elif char == '-':
+                    invalid_count += 1
                 else:
                     invalid_count += 1
             else:
@@ -75,7 +87,15 @@ def find_invariant_sites(sequences, verbose=False):
         # Position is invariant if:
         # 1. At least one sample has a valid nucleotide
         # 2. All valid nucleotides are the same
+        # 3. No ambiguity codes present (any ambiguity code indicates uncertainty and makes site variable)
+        is_invariant = False
         if nucs_at_pos and len(set(nucs_at_pos)) == 1:
+            # If all unambiguous nucleotides match, check for ambiguity codes
+            # Any ambiguity code (R, Y, S, W, K, M, B, D, H, V, N) represents uncertainty
+            # and could represent a different nucleotide, so the site is variable
+            is_invariant = len(ambiguous_chars) == 0
+        
+        if is_invariant:
             invariant_sites.append((pos, nucs_at_pos[0]))
         
         # Store stats for debugging
