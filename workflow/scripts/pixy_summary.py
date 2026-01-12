@@ -1,12 +1,20 @@
 #!/usr/bin/env python3
-import argparse
 import pandas as pd
 import numpy as np
+import sys
+
+# Snakemake automatically passes input/output/params via the 'snakemake' object
+bootstrap_replicates = snakemake.params.bootstrap_replicates
+
+# Redirect stdout and stderr to log file
+log_file = snakemake.log[0]
+sys.stdout = open(log_file, 'w')
+sys.stderr = sys.stdout
 
 def weighted_mean(values, weights):
     return (values * weights).sum() / weights.sum()
 
-def bootstrap_ci(values, weights, B=5000, seed=42):
+def bootstrap_ci(values, weights, B=1000, seed=42):
     rng = np.random.default_rng(seed)
     n = len(values)
     boot = np.empty(B)
@@ -15,7 +23,7 @@ def bootstrap_ci(values, weights, B=5000, seed=42):
         boot[b] = weighted_mean(values[idx], weights[idx])
     return np.percentile(boot, [2.5, 97.5]), boot.std(ddof=1)
 
-def process_pi(file, output):
+def process_pi(file, output, bootstrap_replicates=1000):
     df = pd.read_csv(file, sep="\t")
     df_clean = df[df["avg_pi"].notna()].copy()
     
@@ -25,7 +33,7 @@ def process_pi(file, output):
         weights = group_df["no_sites"].to_numpy()
         
         m = weighted_mean(values, weights)
-        (ci_low, ci_high), se = bootstrap_ci(values, weights)
+        (ci_low, ci_high), se = bootstrap_ci(values, weights, B=bootstrap_replicates)
         
         results.append({
             "population": pop,
@@ -41,7 +49,7 @@ def process_pi(file, output):
     out.to_csv(output, sep="\t", index=False)
     print(f"Pi results written to {output}")
 
-def process_fst(file, output):
+def process_fst(file, output, bootstrap_replicates=1000):
     df = pd.read_csv(file, sep="\t")
     df_clean = df[df["avg_wc_fst"].notna()].copy()
     
@@ -51,7 +59,7 @@ def process_fst(file, output):
         weights = group_df["no_snps"].to_numpy()
         
         m = weighted_mean(values, weights)
-        (ci_low, ci_high), se = bootstrap_ci(values, weights)
+        (ci_low, ci_high), se = bootstrap_ci(values, weights, B=bootstrap_replicates)
         
         results.append({
             "pop1": pop1,
@@ -68,7 +76,7 @@ def process_fst(file, output):
     out.to_csv(output, sep="\t", index=False)
     print(f"Fst results written to {output}")
 
-def process_dxy(file, output):
+def process_dxy(file, output, bootstrap_replicates=1000):
     df = pd.read_csv(file, sep="\t")
     df_clean = df[df["avg_dxy"].notna()].copy()
     
@@ -78,7 +86,7 @@ def process_dxy(file, output):
         weights = group_df["no_sites"].to_numpy()
         
         m = weighted_mean(values, weights)
-        (ci_low, ci_high), se = bootstrap_ci(values, weights)
+        (ci_low, ci_high), se = bootstrap_ci(values, weights, B=bootstrap_replicates)
         
         results.append({
             "pop1": pop1,
@@ -95,23 +103,7 @@ def process_dxy(file, output):
     out.to_csv(output, sep="\t", index=False)
     print(f"Dxy results written to {output}")
 
-def main(args):
-    if args.pi and args.output_pi:
-        process_pi(args.pi, args.output_pi)
-    
-    if args.fst and args.output_fst:
-        process_fst(args.fst, args.output_fst)
-    
-    if args.dxy and args.output_dxy:
-        process_dxy(args.dxy, args.output_dxy)
-
-if __name__ == "__main__":
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--pi", help="Input pixy pi file")
-    ap.add_argument("--output-pi", help="Output file for pi summary")
-    ap.add_argument("--fst", help="Input pixy fst file")
-    ap.add_argument("--output-fst", help="Output file for fst summary")
-    ap.add_argument("--dxy", help="Input pixy dxy file")
-    ap.add_argument("--output-dxy", help="Output file for dxy summary")
-    args = ap.parse_args()
-    main(args)
+# Process all three statistics
+process_pi(snakemake.input.pi, snakemake.output.pi, bootstrap_replicates)
+process_fst(snakemake.input.fst, snakemake.output.fst, bootstrap_replicates)
+process_dxy(snakemake.input.dxy, snakemake.output.dxy, bootstrap_replicates)

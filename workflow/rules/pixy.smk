@@ -127,19 +127,13 @@ rule pixy_summary:
         "logs/{project}/pixy_summary.log"
     benchmark:
         "benchmarks/{project}/pixy_summary.txt"
+    params:
+        bootstrap_replicates = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("bootstrap_replicates", 1000)
     conda:
         "../envs/python.yaml"
     threads: 1
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
-    shell:
-        """
-        python workflow/scripts/pixy_summary.py \
-          --pi {input.pi} \
-          --output-pi {output.pi} \
-          --fst {input.fst} \
-          --output-fst {output.fst} \
-          --dxy {input.dxy} \
-          --output-dxy {output.dxy} &> {log}
-        """
+    script:
+        "../scripts/pixy_summary.py"
