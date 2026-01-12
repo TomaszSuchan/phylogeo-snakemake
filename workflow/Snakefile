@@ -24,6 +24,7 @@ include: "rules/pixy.smk"
 include: "rules/structure.smk"
 include: "rules/iqtree.smk"
 include: "rules/mapmixture.smk"
+include: "rules/population_map.smk"
 include: "rules/genetic_distances.smk"
 include: "rules/mapi.smk"
 include: "rules/fineradstructure.smk"
@@ -298,6 +299,13 @@ def get_all_targets():
                     "results/" + project + "/mapi/" + project + ".mapi_upper_tails.gpkg",
                     "results/" + project + "/mapi/" + project + ".mapi_lower_tails.gpkg"
                 ])
+        
+        # Population map targets (always run if popdata is available)
+        popdata = params.get("popdata")
+        if popdata and popdata != "NULL" and popdata != "":
+            targets.extend([
+                "results/" + project + "/population_map/" + project + ".population_map.pdf"
+            ])
 
         # fineRADstructure targets
         if analyses.get("fineradstructure", False):

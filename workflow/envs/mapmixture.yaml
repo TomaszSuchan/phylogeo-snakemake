@@ -6,6 +6,7 @@ dependencies:
   - r-base
   - r-devtools
   - r-ggplot2
+  - r-ggrepel
   - r-sf
   - r-terra
   - r-tidyverse

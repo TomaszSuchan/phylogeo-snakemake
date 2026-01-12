@@ -89,6 +89,28 @@ parameters: &global_params
       - "#FFFFFF"  # white
       - "#000000"  # black
 
+  ## Population map plotting parameters
+  # Note: Most map parameters (boundary, crs, land_colour, sea_colour, arrow, scalebar, etc.)
+  # are inherited from mapmixture parameters above for consistency
+  population_map:
+    # Point styling
+    point_size: 1                # size of population points
+    point_color: "black"         # color of population points
+    point_shape: 19              # shape of points (19 = filled circle)
+    show_points: true            # show population points (true/false)
+    # Label styling
+    label_size: 3                # font size for labels
+    label_color: "black"         # color of labels
+    label_fontface: "plain"      # font face: plain, bold, italic, bold.italic
+    show_labels: true            # show population labels (true/false)
+    # ggrepel parameters for label positioning
+    force: 10                    # force of repulsion between labels
+    force_pull: 1                # force pulling labels toward points
+    max.overlaps: Inf            # maximum number of overlapping labels to show (Inf = show all labels)
+    min.segment.length: 0.5      # minimum length of leader line segment (in map units)
+    segment.color: "black"      # color of leader lines
+    segment.size: 0.2            # line width of leader lines
+
   ## MAPI parameters
   # MAPI (Mapping Averaged Pairwise Information) identifies spatial patterns of genetic diversity
   # by comparing genetic distances to geographic distances across a hexagonal grid
