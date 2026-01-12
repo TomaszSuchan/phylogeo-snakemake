@@ -42,7 +42,7 @@ def parse_loci_file(filename):
     
     return loci_data
 
-def find_invariant_sites(sequences, verbose=False):
+def find_invariant_sites(sequences):
     """Find positions where all samples with valid nucleotides have the same nucleotide"""
     if not sequences:
         return []
@@ -59,13 +59,9 @@ def find_invariant_sites(sequences, verbose=False):
     # B=not A, D=not C, H=not G, V=not T, N=any
     ambiguity_codes = {'R', 'Y', 'S', 'W', 'K', 'M', 'B', 'D', 'H', 'V', 'N'}
     
-    # Track statistics for debugging
-    position_stats = []
-    
     for pos in range(seq_length):
         # Get all valid nucleotides at this position
         nucs_at_pos = []
-        invalid_count = 0
         ambiguous_chars = []  # Track ambiguity codes at this position
         
         # Check ALL samples at this position
@@ -76,53 +72,45 @@ def find_invariant_sites(sequences, verbose=False):
                     nucs_at_pos.append(char)
                 elif char in ambiguity_codes:
                     ambiguous_chars.append(char)
-                    invalid_count += 1
-                elif char == '-':
-                    invalid_count += 1
-                else:
-                    invalid_count += 1
-            else:
-                invalid_count += 1
         
         # Position is invariant if:
         # 1. At least one sample has a valid nucleotide
         # 2. All valid nucleotides are the same
         # 3. No ambiguity codes present (any ambiguity code indicates uncertainty and makes site variable)
-        is_invariant = False
-        if nucs_at_pos and len(set(nucs_at_pos)) == 1:
-            # If all unambiguous nucleotides match, check for ambiguity codes
-            # Any ambiguity code (R, Y, S, W, K, M, B, D, H, V, N) represents uncertainty
-            # and could represent a different nucleotide, so the site is variable
-            is_invariant = len(ambiguous_chars) == 0
-        
-        if is_invariant:
+        if nucs_at_pos and len(set(nucs_at_pos)) == 1 and len(ambiguous_chars) == 0:
             invariant_sites.append((pos, nucs_at_pos[0]))
-        
-        # Store stats for debugging
-        if verbose and pos < 10:  # Show first 10 positions
-            unique_nucs = set(nucs_at_pos) if nucs_at_pos else set()
-            position_stats.append({
-                'pos': pos,
-                'valid_count': len(nucs_at_pos),
-                'invalid_count': invalid_count,
-                'unique_nucs': unique_nucs
-            })
-    
-    if verbose and position_stats:
-        print(f"    First 10 positions analysis:")
-        for stat in position_stats:
-            print(f"      Pos {stat['pos']}: {stat['valid_count']} valid samples, "
-                  f"{stat['invalid_count']} with N/ambiguous, nucleotides: {stat['unique_nucs']}")
     
     return invariant_sites
 
-def generate_vcf(loci_data, output_file):
-    """Generate VCF file with invariant sites only"""
+def read_samples_file(filename):
+    """Read sample names from a file (one per line)"""
+    samples = set()
+    with open(filename, 'r') as f:
+        for line in f:
+            sample = line.strip()
+            if sample:  # Skip empty lines
+                samples.add(sample)
+    return samples
+
+def generate_vcf(loci_data, output_file, samples_filter=None):
+    """Generate VCF file with invariant sites only
+    
+    Args:
+        loci_data: List of dictionaries with sequences by locus
+        output_file: Output VCF file path
+        samples_filter: Optional set of sample names to include (only samples in both loci and filter)
+    """
     
     # Get all unique sample names across all loci
     all_samples = set()
     for locus_seqs in loci_data:
         all_samples.update(locus_seqs.keys())
+    
+    # Apply filter if provided
+    if samples_filter is not None:
+        # Only include samples that are in both the loci file and the filter list
+        all_samples = all_samples.intersection(samples_filter)
+    
     samples_list = sorted(list(all_samples))
     
     with open(output_file, 'w') as vcf:
@@ -142,7 +130,15 @@ def generate_vcf(loci_data, output_file):
         # Process each locus
         for locus_idx, sequences in enumerate(loci_data):
             locus_num = locus_idx  # 0-based numbering
-            invariant_sites = find_invariant_sites(sequences)
+            
+            # Filter sequences per locus to only process samples in the filter
+            if samples_filter is not None:
+                filtered_sequences = {sample: seq for sample, seq in sequences.items() 
+                                    if sample in samples_filter}
+            else:
+                filtered_sequences = sequences
+            
+            invariant_sites = find_invariant_sites(filtered_sequences)
             
             for pos, ref_allele in invariant_sites:
                 # Chromosome name
@@ -158,9 +154,12 @@ def generate_vcf(loci_data, output_file):
                 vcf.write(f"{chrom}\t{vcf_pos}\t{var_id}\t{ref_allele}\t.\t.\tPASS\tINVARIANT\tGT")
                 
                 # Write genotypes for all samples
+                # Use filtered_sequences if filter was applied, otherwise use original sequences
+                sequences_to_use = filtered_sequences if samples_filter is not None else sequences
+                
                 for sample in samples_list:
-                    if sample in sequences and pos < len(sequences[sample]):
-                        nuc = sequences[sample][pos]
+                    if sample in sequences_to_use and pos < len(sequences_to_use[sample]):
+                        nuc = sequences_to_use[sample][pos]
                         if nuc == ref_allele:
                             vcf.write("\t0/0")
                         elif nuc in {'A', 'T', 'G', 'C'}:
@@ -184,43 +183,52 @@ def main():
     parser.add_argument('input_file', help='Input loci file')
     parser.add_argument('-o', '--output', default='invariant_sites.vcf', 
                        help='Output VCF file (default: invariant_sites.vcf)')
-    parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output')
+    parser.add_argument('--samples-file', help='File containing sample names to include (one per line)')
     
     args = parser.parse_args()
     
-    if args.verbose:
-        print(f"Reading loci file: {args.input_file}")
+    # Read samples file if provided
+    samples_filter = None
+    if args.samples_file:
+        samples_filter = read_samples_file(args.samples_file)
+        if not samples_filter:
+            print(f"ERROR: No samples found in filter file: {args.samples_file}", file=sys.stderr)
+            sys.exit(1)
     
     # Parse the loci file
     loci_data = parse_loci_file(args.input_file)
     
-    if args.verbose:
-        print(f"Found {len(loci_data)} loci")
-        total_invariant = 0
+    # Check for critical errors
+    if not loci_data:
+        print(f"ERROR: No loci found in input file: {args.input_file}", file=sys.stderr)
+        sys.exit(1)
+    
+    # Collect all samples in loci
+    all_samples_in_loci = set()
+    for locus_seqs in loci_data:
+        all_samples_in_loci.update(locus_seqs.keys())
+    
+    if not all_samples_in_loci:
+        print(f"ERROR: No samples found in loci file: {args.input_file}", file=sys.stderr)
+        sys.exit(1)
+    
+    # Check if samples in filter file are missing from loci
+    if samples_filter:
+        samples_in_filter_not_in_loci = samples_filter - all_samples_in_loci
+        if samples_in_filter_not_in_loci:
+            print(f"ERROR: {len(samples_in_filter_not_in_loci)} sample(s) in filter file not found in loci file:", file=sys.stderr)
+            for sample in sorted(samples_in_filter_not_in_loci):
+                print(f"  {sample}", file=sys.stderr)
+            sys.exit(1)
         
-        for locus_idx, sequences in enumerate(loci_data):
-            locus_num = locus_idx  # 0-based numbering
-            
-            # Get sequence length and sample info
-            if sequences:
-                seq_length = len(next(iter(sequences.values())))
-                # Show first few samples for debugging
-                sample_list = list(sequences.keys())[:3]
-                print(f"\n  Locus {locus_num} (RAD_{locus_num}):")
-                print(f"    Samples: {len(sequences)} (first few: {', '.join(sample_list)}...)")
-                print(f"    Sequence length: {seq_length} bp")
-                
-                # Find invariant sites with verbose output
-                invariant_sites = find_invariant_sites(sequences, verbose=True)
-                total_invariant += len(invariant_sites)
-                print(f"    Invariant sites found: {len(invariant_sites)}")
-            else:
-                print(f"  Locus {locus_num} (RAD_{locus_num}): Empty")
-        
-        print(f"\nTotal invariant sites across all loci: {total_invariant}")
+        # Check if any samples will be included after filtering
+        filtered_samples = all_samples_in_loci.intersection(samples_filter)
+        if not filtered_samples:
+            print(f"ERROR: No samples match between filter file and loci file", file=sys.stderr)
+            sys.exit(1)
     
     # Generate VCF
-    generate_vcf(loci_data, args.output)
+    generate_vcf(loci_data, args.output, samples_filter=samples_filter)
     
     print(f"VCF file written to: {args.output}")
 
