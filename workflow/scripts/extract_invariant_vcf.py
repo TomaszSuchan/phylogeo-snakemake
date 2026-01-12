@@ -2,7 +2,7 @@
 """
 Extract invariant sites from RADseq loci file and generate VCF
 A site is considered invariant if all samples with valid nucleotides (A,T,G,C)
-have the same nucleotide, regardless of samples with N or ambiguous codes
+have the same nucleotide AND no samples have N or ambiguous codes at that position
 """
 
 import sys
