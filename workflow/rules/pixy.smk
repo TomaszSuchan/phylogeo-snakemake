@@ -1,6 +1,7 @@
 rule prepare_invariant_vcf:
     input:
-        loci = lambda wildcards: config["projects"][wildcards.project]["ipyrad_prefix"] + ".loci"
+        loci = lambda wildcards: config["projects"][wildcards.project]["ipyrad_prefix"] + ".loci",
+        samples_file = rules.create_samples_file.output.samples_file
     output:
         invariant_vcf = "results/{project}/filtered_data/{project}.invariant_sites.vcf"
     log:
@@ -15,7 +16,7 @@ rule prepare_invariant_vcf:
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
     shell:
         """
-        python workflow/scripts/extract_invariant_vcf.py {input.loci} -o {output.invariant_vcf} &> {log}
+        python workflow/scripts/extract_invariant_vcf.py {input.loci} -o {output.invariant_vcf} --samples-file {input.samples_file} &> {log}
         """
 
 rule prepare_invariant_vcf_gz:
