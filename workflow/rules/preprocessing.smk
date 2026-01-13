@@ -130,7 +130,7 @@ rule subset_vcf:
 # Rule to index subset VCF
 rule index_subset_vcf:
     input:
-        vcf=rules.subset_samples.output.vcf
+        vcf=rules.subset_vcf.output.vcf
     output:
         index="results/{project}/filtered_data/{project}.raw_sorted_subset.vcf.gz.csi"
     log:
@@ -151,7 +151,7 @@ rule index_subset_vcf:
 # Rule to select only biallelic SNPs with MAC>1 from VCF
 rule select_biallelic_snps:
     input:
-        vcf = rules.subset_samples.output.vcf,
+        vcf = rules.subset_vcf.output.vcf,
         index = rules.index_subset_vcf.output.index
     output:
         biallelic_vcf = "results/{project}/filtered_data/{project}.biallelic_snps.vcf.gz"

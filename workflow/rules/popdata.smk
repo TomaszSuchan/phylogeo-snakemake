@@ -1,6 +1,6 @@
 rule generate_popmap:
     input:
-        vcf=rules.subset_samples.output.vcf
+        vcf=rules.subset_vcf.output.vcf
     output:
         popmap="results/{project}/popmap.txt"
     params:
