@@ -4,7 +4,7 @@
 # and zero for individuals within a populations.
 rule relatedness:
     input:
-        vcf=rules.sort_vcf.output.vcf
+        vcf=rules.thin_vcf.output.vcf
     output:
         "results/{project}/relatedness/{project}.relatedness"
     log:
@@ -29,7 +29,7 @@ rule relatedness:
 rule relatedness2:
     input:
         # Use Snakemake's automatic file selection with multiple possible inputs
-        vcf=rules.sort_vcf.output.vcf
+        vcf=rules.thin_vcf.output.vcf
     output:
         "results/{project}/relatedness/{project}.relatedness2"
     log:
