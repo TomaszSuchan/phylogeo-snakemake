@@ -87,7 +87,7 @@ rule index_vcf:
 rule create_samples_file:
     input:
         vcf=rules.sort_vcf.output.vcf,
-        output_file=ancient(f"results/{wildcards.project}/filtered_data/{wildcards.project}.samples.txt")
+        output_file=ancient("results/{project}/filtered_data/{project}.samples.txt")
     output:
         samples_file="results/{project}/filtered_data/{project}.samples.txt"
     log:
@@ -125,7 +125,7 @@ rule subset_samples:
         vcf=rules.sort_vcf.output.vcf,
         index=rules.index_vcf.output.index,
         samples_file=rules.create_samples_file.output.samples_file,
-        output_file=ancient(f"results/{wildcards.project}/filtered_data/{wildcards.project}.raw_sorted_subset.vcf.gz")
+        output_file=ancient("results/{project}/filtered_data/{project}.raw_sorted_subset.vcf.gz")
     output:
         vcf="results/{project}/filtered_data/{project}.raw_sorted_subset.vcf.gz"
     log:
@@ -157,7 +157,7 @@ rule subset_samples:
 rule index_subset_vcf:
     input:
         vcf=rules.subset_samples.output.vcf,
-        output_file=ancient(f"results/{wildcards.project}/filtered_data/{wildcards.project}.raw_sorted_subset.vcf.gz.csi")
+        output_file=ancient("results/{project}/filtered_data/{project}.raw_sorted_subset.vcf.gz.csi")
     output:
         index="results/{project}/filtered_data/{project}.raw_sorted_subset.vcf.gz.csi"
     log:
