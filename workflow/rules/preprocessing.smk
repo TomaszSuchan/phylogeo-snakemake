@@ -1,5 +1,36 @@
 import os
 
+# Helper function to get samples list for a project
+def get_samples(wildcards):
+    """Get samples list for a project from comma-separated string, return empty list if not specified."""
+    samples = config["projects"][wildcards.project].get("samples", "")
+    
+    # If samples is a string (comma-separated), split and convert to list
+    if isinstance(samples, str):
+        # Split by comma and strip whitespace, filter out empty strings
+        return [s.strip() for s in samples.split(',') if s.strip()]
+    
+    # Return empty list if not a string
+    return []
+
+# Helper function to get the VCF to use (subset if samples specified, otherwise original)
+def get_input_vcf(wildcards):
+    """Return subset VCF if samples are specified, otherwise original sorted VCF"""
+    samples = get_samples(wildcards)
+    if samples and len(samples) > 0:
+        return rules.subset_samples.output.vcf
+    else:
+        return rules.sort_vcf.output.vcf
+
+# Helper function to get the index to use
+def get_input_index(wildcards):
+    """Return subset index if samples are specified, otherwise original index"""
+    samples = get_samples(wildcards)
+    if samples and len(samples) > 0:
+        return rules.index_subset_vcf.output.index
+    else:
+        return rules.index_vcf.output.index
+
 # Rule to sort input vcf
 rule sort_vcf:
     input:
@@ -9,7 +40,7 @@ rule sort_vcf:
           else f"{config['projects'][wildcards.project]['ipyrad_prefix']}.vcf"
       )
     output:
-        vcf="results/{project}/filtered_data/{project}.raw_sorted.vcf.gz"
+        vcf=temporary("results/{project}/filtered_data/{project}.raw_sorted.vcf.gz")
     log:
         "logs/{project}/sort_vcf.log"
     benchmark:
@@ -30,7 +61,7 @@ rule index_vcf:
         # Snakemake selects the first existing file from this list
         vcf=rules.sort_vcf.output.vcf
     output:
-        index="results/{project}/filtered_data/{project}.raw_sorted.vcf.gz.csi"
+        index=temporary("results/{project}/filtered_data/{project}.raw_sorted.vcf.gz.csi")
     log:
         "logs/{project}/index_vcf.log"
     benchmark:
@@ -46,11 +77,106 @@ rule index_vcf:
         bcftools index -f {input.vcf} &> {log}
         """
 
+# Rule to create samples text file
+rule create_samples_file:
+    input:
+        vcf=rules.sort_vcf.output.vcf
+    output:
+        samples_file="results/{project}/filtered_data/{project}.samples.txt"
+    log:
+        "logs/{project}/create_samples_file.log"
+    benchmark:
+        "benchmarks/{project}/create_samples_file.txt"
+    params:
+        samples=lambda wildcards: get_samples(wildcards)
+    conda:
+        "../envs/bcftools.yaml"
+    run:
+        import subprocess
+        
+        samples = params.samples
+        
+        # Write samples to file if provided and not empty
+        if samples and len(samples) > 0:
+            with open(output.samples_file, 'w') as f:
+                for sample in samples:
+                    f.write(str(sample) + '\n')
+        else:
+            # If no samples specified, extract all samples from VCF
+            cmd = f"bcftools query -l {input.vcf}"
+            with open(log[0], 'w') as logfile:
+                result = subprocess.run(cmd, shell=True, capture_output=True, text=True, stderr=logfile)
+                if result.returncode != 0:
+                    raise subprocess.CalledProcessError(result.returncode, cmd)
+                # Write all samples to file
+                with open(output.samples_file, 'w') as f:
+                    f.write(result.stdout)
+
+# Rule to subset samples from VCF using bcftools
+rule subset_samples:
+    input:
+        vcf=rules.sort_vcf.output.vcf,
+        index=rules.index_vcf.output.index,
+        samples_file=rules.create_samples_file.output.samples_file
+    output:
+        vcf="results/{project}/filtered_data/{project}.raw_sorted_subset.vcf.gz"
+    log:
+        "logs/{project}/subset_samples.log"
+    benchmark:
+        "benchmarks/{project}/subset_samples.txt"
+    params:
+        samples=lambda wildcards: get_samples(wildcards)
+    conda:
+        "../envs/bcftools.yaml"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    run:
+        import subprocess
+        import shutil
+        
+        samples = params.samples
+        
+        # Check if samples were specified in config (not just if file has content)
+        if samples and len(samples) > 0:
+            # Subset VCF using bcftools view -S and fill tags
+            cmd = f"bcftools view -S {input.samples_file} -Ou {input.vcf} | bcftools +fill-tags -Oz -o {output.vcf} -- -t NS,AC,AN,AF"
+            
+            with open(log[0], 'w') as logfile:
+                result = subprocess.run(cmd, shell=True, stderr=logfile, stdout=logfile)
+                if result.returncode != 0:
+                    raise subprocess.CalledProcessError(result.returncode, cmd)
+        else:
+            # If no samples specified, just copy the input VCF to output
+            shutil.copy(input.vcf, output.vcf)
+
+# Rule to index subset VCF
+rule index_subset_vcf:
+    input:
+        vcf=rules.subset_samples.output.vcf
+    output:
+        index="results/{project}/filtered_data/{project}.raw_sorted_subset.vcf.gz.csi"
+    log:
+        "logs/{project}/index_subset_vcf.log"
+    benchmark:
+        "benchmarks/{project}/index_subset_vcf.txt"
+    conda:
+        "../envs/bcftools.yaml"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    shell:
+        """
+        bcftools index -f {input.vcf} &> {log}
+        """
+
 # Rule to select only biallelic SNPs with MAC>1 from VCF
 rule select_biallelic_snps:
     input:
-        vcf = rules.sort_vcf.output.vcf,
-        index = rules.index_vcf.output.index
+        vcf = get_input_vcf,
+        index = get_input_index
     output:
         biallelic_vcf = "results/{project}/filtered_data/{project}.biallelic_snps.vcf.gz"
     log:
