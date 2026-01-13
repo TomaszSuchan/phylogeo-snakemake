@@ -60,7 +60,7 @@ rule prepare_invariant_vcf_gz_index:
 
 rule merge_invariant_sites:
     input:
-        vcf_var = rules.subset_samples.output.vcf,
+        vcf_var = rules.subset_vcf.output.vcf,
         vcf_var_index = rules.index_subset_vcf.output.index,
         vcf_inv = rules.prepare_invariant_vcf_gz.output.vcf,
         vcf_inv_index = rules.prepare_invariant_vcf_gz_index.output.index

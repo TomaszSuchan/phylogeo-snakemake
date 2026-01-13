@@ -13,28 +13,6 @@ def get_samples(wildcards):
     # Return empty list if not a string
     return []
 
-# Helper function to get the VCF to use (subset if samples specified, otherwise original)
-def get_input_vcf(wildcards):
-    """Return subset VCF if samples specified, otherwise original sorted VCF"""
-    samples = get_samples(wildcards)
-    
-    # If samples specified, use subset VCF
-    if samples and len(samples) > 0:
-        return f"results/{wildcards.project}/filtered_data/{wildcards.project}.raw_sorted_subset.vcf.gz"
-    else:
-        return f"results/{wildcards.project}/filtered_data/{wildcards.project}.raw_sorted.vcf.gz"
-
-# Helper function to get the index to use
-def get_input_index(wildcards):
-    """Return subset index if samples specified, otherwise original index"""
-    samples = get_samples(wildcards)
-    
-    # If samples specified, use subset index
-    if samples and len(samples) > 0:
-        return f"results/{wildcards.project}/filtered_data/{wildcards.project}.raw_sorted_subset.vcf.gz.csi"
-    else:
-        return f"results/{wildcards.project}/filtered_data/{wildcards.project}.raw_sorted.vcf.gz.csi"
-
 # Rule to sort input vcf
 rule sort_vcf:
     input:
@@ -117,7 +95,7 @@ rule create_samples_file:
                     f.write(result.stdout)
 
 # Rule to subset samples from VCF using bcftools
-rule subset_samples:
+rule subset_vcf:
     input:
         vcf=rules.sort_vcf.output.vcf,
         index=rules.index_vcf.output.index,
@@ -125,9 +103,9 @@ rule subset_samples:
     output:
         vcf="results/{project}/filtered_data/{project}.raw_sorted_subset.vcf.gz"
     log:
-        "logs/{project}/subset_samples.log"
+        "logs/{project}/subset_vcf.log"
     benchmark:
-        "benchmarks/{project}/subset_samples.txt"
+        "benchmarks/{project}/subset_vcf.txt"
     params:
         samples=lambda wildcards: get_samples(wildcards),
         has_samples=lambda wildcards: "1" if len(get_samples(wildcards)) > 0 else "0",
@@ -173,8 +151,8 @@ rule index_subset_vcf:
 # Rule to select only biallelic SNPs with MAC>1 from VCF
 rule select_biallelic_snps:
     input:
-        vcf = get_input_vcf,
-        index = get_input_index
+        vcf = rules.subset_samples.output.vcf,
+        index = rules.index_subset_vcf.output.index
     output:
         biallelic_vcf = "results/{project}/filtered_data/{project}.biallelic_snps.vcf.gz"
     log:
