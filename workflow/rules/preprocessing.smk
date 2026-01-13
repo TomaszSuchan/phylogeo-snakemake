@@ -125,31 +125,22 @@ rule subset_samples:
     benchmark:
         "benchmarks/{project}/subset_samples.txt"
     params:
-        samples=lambda wildcards: get_samples(wildcards)
+        samples=lambda wildcards: get_samples(wildcards),
+        has_samples=lambda wildcards: "1" if len(get_samples(wildcards)) > 0 else "0"
     conda:
         "../envs/bcftools.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
-    run:
-        import subprocess
-        import shutil
-        
-        samples = params.samples
-        
-        # Check if samples were specified in config (not just if file has content)
-        if samples and len(samples) > 0:
-            # Subset VCF using bcftools view -S and fill tags
-            cmd = f"bcftools view -S {input.samples_file} -Ou {input.vcf} | bcftools +fill-tags -Oz -o {output.vcf} -- -t NS,AC,AN,AF"
-            
-            with open(log[0], 'w') as logfile:
-                result = subprocess.run(cmd, shell=True, stderr=logfile, stdout=logfile)
-                if result.returncode != 0:
-                    raise subprocess.CalledProcessError(result.returncode, cmd)
-        else:
-            # If no samples specified, just copy the input VCF to output
-            shutil.copy(input.vcf, output.vcf)
+    shell:
+        """
+        if [ "{params.has_samples}" = "1" ]; then
+            bcftools view -S {input.samples_file} -Ou {input.vcf} | bcftools +fill-tags -Oz -o {output.vcf} -- -t NS,AC,AN,AF &> {log}
+        else
+            cp {input.vcf} {output.vcf}
+        fi
+        """
 
 # Rule to index subset VCF
 rule index_subset_vcf:
