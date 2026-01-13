@@ -15,25 +15,31 @@ def get_samples(wildcards):
 
 # Helper function to get the VCF to use (subset if samples specified, otherwise original)
 def get_input_vcf(wildcards):
-    """Return subset VCF if samples are specified or if subset exists, otherwise original sorted VCF"""
+    """Return subset VCF if samples specified or if subset exists, otherwise original sorted VCF"""
     samples = get_samples(wildcards)
     subset_vcf = f"results/{wildcards.project}/filtered_data/{wildcards.project}.raw_sorted_subset.vcf.gz"
     
     # If samples specified, always use subset
     if samples and len(samples) > 0:
         return ancient(rules.subset_samples.output.vcf)
+    # If no samples but subset exists (from previous run), use it as ancient to skip temp file recreation
+    elif os.path.exists(subset_vcf):
+        return ancient(subset_vcf)
     else:
         return rules.sort_vcf.output.vcf
 
 # Helper function to get the index to use
 def get_input_index(wildcards):
-    """Return subset index if samples are specified or if subset exists, otherwise original index"""
+    """Return subset index if samples specified or if subset exists, otherwise original index"""
     samples = get_samples(wildcards)
     subset_index = f"results/{wildcards.project}/filtered_data/{wildcards.project}.raw_sorted_subset.vcf.gz.csi"
     
     # If samples specified, always use subset index
     if samples and len(samples) > 0:
         return ancient(rules.index_subset_vcf.output.index)
+    # If no samples but subset index exists (from previous run), use it as ancient to skip temp file recreation
+    elif os.path.exists(subset_index):
+        return ancient(subset_index)
     else:
         return rules.index_vcf.output.index
 
@@ -86,8 +92,7 @@ rule index_vcf:
 # Rule to create samples text file
 rule create_samples_file:
     input:
-        vcf=rules.sort_vcf.output.vcf,
-        output_file=ancient("results/{project}/filtered_data/{project}.samples.txt")
+        vcf=rules.sort_vcf.output.vcf
     output:
         samples_file="results/{project}/filtered_data/{project}.samples.txt"
     log:
@@ -124,8 +129,7 @@ rule subset_samples:
     input:
         vcf=rules.sort_vcf.output.vcf,
         index=rules.index_vcf.output.index,
-        samples_file=rules.create_samples_file.output.samples_file,
-        output_file=ancient("results/{project}/filtered_data/{project}.raw_sorted_subset.vcf.gz")
+        samples_file=rules.create_samples_file.output.samples_file
     output:
         vcf="results/{project}/filtered_data/{project}.raw_sorted_subset.vcf.gz"
     log:
@@ -156,8 +160,7 @@ rule subset_samples:
 # Rule to index subset VCF
 rule index_subset_vcf:
     input:
-        vcf=rules.subset_samples.output.vcf,
-        output_file=ancient("results/{project}/filtered_data/{project}.raw_sorted_subset.vcf.gz.csi")
+        vcf=rules.subset_samples.output.vcf
     output:
         index="results/{project}/filtered_data/{project}.raw_sorted_subset.vcf.gz.csi"
     log:
