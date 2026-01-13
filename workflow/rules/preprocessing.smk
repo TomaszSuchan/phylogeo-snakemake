@@ -15,39 +15,25 @@ def get_samples(wildcards):
 
 # Helper function to get the VCF to use (subset if samples specified, otherwise original)
 def get_input_vcf(wildcards):
-    """Return subset VCF if samples specified or if subset exists, otherwise original sorted VCF"""
+    """Return subset VCF if samples specified, otherwise original sorted VCF"""
     samples = get_samples(wildcards)
-    subset_vcf = f"results/{wildcards.project}/filtered_data/{wildcards.project}.raw_sorted_subset.vcf.gz"
     
-    # If samples specified and subset exists, use the file path directly
+    # If samples specified, use subset VCF
     if samples and len(samples) > 0:
-        if os.path.exists(subset_vcf):
-            return ancient(subset_vcf)  # Use file path, not rule output
-        else:
-            return rules.subset_samples.output.vcf  # File doesn't exist yet, need to create it
-    # If no samples but subset exists (from previous run), use it as ancient
-    elif os.path.exists(subset_vcf):
-        return ancient(subset_vcf)
+        return f"results/{wildcards.project}/filtered_data/{wildcards.project}.raw_sorted_subset.vcf.gz"
     else:
-        return rules.sort_vcf.output.vcf
+        return f"results/{wildcards.project}/filtered_data/{wildcards.project}.raw_sorted.vcf.gz"
 
 # Helper function to get the index to use
 def get_input_index(wildcards):
-    """Return subset index if samples specified or if subset exists, otherwise original index"""
+    """Return subset index if samples specified, otherwise original index"""
     samples = get_samples(wildcards)
-    subset_index = f"results/{wildcards.project}/filtered_data/{wildcards.project}.raw_sorted_subset.vcf.gz.csi"
     
-    # If samples specified and subset index exists, use the file path directly
+    # If samples specified, use subset index
     if samples and len(samples) > 0:
-        if os.path.exists(subset_index):
-            return ancient(subset_index)  # Use file path, not rule output
-        else:
-            return rules.index_subset_vcf.output.index  # File doesn't exist yet, need to create it
-    # If no samples but subset index exists (from previous run), use it as ancient
-    elif os.path.exists(subset_index):
-        return ancient(subset_index)
+        return f"results/{wildcards.project}/filtered_data/{wildcards.project}.raw_sorted_subset.vcf.gz.csi"
     else:
-        return rules.index_vcf.output.index
+        return f"results/{wildcards.project}/filtered_data/{wildcards.project}.raw_sorted.vcf.gz.csi"
 
 # Rule to sort input vcf
 rule sort_vcf:
