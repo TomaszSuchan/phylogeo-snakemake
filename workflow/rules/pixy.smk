@@ -1,7 +1,6 @@
 rule prepare_invariant_vcf:
     input:
-        loci = lambda wildcards: config["projects"][wildcards.project]["ipyrad_prefix"] + ".loci",
-        index = rules.index_vcf.output.index
+        loci = lambda wildcards: config["projects"][wildcards.project]["ipyrad_prefix"] + ".loci"
     output:
         invariant_vcf = "results/{project}/filtered_data/{project}.invariant_sites.vcf"
     log:
