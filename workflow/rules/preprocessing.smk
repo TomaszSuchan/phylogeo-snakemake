@@ -126,7 +126,8 @@ rule subset_samples:
         "benchmarks/{project}/subset_samples.txt"
     params:
         samples=lambda wildcards: get_samples(wildcards),
-        has_samples=lambda wildcards: "1" if len(get_samples(wildcards)) > 0 else "0"
+        has_samples=lambda wildcards: "1" if len(get_samples(wildcards)) > 0 else "0",
+        temp_vcf=lambda wildcards: f"results/{wildcards.project}/filtered_data/{wildcards.project}.raw_sorted_subset_temp.bcf"
     conda:
         "../envs/bcftools.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -136,7 +137,9 @@ rule subset_samples:
     shell:
         """
         if [ "{params.has_samples}" = "1" ]; then
-            bcftools view -S {input.samples_file} -Ou {input.vcf} | bcftools +fill-tags -Oz -o {output.vcf} -- -t NS,AC,AN,AF &> {log}
+            bcftools view -S {input.samples_file} -Ou {input.vcf} -o {params.temp_vcf} &>> {log}
+            bcftools +fill-tags {params.temp_vcf} -Oz -o {output.vcf} -- -t NS,AC,AN,AF &>> {log}
+            rm -f {params.temp_vcf}
         else
             cp {input.vcf} {output.vcf}
         fi
