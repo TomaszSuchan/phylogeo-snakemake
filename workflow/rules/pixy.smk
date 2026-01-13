@@ -23,7 +23,7 @@ rule prepare_invariant_vcf_gz:
     input:
         vcf = rules.prepare_invariant_vcf.output.invariant_vcf
     output:
-        vcf = "results/{project}/filtered_data/{project}.invariant_sites.vcf.gz"
+        vcf = temporary("results/{project}/filtered_data/{project}.invariant_sites.vcf.gz")
     log:
         "logs/{project}/prepare_invariant_vcf_gz.log"
     benchmark:
@@ -43,7 +43,7 @@ rule prepare_invariant_vcf_gz_index:
     input:
         vcf = rules.prepare_invariant_vcf_gz.output.vcf
     output:
-        index = "results/{project}/filtered_data/{project}.invariant_sites.vcf.gz.csi"
+        index = temporary("results/{project}/filtered_data/{project}.invariant_sites.vcf.gz.csi")
     log:
         "logs/{project}/prepare_invariant_vcf_gz_index.log"
     benchmark:
