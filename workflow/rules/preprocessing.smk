@@ -101,7 +101,7 @@ rule subset_vcf:
         index=rules.index_vcf.output.index,
         samples_file=rules.create_samples_file.output.samples_file
     output:
-        vcf="results/{project}/filtered_data/{project}.raw_sorted_subset.vcf.gz"
+        vcf="results/{project}/filtered_data/{project}.vcf.gz"
     log:
         "logs/{project}/subset_vcf.log"
     benchmark:
@@ -132,7 +132,7 @@ rule index_subset_vcf:
     input:
         vcf=rules.subset_vcf.output.vcf
     output:
-        index="results/{project}/filtered_data/{project}.raw_sorted_subset.vcf.gz.csi"
+        index="results/{project}/filtered_data/{project}.vcf.gz.csi"
     log:
         "logs/{project}/index_subset_vcf.log"
     benchmark:
