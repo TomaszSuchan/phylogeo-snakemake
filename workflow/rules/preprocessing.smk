@@ -110,7 +110,7 @@ rule subset_vcf:
     shell:
         """
         if [ "{params.has_samples}" = "1" ]; then
-            bcftools view -S {input.samples_file} -Ou {input.vcf} -o {params.temp_vcf} >> {log} 2>&1 || exit 1
+            bcftools view -S {input.samples_file} --force-samples -Ou {input.vcf} -o {params.temp_vcf} >> {log} 2>&1 || exit 1
             bcftools +fill-tags {params.temp_vcf} -Oz -o {output.vcf} -- -t NS,AC,AN,AF >> {log} 2>&1 || exit 1
             rm -f {params.temp_vcf}
         else
