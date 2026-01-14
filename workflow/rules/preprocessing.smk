@@ -71,8 +71,6 @@ rule create_samples_file:
         "benchmarks/{project}/create_samples_file.txt"
     params:
         samples=lambda wildcards: get_samples(wildcards)
-    conda:
-        "../envs/bcftools.yaml"
     run:
         import subprocess
         
@@ -85,7 +83,9 @@ rule create_samples_file:
                     f.write(str(sample) + '\n')
         else:
             # If no samples specified, extract all samples from VCF
-            cmd = f"bcftools query -l {input.vcf}"
+            # Use sed/awk to extract sample names from #CHROM line (columns 10+)
+            # This avoids needing bcftools in run: directive where conda env isn't activated
+            cmd = f"(zcat {input.vcf} 2>/dev/null || cat {input.vcf}) | sed -n '/^#CHROM/p' | awk '{{for(i=10;i<=NF;i++) print $i}}'"
             with open(log[0], 'w') as logfile:
                 result = subprocess.run(cmd, shell=True, capture_output=True, text=True, stderr=logfile)
                 if result.returncode != 0:
