@@ -76,7 +76,14 @@ rule create_samples_file:
     shell:
         """
         if [ "{params.has_samples}" = "1" ]; then
-            python -c "samples = {params.samples_repr}; [print(s) for s in samples]" > {output.samples_file}
+            # First, write the provided samples to a temp file
+            python -c "samples = {params.samples_repr}; [print(s) for s in samples]" > {output.samples_file}.tmp
+            # Extract samples from VCF in VCF order, then filter to match provided samples
+            case "{input.vcf}" in
+                *.gz) zgrep "^#CHROM" {input.vcf} | awk '{{for(i=10;i<=NF;i++) print $i}}' | grep -F -f {output.samples_file}.tmp > {output.samples_file} 2> {log} || (rm -f {output.samples_file}.tmp && exit 1) ;;
+                *) grep "^#CHROM" {input.vcf} | awk '{{for(i=10;i<=NF;i++) print $i}}' | grep -F -f {output.samples_file}.tmp > {output.samples_file} 2> {log} || (rm -f {output.samples_file}.tmp && exit 1) ;;
+            esac
+            rm -f {output.samples_file}.tmp
         else
             case "{input.vcf}" in
                 *.gz) zgrep "^#CHROM" {input.vcf} | awk '{{for(i=10;i<=NF;i++) print $i}}' > {output.samples_file} 2> {log} || exit 1 ;;
@@ -110,7 +117,7 @@ rule subset_vcf:
     shell:
         """
         if [ "{params.has_samples}" = "1" ]; then
-            bcftools view -S {input.samples_file} --force-samples -Ou {input.vcf} -o {params.temp_vcf} >> {log} 2>&1 || exit 1
+            bcftools view -S {input.samples_file} -Ou {input.vcf} -o {params.temp_vcf} >> {log} 2>&1 || exit 1
             bcftools +fill-tags {params.temp_vcf} -Oz -o {output.vcf} -- -t NS,AC,AN,AF >> {log} 2>&1 || exit 1
             rm -f {params.temp_vcf}
         else
