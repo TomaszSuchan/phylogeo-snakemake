@@ -70,29 +70,20 @@ rule create_samples_file:
     benchmark:
         "benchmarks/{project}/create_samples_file.txt"
     params:
-        samples=lambda wildcards: get_samples(wildcards)
-    run:
-        import subprocess
-        
-        samples = params.samples
-        
-        # Write samples to file if provided and not empty
-        if samples and len(samples) > 0:
-            with open(output.samples_file, 'w') as f:
-                for sample in samples:
-                    f.write(str(sample) + '\n')
-        else:
-            # If no samples specified, extract all samples from VCF
-            # Use sed/awk to extract sample names from #CHROM line (columns 10+)
-            # This avoids needing bcftools in run: directive where conda env isn't activated
-            cmd = f"(zcat {input.vcf} 2>/dev/null || cat {input.vcf}) | sed -n '/^#CHROM/p' | awk '{{for(i=10;i<=NF;i++) print $i}}'"
-            with open(log[0], 'w') as logfile:
-                result = subprocess.run(cmd, shell=True, capture_output=True, text=True, stderr=logfile)
-                if result.returncode != 0:
-                    raise subprocess.CalledProcessError(result.returncode, cmd)
-                # Write all samples to file
-                with open(output.samples_file, 'w') as f:
-                    f.write(result.stdout)
+        samples=lambda wildcards: get_samples(wildcards),
+        has_samples=lambda wildcards: "1" if get_samples(wildcards) else "0",
+        samples_repr=lambda wildcards: repr(get_samples(wildcards))
+    shell:
+        """
+        if [ "{params.has_samples}" = "1" ]; then
+            python -c "samples = {params.samples_repr}; [print(s) for s in samples]" > {output.samples_file}
+        else
+            case "{input.vcf}" in
+                *.gz) zgrep "^#CHROM" {input.vcf} | awk '{{for(i=10;i<=NF;i++) print $i}}' > {output.samples_file} 2> {log} || exit 1 ;;
+                *) grep "^#CHROM" {input.vcf} | awk '{{for(i=10;i<=NF;i++) print $i}}' > {output.samples_file} 2> {log} || exit 1 ;;
+            esac
+        fi
+        """
 
 # Rule to subset samples from VCF using bcftools
 rule subset_vcf:
@@ -108,7 +99,7 @@ rule subset_vcf:
         "benchmarks/{project}/subset_vcf.txt"
     params:
         samples=lambda wildcards: get_samples(wildcards),
-        has_samples=lambda wildcards: "1" if len(get_samples(wildcards)) > 0 else "0",
+        has_samples=lambda wildcards: "1" if get_samples(wildcards) else "0",
         temp_vcf=lambda wildcards: f"results/{wildcards.project}/filtered_data/{wildcards.project}.raw_sorted_subset_temp.bcf"
     conda:
         "../envs/bcftools.yaml"
@@ -119,11 +110,11 @@ rule subset_vcf:
     shell:
         """
         if [ "{params.has_samples}" = "1" ]; then
-            bcftools view -S {input.samples_file} -Ou {input.vcf} -o {params.temp_vcf} &>> {log}
-            bcftools +fill-tags {params.temp_vcf} -Oz -o {output.vcf} -- -t NS,AC,AN,AF &>> {log}
+            bcftools view -S {input.samples_file} -Ou {input.vcf} -o {params.temp_vcf} >> {log} 2>&1 || exit 1
+            bcftools +fill-tags {params.temp_vcf} -Oz -o {output.vcf} -- -t NS,AC,AN,AF >> {log} 2>&1 || exit 1
             rm -f {params.temp_vcf}
         else
-            cp {input.vcf} {output.vcf}
+            cp -f {input.vcf} {output.vcf} >> {log} 2>&1 || exit 1
         fi
         """
 
