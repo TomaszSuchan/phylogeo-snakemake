@@ -1,6 +1,3 @@
-# Load configuration
-configfile: "config/config.yaml"
-
 def get_pca_combinations(pc_max):
     """
     Generate all unique combinations of PC axes up to pc_max.
