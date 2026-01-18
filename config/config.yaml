@@ -28,6 +28,11 @@ parameters: &global_params
   # The VCF file will is first filtered for bilallelic SNPs with MAC>1
   # and then thinned to one SNP per RAD fragment using the parameters below.
   #
+  vcf_filtering:
+    f_missing: 0.5 # maximum missing data threshold for variant filtering
+                   # variants missing in > f_missing proportion of samples are filtered out
+                   # 1 keeps all variants, 0 removes variants with any missing data
+    
   # VCF thinning parameters (defaults shown):
   vcf_thinning:
     min_coverage: 0          # minimum number of samples with data

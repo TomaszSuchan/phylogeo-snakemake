@@ -107,7 +107,8 @@ rule subset_vcf:
     params:
         samples=lambda wildcards: get_samples(wildcards),
         has_samples=lambda wildcards: "1" if get_samples(wildcards) else "0",
-        temp_vcf=lambda wildcards: f"results/{wildcards.project}/filtered_data/{wildcards.project}.raw_sorted_subset_temp.bcf"
+        missing_threshold=lambda wildcards: config["projects"][wildcards.project]["parameters"]["vcf_filtering"]["f_missing"],
+        skip_missing_filter=lambda wildcards: "1" if config["projects"][wildcards.project]["parameters"]["vcf_filtering"]["f_missing"] >= 1.0 else "0"
     conda:
         "../envs/bcftools.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -117,11 +118,25 @@ rule subset_vcf:
     shell:
         """
         if [ "{params.has_samples}" = "1" ]; then
-            bcftools view -S {input.samples_file} -Ou {input.vcf} -o {params.temp_vcf} >> {log} 2>&1 || exit 1
-            bcftools +fill-tags {params.temp_vcf} -Oz -o {output.vcf} -- -t NS,AC,AN,AF >> {log} 2>&1 || exit 1
-            rm -f {params.temp_vcf}
+            if [ "{params.skip_missing_filter}" = "1" ]; then
+                # Skip F_MISSING filtering when f_missing >= 1
+                bcftools view -S {input.samples_file} -Ou {input.vcf} | \
+                bcftools +fill-tags - -Oz -o {output.vcf} -- -t NS,AC,AN,AF >> {log} 2>&1 || exit 1
+            else
+                # Apply F_MISSING filtering when f_missing < 1
+                bcftools view -S {input.samples_file} -Ou {input.vcf} | \
+                bcftools filter -e 'F_MISSING > {params.missing_threshold}' -Ou - | \
+                bcftools +fill-tags - -Oz -o {output.vcf} -- -t NS,AC,AN,AF >> {log} 2>&1 || exit 1
+            fi
         else
-            cp -f {input.vcf} {output.vcf} >> {log} 2>&1 || exit 1
+            if [ "{params.skip_missing_filter}" = "1" ]; then
+                # Skip F_MISSING filtering when f_missing >= 1
+                bcftools +fill-tags {input.vcf} -Oz -o {output.vcf} -- -t NS,AC,AN,AF >> {log} 2>&1 || exit 1
+            else
+                # Apply F_MISSING filtering when f_missing < 1
+                bcftools filter -e 'F_MISSING > {params.missing_threshold}' -Ou {input.vcf} | \
+                bcftools +fill-tags - -Oz -o {output.vcf} -- -t NS,AC,AN,AF >> {log} 2>&1 || exit 1
+            fi
         fi
         """
 
