@@ -107,8 +107,8 @@ rule subset_vcf:
     params:
         samples=lambda wildcards: get_samples(wildcards),
         has_samples=lambda wildcards: "1" if get_samples(wildcards) else "0",
-        missing_threshold=lambda wildcards: config["projects"][wildcards.project]["parameters"]["vcf_filtering"].get("f_missing", 1),
-        skip_missing_filter=lambda wildcards: "1" if config["projects"][wildcards.project]["parameters"]["vcf_filtering"].get("f_missing", 1) >= 1 else "0"
+        missing_threshold=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("vcf_filtering", {}).get("f_missing", 1),
+        skip_missing_filter=lambda wildcards: "1" if config["projects"][wildcards.project]["parameters"].get("vcf_filtering", {}).get("f_missing", 1) >= 1 else "0"
     conda:
         "../envs/bcftools.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
