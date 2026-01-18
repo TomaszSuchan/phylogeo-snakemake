@@ -38,17 +38,9 @@ if missing_sites:
     print(f"\nMissing {len(missing_sites)} site(s):\n")
 
     for site in sorted(missing_sites):
-        # Find all individuals with this site
-        individuals = popmap_df[popmap_df["Site"] == site]["Ind"].tolist()
-        print(f"  Site: '{site}'")
-        print(f"    Affected individuals ({len(individuals)}):")
-        for ind in individuals[:5]:  # Show first 5
-            print(f"      - {ind}")
-        if len(individuals) > 5:
-            print(f"      ... and {len(individuals) - 5} more")
-        print()
+        print(f"{site}")
 
-    print("=" * 80)
+    print("\n" + "=" * 80)
     print("Please add these sites to the popdata file or update the popmap.")
     print("=" * 80)
     sys.exit(1)

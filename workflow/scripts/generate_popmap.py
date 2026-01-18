@@ -51,7 +51,7 @@ if input_popmap and input_popmap != "":
             print(f"Popmap file: {input_popmap}")
             print(f"\nMissing {len(missing_samples)} sample(s):\n")
             for sample in missing_samples:
-                print(f"  - {sample}")
+                print(f"{sample}")
             print("\n" + "=" * 80)
             print("Please add these samples to the popmap file with their population assignments.")
             print("Example format (tab-separated):")
