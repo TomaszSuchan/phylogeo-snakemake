@@ -269,25 +269,27 @@ parameters: &global_params
 ### Projects configuration ###
 ##############################
 projects:
-  Vcardui_medium-497_filtered:
-    ipyrad_prefix: "/net/pr2/projects/plgrid/plggpam/Vcardui-global/medium-497_filtered"
+  Vcardui_medium-497_:
+    samples: "14U229_Belenois_aurota_Ethiopia_19_11_2014,14T716_Belenois_aurota_Benin_22_10_2014"
+    ipyrad_prefix: "test_data/test"
     ## Analysis selection - set to true/false to enable/disable
     analyses:
-      structure: true
-      faststructure: true
-      admixture: true
-      mapi: true
-      pcaone: true
+      structure: false
+      faststructure: false
+      admixture: false
+      mapi: false
+      pcaone: false
       vcf2pcacluster: false
       pcaone_emu: false
       pcaone_miss: false
       pixy: false
-      relatedness: true
+      relatedness: false
       iqtree: false
       iqtree_trimal: false
       iqtree_robust: false
       fineradstructure: false
+      plot_map: false  # Plot population map (requires popdata.txt)
     parameters:
       <<: *global_params
-      popmap: "data/Vcardui-popmap.txt"
-      popdata: "data/Vcardui-popdata.txt"
+      popmap: "data/popmap.txt"
+      popdata: "data/popdata.txt"

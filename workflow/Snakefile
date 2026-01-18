@@ -297,12 +297,13 @@ def get_all_targets():
                     "results/" + project + "/mapi/" + project + ".mapi_lower_tails.gpkg"
                 ])
         
-        # Population map targets (always run if popdata is available)
-        popdata = params.get("popdata")
-        if popdata and popdata != "NULL" and popdata != "":
-            targets.extend([
-                "results/" + project + "/population_map/" + project + ".population_map.pdf"
-            ])
+        # Population map targets (only run if plot_map is enabled and popdata is available)
+        if analyses.get("plot_map", False):
+            popdata = params.get("popdata")
+            if popdata and popdata != "NULL" and popdata != "":
+                targets.extend([
+                    "results/" + project + "/population_map/" + project + ".population_map.pdf"
+                ])
 
         # fineRADstructure targets
         if analyses.get("fineradstructure", False):
