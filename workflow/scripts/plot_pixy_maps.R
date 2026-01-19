@@ -8,13 +8,15 @@ library(RColorBrewer)
 library(grid) # for unit()
 
 # Source common map functions
-# Get the script directory relative to workflow root
-script_dir <- dirname(normalizePath(snakemake@script))
-common_functions <- file.path(script_dir, "common_map_functions.R")
+# Try to get script directory, fallback to relative path
+common_functions <- tryCatch({
+  script_dir <- dirname(normalizePath(snakemake@script))
+  file.path(script_dir, "common_map_functions.R")
+}, error = function(e) "workflow/scripts/common_map_functions.R")
 if (file.exists(common_functions)) {
   source(common_functions)
 } else {
-  # Fallback: try relative to current directory
+  # Final fallback
   source("workflow/scripts/common_map_functions.R")
 }
 
