@@ -1,6 +1,3 @@
-# Rule order to resolve ambiguity between grouped and sorted barplot rules
-ruleorder plot_pixy_pi_barplot_sorted > plot_pixy_pi_barplot
-
 rule prepare_invariant_vcf:
     input:
         loci = lambda wildcards: config["projects"][wildcards.project]["ipyrad_prefix"] + ".loci",
