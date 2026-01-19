@@ -256,8 +256,8 @@ def get_all_targets():
             ])
             # Pi barplots - use pixy.color_by config, fallback to pca_plot.color_by if not specified
             # Only generate if color_by groupings are defined (not "none")
-            pixy_groupings = params.get("pixy", {}).get("color_by", 
-                           params.get("pca_plot", {}).get("color_by", ["none"]))
+            pixy_groupings = params.get("pixy", {}).get("color_by", params.get("pca_plot", {}).get("color_by", ["none"]))
+            for color_by in pixy_groupings:
                 # Only generate if color_by is not "none"
                 if color_by != "none":
                     # Generate grouped version
