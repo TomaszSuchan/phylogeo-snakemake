@@ -256,18 +256,19 @@ def get_all_targets():
             ])
             # Pi barplots - use pixy.color_by config, fallback to pca_plot.color_by if not specified
             # Only generate if color_by groupings are defined (not "none")
-            pixy_groupings = params.get("pixy", {}).get("color_by", params.get("pca_plot", {}).get("color_by", ["none"]))
+            pixy_groupings = params.get("pixy", {}).get(
+                "color_by", params.get("pca_plot", {}).get("color_by", ["none"])
+            )
             for color_by in pixy_groupings:
-                if color_by != "none":
-                    # Generate grouped version
+                if color_by == "none":
+                    continue
                 targets.extend([
                     f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}.pdf",
-                    f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}.rds"
+                    f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}.rds",
                 ])
-                    # Generate sorted version
                     targets.extend([
                         f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}-sorted.pdf",
-                        f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}-sorted.rds"
+                    f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}-sorted.rds",
                     ])
             # Map plots - only pi makes sense (FST and DXY are pairwise, use heatmaps instead)
             # Only if popdata is specified
