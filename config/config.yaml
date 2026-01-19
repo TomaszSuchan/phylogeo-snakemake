@@ -54,7 +54,7 @@ parameters: &global_params
     boundary: NULL                  # map boundaries, e.g. c(xmin=-15, xmax=16, ymin=40, ymax=62)
     crs: 4326                       # coordinate reference system (4326 = WGS84 lat/lon)
     basemap: NULL                   # optional basemap object
-    pie_size: 1                     # size of pie charts on map
+    pie_size: 0.2                     # size of pie charts on map
     pie_border: 0.2                 # thickness of pie chart borders
     pie_border_col: "black"         # color of pie chart borders
     pie_opacity: 1                  # opacity of pie charts (0-1)
@@ -136,6 +136,17 @@ parameters: &global_params
   faststructure:
     tol: "10e-6"        # convergence criterion
     prior: "simple"     # prior choice: simple or logistic
+  
+  ## conStruct parameters
+  # conStruct (spatial population structure analysis incorporating geography)
+  construct:
+    n_chains: 1        # number of MCMC chains to run
+    n_iterations: 10000  # number of MCMC iterations per chain
+    make.freqs: true   # whether to make allele frequencies from genotype data
+    geoDist: null      # optional pre-computed geographic distance matrix (null = compute from coords)
+    coords: null       # optional coordinate matrix (null = use from indpopdata)
+    save.files: true   # whether to save intermediate files
+    crs: 4326          # coordinate reference system for plotting (4326 = WGS84)
   
   ## PCAone parameters
   #
@@ -264,19 +275,23 @@ parameters: &global_params
       threads: 4
       mem_mb: 16000
       runtime: 240
+    construct:
+      threads: 4
+      mem_mb: 16000
+      runtime: 1440  # conStruct MCMC can be time-intensive
 
 ##############################
 ### Projects configuration ###
 ##############################
 projects:
-  Vcardui_medium-497_:
-    samples: "14U229_Belenois_aurota_Ethiopia_19_11_2014,14T716_Belenois_aurota_Benin_22_10_2014"
+  TestProject:
     ipyrad_prefix: "test_data/test"
     ## Analysis selection - set to true/false to enable/disable
     analyses:
       structure: false
       faststructure: false
       admixture: false
+      construct: true
       mapi: false
       pcaone: false
       vcf2pcacluster: false

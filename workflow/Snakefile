@@ -247,7 +247,35 @@ def get_all_targets():
             targets.extend([
                 "results/" + project + "/pixy/" + project + ".pixy_pi-summary.txt",
                 "results/" + project + "/pixy/" + project + ".pixy_fst-summary.txt",
-                "results/" + project + "/pixy/" + project + ".pixy_dxy-summary.txt"
+                "results/" + project + "/pixy/" + project + ".pixy_dxy-summary.txt",
+                # Heatmaps
+                "results/" + project + "/pixy/plots/" + project + ".pixy_fst_heatmap.pdf",
+                "results/" + project + "/pixy/plots/" + project + ".pixy_fst_heatmap.rds",
+                "results/" + project + "/pixy/plots/" + project + ".pixy_dxy_heatmap.pdf",
+                "results/" + project + "/pixy/plots/" + project + ".pixy_dxy_heatmap.rds"
+            ])
+            # Pi barplots - use same color_by groupings as PCA plots
+            # Default to ["none"] if color_by not specified
+            pixy_groupings = params.get("pca_plot", {}).get("color_by", ["none"])
+            for color_by in pixy_groupings:
+                # Always generate grouped version
+                targets.extend([
+                    f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}.pdf",
+                    f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}.rds"
+                ])
+                # Generate sorted version if color_by is not "none"
+                if color_by != "none":
+                    targets.extend([
+                        f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}-sorted.pdf",
+                        f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}-sorted.rds"
+                    ])
+            # Map plots - only pi makes sense (FST and DXY are pairwise, use heatmaps instead)
+            # Only if popdata is specified
+            popdata = params.get("popdata")
+            if popdata and popdata != "NULL" and popdata != "":
+                targets.extend([
+                    "results/" + project + "/pixy/plots/" + project + ".pixy_pi_map.pdf",
+                    "results/" + project + "/pixy/plots/" + project + ".pixy_pi_map.rds"
             ])
 
         # Relatedness targets

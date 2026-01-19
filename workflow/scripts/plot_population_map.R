@@ -11,6 +11,17 @@ library(tidyverse)
 library(mapmixture)
 library(ggrepel)
 
+# Source common map functions
+# Get the script directory relative to workflow root
+script_dir <- dirname(normalizePath(snakemake@script))
+common_functions <- file.path(script_dir, "common_map_functions.R")
+if (file.exists(common_functions)) {
+  source(common_functions)
+} else {
+  # Fallback: try relative to current directory
+  source("workflow/scripts/common_map_functions.R")
+}
+
 # Prevent creation of Rplots.pdf
 pdf(NULL)
 
@@ -94,32 +105,11 @@ message(sprintf("Coordinate range: Lat [%.2f, %.2f], Lon [%.2f, %.2f]\n",
             min(coords_df$Lat), max(coords_df$Lat),
             min(coords_df$Lon), max(coords_df$Lon)))
 
-# Create dummy Q matrix (single cluster, all 1s) for mapmixture
-# This allows us to use mapmixture's basemap without showing pie charts
-message("\n=== CREATING DUMMY Q MATRIX FOR MAPMIXTURE ===\n")
-dummy_qmatrix <- data.frame(
-  Site = coords_df$Site,
-  Ind = coords_df$Site,  # Use site name as individual ID
-  Cluster1 = rep(1, nrow(coords_df))
-)
-message(sprintf("Dummy Q matrix: %d rows x %d columns\n", nrow(dummy_qmatrix), ncol(dummy_qmatrix)))
-
-# Create mapmixture plot with pie_size = 0 (invisible pies)
-# This gives us the styled basemap with all the same parameters as structure plots
-message("\n=== CREATING MAPMIXTURE BASEMAP ===\n")
-message("Using mapmixture with pie_size=0 to create basemap only\n")
-
-p <- mapmixture(
-  admixture_df = dummy_qmatrix,
-  coords_df = coords_df,
-  cluster_cols = c("#000000"),  # Dummy color (won't be visible)
-  boundary = if (length(boundary) == 0 || is.null(boundary) || boundary == "NULL") NULL else eval(parse(text = boundary)),
+# Prepare map parameters
+map_params <- list(
+  boundary = boundary,
   crs = crs,
-  basemap = if (length(basemap) == 0 || is.null(basemap) || basemap == "NULL") NULL else basemap,
-  pie_size = 0,  # Make pies invisible
-  pie_border = 0,
-  pie_border_col = "transparent",
-  pie_opacity = 0,
+  basemap = basemap,
   land_colour = land_colour,
   sea_colour = sea_colour,
   expand = expand,
@@ -137,8 +127,9 @@ p <- mapmixture(
   basemap_border_lwd = basemap_border_lwd
 )
 
-# Remove legend (not needed for population map)
-p <- p + theme(legend.position = "none")
+# Create basemap using mapmixture (with invisible pies)
+message("\n=== CREATING MAPMIXTURE BASEMAP ===\n")
+p <- create_basemap(coords_df, map_params)
 
 # Add population points if desired
 if (show_points) {
