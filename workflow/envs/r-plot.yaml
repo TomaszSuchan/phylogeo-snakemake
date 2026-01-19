@@ -6,3 +6,4 @@ dependencies:
   - r-devtools
   - r-rcolorbrewer
   - r-scales
+  - r-dplyr
