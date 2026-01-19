@@ -264,8 +264,8 @@ def get_all_targets():
                     f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}.rds",
                 ])
                     targets.extend([
-                        f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}-sorted.pdf",
-                    f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}-sorted.rds",
+                    f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-sorted-{color_by}.pdf",
+                    f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-sorted-{color_by}.rds",
                     ])
             popdata = params.get("popdata")
             if popdata and popdata != "NULL" and popdata != "":

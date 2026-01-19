@@ -190,7 +190,7 @@ rule plot_pixy_pi_barplot:
     log:
         "logs/{project}/plot_pixy_pi_barplot_{color_by}.log"
     wildcard_constraints:
-        color_by="(?!.*-sorted$).*"  # Exclude values ending with "-sorted"
+        color_by="(?!sorted-).*"  # Exclude values starting with "sorted-"
     params:
         color_by = lambda wildcards: wildcards.color_by if wildcards.color_by != "none" else None,
         pca_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pca_colors", None),
@@ -211,12 +211,12 @@ rule plot_pixy_pi_barplot_sorted:
         pi_summary = rules.pixy_summary.output.pi,
         popdata = rules.generate_popdata.output.indpopdata
     output:
-        pdf = "results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}-sorted.pdf",
-        rds = "results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}-sorted.rds"
+        pdf = "results/{project}/pixy/plots/{project}.pixy_pi_barplot-sorted-{color_by}.pdf",
+        rds = "results/{project}/pixy/plots/{project}.pixy_pi_barplot-sorted-{color_by}.rds"
     log:
         "logs/{project}/plot_pixy_pi_barplot_{color_by}_sorted.log"
     wildcard_constraints:
-        color_by="(?!none)(?!.*-sorted$).*"  # Exclude "none" and values ending with "-sorted"
+        color_by="(?!none)(?!sorted-).*"  # Exclude "none" and values starting with "sorted-"
     params:
         color_by = lambda wildcards: wildcards.color_by,
         pca_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pca_colors", None),
