@@ -254,11 +254,8 @@ def get_all_targets():
                 "results/" + project + "/pixy/plots/" + project + ".pixy_dxy_heatmap.pdf",
                 "results/" + project + "/pixy/plots/" + project + ".pixy_dxy_heatmap.rds"
             ])
-            # Pi barplots - use pixy.color_by config, fallback to pca_plot.color_by if not specified
-            # Only generate if color_by groupings are defined (not "none")
-            pixy_groupings = params.get("pixy", {}).get(
-                "color_by", params.get("pca_plot", {}).get("color_by", ["none"])
-            )
+            pixy_groupings = params.get("pixy", {}).get("color_by",
+                params.get("pca_plot", {}).get("color_by", ["none"]))
             for color_by in pixy_groupings:
                 if color_by == "none":
                     continue
@@ -270,8 +267,6 @@ def get_all_targets():
                         f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}-sorted.pdf",
                     f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}-sorted.rds",
                     ])
-            # Map plots - only pi makes sense (FST and DXY are pairwise, use heatmaps instead)
-            # Only if popdata is specified
             popdata = params.get("popdata")
             if popdata and popdata != "NULL" and popdata != "":
                 targets.extend([
