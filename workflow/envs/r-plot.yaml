@@ -3,7 +3,6 @@ channels:
 dependencies:
   - r-base
   - r-ggplot2>=4.0
-  - r-devtools
-  - r-rcolorbrewer
-  - r-scales
-  - r-dplyr
+  - r-tidyverse
+  - r-pheatmap
+  - r-gridextra
