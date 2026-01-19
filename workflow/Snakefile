@@ -311,7 +311,9 @@ def get_all_targets():
                 "results/" + project + "/fineradstructure/" + project + ".input",
                 "results/" + project + "/fineradstructure/" + project + "_chunks.out",
                 "results/" + project + "/fineradstructure/" + project + "_chunks.mcmc.xml",
-                "results/" + project + "/fineradstructure/" + project + "_chunks.mcmcTree.xml"
+                "results/" + project + "/fineradstructure/" + project + "_chunks.mcmcTree.xml",
+                "results/" + project + "/fineradstructure/plots/" + project + ".fineradstructure_tree.pdf",
+                "results/" + project + "/fineradstructure/plots/" + project + ".fineradstructure_tree.rds"
             ])
 
     return targets

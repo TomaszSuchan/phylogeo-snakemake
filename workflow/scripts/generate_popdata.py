@@ -2,6 +2,7 @@
 
 import pandas as pd
 import sys
+import os
 
 # Snakemake automatically passes input/output/log via the 'snakemake' object
 popdata_path = snakemake.params.popdata
@@ -13,47 +14,58 @@ log_file = snakemake.log[0]
 sys.stdout = open(log_file, 'w')
 sys.stderr = sys.stdout
 
-print(f"Reading popdata file: {popdata_path}")
-# Read the provided popdata file
-popdata_df = pd.read_csv(popdata_path, sep="\t", header=0)
-print(f"  Found {len(popdata_df)} unique sites in popdata")
-
 print(f"Reading popmap file: {popmap_path}")
 # Read the generated popmap file
 popmap_df = pd.read_csv(popmap_path, sep="\t", header=None, names=["Ind", "Site"])
 print(f"  Found {len(popmap_df)} individuals in popmap")
 print(f"  Found {popmap_df['Site'].nunique()} unique sites in popmap")
 
-# Check if all sites in popmap exist in popdata
-unique_sites_popmap = set(popmap_df["Site"].unique())
-unique_sites_popdata = set(popdata_df["Site"].unique())
-missing_sites = unique_sites_popmap - unique_sites_popdata
+# Check if popdata file is provided and exists
+if popdata_path and popdata_path.strip() and os.path.exists(popdata_path):
+    print(f"\nReading popdata file: {popdata_path}")
+    # Read the provided popdata file
+    popdata_df = pd.read_csv(popdata_path, sep="\t", header=0)
+    print(f"  Found {len(popdata_df)} unique sites in popdata")
 
-if missing_sites:
-    print("\n" + "=" * 80)
-    print("ERROR: Sites found in popmap but missing from popdata file")
-    print("=" * 80)
-    print(f"\nPopdata file: {popdata_path}")
-    print(f"Popmap file:  {popmap_path}")
-    print(f"\nMissing {len(missing_sites)} site(s):\n")
+    # Check if all sites in popmap exist in popdata
+    unique_sites_popmap = set(popmap_df["Site"].unique())
+    unique_sites_popdata = set(popdata_df["Site"].unique())
+    missing_sites = unique_sites_popmap - unique_sites_popdata
 
-    for site in sorted(missing_sites):
-        print(f"{site}")
+    if missing_sites:
+        print("\n" + "=" * 80)
+        print("ERROR: Sites found in popmap but missing from popdata file")
+        print("=" * 80)
+        print(f"\nPopdata file: {popdata_path}")
+        print(f"Popmap file:  {popmap_path}")
+        print(f"\nMissing {len(missing_sites)} site(s):\n")
 
-    print("\n" + "=" * 80)
-    print("Please add these sites to the popdata file or update the popmap.")
-    print("=" * 80)
-    sys.exit(1)
+        for site in sorted(missing_sites):
+            print(f"{site}")
 
-# Merge to ensure consistency
-merged_df = pd.merge(popmap_df, popdata_df, left_on="Site", right_on="Site", how="left")
+        print("\n" + "=" * 80)
+        print("Please add these sites to the popdata file or update the popmap.")
+        print("=" * 80)
+        sys.exit(1)
 
-# Rename the 'Individual_x' column back to 'Individual' (if exists)
-merged_df = merged_df.rename(columns={"Ind_x": "Ind"})
+    # Merge to ensure consistency
+    merged_df = pd.merge(popmap_df, popdata_df, left_on="Site", right_on="Site", how="left")
 
-# Select relevant columns: individual, population, latitude, longitude, and any additional columns
-output_columns = ["Ind", "Site"] + list(merged_df.columns[2:])
-final_popdata_df = merged_df[output_columns]
+    # Rename the 'Individual_x' column back to 'Individual' (if exists)
+    merged_df = merged_df.rename(columns={"Ind_x": "Ind"})
+
+    # Select relevant columns: individual, population, latitude, longitude, and any additional columns
+    output_columns = ["Ind", "Site"] + list(merged_df.columns[2:])
+    final_popdata_df = merged_df[output_columns]
+    
+    print(f"\nGenerated indpopdata with {len(final_popdata_df.columns)} columns: {', '.join(final_popdata_df.columns)}")
+else:
+    # No popdata file provided, generate only Ind and Site columns
+    print("\nNo popdata file provided or file does not exist.")
+    print("Generating indpopdata with only Ind and Site columns.")
+    final_popdata_df = popmap_df[["Ind", "Site"]]
+    print(f"Generated indpopdata with {len(final_popdata_df.columns)} columns: {', '.join(final_popdata_df.columns)}")
 
 # Save the final popdata file
 final_popdata_df.to_csv(output_path, sep="\t", header=True, index=False)
+print(f"\nSaved indpopdata to: {output_path}")

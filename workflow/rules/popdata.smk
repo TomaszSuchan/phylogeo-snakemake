@@ -25,7 +25,7 @@ rule generate_popdata:
     output:
         indpopdata="results/{project}/indpopdata.txt"
     params:
-        popdata=lambda wildcards: config["projects"][wildcards.project]["parameters"]["popdata"],
+        popdata=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("popdata", ""),
     log:
         "logs/{project}/generate_popdata.log"
     benchmark:
