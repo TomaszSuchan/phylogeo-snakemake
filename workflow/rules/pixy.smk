@@ -1,3 +1,6 @@
+# Rule order to resolve ambiguity between grouped and sorted barplot rules
+ruleorder plot_pixy_pi_barplot_sorted > plot_pixy_pi_barplot
+
 rule prepare_invariant_vcf:
     input:
         loci = lambda wildcards: config["projects"][wildcards.project]["ipyrad_prefix"] + ".loci",
@@ -216,7 +219,7 @@ rule plot_pixy_pi_barplot_sorted:
     log:
         "logs/{project}/plot_pixy_pi_barplot_{color_by}_sorted.log"
     wildcard_constraints:
-        color_by="(?!none).*"  # Exclude "none"
+        color_by="(?!none)(?!.*-sorted$).*"  # Exclude "none" and values ending with "-sorted"
     params:
         color_by = lambda wildcards: wildcards.color_by,
         pca_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pca_colors", None),
