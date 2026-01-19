@@ -254,17 +254,18 @@ def get_all_targets():
                 "results/" + project + "/pixy/plots/" + project + ".pixy_dxy_heatmap.pdf",
                 "results/" + project + "/pixy/plots/" + project + ".pixy_dxy_heatmap.rds"
             ])
-            # Pi barplots - use same color_by groupings as PCA plots
-            # Default to ["none"] if color_by not specified
-            pixy_groupings = params.get("pca_plot", {}).get("color_by", ["none"])
-            for color_by in pixy_groupings:
-                # Always generate grouped version
+            # Pi barplots - use pixy.color_by config, fallback to pca_plot.color_by if not specified
+            # Only generate if color_by groupings are defined (not "none")
+            pixy_groupings = params.get("pixy", {}).get("color_by", 
+                           params.get("pca_plot", {}).get("color_by", ["none"]))
+                # Only generate if color_by is not "none"
+                if color_by != "none":
+                    # Generate grouped version
                 targets.extend([
                     f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}.pdf",
                     f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}.rds"
                 ])
-                # Generate sorted version if color_by is not "none"
-                if color_by != "none":
+                    # Generate sorted version
                     targets.extend([
                         f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}-sorted.pdf",
                         f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}-sorted.rds"

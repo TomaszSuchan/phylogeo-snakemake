@@ -203,6 +203,9 @@ parameters: &global_params
   pixy:
     stats: "pi fst dxy"  # statistics to compute, options: pi, fst, dxy
     window_size: 10000  # size of the sliding window in bp
+    bootstrap_replicates: 1000  # number of bootstrap replicates for confidence intervals
+    color_by: ["Region"]  # columns in popdata to color barplots by (must match your popdata column names!)
+                          # separate from pca_plot.color_by - allows different groupings for pixy vs PCA
 
   ## fineRADstructure parameters
   fineradstructure:
