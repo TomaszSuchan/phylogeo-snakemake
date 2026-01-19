@@ -266,8 +266,8 @@ def get_all_targets():
                 # Generate sorted version if color_by is not "none"
                 if color_by != "none":
                     targets.extend([
-                        f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}_sorted.pdf",
-                        f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}_sorted.rds"
+                        f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}-sorted.pdf",
+                        f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}-sorted.rds"
                     ])
             # Map plots - only pi makes sense (FST and DXY are pairwise, use heatmaps instead)
             # Only if popdata is specified
