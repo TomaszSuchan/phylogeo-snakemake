@@ -1,0 +1,19 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - r-base
+  - r-vcfr
+  - r-adegenet
+  - r-ggplot2
+  - r-geosphere
+  - r-sf
+  - r-rcolorbrewer
+  - r-scales
+  - r-tidyverse
+  - r-rnaturalearth
+  - r-rnaturalearthdata
+  - r-colorbrewer
+  # conStruct will be installed from CRAN in the R script if not available
+

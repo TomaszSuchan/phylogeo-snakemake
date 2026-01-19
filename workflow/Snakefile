@@ -25,6 +25,8 @@ include: "rules/pixy.smk"
 include: "rules/genetic_distances.smk"
 include: "rules/mapi.smk"
 include: "rules/fineradstructure.smk"
+include: "rules/construct.smk"
+include: "rules/evaladmix.smk"
 
 def get_all_targets():
     """
@@ -74,6 +76,16 @@ def get_all_targets():
                 expand("results/" + project + "/faststructure/plots/" + project + ".faststructure.K{k}.barplot.rds",
                        k=k_values)
             ])
+            # Evaladmix targets for fastStructure (only if evaladmix is also enabled)
+            if analyses.get("evaladmix", False):
+                targets.extend([
+                    expand("results/" + project + "/faststructure/evaladmix/" + project + ".faststructure.K{k}.corres.txt",
+                           k=k_values),
+                    expand("results/" + project + "/faststructure/evaladmix/plots/" + project + ".faststructure.K{k}.evaladmix.pdf",
+                           k=k_values),
+                    expand("results/" + project + "/faststructure/evaladmix/plots/" + project + ".faststructure.K{k}.evaladmix.rds",
+                           k=k_values)
+                ])
 
         # ADMIXTURE targets
         if analyses.get("admixture", False):
@@ -100,6 +112,16 @@ def get_all_targets():
                 expand("results/" + project + "/admixture/plots/" + project + ".admixture.K{k}.barplot.rds",
                        k=k_values)
             ])
+            # Evaladmix targets for ADMIXTURE (only if evaladmix is also enabled)
+            if analyses.get("evaladmix", False):
+                targets.extend([
+                    expand("results/" + project + "/admixture/evaladmix/" + project + ".admixture.K{k}.corres.txt",
+                           k=k_values),
+                    expand("results/" + project + "/admixture/evaladmix/plots/" + project + ".admixture.K{k}.evaladmix.pdf",
+                           k=k_values),
+                    expand("results/" + project + "/admixture/evaladmix/plots/" + project + ".admixture.K{k}.evaladmix.rds",
+                           k=k_values)
+                ])
 
         # STRUCTURE targets
         if analyses.get("structure", False):
@@ -129,6 +151,18 @@ def get_all_targets():
                 expand("results/" + project + "/structure/plots/" + project + ".structure.K{k}.barplot.rds",
                        k=k_values)
             ])
+            # Evaladmix targets for STRUCTURE (only if evaladmix is also enabled)
+            if analyses.get("evaladmix", False):
+                targets.extend([
+                    expand("results/" + project + "/structure/evaladmix/" + project + ".structure.K{k}.P",
+                           k=k_values),
+                    expand("results/" + project + "/structure/evaladmix/" + project + ".structure.K{k}.corres.txt",
+                           k=k_values),
+                    expand("results/" + project + "/structure/evaladmix/plots/" + project + ".structure.K{k}.evaladmix.pdf",
+                           k=k_values),
+                    expand("results/" + project + "/structure/evaladmix/plots/" + project + ".structure.K{k}.evaladmix.rds",
+                           k=k_values)
+                ])
 
         # PCAone targets (standard)
         if analyses.get("pcaone", False):
@@ -263,16 +297,16 @@ def get_all_targets():
                     f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}.pdf",
                     f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}.rds",
                 ])
-                    targets.extend([
+                targets.extend([
                     f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-sorted-{color_by}.pdf",
                     f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-sorted-{color_by}.rds",
-                    ])
+                ])
             popdata = params.get("popdata")
             if popdata and popdata != "NULL" and popdata != "":
                 targets.extend([
                     "results/" + project + "/pixy/plots/" + project + ".pixy_pi_map.pdf",
                     "results/" + project + "/pixy/plots/" + project + ".pixy_pi_map.rds"
-            ])
+                ])
 
         # Relatedness targets
         if analyses.get("relatedness", False):
@@ -280,7 +314,7 @@ def get_all_targets():
                 "results/" + project + "/relatedness/" + project + ".relatedness",
                 "results/" + project + "/relatedness/" + project + ".relatedness2"
             ])
-        
+
         # IQtree targets
         if analyses.get("iqtree", False):
             targets.extend([
@@ -339,6 +373,22 @@ def get_all_targets():
                 "results/" + project + "/fineradstructure/plots/" + project + ".fineradstructure_tree.pdf",
                 "results/" + project + "/fineradstructure/plots/" + project + ".fineradstructure_tree.rds"
             ])
+
+        # conStruct targets
+        if analyses.get("construct", False):
+            # Only run if popdata is specified (required for geographic coordinates)
+            popdata = params.get("popdata")
+            if popdata and popdata != "NULL" and popdata != "":
+                targets.extend([
+                    expand("results/" + project + "/construct/" + project + ".construct.K{k}.results.rds",
+                           k=k_values),
+                    expand("results/" + project + "/construct/" + project + ".construct.K{k}.layer_proportions.txt",
+                           k=k_values),
+                    expand("results/" + project + "/construct/plots/" + project + ".construct.K{k}.map.pdf",
+                           k=k_values),
+                    expand("results/" + project + "/construct/plots/" + project + ".construct.K{k}.barplot.pdf",
+                           k=k_values)
+                ])
 
     return targets
 
