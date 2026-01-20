@@ -98,7 +98,7 @@ parameters: &global_params
     divider_width: 0.4              # width of site dividers
     site_order: NULL                # custom site order as list, e.g. ["Site1", "Site2", "Site3"]
     flip_axis: FALSE                # flip barplot axis
-    site_labels_angle: 90           # angle for site labels (90 = perpendicular, 0 = horizontal)
+    site_labels_angle: 45           # angle for site labels (90 = perpendicular, 0 = horizontal)
 
   ## Population map plotting parameters
   # Parameters specific to population location maps (points, labels, leader lines)
