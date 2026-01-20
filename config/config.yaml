@@ -245,7 +245,7 @@ parameters: &global_params
     structure:
       threads: 1
       mem_mb: 8000
-      runtime: 1440
+      runtime: 4320
     faststructure:
       threads: 4
       mem_mb: 8000
@@ -294,7 +294,7 @@ projects:
       structure: false
       faststructure: false
       admixture: false
-      evaladmix: true  # Evaluate admixture results (requires structure, faststructure, or admixture to be enabled)
+      evaladmix: false
       construct: false
       mapi: false
       pcaone: false
@@ -307,7 +307,7 @@ projects:
       iqtree_trimal: false
       iqtree_robust: false
       fineradstructure: false
-      plot_map: false  # Plot population map (requires popdata.txt)
+      plot_map: false
     parameters:
       <<: *global_params
       popmap: "data/popmap.txt"
