@@ -1,6 +1,6 @@
 rule generate_popmap:
     input:
-        vcf=rules.subset_vcf.output.vcf
+        vcf=rules.subset_vcf_after_relatedness.output.vcf
     output:
         popmap="results/{project}/popmap.txt"
     params:
@@ -38,6 +38,24 @@ rule generate_popdata:
         runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
     script:
         "../scripts/generate_popdata.py"
+
+rule create_population_summary:
+    input:
+        indpopdata=rules.generate_popdata.output.indpopdata
+    output:
+        summary="results/{project}/population_data/{project}.population_summary.txt"
+    log:
+        "logs/{project}/create_population_summary.log"
+    benchmark:
+        "benchmarks/{project}/create_population_summary.txt"
+    conda:
+        "../envs/python.yaml"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    script:
+        "../scripts/create_population_summary.py"
 
 
 

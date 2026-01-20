@@ -382,8 +382,15 @@ def get_all_targets():
             popdata = params.get("popdata")
             if popdata and popdata != "NULL" and popdata != "":
                 targets.extend([
-                    "results/" + project + "/population_map/" + project + ".population_map.pdf"
+                    "results/" + project + "/population_data/" + project + ".population_map.pdf"
                 ])
+        
+        # Population summary table (always generated if popdata is available)
+        popdata = params.get("popdata")
+        if popdata and popdata != "NULL" and popdata != "":
+            targets.extend([
+                "results/" + project + "/population_data/" + project + ".population_summary.txt"
+            ])
 
         # fineRADstructure targets
         if analyses.get("fineradstructure", False):
