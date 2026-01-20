@@ -265,7 +265,7 @@ rule plot_pixy_pi_map:
         width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("width", 10),
         height = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("height", 8),
         dpi = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("dpi", 300),
-        boundary = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("boundary", "NULL"),
+        boundary = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("map_boundary", "NULL"),
         crs = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("crs", 4326),
         basemap = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap", "NULL"),
         land_colour = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("land_colour", "#d9d9d9"),

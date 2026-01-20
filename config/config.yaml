@@ -61,11 +61,11 @@ parameters: &global_params
   ## Map background parameters (shared across all map plots)
   # These parameters control the base map appearance (boundaries, CRS, colors, decorations)
   # and are shared by mapmixture, population_map, and pixy map plots
+  map_boundary: NULL                  # map boundaries, e.g. c(xmin=-15, xmax=16, ymin=40, ymax=62)
   map_background:
     width: 10                       # plot width in inches
     height: 8                       # plot height in inches
     dpi: 300                        # dots per inch (resolution)
-    boundary: NULL                  # map boundaries, e.g. c(xmin=-15, xmax=16, ymin=40, ymax=62)
     crs: 4326                       # coordinate reference system (4326 = WGS84 lat/lon)
     basemap: NULL                   # optional basemap object
     land_colour: "#d9d9d9"          # color for land masses

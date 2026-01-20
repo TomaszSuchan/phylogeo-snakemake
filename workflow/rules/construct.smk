@@ -55,7 +55,7 @@ rule construct_plot:
         "benchmarks/{project}/construct_plot.K{k}.txt"
     params:
         crs = lambda wildcards: config["projects"][wildcards.project]["parameters"]["construct"].get("crs", 4326),
-        boundary = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("boundary", None),
+        boundary = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("map_boundary", None),
         land_colour = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("land_colour", "#d9d9d9"),
         sea_colour = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("sea_colour", "#deebf7")
     conda:
