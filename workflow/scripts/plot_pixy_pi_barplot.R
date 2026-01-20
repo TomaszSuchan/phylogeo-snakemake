@@ -23,8 +23,13 @@ color_by_name <- NULL
 pca_colors <- NULL
 plot_type <- "grouped"  # "grouped" or "sorted"
 if ("color_by" %in% names(snakemake@params)) {
-  color_by_name <- as.character(snakemake@params[["color_by"]])
-  if (color_by_name == "" || color_by_name == "none") {
+  color_by_param <- snakemake@params[["color_by"]]
+  if (!is.null(color_by_param) && !is.na(color_by_param)) {
+    color_by_name <- as.character(color_by_param)
+    if (length(color_by_name) == 0 || color_by_name == "" || color_by_name == "none") {
+      color_by_name <- NULL
+    }
+  } else {
     color_by_name <- NULL
   }
 }

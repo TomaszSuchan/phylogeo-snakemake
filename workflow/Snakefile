@@ -286,7 +286,10 @@ def get_all_targets():
                 "results/" + project + "/pixy/plots/" + project + ".pixy_fst_heatmap.pdf",
                 "results/" + project + "/pixy/plots/" + project + ".pixy_fst_heatmap.rds",
                 "results/" + project + "/pixy/plots/" + project + ".pixy_dxy_heatmap.pdf",
-                "results/" + project + "/pixy/plots/" + project + ".pixy_dxy_heatmap.rds"
+                "results/" + project + "/pixy/plots/" + project + ".pixy_dxy_heatmap.rds",
+                # Plain barplot (no coloring)
+                "results/" + project + "/pixy/plots/" + project + ".pixy_pi_barplot-plain.pdf",
+                "results/" + project + "/pixy/plots/" + project + ".pixy_pi_barplot-plain.rds"
             ])
             pixy_groupings = params.get("pixy", {}).get("color_by",
                 params.get("pca_plot", {}).get("color_by", ["none"]))
@@ -294,8 +297,8 @@ def get_all_targets():
                 if color_by == "none":
                     continue
                 targets.extend([
-                    f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}.pdf",
-                    f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}.rds",
+                    f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-grouped-{color_by}.pdf",
+                    f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-grouped-{color_by}.rds",
                 ])
                 targets.extend([
                     f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-sorted-{color_by}.pdf",

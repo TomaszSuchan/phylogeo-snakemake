@@ -185,12 +185,10 @@ rule plot_pixy_pi_barplot:
         pi_summary = rules.pixy_summary.output.pi,
         popdata = rules.generate_popdata.output.indpopdata
     output:
-        pdf = "results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}.pdf",
-        rds = "results/{project}/pixy/plots/{project}.pixy_pi_barplot-{color_by}.rds"
+        pdf = "results/{project}/pixy/plots/{project}.pixy_pi_barplot-grouped-{color_by}.pdf",
+        rds = "results/{project}/pixy/plots/{project}.pixy_pi_barplot-grouped-{color_by}.rds"
     log:
         "logs/{project}/plot_pixy_pi_barplot_{color_by}.log"
-    wildcard_constraints:
-        color_by="(?!sorted-).*"  # Exclude values starting with "sorted-"
     params:
         color_by = lambda wildcards: wildcards.color_by if wildcards.color_by != "none" else None,
         pca_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pca_colors", None),
@@ -215,12 +213,33 @@ rule plot_pixy_pi_barplot_sorted:
         rds = "results/{project}/pixy/plots/{project}.pixy_pi_barplot-sorted-{color_by}.rds"
     log:
         "logs/{project}/plot_pixy_pi_barplot_{color_by}_sorted.log"
-    wildcard_constraints:
-        color_by="(?!none)(?!sorted-).*"  # Exclude "none" and values starting with "sorted-"
     params:
         color_by = lambda wildcards: wildcards.color_by,
         pca_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pca_colors", None),
         plot_type = "sorted"  # Sorted by pi value
+    conda:
+        "../envs/r-plot.yaml"
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    script:
+        "../scripts/plot_pixy_pi_barplot.R"
+
+# Rule to plot Pi barplot without coloring (plain barplot)
+rule plot_pixy_pi_barplot_plain:
+    input:
+        pi_summary = rules.pixy_summary.output.pi,
+        popdata = rules.generate_popdata.output.indpopdata
+    output:
+        pdf = "results/{project}/pixy/plots/{project}.pixy_pi_barplot-plain.pdf",
+        rds = "results/{project}/pixy/plots/{project}.pixy_pi_barplot-plain.rds"
+    log:
+        "logs/{project}/plot_pixy_pi_barplot_plain.log"
+    params:
+        color_by = None,  # No coloring
+        pca_colors = None,
+        plot_type = "plain"  # Plain barplot, sorted by pi value
     conda:
         "../envs/r-plot.yaml"
     threads: 1
