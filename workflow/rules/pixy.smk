@@ -242,6 +242,7 @@ rule plot_pixy_pi_map:
         rds = "results/{project}/pixy/plots/{project}.pixy_pi_map.rds"
     params:
         stat_type = "pi",
+        point_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("point_size", 3),
         # Map parameters (reuse mapmixture parameters)
         width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("width", 10),
         height = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("height", 8),
@@ -265,7 +266,6 @@ rule plot_pixy_pi_map:
         basemap_border_col = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("basemap_border_col", "black"),
         basemap_border_lwd = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("basemap_border_lwd", 0.1),
         # Label-specific parameters
-        point_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["population_map"].get("point_size", 3),
         point_color = lambda wildcards: config["projects"][wildcards.project]["parameters"]["population_map"].get("point_color", "black"),
         point_shape = lambda wildcards: config["projects"][wildcards.project]["parameters"]["population_map"].get("point_shape", 19),
         label_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["population_map"].get("label_size", 3),
