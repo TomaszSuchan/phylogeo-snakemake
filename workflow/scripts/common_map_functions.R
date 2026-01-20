@@ -121,7 +121,8 @@ prepare_coordinates <- function(popmap_file, popdata_file) {
   return(coords_df)
 }
 
-#' Extract mapmixture parameters from snakemake params
+#' Extract map background parameters from snakemake params
+#' Also extracts analysis-specific parameters (point_size, labels, etc.) if present
 extract_map_params <- function(snakemake_params) {
   list(
     width = as.numeric(snakemake_params[["width"]]),

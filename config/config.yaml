@@ -45,19 +45,16 @@ parameters: &global_params
   # Common K values to test for population structure (Structure, fastStructure and admixture):
   k_values: [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
-  ## Mapmixture plotting parameters
-  # These parameters control the appearance of map-based structure plots
-  mapmixture:
+  ## Map background parameters (shared across all map plots)
+  # These parameters control the base map appearance (boundaries, CRS, colors, decorations)
+  # and are shared by mapmixture, population_map, and pixy map plots
+  map_background:
     width: 10                       # plot width in inches
     height: 8                       # plot height in inches
     dpi: 300                        # dots per inch (resolution)
     boundary: NULL                  # map boundaries, e.g. c(xmin=-15, xmax=16, ymin=40, ymax=62)
     crs: 4326                       # coordinate reference system (4326 = WGS84 lat/lon)
     basemap: NULL                   # optional basemap object
-    pie_size: 0.2                     # size of pie charts on map
-    pie_border: 0.2                 # thickness of pie chart borders
-    pie_border_col: "black"         # color of pie chart borders
-    pie_opacity: 1                  # opacity of pie charts (0-1)
     land_colour: "#d9d9d9"          # color for land masses
     sea_colour: "#deebf7"           # color for water bodies
     expand: FALSE                   # expand map to fill plotting area (TRUE/FALSE)
@@ -67,19 +64,22 @@ parameters: &global_params
     scalebar: TRUE                  # show scale bar (TRUE/FALSE)
     scalebar_size: 1                # size of scale bar
     scalebar_position: "tl"         # position of scale bar (tl/tr/bl/br)
-    legend: FALSE                   # show legend (TRUE/FALSE)
     plot_title: ""                  # title for the plot
     axis_title_size: 10             # font size for axis titles
     axis_text_size: 8               # font size for axis text
     basemap_border: TRUE            # show border around basemap (TRUE/FALSE)
     basemap_border_col: "black"     # color of basemap border
     basemap_border_lwd: 0.1         # line width of basemap border
-    # Structure barplot parameters (based on mapmixture defaults)
-    cluster_cols: NULL              # list of colors for clusters, e.g. ["#f1a340", "#998ec3"]
-    site_dividers: TRUE             # show dividers between sites
-    divider_width: 0.4              # width of site dividers
-    site_order: NULL                # custom site order as list, e.g. ["Site1", "Site2", "Site3"]
-    flip_axis: FALSE                # flip barplot axis
+
+  ## Mapmixture plotting parameters
+  # Parameters specific to structure/admixture map plots (pie charts, colors, barplots)
+  mapmixture:
+    # Pie chart parameters
+    pie_size: 0.2                   # size of pie charts on map
+    pie_border: 0.2                 # thickness of pie chart borders
+    pie_border_col: "black"         # color of pie chart borders
+    pie_opacity: 1                  # opacity of pie charts (0-1)
+    legend: FALSE                   # show legend (TRUE/FALSE)
     # Structure color palette 
     structure_colors:
       - "#E41A1C"  # red
@@ -93,10 +93,15 @@ parameters: &global_params
       - "#999999"  # gray
       - "#FFFFFF"  # white
       - "#000000"  # black
+    # Structure barplot parameters
+    site_dividers: TRUE             # show dividers between sites
+    divider_width: 0.4              # width of site dividers
+    site_order: NULL                # custom site order as list, e.g. ["Site1", "Site2", "Site3"]
+    flip_axis: FALSE                # flip barplot axis
+    site_labels_angle: 90           # angle for site labels (90 = perpendicular, 0 = horizontal)
 
   ## Population map plotting parameters
-  # Note: Most map parameters (boundary, crs, land_colour, sea_colour, arrow, scalebar, etc.)
-  # are inherited from mapmixture parameters above for consistency
+  # Parameters specific to population location maps (points, labels, leader lines)
   population_map:
     # Point styling
     point_size: 1                # size of population points
@@ -121,7 +126,7 @@ parameters: &global_params
   # by comparing genetic distances to geographic distances across a hexagonal grid
   mapi:
     n_permutations: 1000        # number of permutations for significance testing
-    grid_halfwidth: 100000      # grid cell halfwidth in meters (NULL for auto-estimation)
+    grid_halfwidth: NULL      # grid cell halfwidth in meters (NULL for auto-estimation)
     crs_projected: "EPSG:8857"  # projected CRS for distance calculations ("EPSG:8857" = Equal Earth, EPSG:3035 = ETRS89 / ETRS-LAEA Europe, EPSG:2180 = Poland CS2000)
     crs_geographic: 4326        # geographic CRS for lat/lon coordinates (4326 = WGS84)
     alpha: 0.05                 # significance level for upper/lower tail identification
@@ -206,6 +211,8 @@ parameters: &global_params
     bootstrap_replicates: 1000  # number of bootstrap replicates for confidence intervals
     color_by: ["Region"]  # columns in popdata to color barplots by (must match your popdata column names!)
                           # separate from pca_plot.color_by - allows different groupings for pixy vs PCA
+    # Map-specific parameters for pixy PI maps
+    point_size: 3        # size of points on genetic diversity maps
 
   ## fineRADstructure parameters
   fineradstructure:

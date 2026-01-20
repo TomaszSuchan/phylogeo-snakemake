@@ -20,11 +20,11 @@ height <- as.numeric(snakemake@params[["height"]])
 dpi <- as.numeric(snakemake@params[["dpi"]])
 
 # Barplot-specific parameters
-cluster_cols <- snakemake@params[["cluster_cols"]]
 site_dividers <- as.logical(snakemake@params[["site_dividers"]])
 divider_width <- as.numeric(snakemake@params[["divider_width"]])
 site_order <- snakemake@params[["site_order"]]
 flip_axis <- as.logical(snakemake@params[["flip_axis"]])
+site_labels_angle <- as.numeric(snakemake@params[["site_labels_angle"]])
 
 # Fixed parameters optimized for 1.2 inch height
 site_ticks_size <- -0.05
@@ -106,27 +106,11 @@ colnames(qmatrix_with_data) <- gsub("V", "Cluster", colnames(qmatrix_with_data))
 # We only use the site information from the popmap file
 
 # Get color palette from config - subset first n_clusters colors
-# This uses cluster_cols if provided, otherwise falls back to structure_colors
 cat(sprintf("\n=== SETTING UP COLOR PALETTE ===\n"))
-if (!is.null(cluster_cols) && length(cluster_cols) > 0 &&
-    !(length(cluster_cols) == 1 && (cluster_cols == "NULL" || cluster_cols == ""))) {
-  # Use user-specified cluster_cols
-  if (is.vector(cluster_cols) || is.list(cluster_cols)) {
-    cluster_cols_val <- unlist(cluster_cols)
-  } else {
-    cluster_cols_val <- tryCatch(
-      eval(parse(text = cluster_cols)),
-      error = function(e) NULL
-    )
-  }
-  cat(sprintf("Using user-specified cluster colors: %s\n", paste(cluster_cols_val, collapse = ", ")))
-} else {
-  # Use structure_colors from config and subset to n_clusters
-  structure_colors_full <- unlist(snakemake@params[["structure_colors"]])
-  cluster_cols_val <- structure_colors_full[1:n_clusters]
-  cat(sprintf("Using first %d colors from structure_colors palette: %s\n",
-              n_clusters, paste(cluster_cols_val, collapse = ", ")))
-}
+structure_colors_full <- unlist(snakemake@params[["structure_colors"]])
+cluster_cols_val <- structure_colors_full[1:n_clusters]
+cat(sprintf("Using first %d colors from structure_colors palette: %s\n",
+            n_clusters, paste(cluster_cols_val, collapse = ", ")))
 
 # Parse site_order parameter
 # Snakemake automatically converts Python lists to R vectors
@@ -157,11 +141,13 @@ structure_barplot <- structure_plot(
   flip_axis = flip_axis,
   site_ticks_size = site_ticks_size,
   site_labels_y = site_labels_y,
-  site_labels_size = site_labels_size
+  site_labels_size = site_labels_size,
+  site_labels_angle = site_labels_angle
 ) +
   theme(
     axis.title.y = element_text(size = 8, hjust = 1),
     axis.text.y = element_text(size = 5),
+    strip.background = element_blank()
   )
 
 # Calculate plot dimensions
