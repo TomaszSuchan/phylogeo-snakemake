@@ -48,8 +48,12 @@ if (!is.null(color_by_name)) {
   popdata <- read.table(popdata_file, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
   message(sprintf("Popdata columns: %s\n", paste(names(popdata), collapse = ", ")))
   
-  # Get first column name (should be Site/population identifier)
-  site_col <- colnames(popdata)[1]
+  # Get Site column name (prefer "Site" if it exists, otherwise use first column)
+  if ("Site" %in% colnames(popdata)) {
+    site_col <- "Site"
+  } else {
+    site_col <- colnames(popdata)[1]
+  }
   
   # Get unique population-level data from popdata
   # Aggregate by Site to get population-level metadata
