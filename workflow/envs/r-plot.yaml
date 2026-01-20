@@ -6,3 +6,4 @@ dependencies:
   - r-tidyverse
   - r-pheatmap
   - r-gridextra
+  - r-ggpattern

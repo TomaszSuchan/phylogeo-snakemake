@@ -41,6 +41,19 @@ parameters: &global_params
     ns_tag: "NS"             # INFO field tag for number of samples with data
     id_pattern: "loc(\\d+)_" # regex pattern to extract RAD fragment ID
   
+  ## Relatedness filtering parameters
+  # Filter related/clonal individuals using plink2 KING method
+  relatedness_filtering:
+    enabled: false  # enable/disable relatedness filtering (default: false)
+    king_threshold: 0.0884  # KING kinship threshold for filtering (default: 0.0884, equivalent to PI-HAT > 0.2, 2nd-degree relatives)
+                            # Common values: 0.354 (duplicates/twins), 0.177 (1st-degree), 0.0884 (2nd-degree), 0.0442 (3rd-degree)
+    mac_threshold: 1  # minimum MAC for KING calculation (default: 1)
+    group_by: ["Region"]  # list of columns from popdata to group barplots by (default: ["Region"])
+                          # Similar to pixy.color_by and pca_plot.color_by
+                          # Each value in the list generates a separate barplot grouped by that column
+                          # Use ["none"] or [] for no grouping (overall plot only)
+                          # Example: ["Region", "Population"] generates plots grouped by Region and by Population
+  
   ## Population Structure Analysis
   # Common K values to test for population structure (Structure, fastStructure and admixture):
   k_values: [1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -289,6 +302,10 @@ parameters: &global_params
       threads: 4
       mem_mb: 16000
       runtime: 1440  # conStruct MCMC can be time-intensive
+    relatedness_filtering:
+      threads: 4
+      mem_mb: 16000
+      runtime: 120  # KING calculation can be time-intensive for large datasets
 
 ##############################
 ### Projects configuration ###

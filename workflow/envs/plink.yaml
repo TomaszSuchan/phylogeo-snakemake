@@ -4,3 +4,4 @@ channels:
   - defaults
 dependencies:
  - plink=1.90b6.12
+ - plink2

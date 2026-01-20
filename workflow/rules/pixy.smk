@@ -1,7 +1,7 @@
 rule prepare_invariant_vcf:
     input:
         loci = lambda wildcards: config["projects"][wildcards.project]["ipyrad_prefix"] + ".loci",
-        samples_file = rules.create_samples_file.output.samples_file
+        samples_file = rules.update_samples_file.output.filtered_samples
     output:
         invariant_vcf = "results/{project}/filtered_data/{project}.invariant_sites.vcf"
     log:
@@ -61,8 +61,8 @@ rule prepare_invariant_vcf_gz_index:
 
 rule merge_invariant_sites:
     input:
-        vcf_var = rules.subset_vcf.output.vcf,
-        vcf_var_index = rules.index_subset_vcf.output.index,
+        vcf_var = rules.subset_vcf_after_relatedness.output.vcf,
+        vcf_var_index = rules.index_vcf_after_relatedness.output.index,
         vcf_inv = rules.prepare_invariant_vcf_gz.output.vcf,
         vcf_inv_index = rules.prepare_invariant_vcf_gz_index.output.index
     output:

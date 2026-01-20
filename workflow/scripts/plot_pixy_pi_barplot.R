@@ -196,20 +196,21 @@ if (is.null(color_by_name)) {
     }
     
   } else {
-    # Grouped by stratification - order by group, then by pi within group
-    pi_df <- pi_df[order(pi_df[[color_by_name]], pi_df$mean_pi), ]
+    # Grouped by stratification - use facet_wrap like removed individuals plot
+    # Order populations within each group by pi value
+    pi_df <- pi_df %>%
+      group_by(.data[[color_by_name]]) %>%
+      arrange(mean_pi) %>%
+      ungroup()
     
-    # Create factor levels to maintain order
-    pi_df$population <- factor(pi_df$population, levels = pi_df$population)
-    
-    # Count populations per group for separators
-    group_counts <- table(pi_df[[color_by_name]])
-    group_boundaries <- cumsum(group_counts)
+    # Create factor levels to maintain order within each group
+    pi_df$population <- factor(pi_df$population, levels = unique(pi_df$population))
     
     p <- ggplot(pi_df, aes(x = population, y = mean_pi, fill = .data[[color_by_name]])) +
       geom_bar(stat = "identity", alpha = 0.7, color = "black", linewidth = 0.3) +
       geom_errorbar(aes(ymin = ci_low, ymax = ci_high), 
                     width = 0.2, color = "black", linewidth = 0.5) +
+      facet_wrap(as.formula(paste("~", color_by_name)), scales = "free_x", ncol = 4) +
       labs(
         x = "Population",
         y = expression(paste("Nucleotide Diversity (", pi, ")")),
@@ -219,18 +220,13 @@ if (is.null(color_by_name)) {
       theme(
         axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
         panel.grid.major.x = element_blank(),
-        legend.position = "right"
+        legend.position = "bottom",
+        strip.text = element_text(size = 10, face = "bold")
       )
     
     # Add color scale if colors were defined (use same colors as sorted version)
     if (!is.null(colors)) {
       p <- p + scale_fill_manual(values = colors)
-    }
-    
-    # Add vertical lines between groups
-    for (boundary in group_boundaries[-length(group_boundaries)]) {
-      p <- p + geom_vline(xintercept = boundary + 0.5, 
-                         color = "gray50", linetype = "dashed", linewidth = 0.5)
     }
   }
 }
