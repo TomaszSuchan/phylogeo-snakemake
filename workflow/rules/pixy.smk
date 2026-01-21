@@ -1,7 +1,8 @@
 rule prepare_invariant_vcf:
     input:
         loci = lambda wildcards: config["projects"][wildcards.project]["ipyrad_prefix"] + ".loci",
-        samples_file = rules.update_samples_file.output.filtered_samples
+        # Use canonical keep list (already includes relatedness filtering when enabled)
+        samples_file = rules.filter_related_individuals.output.samples_to_keep
     output:
         invariant_vcf = "results/{project}/filtered_data/{project}.invariant_sites.vcf"
     log:

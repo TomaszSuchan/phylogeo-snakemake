@@ -323,18 +323,18 @@ def get_all_targets():
             targets.extend([
                 "results/" + project + "/filtered_data/" + project + ".king_table.tsv",
                 "results/" + project + "/filtered_data/" + project + ".samples_to_keep.txt",
-                "results/" + project + "/filtered_data/" + project + ".removed_individuals.tsv",
+                "results/" + project + "/population_data/" + project + ".relatedness_filtered_samples.txt",
                 # Plain barplot (no grouping)
-                "results/" + project + "/filtered_data/plots/" + project + ".removed_individuals_by_none.pdf",
-                "results/" + project + "/filtered_data/plots/" + project + ".removed_individuals_by_none.rds"
+                "results/" + project + "/population_data/plots/" + project + ".removed_individuals_by_none.pdf",
+                "results/" + project + "/population_data/plots/" + project + ".removed_individuals_by_none.rds"
             ])
             # Add barplot targets for each group_by value
             group_by_list = params.get("relatedness_filtering", {}).get("group_by", ["Region"])
             for group_by in group_by_list:
                 if group_by != "none" and group_by != "":
                     targets.extend([
-                        f"results/{project}/filtered_data/plots/{project}.removed_individuals_by_{group_by}.pdf",
-                        f"results/{project}/filtered_data/plots/{project}.removed_individuals_by_{group_by}.rds"
+                        f"results/{project}/population_data/plots/{project}.removed_individuals_by_{group_by}.pdf",
+                        f"results/{project}/population_data/plots/{project}.removed_individuals_by_{group_by}.rds"
                     ])
 
         # IQtree targets

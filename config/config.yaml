@@ -44,7 +44,7 @@ parameters: &global_params
   ## Relatedness filtering parameters
   # Filter related/clonal individuals using plink2 KING method
   relatedness_filtering:
-    enabled: false  # enable/disable relatedness filtering (default: false)
+    enabled: true  # enable/disable relatedness filtering (default: false)
     king_threshold: 0.0884  # KING kinship threshold for filtering (default: 0.0884, equivalent to PI-HAT > 0.2, 2nd-degree relatives)
                             # Common values: 0.354 (duplicates/twins), 0.177 (1st-degree), 0.0884 (2nd-degree), 0.0442 (3rd-degree)
     mac_threshold: 1  # minimum MAC for KING calculation (default: 1)

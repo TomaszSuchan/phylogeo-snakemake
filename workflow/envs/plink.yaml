@@ -3,5 +3,5 @@ channels:
   - bioconda
   - defaults
 dependencies:
- - plink=1.90b6.12
- - plink2
+  - plink=1.90b6.12
+  - plink2

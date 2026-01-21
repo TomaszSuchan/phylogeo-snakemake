@@ -64,7 +64,7 @@ rule create_samples_file:
     input:
         vcf=rules.sort_vcf.output.vcf
     output:
-        samples_file="results/{project}/filtered_data/{project}.samples_subset.txt"
+        samples_file=temporary("results/{project}/filtered_data/{project}.samples_subset.txt")
     log:
         "logs/{project}/create_samples_file.log"
     benchmark:
@@ -99,16 +99,15 @@ rule subset_vcf:
         index=rules.index_vcf.output.index,
         samples_file=rules.create_samples_file.output.samples_file
     output:
-        vcf=temporary("results/{project}/filtered_data/{project}.vcf.gz")
+        # Temporary: only user-provided sample subset (no relatedness, no missingness filter)
+        vcf=temporary("results/{project}/filtered_data/{project}.subset.vcf.gz")
     log:
         "logs/{project}/subset_vcf.log"
     benchmark:
         "benchmarks/{project}/subset_vcf.txt"
     params:
         samples=lambda wildcards: get_samples(wildcards),
-        has_samples=lambda wildcards: "1" if get_samples(wildcards) else "0",
-        missing_threshold=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("vcf_filtering", {}).get("f_missing", 1),
-        skip_missing_filter=lambda wildcards: "1" if config["projects"][wildcards.project]["parameters"].get("vcf_filtering", {}).get("f_missing", 1) >= 1 else "0"
+        has_samples=lambda wildcards: "1" if get_samples(wildcards) else "0"
     conda:
         "../envs/bcftools.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -118,25 +117,10 @@ rule subset_vcf:
     shell:
         """
         if [ "{params.has_samples}" = "1" ]; then
-            if [ "{params.skip_missing_filter}" = "1" ]; then
-                # Skip F_MISSING filtering when f_missing >= 1
-                bcftools view -S {input.samples_file} -Ou {input.vcf} | \
-                bcftools +fill-tags - -Oz -o {output.vcf} -- -t NS,AC,AN,AF >> {log} 2>&1 || exit 1
-            else
-                # Apply F_MISSING filtering when f_missing < 1
-                bcftools view -S {input.samples_file} -Ou {input.vcf} | \
-                bcftools filter -e 'F_MISSING > {params.missing_threshold}' -Ou - | \
-                bcftools +fill-tags - -Oz -o {output.vcf} -- -t NS,AC,AN,AF >> {log} 2>&1 || exit 1
-            fi
+            bcftools view -S {input.samples_file} -Ou {input.vcf} | \
+            bcftools +fill-tags - -Oz -o {output.vcf} -- -t NS,AC,AN,AF >> {log} 2>&1 || exit 1
         else
-            if [ "{params.skip_missing_filter}" = "1" ]; then
-                # Skip F_MISSING filtering when f_missing >= 1
-                bcftools +fill-tags {input.vcf} -Oz -o {output.vcf} -- -t NS,AC,AN,AF >> {log} 2>&1 || exit 1
-            else
-                # Apply F_MISSING filtering when f_missing < 1
-                bcftools filter -e 'F_MISSING > {params.missing_threshold}' -Ou {input.vcf} | \
-                bcftools +fill-tags - -Oz -o {output.vcf} -- -t NS,AC,AN,AF >> {log} 2>&1 || exit 1
-            fi
+            bcftools +fill-tags {input.vcf} -Oz -o {output.vcf} -- -t NS,AC,AN,AF >> {log} 2>&1 || exit 1
         fi
         """
 
@@ -145,7 +129,7 @@ rule index_subset_vcf:
     input:
         vcf=rules.subset_vcf.output.vcf
     output:
-        index=temporary("results/{project}/filtered_data/{project}.vcf.gz.csi")
+        index=temporary("results/{project}/filtered_data/{project}.subset.vcf.gz.csi")
     log:
         "logs/{project}/index_subset_vcf.log"
     benchmark:
@@ -161,23 +145,47 @@ rule index_subset_vcf:
         bcftools index -f {input.vcf} &> {log}
         """
 
-# Rule to filter related individuals using plink2 KING method
-rule filter_related_individuals:
+# Rule to create samples list when relatedness filtering is disabled
+rule create_samples_list_when_disabled:
     input:
         vcf=rules.subset_vcf.output.vcf,
         index=rules.index_subset_vcf.output.index
     output:
-        samples_to_keep="results/{project}/filtered_data/{project}.samples_to_keep.txt",
-        king_table="results/{project}/filtered_data/{project}.king_table.tsv"
+        samples_to_keep=temporary("results/{project}/filtered_data/{project}.samples_to_keep_disabled.txt")
     log:
-        "logs/{project}/filter_related_individuals.log"
+        "logs/{project}/create_samples_list_when_disabled.log"
     benchmark:
-        "benchmarks/{project}/filter_related_individuals.txt"
+        "benchmarks/{project}/create_samples_list_when_disabled.txt"
+    conda:
+        "../envs/bcftools.yaml"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    shell:
+        """
+        case "{input.vcf}" in
+            *.gz) bcftools query -l {input.vcf} > {output.samples_to_keep} 2>> {log} || exit 1 ;;
+            *) bcftools query -l {input.vcf} > {output.samples_to_keep} 2>> {log} || exit 1 ;;
+        esac
+        """
+
+# Rule to convert VCF to PLINK format for KING analysis
+rule convert_vcf_to_plink_for_king:
+    input:
+        vcf=rules.subset_vcf.output.vcf,
+        index=rules.index_subset_vcf.output.index
+    output:
+        pgen=temporary("results/{project}/filtered_data/{project}.king_temp.pgen"),
+        pvar=temporary("results/{project}/filtered_data/{project}.king_temp.pvar"),
+        psam=temporary("results/{project}/filtered_data/{project}.king_temp.psam")
+    log:
+        "logs/{project}/convert_vcf_to_plink_for_king.log"
+    benchmark:
+        "benchmarks/{project}/convert_vcf_to_plink_for_king.txt"
     params:
-        king_threshold=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_filtering", {}).get("king_threshold", 0.0884),
         mac_threshold=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_filtering", {}).get("mac_threshold", 1),
-        plink_prefix="results/{project}/filtered_data/{project}.king_temp",
-        enabled=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_filtering", {}).get("enabled", False)
+        plink_prefix="results/{project}/filtered_data/{project}.king_temp"
     conda:
         "../envs/plink.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("relatedness_filtering", {}).get("threads", 4)
@@ -186,76 +194,139 @@ rule filter_related_individuals:
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("relatedness_filtering", {}).get("runtime", 120)
     shell:
         """
-        if [ "{params.enabled}" = "True" ] || [ "{params.enabled}" = "true" ]; then
-            # Convert VCF to PLINK format (pgen format supports multiallelic variants)
-            plink2 --vcf {input.vcf} \
-                   --make-pgen \
-                   --out {params.plink_prefix} \
-                   --allow-extra-chr 0 \
-                   --double-id \
-                   --mac {params.mac_threshold} >> {log} 2>&1 || exit 1
-            
-            # Generate full KING table (outputs .kin0 file)
-            plink2 --pfile {params.plink_prefix} \
-                   --make-king-table \
-                   --out {params.plink_prefix} >> {log} 2>&1 || exit 1
-            
-            # Copy KING table to output location
-            # plink2 outputs .kin0 file (or .kin if using rel-check mode)
-            if [ -f {params.plink_prefix}.kin0 ]; then
-                cp {params.plink_prefix}.kin0 {output.king_table} || exit 1
-            elif [ -f {params.plink_prefix}.kin ]; then
-                cp {params.plink_prefix}.kin {output.king_table} || exit 1
-            else
-                echo "Error: KING table file not found" >> {log}
-                exit 1
-            fi
-            
-            # Filter related individuals using --king-cutoff (greedy algorithm)
-            plink2 --pfile {params.plink_prefix} \
-                   --king-cutoff {params.king_threshold} \
-                   --make-pgen \
-                   --out {params.plink_prefix}.filtered >> {log} 2>&1 || exit 1
-            
-            # Extract samples to keep from filtered .psam file
-            awk '{{print $2}}' {params.plink_prefix}.filtered.psam > {output.samples_to_keep} || exit 1
-            
-            # Clean up temporary files
-            rm -f {params.plink_prefix}.pgen {params.plink_prefix}.pvar {params.plink_prefix}.psam
-            rm -f {params.plink_prefix}.filtered.pgen {params.plink_prefix}.filtered.pvar {params.plink_prefix}.filtered.psam
-            rm -f {params.plink_prefix}.log {params.plink_prefix}.filtered.log
-        else
-            # If filtering is disabled, create samples_to_keep with all samples from VCF
-            case "{input.vcf}" in
-                *.gz) bcftools query -l {input.vcf} > {output.samples_to_keep} 2>> {log} || exit 1 ;;
-                *) bcftools query -l {input.vcf} > {output.samples_to_keep} 2>> {log} || exit 1 ;;
-            esac
-            # Create empty KING table
-            touch {output.king_table}
-        fi
+        plink2 --vcf {input.vcf} \
+               --make-pgen \
+               --out {params.plink_prefix} \
+               --allow-extra-chr 0 \
+               --double-id \
+               --mac {params.mac_threshold} >> {log} 2>&1 || exit 1
         """
 
-# Rule to update samples file based on relatedness filtering
-rule update_samples_file:
+# Rule to generate KING table (only runs when filtering is enabled)
+rule generate_king_table:
     input:
-        original_samples=rules.create_samples_file.output.samples_file,
-        samples_to_keep=rules.filter_related_individuals.output.samples_to_keep
+        pgen=rules.convert_vcf_to_plink_for_king.output.pgen,
+        pvar=rules.convert_vcf_to_plink_for_king.output.pvar,
+        psam=rules.convert_vcf_to_plink_for_king.output.psam
     output:
-        filtered_samples="results/{project}/filtered_data/{project}.samples_subset_relatedness_filtered.txt"
+        king_table=temporary("results/{project}/filtered_data/{project}.king_table_raw.tsv")
     log:
-        "logs/{project}/update_samples_file.log"
+        "logs/{project}/generate_king_table.log"
+    benchmark:
+        "benchmarks/{project}/generate_king_table.txt"
+    params:
+        plink_prefix="results/{project}/filtered_data/{project}.king_temp"
+    conda:
+        "../envs/plink.yaml"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("relatedness_filtering", {}).get("threads", 4)
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("relatedness_filtering", {}).get("mem_mb", 16000),
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("relatedness_filtering", {}).get("runtime", 120)
+    shell:
+        """
+        plink2 --pfile {params.plink_prefix} \
+               --make-king-table \
+               --out {params.plink_prefix} >> {log} 2>&1 || exit 1
+        
+        # Copy KING table to output location
+        if [ -f {params.plink_prefix}.kin0 ]; then
+            cp {params.plink_prefix}.kin0 {output.king_table} || exit 1
+        elif [ -f {params.plink_prefix}.kin ]; then
+            cp {params.plink_prefix}.kin {output.king_table} || exit 1
+        else
+            echo "Error: KING table file not found" >> {log}
+            exit 1
+        fi
+
+        # Cleanup PLINK side-effect files (they are not declared outputs)
+        rm -f {params.plink_prefix}.kin0 {params.plink_prefix}.kin {params.plink_prefix}.log || true
+        """
+
+# Rule to filter related individuals using KING cutoff
+rule filter_related_with_king:
+    input:
+        pgen=rules.convert_vcf_to_plink_for_king.output.pgen,
+        pvar=rules.convert_vcf_to_plink_for_king.output.pvar,
+        psam=rules.convert_vcf_to_plink_for_king.output.psam
+    output:
+        filtered_psam=temporary("results/{project}/filtered_data/{project}.king_temp.filtered.psam")
+    log:
+        "logs/{project}/filter_related_with_king.log"
+    benchmark:
+        "benchmarks/{project}/filter_related_with_king.txt"
+    params:
+        king_threshold=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_filtering", {}).get("king_threshold", 0.0884),
+        plink_prefix="results/{project}/filtered_data/{project}.king_temp"
+    conda:
+        "../envs/plink.yaml"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("relatedness_filtering", {}).get("threads", 4)
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("relatedness_filtering", {}).get("mem_mb", 16000),
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("relatedness_filtering", {}).get("runtime", 120)
+    shell:
+        """
+        plink2 --pfile {params.plink_prefix} \
+               --king-cutoff {params.king_threshold} \
+               --make-pgen \
+               --out {params.plink_prefix}.filtered >> {log} 2>&1 || exit 1
+        """
+
+# Rule to extract samples to keep from filtered PLINK file
+rule extract_samples_to_keep:
+    input:
+        filtered_psam=rules.filter_related_with_king.output.filtered_psam
+    output:
+        samples_to_keep=temporary("results/{project}/filtered_data/{project}.samples_to_keep_enabled.txt")
+    log:
+        "logs/{project}/extract_samples_to_keep.log"
+    benchmark:
+        "benchmarks/{project}/extract_samples_to_keep.txt"
+    conda:
+        "../envs/plink.yaml"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    params:
+        plink_prefix="results/{project}/filtered_data/{project}.king_temp"
+    shell:
+        """
+        # plink2 .psam includes a header line; drop it and keep only IID (2nd column)
+        awk 'NR>1 {{print $2}}' {input.filtered_psam} > {output.samples_to_keep} || exit 1
+
+        # Cleanup PLINK side-effect files from --king-cutoff run
+        rm -f {params.plink_prefix}.filtered.pgen {params.plink_prefix}.filtered.pvar {params.plink_prefix}.filtered.psam || true
+        rm -f {params.plink_prefix}.filtered.log {params.plink_prefix}.log || true
+        """
+
+# Rule to combine outputs (samples_to_keep and king_table) - handles conditional logic
+rule filter_related_individuals:
+    input:
+        samples_to_keep = lambda wildcards: (
+            rules.extract_samples_to_keep.output.samples_to_keep
+            if config["projects"][wildcards.project]["parameters"].get("relatedness_filtering", {}).get("enabled", False)
+            else rules.create_samples_list_when_disabled.output.samples_to_keep
+        ),
+        king_table_raw=rules.generate_king_table.output.king_table
+    output:
+        samples_to_keep="results/{project}/filtered_data/{project}.samples_to_keep.txt",
+        king_table="results/{project}/filtered_data/{project}.king_table.tsv"
     params:
         enabled=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_filtering", {}).get("enabled", False)
     shell:
         """
+        cp {input.samples_to_keep} {output.samples_to_keep}
         if [ "{params.enabled}" = "True" ] || [ "{params.enabled}" = "true" ]; then
-            # Filter original samples file to only include samples in samples_to_keep
-            grep -F -f {input.samples_to_keep} {input.original_samples} > {output.filtered_samples} 2> {log} || exit 1
+            cp {input.king_table_raw} {output.king_table}
         else
-            # If filtering is disabled, copy original samples file
-            cp {input.original_samples} {output.filtered_samples} 2> {log} || exit 1
+            # Create empty KING table when filtering is disabled
+            touch {output.king_table}
         fi
         """
+
+#
+# NOTE: We no longer write an extra "{project}.samples_subset_relatedness_filtered.txt" file.
+# All downstream subsetting uses the canonical "{project}.samples_to_keep.txt".
 
 # Rule to categorize removed individuals by relationship type
 rule categorize_removed_individuals:
@@ -263,7 +334,7 @@ rule categorize_removed_individuals:
         king_table=rules.filter_related_individuals.output.king_table,
         samples_to_keep=rules.filter_related_individuals.output.samples_to_keep
     output:
-        categorized="results/{project}/filtered_data/{project}.removed_individuals.tsv"
+        categorized="results/{project}/population_data/{project}.relatedness_filtered_samples.txt"
     log:
         "logs/{project}/categorize_removed_individuals.log"
     params:
@@ -303,8 +374,8 @@ rule plot_removed_individuals_barplot:
         # can resolve the producing rule later.
         popdata="results/{project}/indpopdata.txt"
     output:
-        pdf="results/{project}/filtered_data/plots/{project}.removed_individuals_by_{group_by}.pdf",
-        rds="results/{project}/filtered_data/plots/{project}.removed_individuals_by_{group_by}.rds"
+        pdf="results/{project}/population_data/plots/{project}.removed_individuals_by_{group_by}.pdf",
+        rds="results/{project}/population_data/plots/{project}.removed_individuals_by_{group_by}.rds"
     log:
         "logs/{project}/plot_removed_individuals_barplot_{group_by}.log"
     wildcard_constraints:
@@ -324,17 +395,20 @@ rule plot_removed_individuals_barplot:
 # Rule to subset VCF after relatedness filtering (if enabled)
 rule subset_vcf_after_relatedness:
     input:
+        # Take the user-subset VCF, then apply relatedness-filtered sample list,
+        # then apply missingness filtering (after relatedness), and write final VCF.
         vcf=rules.subset_vcf.output.vcf,
         index=rules.index_subset_vcf.output.index,
-        samples_file=rules.update_samples_file.output.filtered_samples
+        samples_file=rules.filter_related_individuals.output.samples_to_keep
     output:
-        vcf="results/{project}/filtered_data/{project}.vcf_filtered_relatedness.gz"
+        vcf="results/{project}/filtered_data/{project}.filtered.vcf.gz"
     log:
         "logs/{project}/subset_vcf_after_relatedness.log"
     benchmark:
         "benchmarks/{project}/subset_vcf_after_relatedness.txt"
     params:
-        enabled=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_filtering", {}).get("enabled", False)
+        missing_threshold=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("vcf_filtering", {}).get("f_missing", 1),
+        skip_missing_filter=lambda wildcards: "1" if config["projects"][wildcards.project]["parameters"].get("vcf_filtering", {}).get("f_missing", 1) >= 1 else "0"
     conda:
         "../envs/bcftools.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -343,13 +417,13 @@ rule subset_vcf_after_relatedness:
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
     shell:
         """
-        if [ "{params.enabled}" = "True" ] || [ "{params.enabled}" = "true" ]; then
-            # Subset VCF to only include filtered samples
+        if [ "{params.skip_missing_filter}" = "1" ]; then
             bcftools view -S {input.samples_file} -Ou {input.vcf} | \
             bcftools +fill-tags - -Oz -o {output.vcf} -- -t NS,AC,AN,AF >> {log} 2>&1 || exit 1
         else
-            # If filtering is disabled, just copy the VCF
-            cp {input.vcf} {output.vcf} 2>> {log} || exit 1
+            bcftools view -S {input.samples_file} -Ou {input.vcf} | \
+            bcftools filter -e 'F_MISSING > {params.missing_threshold}' -Ou - | \
+            bcftools +fill-tags - -Oz -o {output.vcf} -- -t NS,AC,AN,AF >> {log} 2>&1 || exit 1
         fi
         """
 
@@ -358,7 +432,7 @@ rule index_vcf_after_relatedness:
     input:
         vcf=rules.subset_vcf_after_relatedness.output.vcf
     output:
-        index="results/{project}/filtered_data/{project}.vcf_filtered_relatedness.gz.csi"
+        index="results/{project}/filtered_data/{project}.filtered.vcf.gz.csi"
     log:
         "logs/{project}/index_vcf_after_relatedness.log"
     benchmark:
@@ -374,19 +448,12 @@ rule index_vcf_after_relatedness:
         bcftools index -f {input.vcf} &> {log}
         """
 
+## Rules to filter VCF for biallelic unlinked markers
 # Rule to select only biallelic SNPs with MAC>1 from VCF
 rule select_biallelic_snps:
     input:
-        vcf = lambda wildcards: (
-            rules.subset_vcf_after_relatedness.output.vcf
-            if config["projects"][wildcards.project]["parameters"].get("relatedness_filtering", {}).get("enabled", False)
-            else rules.subset_vcf.output.vcf
-        ),
-        index = lambda wildcards: (
-            rules.index_vcf_after_relatedness.output.index
-            if config["projects"][wildcards.project]["parameters"].get("relatedness_filtering", {}).get("enabled", False)
-            else rules.index_subset_vcf.output.index
-        )
+        vcf=rules.subset_vcf_after_relatedness.output.vcf,
+        index=rules.index_vcf_after_relatedness.output.index
     output:
         biallelic_vcf = "results/{project}/filtered_data/{project}.biallelic_snps.vcf.gz"
     log:
@@ -440,6 +507,7 @@ rule thin_vcf:
             --id-pattern '{params.id_pattern}' &> {log}
         """
 
+## Rules for exporting data from VCF to other formats
 # Rule to convert thinned VCF to PLINK format
 # renames chromosomes to "0" for downstream compatibility with "--allow-extra-chr 0"
 rule vcf_to_plink:
@@ -493,6 +561,7 @@ rule vcf_to_structure:
             --out {output.str} &> {log}
         """
 
+## Rules used for genertaing VCFs with different data thresholds - for checking PCA robustness to missing data
 # Rule to filter VCF for missing data threshold
 rule filter_missing_vcf:
     input:
