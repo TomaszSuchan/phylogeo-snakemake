@@ -369,10 +369,9 @@ rule categorize_removed_individuals:
 rule plot_removed_individuals_barplot:
     input:
         removed_individuals=rules.categorize_removed_individuals.output.categorized,
-        # Don't reference rules.generate_popdata here because popdata.smk is included
-        # after preprocessing.smk in workflow/Snakefile; use the file path so Snakemake
-        # can resolve the producing rule later.
-        popdata="results/{project}/indpopdata.txt"
+        # Use indpopdata_all.txt which includes all individuals before filtering
+        # (so removed individuals can be matched to their Site/Region)
+        popdata="results/{project}/indpopdata_all.txt"
     output:
         pdf="results/{project}/population_data/plots/{project}.removed_individuals_by_{group_by}.pdf",
         rds="results/{project}/population_data/plots/{project}.removed_individuals_by_{group_by}.rds"
