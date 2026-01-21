@@ -231,11 +231,21 @@ message(sprintf("  Number of clusters: %d\n", n_clusters))
 message(sprintf("All rows of admixture_df being passed to mapmixture:\n"))
 print(qmatrix_with_data)
 
+# Parse boundary with error handling
+boundary_parsed <- NULL
+if (!(length(boundary) == 0 || is.null(boundary) || boundary == "NULL")) {
+  tryCatch({
+    boundary_parsed <- eval(parse(text = boundary))
+  }, error = function(e) {
+    stop(sprintf("Failed to parse boundary parameter '%s': %s", boundary, as.character(e)))
+  })
+}
+
 p <- mapmixture(
   admixture_df = qmatrix_with_data,
   coords_df = coords_df,
   cluster_cols = strcolors,
-  boundary = if (length(boundary) == 0 || is.null(boundary) || boundary == "NULL") NULL else eval(parse(text = boundary)),
+  boundary = boundary_parsed,
   crs = crs,
   basemap = if (length(basemap) == 0 || is.null(basemap) || basemap == "NULL") NULL else basemap,
   pie_size = pie_size,
