@@ -28,7 +28,15 @@ site_labels_angle <- as.numeric(snakemake@params[["site_labels_angle"]])
 
 # Fixed parameters optimized for 1.2 inch height
 site_ticks_size <- -0.05
-site_labels_y <- -0.35
+# Adjust site_labels_y based on angle to prevent clipping
+# For rotated labels (45 or 90 degrees), need more space
+if (site_labels_angle == 90) {
+  site_labels_y <- -0.5  # More space for perpendicular labels
+} else if (site_labels_angle == 45) {
+  site_labels_y <- -0.45  # More space for diagonal labels
+} else {
+  site_labels_y <- -0.35  # Default for horizontal labels
+}
 site_labels_size <- 2.2
 
 # Read Q matrix (space or tab delimited, no headers)
@@ -144,11 +152,34 @@ structure_barplot <- structure_plot(
   site_labels_size = site_labels_size,
   site_labels_angle = site_labels_angle
 ) +
+  coord_cartesian(clip = "off") +  # Allow labels to extend beyond plot area
   theme(
     axis.title.y = element_text(size = 8, hjust = 1),
     axis.text.y = element_text(size = 5),
-    strip.background = element_blank()
+    # Remove ALL facet strip "boxes" around site names (handles different ggplot2 versions)
+    # Based on mapmixture source: site labels use facets, boxes come from strip backgrounds
+    strip.background = element_blank(),
+    strip.background.x = element_blank(),
+    strip.background.y = element_blank(),
+    strip.text = element_text(),
+    strip.text.x = element_text(),  # Explicitly set strip text (no background)
+    strip.text.y = element_text(),  # Explicitly set strip text (no background)
+    panel.background = element_blank(),
+    plot.background = element_blank(),
+    # Remove any annotation backgrounds
+    legend.background = element_blank(),
+    legend.box.background = element_blank(),
+    legend.key = element_blank(),
+    # Add extra margin at bottom for rotated labels to prevent clipping
+    plot.margin = margin(
+      t = 5, 
+      r = 5, 
+      b = ifelse(site_labels_angle >= 45, max(30, site_labels_size * 5), 5), 
+      l = 5, 
+      unit = "pt"
+    )
   )
+
 
 # Calculate plot dimensions
 n_individuals <- nrow(qmatrix_with_data)
