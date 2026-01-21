@@ -130,8 +130,8 @@ parameters: &global_params
     force: 10                    # force of repulsion between labels
     force_pull: 1                # force pulling labels toward points
     max.overlaps: Inf            # maximum number of overlapping labels to show (Inf = show all labels)
-    min.segment.length: 0.5      # minimum length of leader line segment (in map units)
-    segment.color: "black"      # color of leader lines
+    min.segment.length: 0        # minimum length of leader line segment (in map units)
+    segment.color: "black"       # color of leader lines
     segment.size: 0.2            # line width of leader lines
 
   ## MAPI parameters
