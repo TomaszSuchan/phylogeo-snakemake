@@ -6,7 +6,7 @@ rule mapi_analysis:
     """
     input:
         euclidean_dist="results/{project}/gen_dist/{project}.euclidean_distance.tsv",
-        indpopdata="results/{project}/indpopdata.txt",
+        indpopdata=rules.generate_popdata.output.indpopdata,
     output:
         mapi_gpkg="results/{project}/mapi/{project}.mapi_results.gpkg",
         upper_tails_gpkg="results/{project}/mapi/{project}.mapi_upper_tails.gpkg",
@@ -41,6 +41,7 @@ rule mapi_plot:
         mapi_gpkg="results/{project}/mapi/{project}.mapi_results.gpkg",
         upper_tails_gpkg="results/{project}/mapi/{project}.mapi_upper_tails.gpkg",
         lower_tails_gpkg="results/{project}/mapi/{project}.mapi_lower_tails.gpkg",
+        indpopdata=rules.generate_popdata.output.indpopdata,
     output:
         mapi_plot="results/{project}/mapi/{project}.mapi_euclidean.pdf",
     conda:

@@ -16,6 +16,7 @@ library(RColorBrewer)
 mapi_gpkg <- snakemake@input[['mapi_gpkg']]
 upper_tails_gpkg <- snakemake@input[['upper_tails_gpkg']]
 lower_tails_gpkg <- snakemake@input[['lower_tails_gpkg']]
+indpopdata_file <- snakemake@input[['indpopdata']]
 
 # Output files
 mapi_plot <- snakemake@output[['mapi_plot']]
@@ -27,6 +28,7 @@ cat("=== MAPI Plotting Script ===\n")
 cat("Input MAPI results:", mapi_gpkg, "\n")
 cat("Input upper tails:", upper_tails_gpkg, "\n")
 cat("Input lower tails:", lower_tails_gpkg, "\n")
+cat("Input indpopdata:", indpopdata_file, "\n")
 cat("Output plot:", mapi_plot, "\n")
 cat("Fill variable:", fill_var, "\n")
 cat("==============================\n\n")
@@ -39,6 +41,7 @@ plot_mapi <- function(
   mapi_results,
   upper_tails = NULL,
   lower_tails = NULL,
+  indpopdata_sf = NULL,
   fill_var = "avg_value",
   crs_plot = 4326,
   limits = NULL
@@ -114,6 +117,20 @@ plot_mapi <- function(
       )
   }
 
+  # --- Add individual locations if provided ---
+  if (!is.null(indpopdata_sf) && nrow(indpopdata_sf) > 0) {
+    # Transform to match mapi_results CRS if needed
+    indpopdata_transformed <- st_transform(indpopdata_sf, st_crs(mapi_results))
+    p <- p +
+      geom_sf(
+        data = indpopdata_transformed,
+        color = "black",
+        size = 0.8,
+        alpha = 0.6,
+        shape = 16
+      )
+  }
+
   return(p)
 }
 
@@ -134,6 +151,28 @@ lower_tails <- st_read(lower_tails_gpkg, layer = "euclidean_lower", quiet = TRUE
 cat("Loaded", nrow(lower_tails), "lower tail cells\n")
 
 # ==============================================================================
+# Load individual location data
+# ==============================================================================
+
+cat("Loading individual location data...\n")
+indpopdata <- read.table(indpopdata_file, header = TRUE, sep = "\t")
+cat("Loaded", nrow(indpopdata), "individuals\n")
+
+# Check required columns
+required_cols <- c("Ind", "Lat", "Lon")
+if (!all(required_cols %in% colnames(indpopdata))) {
+  warning("indpopdata missing required columns (Ind, Lat, Lon). Individual locations will not be plotted.")
+  indpopdata_sf <- NULL
+} else if (any(is.na(indpopdata$Lat) | is.na(indpopdata$Lon))) {
+  warning("Some individuals have missing coordinates. Individual locations will not be plotted.")
+  indpopdata_sf <- NULL
+} else {
+  # Create sf object with geographic coordinates (assuming WGS84)
+  indpopdata_sf <- st_as_sf(indpopdata, coords = c("Lon", "Lat"), crs = 4326)
+  cat("Created sf object with", nrow(indpopdata_sf), "individual locations\n")
+}
+
+# ==============================================================================
 # Create plot
 # ==============================================================================
 
@@ -146,6 +185,7 @@ if (nrow(mapi_results) > 0) {
       mapi_results = mapi_results,
       upper_tails = if(nrow(upper_tails) > 0) upper_tails else NULL,
       lower_tails = if(nrow(lower_tails) > 0) lower_tails else NULL,
+      indpopdata_sf = indpopdata_sf,
       fill_var = fill_var
     )
 
