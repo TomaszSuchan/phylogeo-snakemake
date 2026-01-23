@@ -249,6 +249,17 @@ parameters: &global_params
     # outgroup: "sample1,sample2"  # optional: comma-separated list of outgroup taxa
     support_threshold: 70  # minimum bootstrap support value to display on tree (0-100)
 
+  ## AMOVA parameters
+  # AMOVA (Analysis of Molecular Variance) partitions genetic variance into hierarchical components
+  amova:
+    strata: ["Region", "Site"]  # hierarchical stratification levels (e.g., ["Region", "Site"])
+                                 # Each level must be a column name in popdata.txt
+                                 # Order matters: first element is the highest level, last is the population level
+                                 # Example: ["Region", "Site"] creates hierarchy: Region > Site
+                                 #           where Site is the population level (most nested)
+                                 # Must specify at least one level (the population level)
+    nperm: 999  # number of permutations for significance testing
+
   ## Analysis resources
   #
   # Define computational resources for different analysis steps.

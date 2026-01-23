@@ -27,6 +27,7 @@ include: "rules/mapi.smk"
 include: "rules/fineradstructure.smk"
 include: "rules/construct.smk"
 include: "rules/evaladmix.smk"
+include: "rules/amova.smk"
 
 def get_all_targets():
     """
@@ -417,6 +418,17 @@ def get_all_targets():
                            k=k_values),
                     expand("results/" + project + "/construct/plots/" + project + ".construct.K{k}.barplot.pdf",
                            k=k_values)
+                ])
+
+        # AMOVA targets
+        if analyses.get("amova", False):
+            # Only run if popdata is specified (required for stratification)
+            popdata = params.get("popdata")
+            if popdata and popdata != "NULL" and popdata != "":
+                targets.extend([
+                    "results/" + project + "/amova/" + project + ".amova_results.txt",
+                    "results/" + project + "/amova/plots/" + project + ".amova_variance_components.pdf",
+                    "results/" + project + "/amova/plots/" + project + ".amova_variance_components.rds"
                 ])
 
     return targets
