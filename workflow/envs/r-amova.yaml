@@ -1,0 +1,10 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - r-base
+  - r-adegenet
+  - r-poppr
+  - r-ggplot2>=4.0
+  - r-vcfr
+
