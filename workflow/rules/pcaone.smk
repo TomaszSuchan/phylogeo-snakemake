@@ -109,7 +109,7 @@ rule plot_pca_colored:
         eigvecs=rules.pcaone.output.pcaone_eigenvectors2,
         eigvals=rules.pcaone.output.pcaone_eigenvalues,
         indpopdata=rules.generate_popdata.output.indpopdata,
-        indmiss="results/{project}/filtered_data/{project}.biallelic_snps_thinned.imiss"
+        indmiss=rules.calculate_missing_indv_thinned.output.imiss
     output:
         pdf="results/{project}/pcaone/plots/{project}.PCA-PC{pc1}_PC{pc2}-{color_by}.pdf",
         rds="results/{project}/pcaone/plots/{project}.PCA-PC{pc1}_PC{pc2}-{color_by}.rds"
@@ -139,7 +139,7 @@ rule plot_pca_labeled:
         eigvecs=rules.pcaone.output.pcaone_eigenvectors2,
         eigvals=rules.pcaone.output.pcaone_eigenvalues,
         indpopdata=rules.generate_popdata.output.indpopdata,
-        indmiss="results/{project}/filtered_data/{project}.biallelic_snps_thinned.imiss"
+        indmiss=rules.calculate_missing_indv_thinned.output.imiss
     output:
         pdf="results/{project}/pcaone/plots/{project}.PCA-PC{pc1}_PC{pc2}-labeled.pdf",
         rds="results/{project}/pcaone/plots/{project}.PCA-PC{pc1}_PC{pc2}-labeled.rds"
@@ -165,7 +165,7 @@ rule plot_pca_missing:
         eigvecs=rules.pcaone.output.pcaone_eigenvectors2,
         eigvals=rules.pcaone.output.pcaone_eigenvalues,
         indpopdata=rules.generate_popdata.output.indpopdata,
-        indmiss="results/{project}/filtered_data/{project}.biallelic_snps_thinned.imiss"
+        indmiss=rules.calculate_missing_indv_thinned.output.imiss
     output:
         pdf="results/{project}/pcaone/plots/{project}.PCA-PC{pc1}_PC{pc2}-missing.pdf",
         rds="results/{project}/pcaone/plots/{project}.PCA-PC{pc1}_PC{pc2}-missing.rds"
@@ -191,7 +191,7 @@ rule plot_pca_facet_colored:
         eigvecs=rules.pcaone.output.pcaone_eigenvectors2,
         eigvals=rules.pcaone.output.pcaone_eigenvalues,
         indpopdata=rules.generate_popdata.output.indpopdata,
-        indmiss="results/{project}/filtered_data/{project}.biallelic_snps_thinned.imiss"
+        indmiss=rules.calculate_missing_indv_thinned.output.imiss
     output:
         pdf="results/{project}/pcaone/plots/{project}.PCA-facet-{color_by}.pdf",
         rds="results/{project}/pcaone/plots/{project}.PCA-facet-{color_by}.rds"
@@ -220,7 +220,7 @@ rule plot_pca_facet_labeled:
         eigvecs=rules.pcaone.output.pcaone_eigenvectors2,
         eigvals=rules.pcaone.output.pcaone_eigenvalues,
         indpopdata=rules.generate_popdata.output.indpopdata,
-        indmiss="results/{project}/filtered_data/{project}.biallelic_snps_thinned.imiss"
+        indmiss=rules.calculate_missing_indv_thinned.output.imiss
     output:
         pdf="results/{project}/pcaone/plots/{project}.PCA-facet-labeled.pdf",
         rds="results/{project}/pcaone/plots/{project}.PCA-facet-labeled.rds"
@@ -245,7 +245,7 @@ rule plot_pca_facet_missing:
         eigvecs=rules.pcaone.output.pcaone_eigenvectors2,
         eigvals=rules.pcaone.output.pcaone_eigenvalues,
         indpopdata=rules.generate_popdata.output.indpopdata,
-        indmiss="results/{project}/filtered_data/{project}.biallelic_snps_thinned.imiss"
+        indmiss=rules.calculate_missing_indv_thinned.output.imiss
     output:
         pdf="results/{project}/pcaone/plots/{project}.PCA-facet-missing.pdf",
         rds="results/{project}/pcaone/plots/{project}.PCA-facet-missing.rds"
@@ -270,7 +270,7 @@ rule plot_pca_emu_colored:
         eigvecs=rules.pcaone_emu.output.pcaone_eigenvectors2,
         eigvals=rules.pcaone_emu.output.pcaone_eigenvalues,
         indpopdata=rules.generate_popdata.output.indpopdata,
-        indmiss="results/{project}/filtered_data/{project}.biallelic_snps_thinned.imiss"
+        indmiss=rules.calculate_missing_indv_thinned.output.imiss
     output:
         pdf="results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-PC{pc1}_PC{pc2}-{color_by}.pdf",
         rds="results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-PC{pc1}_PC{pc2}-{color_by}.rds"
@@ -300,7 +300,7 @@ rule plot_pca_emu_labeled:
         eigvecs=rules.pcaone_emu.output.pcaone_eigenvectors2,
         eigvals=rules.pcaone_emu.output.pcaone_eigenvalues,
         indpopdata=rules.generate_popdata.output.indpopdata,
-        indmiss="results/{project}/filtered_data/{project}.biallelic_snps_thinned.imiss"
+        indmiss=rules.calculate_missing_indv_thinned.output.imiss
     output:
         pdf="results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-PC{pc1}_PC{pc2}-labeled.pdf",
         rds="results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-PC{pc1}_PC{pc2}-labeled.rds"
@@ -326,7 +326,7 @@ rule plot_pca_emu_missing:
         eigvecs=rules.pcaone_emu.output.pcaone_eigenvectors2,
         eigvals=rules.pcaone_emu.output.pcaone_eigenvalues,
         indpopdata=rules.generate_popdata.output.indpopdata,
-        indmiss="results/{project}/filtered_data/{project}.biallelic_snps_thinned.imiss"
+        indmiss=rules.calculate_missing_indv_thinned.output.imiss
     output:
         pdf="results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-PC{pc1}_PC{pc2}-missing.pdf",
         rds="results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-PC{pc1}_PC{pc2}-missing.rds"
@@ -346,13 +346,92 @@ rule plot_pca_emu_missing:
     script:
         "../scripts/plot_pca_single.R"
 
+# Rule to plot PCA EMU facet (all PC combinations, colored)
+rule plot_pca_emu_facet_colored:
+    input:
+        eigvecs=rules.pcaone_emu.output.pcaone_eigenvectors2,
+        eigvals=rules.pcaone_emu.output.pcaone_eigenvalues,
+        indpopdata=rules.generate_popdata.output.indpopdata,
+        indmiss=rules.calculate_missing_indv_thinned.output.imiss
+    output:
+        pdf="results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-facet-{color_by}.pdf",
+        rds="results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-facet-{color_by}.rds"
+    log:
+        "logs/{project}/plot_pca_emu_facet_colored_{color_by}.log"
+    wildcard_constraints:
+        color_by="(?!labeled|missing).*"
+    params:
+        color_by = lambda wildcards: wildcards.color_by,
+        pca_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pca_colors", None),
+        pc_max = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pc_max", 2),
+        plot_type = "colored"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    group: "plot_pca"
+    conda:
+        "../envs/r-plot.yaml"
+    script:
+        "../scripts/plot_pca_facet.R"
+
+# Rule to plot PCA EMU facet (all PC combinations, labeled)
+rule plot_pca_emu_facet_labeled:
+    input:
+        eigvecs=rules.pcaone_emu.output.pcaone_eigenvectors2,
+        eigvals=rules.pcaone_emu.output.pcaone_eigenvalues,
+        indpopdata=rules.generate_popdata.output.indpopdata,
+        indmiss=rules.calculate_missing_indv_thinned.output.imiss
+    output:
+        pdf="results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-facet-labeled.pdf",
+        rds="results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-facet-labeled.rds"
+    log:
+        "logs/{project}/plot_pca_emu_facet_labeled.log"
+    params:
+        pc_max = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pc_max", 2),
+        plot_type = "labeled"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    group: "plot_pca"
+    conda:
+        "../envs/r-plot.yaml"
+    script:
+        "../scripts/plot_pca_facet.R"
+
+# Rule to plot PCA EMU facet (all PC combinations, missing)
+rule plot_pca_emu_facet_missing:
+    input:
+        eigvecs=rules.pcaone_emu.output.pcaone_eigenvectors2,
+        eigvals=rules.pcaone_emu.output.pcaone_eigenvalues,
+        indpopdata=rules.generate_popdata.output.indpopdata,
+        indmiss=rules.calculate_missing_indv_thinned.output.imiss
+    output:
+        pdf="results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-facet-missing.pdf",
+        rds="results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-facet-missing.rds"
+    log:
+        "logs/{project}/plot_pca_emu_facet_missing.log"
+    params:
+        pc_max = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pc_max", 2),
+        plot_type = "missing"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    group: "plot_pca"
+    conda:
+        "../envs/r-plot.yaml"
+    script:
+        "../scripts/plot_pca_facet.R"
+
 # Rule to plot PCA for each miss threshold (colored by population/metadata)
 rule plot_pca_miss_colored:
     input:
         eigvecs=rules.pcaone_miss.output.eigenvectors2,
         eigvals=rules.pcaone_miss.output.eigenvalues,
         indpopdata=rules.generate_popdata.output.indpopdata,
-        indmiss="results/{project}/filtered_data/{project}.biallelic_snps_thinned_miss{miss}.imiss"
+        indmiss="results/{project}/missingness_data/{project}.biallelic_snps_thinned_miss{miss}.imiss"
     output:
         pdf="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-{color_by}.pdf",
         rds="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-{color_by}.rds"
@@ -382,7 +461,7 @@ rule plot_pca_miss_labeled:
         eigvecs=rules.pcaone_miss.output.eigenvectors2,
         eigvals=rules.pcaone_miss.output.eigenvalues,
         indpopdata=rules.generate_popdata.output.indpopdata,
-        indmiss="results/{project}/filtered_data/{project}.biallelic_snps_thinned_miss{miss}.imiss"
+        indmiss="results/{project}/missingness_data/{project}.biallelic_snps_thinned_miss{miss}.imiss"
     output:
         pdf="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-labeled.pdf",
         rds="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-labeled.rds"
@@ -408,7 +487,7 @@ rule plot_pca_miss_missing:
         eigvecs=rules.pcaone_miss.output.eigenvectors2,
         eigvals=rules.pcaone_miss.output.eigenvalues,
         indpopdata=rules.generate_popdata.output.indpopdata,
-        indmiss="results/{project}/filtered_data/{project}.biallelic_snps_thinned_miss{miss}.imiss"
+        indmiss="results/{project}/missingness_data/{project}.biallelic_snps_thinned_miss{miss}.imiss"
     output:
         pdf="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-missing.pdf",
         rds="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-missing.rds"
@@ -427,3 +506,82 @@ rule plot_pca_miss_missing:
         "../envs/r-plot.yaml"
     script:
         "../scripts/plot_pca_single.R"
+
+# Rule to plot PCA miss facet (all PC combinations, colored)
+rule plot_pca_miss_facet_colored:
+    input:
+        eigvecs=rules.pcaone_miss.output.eigenvectors2,
+        eigvals=rules.pcaone_miss.output.eigenvalues,
+        indpopdata=rules.generate_popdata.output.indpopdata,
+        indmiss="results/{project}/missingness_data/{project}.biallelic_snps_thinned_miss{miss}.imiss"
+    output:
+        pdf="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-{color_by}.pdf",
+        rds="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-{color_by}.rds"
+    log:
+        "logs/{project}/plot_pca_miss{miss}_facet_colored_{color_by}.log"
+    wildcard_constraints:
+        color_by="(?!labeled|missing).*"
+    params:
+        color_by = lambda wildcards: wildcards.color_by,
+        pca_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pca_colors", None),
+        pc_max = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pc_max", 2),
+        plot_type = "colored"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    group: "plot_pca"
+    conda:
+        "../envs/r-plot.yaml"
+    script:
+        "../scripts/plot_pca_facet.R"
+
+# Rule to plot PCA miss facet (all PC combinations, labeled)
+rule plot_pca_miss_facet_labeled:
+    input:
+        eigvecs=rules.pcaone_miss.output.eigenvectors2,
+        eigvals=rules.pcaone_miss.output.eigenvalues,
+        indpopdata=rules.generate_popdata.output.indpopdata,
+        indmiss="results/{project}/missingness_data/{project}.biallelic_snps_thinned_miss{miss}.imiss"
+    output:
+        pdf="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-labeled.pdf",
+        rds="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-labeled.rds"
+    log:
+        "logs/{project}/plot_pca_miss{miss}_facet_labeled.log"
+    params:
+        pc_max = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pc_max", 2),
+        plot_type = "labeled"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    group: "plot_pca"
+    conda:
+        "../envs/r-plot.yaml"
+    script:
+        "../scripts/plot_pca_facet.R"
+
+# Rule to plot PCA miss facet (all PC combinations, missing)
+rule plot_pca_miss_facet_missing:
+    input:
+        eigvecs=rules.pcaone_miss.output.eigenvectors2,
+        eigvals=rules.pcaone_miss.output.eigenvalues,
+        indpopdata=rules.generate_popdata.output.indpopdata,
+        indmiss="results/{project}/missingness_data/{project}.biallelic_snps_thinned_miss{miss}.imiss"
+    output:
+        pdf="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-missing.pdf",
+        rds="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-missing.rds"
+    log:
+        "logs/{project}/plot_pca_miss{miss}_facet_missing.log"
+    params:
+        pc_max = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pc_max", 2),
+        plot_type = "missing"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    group: "plot_pca"
+    conda:
+        "../envs/r-plot.yaml"
+    script:
+        "../scripts/plot_pca_facet.R"

@@ -318,6 +318,10 @@ parameters: &global_params
       threads: 4
       mem_mb: 16000
       runtime: 120  # KING calculation can be time-intensive for large datasets
+    amova:
+      threads: 1
+      mem_mb: 16000
+      runtime: 120  # AMOVA with many permutations can be time-intensive
 
 ##############################
 ### Projects configuration ###
@@ -344,6 +348,7 @@ projects:
       iqtree_robust: false
       fineradstructure: false
       plot_map: false
+      amova: false
     parameters:
       <<: *global_params
       popmap: "data/popmap.txt"

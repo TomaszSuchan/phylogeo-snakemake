@@ -102,37 +102,19 @@ rule create_population_summary:
 
 
 
-rule calculate_missing_indv:
-    input:
-        vcf = rules.thin_vcf.output.vcf
-    output:
-        imiss = "results/{project}/filtered_data/{project}.biallelic_snps_thinned.imiss"
-    log:
-        "logs/{project}/calculate_missing_indv.log"
-    params:
-        out_prefix = lambda wildcards: f"results/{wildcards.project}/filtered_data/{wildcards.project}.biallelic_snps_thinned"
-    conda:
-        "../envs/vcftools.yaml"
-    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
-    resources:
-        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
-        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
-    shell:
-        """
-        vcftools --gzvcf {input.vcf} \
-                 --missing-indv \
-                 --out {params.out_prefix} &> {log}
-        """
+# Note: calculate_missing_indv has been moved to missingness.smk
+# This rule is kept for backward compatibility with calculate_missing_indv_miss
+# but the main rule is now in missingness.smk
 
 rule calculate_missing_indv_miss:
     input:
         vcf = rules.filter_missing_vcf.output.vcf
     output:
-        imiss = "results/{project}/filtered_data/{project}.biallelic_snps_thinned_miss{miss}.imiss"
+        imiss = "results/{project}/missingness_data/{project}.biallelic_snps_thinned_miss{miss}.imiss"
     log:
         "logs/{project}/calculate_missing_indv_miss_{miss}.log"
     params:
-        out_prefix = lambda wildcards: f"results/{wildcards.project}/filtered_data/{wildcards.project}.biallelic_snps_thinned_miss{wildcards.miss}"
+        out_prefix = lambda wildcards: f"results/{wildcards.project}/missingness_data/{wildcards.project}.biallelic_snps_thinned_miss{wildcards.miss}"
     conda:
         "../envs/vcftools.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -141,6 +123,7 @@ rule calculate_missing_indv_miss:
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
     shell:
         """
+        mkdir -p results/{wildcards.project}/missingness_data
         vcftools --gzvcf {input.vcf} \
                  --missing-indv \
                  --out {params.out_prefix} &> {log}

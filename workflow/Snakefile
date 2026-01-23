@@ -12,6 +12,7 @@ def get_pca_combinations(pc_max):
 # Include rule files
 include: "rules/preprocessing.smk"
 include: "rules/popdata.smk"
+include: "rules/missingness.smk"
 include: "rules/faststructure.smk"
 include: "rules/admixture.smk"
 include: "rules/pcaone.smk"
@@ -165,14 +166,62 @@ def get_all_targets():
                            k=k_values)
                 ])
 
+        # Missingness targets (always generated)
+        # Filtered dataset (before thinning)
+        targets.extend([
+            "results/" + project + "/missingness_data/" + project + ".filtered.imiss",
+            "results/" + project + "/missingness_data/" + project + ".filtered.lmiss",
+            "results/" + project + "/missingness_data/plots/" + project + ".filtered.imiss_histogram.pdf",
+            "results/" + project + "/missingness_data/plots/" + project + ".filtered.imiss_histogram.rds",
+            "results/" + project + "/missingness_data/plots/" + project + ".filtered.lmiss_histogram.pdf",
+            "results/" + project + "/missingness_data/plots/" + project + ".filtered.lmiss_histogram.rds",
+            "results/" + project + "/missingness_data/plots/" + project + ".filtered.imiss_barplot-plain.pdf",
+            "results/" + project + "/missingness_data/plots/" + project + ".filtered.imiss_barplot-plain.rds",
+            "results/" + project + "/missingness_data/plots/" + project + ".filtered.lmiss_barplot-plain.pdf",
+            "results/" + project + "/missingness_data/plots/" + project + ".filtered.lmiss_barplot-plain.rds"
+        ])
+        # Thinned dataset (after thinning)
+        targets.extend([
+            "results/" + project + "/missingness_data/" + project + ".biallelic_snps_thinned.imiss",
+            "results/" + project + "/missingness_data/" + project + ".biallelic_snps_thinned.lmiss",
+            "results/" + project + "/missingness_data/plots/" + project + ".biallelic_snps_thinned.imiss_histogram.pdf",
+            "results/" + project + "/missingness_data/plots/" + project + ".biallelic_snps_thinned.imiss_histogram.rds",
+            "results/" + project + "/missingness_data/plots/" + project + ".biallelic_snps_thinned.lmiss_histogram.pdf",
+            "results/" + project + "/missingness_data/plots/" + project + ".biallelic_snps_thinned.lmiss_histogram.rds",
+            "results/" + project + "/missingness_data/plots/" + project + ".biallelic_snps_thinned.imiss_barplot-plain.pdf",
+            "results/" + project + "/missingness_data/plots/" + project + ".biallelic_snps_thinned.imiss_barplot-plain.rds",
+            "results/" + project + "/missingness_data/plots/" + project + ".biallelic_snps_thinned.lmiss_barplot-plain.pdf",
+            "results/" + project + "/missingness_data/plots/" + project + ".biallelic_snps_thinned.lmiss_barplot-plain.rds"
+        ])
+        # Add imiss barplots colored by stratification (similar to pixy) for both datasets
+        # Get color_by from config (use pixy or pca_plot color_by)
+        missingness_groupings = params.get("pixy", {}).get("color_by",
+            params.get("pca_plot", {}).get("color_by", ["none"]))
+        for color_by in missingness_groupings:
+            if color_by != "none" and color_by != "":
+                # Filtered dataset
+                targets.extend([
+                    f"results/{project}/missingness_data/plots/{project}.filtered.imiss_barplot-grouped-{color_by}.pdf",
+                    f"results/{project}/missingness_data/plots/{project}.filtered.imiss_barplot-grouped-{color_by}.rds",
+                    f"results/{project}/missingness_data/plots/{project}.filtered.imiss_barplot-sorted-{color_by}.pdf",
+                    f"results/{project}/missingness_data/plots/{project}.filtered.imiss_barplot-sorted-{color_by}.rds"
+                ])
+                # Thinned dataset
+                targets.extend([
+                    f"results/{project}/missingness_data/plots/{project}.biallelic_snps_thinned.imiss_barplot-grouped-{color_by}.pdf",
+                    f"results/{project}/missingness_data/plots/{project}.biallelic_snps_thinned.imiss_barplot-grouped-{color_by}.rds",
+                    f"results/{project}/missingness_data/plots/{project}.biallelic_snps_thinned.imiss_barplot-sorted-{color_by}.pdf",
+                    f"results/{project}/missingness_data/plots/{project}.biallelic_snps_thinned.imiss_barplot-sorted-{color_by}.rds"
+                ])
+
         # PCAone targets (standard)
         if analyses.get("pcaone", False):
             targets.extend([
                 "results/" + project + "/pcaone/" + project + ".PCA.eigvecs",
                 "results/" + project + "/pcaone/" + project + ".PCA.eigvals"
             ])
-            # Always add missing data calculation target
-            targets.append("results/" + project + "/filtered_data/" + project + ".biallelic_snps_thinned.imiss")
+            # Always add missing data calculation target (now in missingness_data)
+            targets.append("results/" + project + "/missingness_data/" + project + ".biallelic_snps_thinned.imiss")
             # Add plot targets for each PC combination and color grouping
             for pc1, pc2 in pca_combinations:
                 for color_by in PCA_groupings:
@@ -207,8 +256,8 @@ def get_all_targets():
                 "results/" + project + "/pcaone_EMU/" + project + ".PCA_EMU.eigvecs",
                 "results/" + project + "/pcaone_EMU/" + project + ".PCA_EMU.eigvals"
             ])
-            # Always add missing data calculation target (reuses same .imiss as pcaone)
-            targets.append("results/" + project + "/filtered_data/" + project + ".biallelic_snps_thinned.imiss")
+            # Always add missing data calculation target (now in missingness_data)
+            targets.append("results/" + project + "/missingness_data/" + project + ".biallelic_snps_thinned.imiss")
             # Add plot targets for each PC combination and color grouping
             for pc1, pc2 in pca_combinations:
                 for color_by in PCA_groupings:
@@ -236,7 +285,7 @@ def get_all_targets():
             ])
             # Always add missing data calculation targets for each threshold
             targets.extend([
-                expand("results/" + project + "/filtered_data/" + project + ".biallelic_snps_thinned_miss{miss}.imiss",
+                expand("results/" + project + "/missingness_data/" + project + ".biallelic_snps_thinned_miss{miss}.imiss",
                        miss=miss_values)
             ])
             # Add plot targets for each miss value, PC combination, and color grouping
