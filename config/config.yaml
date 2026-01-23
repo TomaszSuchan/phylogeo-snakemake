@@ -226,6 +226,7 @@ parameters: &global_params
                           # separate from pca_plot.color_by - allows different groupings for pixy vs PCA
     # Map-specific parameters for pixy PI maps
     point_size: 3        # size of points on genetic diversity maps
+    map_outline: true    # add point outlines (true/false, default: true)
 
   ## fineRADstructure parameters
   fineradstructure:

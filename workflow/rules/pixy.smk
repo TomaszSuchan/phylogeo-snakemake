@@ -285,7 +285,8 @@ rule plot_pixy_pi_map:
         basemap_border_col = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border_col", "black"),
         basemap_border_lwd = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border_lwd", 0.1),
         # Pixy-specific parameters
-        point_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("point_size", 3)
+        point_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("point_size", 3),
+        map_outline = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("map_outline", True)
     log:
         "logs/{project}/plot_pixy_pi_map.log"
     benchmark:

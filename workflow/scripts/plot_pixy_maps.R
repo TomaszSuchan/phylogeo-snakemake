@@ -43,6 +43,12 @@ if (is.null(indpopdata_file) || indpopdata_file == "NULL" || indpopdata_file == 
 # Extract map parameters
 map_params <- extract_map_params(snakemake@params)
 
+# Extract pixy-specific parameters
+map_outline <- as.logical(snakemake@params[["map_outline"]])
+if (is.na(map_outline)) {
+  map_outline <- TRUE  # default to true if not specified
+}
+
 # Prepare coordinates from indpopdata
 message("\n=== READING INDPOPDATA ===\n")
 indpopdata <- read.table(indpopdata_file, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
@@ -89,7 +95,21 @@ p <- p +
     aes(x = Lon, y = Lat, color = !!sym(value_col)),
     size = map_params$point_size,
     shape = 19
-  ) +
+  )
+
+# Add point outlines if enabled
+if (map_outline) {
+  p <- p +
+    geom_point(
+      data = plot_data,
+      aes(x = Lon, y = Lat),
+      color = "black",
+      size = map_params$point_size,
+      shape = 1
+    )
+}
+
+p <- p +
   scale_color_gradientn(
     name = legend_title,
     colours = RColorBrewer::brewer.pal(9, "YlOrBr"),
