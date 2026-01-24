@@ -79,7 +79,17 @@ if (!is.null(color_by_name) && plot_type != "plain") {
   }
 }
 
-message("\n=== CREATING BARPLOT ===\n")
+message("\n=== CREATING PLOT ===\n")
+
+# Track plot characteristics for sizing
+use_boxplot <- FALSE
+n_categories <- 0
+
+# Determine number of categories if grouping is used
+if (!is.null(color_by_name) && plot_type != "plain") {
+  unique_categories <- sort(unique(imiss_df[[color_by_name]]))
+  n_categories <- length(unique_categories)
+}
 
 # Create base plot
 if (is.null(color_by_name) || plot_type == "plain") {
@@ -101,11 +111,10 @@ if (is.null(color_by_name) || plot_type == "plain") {
 } else {
   # Colored by stratification
   unique_categories <- sort(unique(imiss_df[[color_by_name]]))
-  n_categories <- length(unique_categories)
   
   if (!is.null(pca_colors) && length(pca_colors) > 0) {
     if (n_categories > length(pca_colors)) {
-      message(sprintf("Imiss barplot: %d categories but only %d colors defined. Interpolating additional colors.",
+      message(sprintf("Imiss plot: %d categories but only %d colors defined. Interpolating additional colors.",
                      n_categories, length(pca_colors)))
       colors_all <- colorRampPalette(pca_colors)(n_categories)
     } else {
@@ -114,7 +123,7 @@ if (is.null(color_by_name) || plot_type == "plain") {
     names(colors_all) <- unique_categories
     colors <- colors_all
   } else {
-    message("Imiss barplot: No colors defined in config. Using default ggplot2 colors.")
+    message("Imiss plot: No colors defined in config. Using default ggplot2 colors.")
     colors <- NULL
   }
   
@@ -143,31 +152,63 @@ if (is.null(color_by_name) || plot_type == "plain") {
     
   } else {
     # Grouped by stratification
-    imiss_df <- imiss_df %>%
-      group_by(.data[[color_by_name]]) %>%
-      arrange(F_MISS) %>%
-      ungroup()
+    # For many categories, use boxplot/violin plot instead of individual bars
+    # Threshold: if more than 20 categories, use boxplot
+    use_boxplot <- n_categories > 20
     
-    imiss_df$INDV <- factor(imiss_df$INDV, levels = unique(imiss_df$INDV))
-    
-    p <- ggplot(imiss_df, aes(x = INDV, y = F_MISS, fill = .data[[color_by_name]])) +
-      geom_bar(stat = "identity", alpha = 0.7, color = "black", linewidth = 0.3) +
-      facet_wrap(as.formula(paste("~", color_by_name)), scales = "free_x", ncol = 4) +
-      labs(
-        x = "Individual",
-        y = "Proportion of missing data",
-        fill = color_by_name
-      ) +
-      theme_bw() +
-      theme(
-        axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
-        panel.grid.major.x = element_blank(),
-        legend.position = "bottom",
-        strip.text = element_text(size = 10, face = "bold")
-      )
-    
-    if (!is.null(colors)) {
-      p <- p + scale_fill_manual(values = colors)
+    if (use_boxplot) {
+      message(sprintf("Imiss plot: %d categories detected. Using boxplot instead of individual bars for better visualization.\n", n_categories))
+      
+      # Convert grouping column to factor for proper ordering
+      imiss_df[[color_by_name]] <- factor(imiss_df[[color_by_name]], levels = unique_categories)
+      
+      p <- ggplot(imiss_df, aes(x = .data[[color_by_name]], y = F_MISS, fill = .data[[color_by_name]])) +
+        geom_violin(alpha = 0.7, trim = FALSE) +
+        geom_boxplot(width = 0.2, alpha = 0.9, outlier.size = 1, outlier.alpha = 0.5) +
+        labs(
+          x = color_by_name,
+          y = "Proportion of missing data",
+          fill = color_by_name
+        ) +
+        theme_bw() +
+        theme(
+          axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
+          panel.grid.major.x = element_blank(),
+          legend.position = "none"
+        )
+      
+      if (!is.null(colors)) {
+        p <- p + scale_fill_manual(values = colors)
+      }
+      
+    } else {
+      # Few categories - use individual bars with faceting
+      imiss_df <- imiss_df %>%
+        group_by(.data[[color_by_name]]) %>%
+        arrange(F_MISS) %>%
+        ungroup()
+      
+      imiss_df$INDV <- factor(imiss_df$INDV, levels = unique(imiss_df$INDV))
+      
+      p <- ggplot(imiss_df, aes(x = INDV, y = F_MISS, fill = .data[[color_by_name]])) +
+        geom_bar(stat = "identity", alpha = 0.7, color = "black", linewidth = 0.3) +
+        facet_wrap(as.formula(paste("~", color_by_name)), scales = "free_x", ncol = 4) +
+        labs(
+          x = "Individual",
+          y = "Proportion of missing data",
+          fill = color_by_name
+        ) +
+        theme_bw() +
+        theme(
+          axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
+          panel.grid.major.x = element_blank(),
+          legend.position = "bottom",
+          strip.text = element_text(size = 10, face = "bold")
+        )
+      
+      if (!is.null(colors)) {
+        p <- p + scale_fill_manual(values = colors)
+      }
     }
   }
 }
@@ -178,13 +219,27 @@ message(sprintf("Output PDF: %s\n", output_pdf))
 message(sprintf("Output RDS: %s\n", output_rds))
 
 dir.create(dirname(output_pdf), recursive = TRUE, showWarnings = FALSE)
+
+# Calculate appropriate plot dimensions
+# For boxplots with many categories, use reasonable width
+if (plot_type == "grouped" && !is.null(color_by_name) && use_boxplot) {
+  # Boxplot: width based on number of categories, but capped
+  plot_width <- min(max(8, n_categories * 0.3), 50)
+  plot_height <- 6
+} else {
+  # Barplot (sorted, plain, or grouped with few categories): width based on individuals, but capped
+  plot_width <- min(max(8, nrow(imiss_df) * 0.2), 50)
+  plot_height <- 6
+}
+
 ggsave(
   filename = output_pdf,
   plot = p,
-  width = max(8, nrow(imiss_df) * 0.2),
-  height = 6,
+  width = plot_width,
+  height = plot_height,
   dpi = 300,
-  device = "pdf"
+  device = "pdf",
+  limitsize = FALSE
 )
 
 dir.create(dirname(output_rds), recursive = TRUE, showWarnings = FALSE)
