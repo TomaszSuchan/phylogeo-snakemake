@@ -174,11 +174,7 @@ def get_all_targets():
             "results/" + project + "/missingness_data/filtered/plots/" + project + ".filtered.imiss_histogram.pdf",
             "results/" + project + "/missingness_data/filtered/plots/" + project + ".filtered.imiss_histogram.rds",
             "results/" + project + "/missingness_data/filtered/plots/" + project + ".filtered.lmiss_histogram.pdf",
-            "results/" + project + "/missingness_data/filtered/plots/" + project + ".filtered.lmiss_histogram.rds",
-            "results/" + project + "/missingness_data/filtered/plots/" + project + ".filtered.imiss_barplot-plain.pdf",
-            "results/" + project + "/missingness_data/filtered/plots/" + project + ".filtered.imiss_barplot-plain.rds",
-            "results/" + project + "/missingness_data/filtered/plots/" + project + ".filtered.lmiss_barplot-plain.pdf",
-            "results/" + project + "/missingness_data/filtered/plots/" + project + ".filtered.lmiss_barplot-plain.rds"
+            "results/" + project + "/missingness_data/filtered/plots/" + project + ".filtered.lmiss_histogram.rds"
         ])
         # Thinned dataset (after thinning)
         targets.extend([
@@ -187,33 +183,8 @@ def get_all_targets():
             "results/" + project + "/missingness_data/thinned/plots/" + project + ".biallelic_snps_thinned.imiss_histogram.pdf",
             "results/" + project + "/missingness_data/thinned/plots/" + project + ".biallelic_snps_thinned.imiss_histogram.rds",
             "results/" + project + "/missingness_data/thinned/plots/" + project + ".biallelic_snps_thinned.lmiss_histogram.pdf",
-            "results/" + project + "/missingness_data/thinned/plots/" + project + ".biallelic_snps_thinned.lmiss_histogram.rds",
-            "results/" + project + "/missingness_data/thinned/plots/" + project + ".biallelic_snps_thinned.imiss_barplot-plain.pdf",
-            "results/" + project + "/missingness_data/thinned/plots/" + project + ".biallelic_snps_thinned.imiss_barplot-plain.rds",
-            "results/" + project + "/missingness_data/thinned/plots/" + project + ".biallelic_snps_thinned.lmiss_barplot-plain.pdf",
-            "results/" + project + "/missingness_data/thinned/plots/" + project + ".biallelic_snps_thinned.lmiss_barplot-plain.rds"
+            "results/" + project + "/missingness_data/thinned/plots/" + project + ".biallelic_snps_thinned.lmiss_histogram.rds"
         ])
-        # Add imiss barplots colored by stratification (similar to pixy) for both datasets
-        # Get color_by from config (use pixy or pca_plot color_by)
-        missingness_groupings = params.get("pixy", {}).get("color_by",
-            params.get("pca_plot", {}).get("color_by", ["none"]))
-        for color_by in missingness_groupings:
-            if color_by != "none" and color_by != "":
-                # Filtered dataset
-                targets.extend([
-                    f"results/{project}/missingness_data/filtered/plots/{project}.filtered.imiss_barplot-grouped-{color_by}.pdf",
-                    f"results/{project}/missingness_data/filtered/plots/{project}.filtered.imiss_barplot-grouped-{color_by}.rds",
-                    f"results/{project}/missingness_data/filtered/plots/{project}.filtered.imiss_barplot-sorted-{color_by}.pdf",
-                    f"results/{project}/missingness_data/filtered/plots/{project}.filtered.imiss_barplot-sorted-{color_by}.rds"
-                ])
-                # Thinned dataset
-                targets.extend([
-                    f"results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps_thinned.imiss_barplot-grouped-{color_by}.pdf",
-                    f"results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps_thinned.imiss_barplot-grouped-{color_by}.rds",
-                    f"results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps_thinned.imiss_barplot-sorted-{color_by}.pdf",
-                    f"results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps_thinned.imiss_barplot-sorted-{color_by}.rds"
-                ])
-
         # PCAone targets (standard)
         if analyses.get("pcaone", False):
             targets.extend([
