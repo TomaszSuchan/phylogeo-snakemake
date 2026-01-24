@@ -6,6 +6,7 @@ library(tidyverse)
 library(mapmixture)
 library(RColorBrewer)
 library(grid) # for unit()
+library(sf)
 
 # Source common map functions
 # Try to get script directory, fallback to relative path
@@ -82,6 +83,14 @@ message(sprintf("Value range: [%.6f, %.6f]\n",
                 max(plot_data[[value_col]], na.rm = TRUE)))
 message(sprintf("Values are numeric: %s\n", is.numeric(plot_data[[value_col]])))
 
+# Transform coordinates to match map CRS if needed
+message("\n=== TRANSFORMING COORDINATES ===\n")
+message(sprintf("Target CRS: %d\n", map_params$crs))
+plot_data_transformed <- transform_coordinates(plot_data, map_params$crs)
+message(sprintf("Coordinates transformed. Range: Lon [%.2f, %.2f], Lat [%.2f, %.2f]\n",
+            min(plot_data_transformed$Lon), max(plot_data_transformed$Lon),
+            min(plot_data_transformed$Lat), max(plot_data_transformed$Lat)))
+
 # Create basemap using mapmixture (with invisible pies)
 message("\n=== CREATING MAPMIXTURE BASEMAP ===\n")
 p <- create_basemap(coords_df, map_params)
@@ -91,7 +100,7 @@ p <- create_basemap(coords_df, map_params)
 message("\n=== ADDING COLORED POINTS ===\n")
 p <- p +
   geom_point(
-    data = plot_data,
+    data = plot_data_transformed,
     aes(x = Lon, y = Lat, color = !!sym(value_col)),
     size = map_params$point_size,
     shape = 19
@@ -101,7 +110,7 @@ p <- p +
 if (map_outline) {
   p <- p +
     geom_point(
-      data = plot_data,
+      data = plot_data_transformed,
       aes(x = Lon, y = Lat),
       color = "black",
       size = map_params$point_size,

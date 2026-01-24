@@ -5,6 +5,7 @@
 library(tidyverse)
 library(mapmixture)
 library(ggrepel)
+library(sf)
 
 #' Create basemap using mapmixture (without pie charts)
 #' This function creates a styled basemap with all the same parameters as structure plots
@@ -117,6 +118,30 @@ prepare_coordinates <- function(popmap_file, popdata_file) {
     warning(paste(missing_sites, collapse = ", "))
     warning("\nThese populations will not be plotted.\n")
   }
+  
+  return(coords_df)
+}
+
+#' Transform coordinates from WGS84 (4326) to target CRS
+#' This ensures points align with the map when using projected CRS
+transform_coordinates <- function(coords_df, target_crs) {
+  # If CRS is 4326 (WGS84), no transformation needed
+  if (target_crs == 4326) {
+    return(coords_df)
+  }
+  
+  # Create sf object with geographic coordinates (WGS84)
+  coords_sf <- st_as_sf(coords_df, coords = c("Lon", "Lat"), crs = 4326)
+  
+  # Transform to target CRS
+  coords_transformed <- st_transform(coords_sf, crs = target_crs)
+  
+  # Extract transformed coordinates
+  coords_matrix <- st_coordinates(coords_transformed)
+  
+  # Update coordinates in dataframe
+  coords_df$Lon <- coords_matrix[, "X"]
+  coords_df$Lat <- coords_matrix[, "Y"]
   
   return(coords_df)
 }

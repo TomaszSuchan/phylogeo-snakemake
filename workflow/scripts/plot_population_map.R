@@ -10,6 +10,7 @@ if (!require("mapmixture", quietly = TRUE)) {
 library(tidyverse)
 library(mapmixture)
 library(ggrepel)
+library(sf)
 
 # Source common map functions
 # Try to get script directory, fallback to relative path
@@ -129,6 +130,14 @@ map_params <- list(
   basemap_border_lwd = basemap_border_lwd
 )
 
+# Transform coordinates to match map CRS if needed
+message("\n=== TRANSFORMING COORDINATES ===\n")
+message(sprintf("Target CRS: %d\n", crs))
+coords_df_transformed <- transform_coordinates(coords_df, crs)
+message(sprintf("Coordinates transformed. Range: Lon [%.2f, %.2f], Lat [%.2f, %.2f]\n",
+            min(coords_df_transformed$Lon), max(coords_df_transformed$Lon),
+            min(coords_df_transformed$Lat), max(coords_df_transformed$Lat)))
+
 # Create basemap using mapmixture (with invisible pies)
 message("\n=== CREATING MAPMIXTURE BASEMAP ===\n")
 p <- create_basemap(coords_df, map_params)
@@ -137,7 +146,7 @@ p <- create_basemap(coords_df, map_params)
 if (show_points) {
   message("\n=== ADDING POPULATION POINTS ===\n")
   p <- p + geom_point(
-    data = coords_df,
+    data = coords_df_transformed,
     aes(x = Lon, y = Lat),
     size = point_size,
     color = point_color,
@@ -149,7 +158,7 @@ if (show_points) {
 if (show_labels) {
   message("\n=== ADDING LABELS WITH GGREPEL ===\n")
   p <- p + geom_text_repel(
-    data = coords_df,
+    data = coords_df_transformed,
     aes(x = Lon, y = Lat, label = Site),
     size = label_size,
     color = label_color,
