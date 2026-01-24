@@ -23,7 +23,6 @@ rule calculate_missing_indv_filtered:
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
     shell:
         """
-        mkdir -p results/{wildcards.project}/missingness_data/filtered
         vcftools --gzvcf {input.vcf} \
                  --missing-indv \
                  --out {params.out_prefix} &> {log}
@@ -46,11 +45,9 @@ rule calculate_missing_loci_filtered:
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
     shell:
         """
-        mkdir -p results/{wildcards.project}/missingness_data/filtered
         vcftools --gzvcf {input.vcf} \
                  --missing-site \
                  --out {params.out_prefix} &> {log}
-        mv {params.out_prefix}.lmiss {output.lmiss} || cp {params.out_prefix}.lmiss {output.lmiss}
         """
 
 # Missingness from thinned VCF (after thinning)
@@ -71,7 +68,6 @@ rule calculate_missing_indv_thinned:
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
     shell:
         """
-        mkdir -p results/{wildcards.project}/missingness_data/thinned
         vcftools --gzvcf {input.vcf} \
                  --missing-indv \
                  --out {params.out_prefix} &> {log}
@@ -94,11 +90,9 @@ rule calculate_missing_loci_thinned:
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
     shell:
         """
-        mkdir -p results/{wildcards.project}/missingness_data/thinned
         vcftools --gzvcf {input.vcf} \
                  --missing-site \
                  --out {params.out_prefix} &> {log}
-        mv {params.out_prefix}.lmiss {output.lmiss} || cp {params.out_prefix}.lmiss {output.lmiss}
         """
 
 # Plot imiss histogram - filtered dataset
