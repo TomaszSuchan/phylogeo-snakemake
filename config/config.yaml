@@ -314,6 +314,10 @@ parameters: &global_params
       threads: 4
       mem_mb: 16000
       runtime: 1440  # conStruct MCMC can be time-intensive
+    dapc:
+      threads: 1
+      mem_mb: 8000
+      runtime: 10
     relatedness_filtering:
       threads: 4
       mem_mb: 16000
