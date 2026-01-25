@@ -349,6 +349,7 @@ projects:
       fineradstructure: false
       plot_map: false
       amova: false
+      dapc: false
     parameters:
       <<: *global_params
       popmap: "data/popmap.txt"
