@@ -29,6 +29,7 @@ include: "rules/fineradstructure.smk"
 include: "rules/construct.smk"
 include: "rules/evaladmix.smk"
 include: "rules/amova.smk"
+include: "rules/dapc.smk"
 
 def get_all_targets():
     """
@@ -449,6 +450,29 @@ def get_all_targets():
                     "results/" + project + "/amova/" + project + ".amova_results.txt",
                     "results/" + project + "/amova/plots/" + project + ".amova_variance_components.pdf",
                     "results/" + project + "/amova/plots/" + project + ".amova_variance_components.rds"
+                ])
+
+        # DAPC targets
+        if analyses.get("dapc", False):
+            k_values = params.get("k_values", [1, 2, 3, 4, 5, 6, 7, 8, 9])
+            # Filter out K=1 (DAPC requires at least 2 clusters)
+            k_values = [k for k in k_values if k >= 2]
+            
+            targets.extend([
+                expand("results/" + project + "/dapc/" + project + ".dapc.K{k}.results.rds", k=k_values),
+                expand("results/" + project + "/dapc/" + project + ".dapc.K{k}.cluster_assignments.txt", k=k_values),
+                expand("results/" + project + "/dapc/" + project + ".dapc.K{k}.membership_probs.txt", k=k_values),
+                expand("results/" + project + "/dapc/plots/" + project + ".dapc.K{k}.scatter.pdf", k=k_values),
+                expand("results/" + project + "/dapc/plots/" + project + ".dapc.K{k}.scatter.rds", k=k_values),
+                "results/" + project + "/dapc/plots/" + project + ".dapc.criterion_plot.pdf",
+                "results/" + project + "/dapc/plots/" + project + ".dapc.criterion_plot.rds"
+            ])
+            # Add DAPC map targets (only if popdata is specified, like AMOVA)
+            popdata = params.get("popdata")
+            if popdata and popdata != "NULL" and popdata != "":
+                targets.extend([
+                    expand("results/" + project + "/dapc/plots/" + project + ".dapc.K{k}.map.pdf", k=k_values),
+                    expand("results/" + project + "/dapc/plots/" + project + ".dapc.K{k}.map.rds", k=k_values)
                 ])
 
     return targets
