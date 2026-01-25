@@ -251,8 +251,9 @@ if (!is.null(group_by_name) && group_by_name %in% colnames(popdata)) {
       linewidth = 0.3,
       pattern_fill = "black",
       pattern_color = "black",
-      pattern_density = 0.3,
-      pattern_spacing = 0.02
+      pattern_density = 0.5,
+      pattern_spacing = 0.04,
+      pattern_linewidth = 0.8
     ) +
     facet_wrap(as.formula(paste("~", group_by_name)), scales = "free_x", ncol = 4) +
     labs(
@@ -262,11 +263,11 @@ if (!is.null(group_by_name) && group_by_name %in% colnames(popdata)) {
       pattern = "Category"
     ) +
     scale_fill_manual(
-      values = c("clone" = "white",
-                 "1st-degree" = "white",
-                 "2nd-degree" = "white",
-                 "other" = "white",
-                 "kept" = "lightgray"),
+      values = c("clone" = "black",
+                 "1st-degree" = "darkgray",
+                 "2nd-degree" = "gray",
+                 "other" = "lightgray",
+                 "kept" = "white"),
       breaks = category_order,
       labels = c("clone" = "Clone", "1st-degree" = "1st-degree", 
                  "2nd-degree" = "2nd-degree", "other" = "Other", "kept" = "Kept")
@@ -286,7 +287,10 @@ if (!is.null(group_by_name) && group_by_name %in% colnames(popdata)) {
       axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
       panel.grid.major.x = element_blank(),
       legend.position = "bottom",
-      strip.text = element_text(size = 10, face = "bold")
+      strip.text = element_text(size = 10, face = "bold"),
+      legend.key.size = unit(1.2, "cm"),
+      legend.key.height = unit(1.2, "cm"),
+      legend.key.width = unit(1.5, "cm")
     )
 } else {
   # No grouping - show all sites with stacked pattern-filled bars
@@ -298,8 +302,9 @@ if (!is.null(group_by_name) && group_by_name %in% colnames(popdata)) {
       linewidth = 0.3,
       pattern_fill = "black",
       pattern_color = "black",
-      pattern_density = 0.3,
-      pattern_spacing = 0.02
+      pattern_density = 0.5,
+      pattern_spacing = 0.04,
+      pattern_linewidth = 0.8
     ) +
     labs(
       x = "Population",
@@ -308,11 +313,11 @@ if (!is.null(group_by_name) && group_by_name %in% colnames(popdata)) {
       pattern = "Category"
     ) +
     scale_fill_manual(
-      values = c("clone" = "white",
-                 "1st-degree" = "white",
-                 "2nd-degree" = "white",
-                 "other" = "white",
-                 "kept" = "lightgray"),
+      values = c("clone" = "black",
+                 "1st-degree" = "darkgray",
+                 "2nd-degree" = "gray",
+                 "other" = "lightgray",
+                 "kept" = "white"),
       breaks = category_order,
       labels = c("clone" = "Clone", "1st-degree" = "1st-degree", 
                  "2nd-degree" = "2nd-degree", "other" = "Other", "kept" = "Kept")
@@ -331,7 +336,10 @@ if (!is.null(group_by_name) && group_by_name %in% colnames(popdata)) {
     theme(
       axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
       panel.grid.major.x = element_blank(),
-      legend.position = "bottom"
+      legend.position = "bottom",
+      legend.key.size = unit(1.2, "cm"),
+      legend.key.height = unit(1.2, "cm"),
+      legend.key.width = unit(1.5, "cm")
     )
 }
 
