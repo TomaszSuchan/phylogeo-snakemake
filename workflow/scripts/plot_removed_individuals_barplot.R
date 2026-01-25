@@ -4,7 +4,6 @@
 
 library(ggplot2)
 library(dplyr)
-library(ggpattern)
 
 # Prevent creation of Rplots.pdf
 pdf(NULL)
@@ -159,42 +158,26 @@ if (!is.null(group_by_name) && group_by_name %in% colnames(popdata)) {
     arrange(.data[[group_by_name]], desc(total))
   count_df$Site <- factor(count_df$Site, levels = site_totals_by_region$Site)
   
-  # Create facet plot grouped by region with stacked pattern-filled bars
-  p <- ggplot(count_df, aes(x = Site, y = count, fill = category, pattern = category)) +
-    geom_bar_pattern(
+  # Create facet plot grouped by region with stacked bars
+  p <- ggplot(count_df, aes(x = Site, y = count, fill = category)) +
+    geom_bar(
       stat = "identity", 
       position = "stack", 
       color = "black", 
-      linewidth = 0.3,
-      pattern_fill = "black",
-      pattern_color = "black",
-      pattern_density = 0.5,
-      pattern_spacing = 0.04,
-      pattern_linewidth = 0.8
+      linewidth = 0.3
     ) +
     facet_wrap(as.formula(paste("~", group_by_name)), scales = "free_x", ncol = 4) +
     labs(
       x = "Population",
       y = "Number of Individuals",
-      fill = "Category",
-      pattern = "Category"
+      fill = "Category"
     ) +
     scale_fill_manual(
       values = c("clone" = "black",
-                 "1st-degree" = "darkgray",
-                 "2nd-degree" = "gray",
-                 "other" = "lightgray",
+                 "1st-degree" = "gray30",
+                 "2nd-degree" = "gray60",
+                 "other" = "gray85",
                  "kept" = "white"),
-      breaks = category_order,
-      labels = c("clone" = "Clone", "1st-degree" = "1st-degree", 
-                 "2nd-degree" = "2nd-degree", "other" = "Other", "kept" = "Kept")
-    ) +
-    scale_pattern_manual(
-      values = c("clone" = "none",
-                 "1st-degree" = "stripe",
-                 "2nd-degree" = "circle",
-                 "other" = "none",
-                 "kept" = "none"),
       breaks = category_order,
       labels = c("clone" = "Clone", "1st-degree" = "1st-degree", 
                  "2nd-degree" = "2nd-degree", "other" = "Other", "kept" = "Kept")
@@ -204,47 +187,28 @@ if (!is.null(group_by_name) && group_by_name %in% colnames(popdata)) {
       axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
       panel.grid.major.x = element_blank(),
       legend.position = "bottom",
-      strip.text = element_text(size = 10, face = "bold"),
-      legend.key.size = unit(1.2, "cm"),
-      legend.key.height = unit(1.2, "cm"),
-      legend.key.width = unit(1.5, "cm")
+      strip.text = element_text(size = 10, face = "bold")
     )
 } else {
-  # No grouping - show all sites with stacked pattern-filled bars
-  p <- ggplot(count_df, aes(x = Site, y = count, fill = category, pattern = category)) +
-    geom_bar_pattern(
+  # No grouping - show all sites with stacked bars
+  p <- ggplot(count_df, aes(x = Site, y = count, fill = category)) +
+    geom_bar(
       stat = "identity", 
       position = "stack", 
       color = "black", 
-      linewidth = 0.3,
-      pattern_fill = "black",
-      pattern_color = "black",
-      pattern_density = 0.5,
-      pattern_spacing = 0.04,
-      pattern_linewidth = 0.8
+      linewidth = 0.3
     ) +
     labs(
       x = "Population",
       y = "Number of Individuals",
-      fill = "Category",
-      pattern = "Category"
+      fill = "Category"
     ) +
     scale_fill_manual(
       values = c("clone" = "black",
-                 "1st-degree" = "darkgray",
-                 "2nd-degree" = "gray",
-                 "other" = "lightgray",
+                 "1st-degree" = "gray30",
+                 "2nd-degree" = "gray60",
+                 "other" = "gray85",
                  "kept" = "white"),
-      breaks = category_order,
-      labels = c("clone" = "Clone", "1st-degree" = "1st-degree", 
-                 "2nd-degree" = "2nd-degree", "other" = "Other", "kept" = "Kept")
-    ) +
-    scale_pattern_manual(
-      values = c("clone" = "none",
-                 "1st-degree" = "stripe",
-                 "2nd-degree" = "circle",
-                 "other" = "none",
-                 "kept" = "none"),
       breaks = category_order,
       labels = c("clone" = "Clone", "1st-degree" = "1st-degree", 
                  "2nd-degree" = "2nd-degree", "other" = "Other", "kept" = "Kept")
@@ -253,10 +217,7 @@ if (!is.null(group_by_name) && group_by_name %in% colnames(popdata)) {
     theme(
       axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
       panel.grid.major.x = element_blank(),
-      legend.position = "bottom",
-      legend.key.size = unit(1.2, "cm"),
-      legend.key.height = unit(1.2, "cm"),
-      legend.key.width = unit(1.5, "cm")
+      legend.position = "bottom"
     )
 }
 
