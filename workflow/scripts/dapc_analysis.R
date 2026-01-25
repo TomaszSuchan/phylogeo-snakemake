@@ -16,10 +16,6 @@ options(device = function(file = NULL, ...) {
 # Load required libraries
 library(adegenet)  # Also loads ade4
 library(vcfR)
-if (!requireNamespace("jsonlite", quietly = TRUE)) {
-  stop("jsonlite package is required for debugging. Install with: install.packages('jsonlite')")
-}
-library(jsonlite)
 
 # Explicitly prevent Rplots.pdf creation
 #pdf(NULL)
@@ -75,98 +71,13 @@ cat("  ", nPop(genind_obj), "populations\n\n")
 cat("Finding clusters for K =", k, "...\n")
 n_pca_used <- ifelse(n_pca == "retained", ncol(genind_obj@tab), as.numeric(n_pca))
 
-# #region agent log
-log_entry <- list(
-  sessionId = "debug-session",
-  runId = "run1",
-  hypothesisId = "I",
-  location = "dapc_analysis.R:77",
-  message = "DAPC parameters",
-  data = list(
-    k = k,
-    n_pca = n_pca,
-    n_pca_used = n_pca_used,
-    n_individuals = nInd(genind_obj),
-    n_loci = nLoc(genind_obj),
-    tab_ncol = ncol(genind_obj@tab)
-  ),
-  timestamp = as.numeric(Sys.time()) * 1000
-)
-write(paste0(jsonlite::toJSON(log_entry, auto_unbox = TRUE)), 
-      file = "/Users/ibpan/Documents/github/phylogeo-snakemake/.cursor/debug.log", 
-      append = TRUE)
-# #endregion
-
-# #region agent log
-log_entry <- list(
-  sessionId = "debug-session",
-  runId = "run1",
-  hypothesisId = "G",
-  location = "dapc_analysis.R:78",
-  message = "Starting find.clusters for BIC extraction",
-  data = list(k = k, n_pca_used = n_pca_used, n_individuals = nInd(genind_obj)),
-  timestamp = as.numeric(Sys.time()) * 1000
-)
-write(paste0(jsonlite::toJSON(log_entry, auto_unbox = TRUE)), 
-      file = "/Users/ibpan/Documents/github/phylogeo-snakemake/.cursor/debug.log", 
-      append = TRUE)
-# #endregion
-
-# NOTE: We cannot extract BIC from find.clusters with choose.n.clust = TRUE
-# because readline() is locked and cannot be overridden in R.
-# The extracted BIC values from Kstat (894, 902) were closer to expected (815-845)
-# than manual calculation (1060), suggesting a parameter mismatch in manual calculation.
-#
-# For now, we'll use manual calculation. The manual calculation needs to be fixed
-# to match adegenet's method exactly. This is a known issue that requires investigation.
-
 # Initialize
 criterion_value <- NA
-grp <- NULL
-
-# Calculate BIC manually
-cat("Calculating BIC manually for K =", k, "...\n")
-
-# #region agent log
-log_entry <- list(
-  sessionId = "debug-session",
-  runId = "run1",
-  hypothesisId = "A",
-  location = "dapc_analysis.R:128",
-  message = "Starting manual BIC calculation",
-  data = list(k = k, n_pca_used = n_pca_used, n_individuals = nInd(genind_obj)),
-  timestamp = as.numeric(Sys.time()) * 1000
-)
-write(paste0(jsonlite::toJSON(log_entry, auto_unbox = TRUE)), 
-      file = "/Users/ibpan/Documents/github/phylogeo-snakemake/.cursor/debug.log", 
-      append = TRUE)
-# #endregion
 
 # Get clustering for the target K
 grp <- find.clusters(genind_obj, n.clust = k, choose.n.clust = FALSE,
                      n.pca = n_pca_used,
                      criterion = criterion)
-
-# #region agent log
-log_entry <- list(
-  sessionId = "debug-session",
-  runId = "run1",
-  hypothesisId = "J",
-  location = "dapc_analysis.R:149",
-  message = "After find.clusters - checking result structure",
-  data = list(
-    grp_names = paste(names(grp), collapse = ","),
-    has_stat = "stat" %in% names(grp),
-    stat_value = if ("stat" %in% names(grp)) as.character(grp$stat) else "NULL",
-    has_pca = "pca" %in% names(grp),
-    grp_class = class(grp)[1]
-  ),
-  timestamp = as.numeric(Sys.time()) * 1000
-)
-write(paste0(jsonlite::toJSON(log_entry, auto_unbox = TRUE)), 
-      file = "/Users/ibpan/Documents/github/phylogeo-snakemake/.cursor/debug.log", 
-      append = TRUE)
-# #endregion
 
 # Check if find.clusters stores PCA coordinates internally
 # The result object might have a 'stat' component or PCA information
@@ -184,26 +95,6 @@ genind_tab <- genind_obj@tab
 genind_tab[is.infinite(genind_tab)] <- NA
 genind_tab[is.nan(genind_tab)] <- NA
 
-# #region agent log
-log_entry <- list(
-  sessionId = "debug-session",
-  runId = "run1",
-  hypothesisId = "B",
-  location = "dapc_analysis.R:93",
-  message = "Before NA imputation",
-  data = list(
-    n_inf = sum(is.infinite(genind_obj@tab)),
-    n_nan = sum(is.nan(genind_obj@tab)),
-    n_na_before = sum(is.na(genind_tab)),
-    tab_dim = dim(genind_tab)
-  ),
-  timestamp = as.numeric(Sys.time()) * 1000
-)
-write(paste0(jsonlite::toJSON(log_entry, auto_unbox = TRUE)), 
-      file = "/Users/ibpan/Documents/github/phylogeo-snakemake/.cursor/debug.log", 
-      append = TRUE)
-# #endregion
-
 # Replace NA values with column means (or 0 if all NA)
 for (j in 1:ncol(genind_tab)) {
   na_indices <- is.na(genind_tab[, j])
@@ -214,64 +105,14 @@ for (j in 1:ncol(genind_tab)) {
   }
 }
 
-# #region agent log
-log_entry <- list(
-  sessionId = "debug-session",
-  runId = "run1",
-  hypothesisId = "B",
-  location = "dapc_analysis.R:108",
-  message = "After NA imputation",
-  data = list(n_na_after = sum(is.na(genind_tab))),
-  timestamp = as.numeric(Sys.time()) * 1000
-)
-write(paste0(jsonlite::toJSON(log_entry, auto_unbox = TRUE)), 
-      file = "/Users/ibpan/Documents/github/phylogeo-snakemake/.cursor/debug.log", 
-      append = TRUE)
-# #endregion
-
 # Perform PCA with the same number of axes as used in find.clusters
 # Use dudi.pca from ade4 (which adegenet uses internally)
 tryCatch({
   n_pca_final <- min(n_pca_used, nInd(genind_obj) - 1, ncol(genind_tab))
   
-  # #region agent log
-  log_entry <- list(
-    sessionId = "debug-session",
-    runId = "run1",
-    hypothesisId = "C",
-    location = "dapc_analysis.R:115",
-    message = "Before PCA",
-    data = list(
-      n_pca_final = n_pca_final,
-      n_pca_used = n_pca_used,
-      n_ind = nInd(genind_obj),
-      n_cols = ncol(genind_tab)
-    ),
-    timestamp = as.numeric(Sys.time()) * 1000
-  )
-  write(paste0(jsonlite::toJSON(log_entry, auto_unbox = TRUE)), 
-        file = "/Users/ibpan/Documents/github/phylogeo-snakemake/.cursor/debug.log", 
-        append = TRUE)
-  # #endregion
-  
   if (n_pca_final < 1) {
     cat("WARNING: Cannot perform PCA (n_pca_final =", n_pca_final, ")\n")
     criterion_value <- NA
-    
-    # #region agent log
-    log_entry <- list(
-      sessionId = "debug-session",
-      runId = "run1",
-      hypothesisId = "C",
-      location = "dapc_analysis.R:133",
-      message = "PCA skipped - n_pca_final < 1",
-      data = list(n_pca_final = n_pca_final),
-      timestamp = as.numeric(Sys.time()) * 1000
-    )
-    write(paste0(jsonlite::toJSON(log_entry, auto_unbox = TRUE)), 
-          file = "/Users/ibpan/Documents/github/phylogeo-snakemake/.cursor/debug.log", 
-          append = TRUE)
-    # #endregion
   } else {
     pca_dudi <- dudi.pca(genind_tab, center = TRUE, scale = FALSE, 
                          scannf = FALSE, nf = n_pca_final)
@@ -279,26 +120,6 @@ tryCatch({
     
     n_individuals <- nrow(pca_coords)
     n_pca_axes <- ncol(pca_coords)
-    
-    # #region agent log
-    log_entry <- list(
-      sessionId = "debug-session",
-      runId = "run1",
-      hypothesisId = "D",
-      location = "dapc_analysis.R:149",
-      message = "After PCA",
-      data = list(
-        n_individuals = n_individuals,
-        n_pca_axes = n_pca_axes,
-        pca_coords_dim = dim(pca_coords),
-        n_clusters = length(unique(grp$grp))
-      ),
-      timestamp = as.numeric(Sys.time()) * 1000
-    )
-    write(paste0(jsonlite::toJSON(log_entry, auto_unbox = TRUE)), 
-          file = "/Users/ibpan/Documents/github/phylogeo-snakemake/.cursor/debug.log", 
-          append = TRUE)
-    # #endregion
     
     cat("PCA coordinates: ", n_individuals, "individuals x", n_pca_axes, "axes\n")
     
@@ -328,79 +149,13 @@ tryCatch({
     
     cat("WSS:", wss, ", Clusters with data:", n_clusters_with_data, "\n")
     
-    # #region agent log
-    log_entry <- list(
-      sessionId = "debug-session",
-      runId = "run1",
-      hypothesisId = "E",
-      location = "dapc_analysis.R:180",
-      message = "Before BIC calculation",
-      data = list(
-        wss = wss,
-        n_clusters_with_data = n_clusters_with_data,
-        n_individuals = n_individuals,
-        k = k,
-        wss_finite = is.finite(wss),
-        wss_positive = wss > 0
-      ),
-      timestamp = as.numeric(Sys.time()) * 1000
-    )
-    write(paste0(jsonlite::toJSON(log_entry, auto_unbox = TRUE)), 
-          file = "/Users/ibpan/Documents/github/phylogeo-snakemake/.cursor/debug.log", 
-          append = TRUE)
-    # #endregion
-    
     # Calculate BIC using adegenet's formula: BIC = n * log(WSS/n) + k * log(n)
     if (wss > 0 && is.finite(wss) && n_individuals > 0) {
       criterion_value <- n_individuals * log(wss / n_individuals) + k * log(n_individuals)
       cat("BIC value:", criterion_value, "\n")
-      
-      # #region agent log
-      log_entry <- list(
-        sessionId = "debug-session",
-        runId = "run1",
-        hypothesisId = "E",
-        location = "dapc_analysis.R:200",
-        message = "BIC calculated successfully",
-        data = list(criterion_value = criterion_value),
-        timestamp = as.numeric(Sys.time()) * 1000
-      )
-      write(paste0(jsonlite::toJSON(log_entry, auto_unbox = TRUE)), 
-            file = "/Users/ibpan/Documents/github/phylogeo-snakemake/.cursor/debug.log", 
-            append = TRUE)
-      # #endregion
     } else {
       criterion_value <- NA
       cat("WARNING: Could not calculate BIC (WSS =", wss, ", n =", n_individuals, ")\n")
-      
-      # #region agent log
-      # Determine reason for failure
-      reason <- "unknown"
-      if (n_individuals <= 0) {
-        reason <- "n <= 0"
-      } else if (!is.finite(wss)) {
-        reason <- "WSS not finite"
-      } else if (wss <= 0) {
-        reason <- "WSS <= 0"
-      }
-      
-      log_entry <- list(
-        sessionId = "debug-session",
-        runId = "run1",
-        hypothesisId = "E",
-        location = "dapc_analysis.R:214",
-        message = "BIC calculation failed",
-        data = list(
-          wss = wss,
-          n_individuals = n_individuals,
-          reason = reason
-        ),
-        timestamp = as.numeric(Sys.time()) * 1000
-      )
-      write(paste0(jsonlite::toJSON(log_entry, auto_unbox = TRUE)), 
-            file = "/Users/ibpan/Documents/github/phylogeo-snakemake/.cursor/debug.log", 
-            append = TRUE)
-      # #endregion
     }
   }
 }, error = function(e) {
@@ -408,24 +163,6 @@ tryCatch({
   cat("Error traceback:\n")
   print(traceback())
   criterion_value <<- NA
-  
-  # #region agent log
-  log_entry <- list(
-    sessionId = "debug-session",
-    runId = "run1",
-    hypothesisId = "F",
-    location = "dapc_analysis.R:235",
-    message = "BIC calculation error",
-    data = list(
-      error_message = e$message,
-      error_class = class(e)[1]
-    ),
-    timestamp = as.numeric(Sys.time()) * 1000
-  )
-  write(paste0(jsonlite::toJSON(log_entry, auto_unbox = TRUE)), 
-        file = "/Users/ibpan/Documents/github/phylogeo-snakemake/.cursor/debug.log", 
-        append = TRUE)
-  # #endregion
 })
 
 # Get clustering for the target K (for DAPC analysis)

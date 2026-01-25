@@ -345,11 +345,11 @@ projects:
       relatedness: false
       iqtree: false
       iqtree_trimal: false
+      dapc: false
       iqtree_robust: false
       fineradstructure: false
       plot_map: false
       amova: false
-      dapc: false
     parameters:
       <<: *global_params
       popmap: "data/popmap.txt"
