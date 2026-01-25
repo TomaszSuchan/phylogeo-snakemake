@@ -112,7 +112,8 @@ if (nrow(removed_df) == 0 || (nrow(removed_df) == 1 && removed_df$individual[1] 
     width = 8,
     height = 6,
     dpi = 300,
-    device = "pdf"
+    device = "pdf",
+    limitsize = FALSE
   )
   
   dir.create(dirname(output_rds), recursive = TRUE, showWarnings = FALSE)
@@ -346,7 +347,8 @@ ggsave(
   width = max(12, length(unique(count_df$Site)) * 0.4),
   height = 6,
   dpi = 300,
-  device = "pdf"
+  device = "pdf",
+  limitsize = FALSE
 )
 
 dir.create(dirname(output_rds), recursive = TRUE, showWarnings = FALSE)
