@@ -174,8 +174,8 @@ if (!is.null(group_by_name) && group_by_name %in% colnames(popdata)) {
     ) +
     scale_fill_manual(
       values = c("clone" = "black",
-                 "1st-degree" = "gray30",
-                 "2nd-degree" = "gray60",
+                 "1st-degree" = "gray20",
+                 "2nd-degree" = "gray50",
                  "other" = "gray85",
                  "kept" = "white"),
       breaks = category_order,
