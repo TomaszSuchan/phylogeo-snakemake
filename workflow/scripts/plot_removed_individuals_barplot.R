@@ -6,49 +6,6 @@ library(ggplot2)
 library(dplyr)
 library(ggpattern)
 
-#region agent log
-.agent_log <- function(hypothesisId, location, message, data=list(), runId="run1") {
-  # NDJSON append to Cursor debug log (no secrets)
-  try({
-    payload <- list(
-      sessionId = "debug-session",
-      runId = runId,
-      hypothesisId = hypothesisId,
-      location = location,
-      message = message,
-      data = data,
-      # keep as numeric; integer overflows on some R builds
-      timestamp = as.numeric(Sys.time()) * 1000
-    )
-    json <- paste0("{",
-      paste(
-        vapply(names(payload), function(k) {
-          v <- payload[[k]]
-          if (is.list(v)) {
-            # simple JSON for flat named list
-            inner <- paste(
-              vapply(names(v), function(ik) {
-                iv <- v[[ik]]
-                ivs <- if (is.character(iv)) paste0("\"", gsub("\"", "\\\\\"", iv), "\"") else as.character(iv)
-                paste0("\"", ik, "\":", ivs)
-              }, character(1)),
-              collapse = ","
-            )
-            paste0("\"", k, "\":{", inner, "}")
-          } else if (is.character(v)) {
-            paste0("\"", k, "\":\"", gsub("\"", "\\\\\"", v), "\"")
-          } else {
-            paste0("\"", k, "\":", as.character(v))
-          }
-        }, character(1)),
-        collapse = ","
-      ),
-    "}")
-    cat(json, "\n", file="/Users/ibpan/Documents/github/phylogeo-snakemake/.cursor/debug.log", append=TRUE)
-  }, silent=TRUE)
-}
-#endregion agent log
-
 # Prevent creation of Rplots.pdf
 pdf(NULL)
 
@@ -62,15 +19,6 @@ removed_file <- snakemake@input[["removed_individuals"]]
 popdata_file <- snakemake@input[["popdata"]]
 output_pdf <- snakemake@output[["pdf"]]
 output_rds <- snakemake@output[["rds"]]
-
-#region agent log
-.agent_log("H0", "plot_removed_individuals_barplot.R:inputs", "Inputs/outputs", list(
-  removed_file = removed_file,
-  popdata_file = popdata_file,
-  output_pdf = output_pdf,
-  output_rds = output_rds
-), runId="post-fix")
-#endregion agent log
 
 # Parameters
 group_by_name <- NULL
@@ -89,14 +37,6 @@ if ("group_by" %in% names(snakemake@params)) {
 message("\n=== READING REMOVED INDIVIDUALS ===\n")
 removed_df <- read.table(removed_file, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
 message(sprintf("Loaded %d removed individuals\n", nrow(removed_df)))
-
-#region agent log
-.agent_log("H1", "plot_removed_individuals_barplot.R:removed_df", "Removed table loaded", list(
-  n_removed_rows = nrow(removed_df),
-  colnames = paste(colnames(removed_df), collapse=","),
-  category_head = if ("category" %in% colnames(removed_df)) paste(head(removed_df$category, 5), collapse=",") else "NO_CATEGORY_COL"
-), runId="post-fix")
-#endregion agent log
 
 # If no removed individuals, create empty plot
 if (nrow(removed_df) == 0 || (nrow(removed_df) == 1 && removed_df$individual[1] == "")) {
@@ -128,14 +68,6 @@ message("\n=== READING POPDATA ===\n")
 popdata <- read.table(popdata_file, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
 message(sprintf("Popdata columns: %s\n", paste(names(popdata), collapse = ", ")))
 
-#region agent log
-.agent_log("H2", "plot_removed_individuals_barplot.R:popdata", "Popdata loaded", list(
-  n_popdata_rows = nrow(popdata),
-  n_unique_site = if ("Site" %in% colnames(popdata)) length(unique(popdata$Site)) else -1,
-  colnames = paste(colnames(popdata), collapse=",")
-), runId="post-fix")
-#endregion agent log
-
 # Get Individual column name (indpopdata uses "Ind")
 if ("Ind" %in% colnames(popdata)) {
   ind_col <- "Ind"
@@ -147,26 +79,11 @@ if ("Ind" %in% colnames(popdata)) {
   ind_col <- colnames(popdata)[1]
 }
 
-#region agent log
-.agent_log("H3", "plot_removed_individuals_barplot.R:ind_col", "Chosen individual column", list(ind_col = ind_col), runId="post-fix")
-#endregion agent log
-
 # Merge removed individuals with popdata to get Site
 removed_df_merged <- merge(removed_df, popdata[, c(ind_col, "Site"), drop = FALSE],
                            by.x = "individual",
                            by.y = ind_col,
                            all.x = TRUE)
-
-#region agent log
-.agent_log("H4", "plot_removed_individuals_barplot.R:merge", "After merge removed->Site", list(
-  n_merged = nrow(removed_df_merged),
-  n_na_site = sum(is.na(removed_df_merged$Site)),
-  unique_site = length(unique(removed_df_merged$Site[!is.na(removed_df_merged$Site)])),
-  sample_individuals = paste(head(removed_df$individual, 3), collapse=","),
-  sample_popdata_inds = paste(head(popdata[[ind_col]], 3), collapse=","),
-  popdata_file_used = popdata_file
-), runId="post-fix")
-#endregion agent log
 
 # Remove individuals without Site data
 na_mask <- is.na(removed_df_merged$Site)
@@ -273,8 +190,8 @@ if (!is.null(group_by_name) && group_by_name %in% colnames(popdata)) {
                  "2nd-degree" = "2nd-degree", "other" = "Other", "kept" = "Kept")
     ) +
     scale_pattern_manual(
-      values = c("clone" = "stripe",
-                 "1st-degree" = "wave",
+      values = c("clone" = "none",
+                 "1st-degree" = "stripe",
                  "2nd-degree" = "circle",
                  "other" = "none",
                  "kept" = "none"),
@@ -323,8 +240,8 @@ if (!is.null(group_by_name) && group_by_name %in% colnames(popdata)) {
                  "2nd-degree" = "2nd-degree", "other" = "Other", "kept" = "Kept")
     ) +
     scale_pattern_manual(
-      values = c("clone" = "stripe",
-                 "1st-degree" = "wave",
+      values = c("clone" = "none",
+                 "1st-degree" = "stripe",
                  "2nd-degree" = "circle",
                  "other" = "none",
                  "kept" = "none"),
