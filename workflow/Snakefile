@@ -27,7 +27,6 @@ include: "rules/genetic_distances.smk"
 include: "rules/mapi.smk"
 include: "rules/fineradstructure.smk"
 include: "rules/construct.smk"
-include: "rules/evaladmix.smk"
 include: "rules/amova.smk"
 include: "rules/dapc.smk"
 
