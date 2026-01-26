@@ -275,6 +275,18 @@ def get_all_targets():
                         f"results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-missing.pdf",
                         f"results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-missing.rds"
                     ])
+                # Add facet plots (all PC combinations in one plot)
+                for color_by in PCA_groupings:
+                    targets.extend([
+                        f"results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-{color_by}.pdf",
+                        f"results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-{color_by}.rds"
+                    ])
+                targets.extend([
+                    f"results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-labeled.pdf",
+                    f"results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-labeled.rds",
+                    f"results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-missing.pdf",
+                    f"results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-missing.rds"
+                    ])
         
         # VCF2PCACluster targets
         if analyses.get("vcf2pcacluster", False):
