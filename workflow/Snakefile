@@ -244,6 +244,18 @@ def get_all_targets():
                     f"results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-PC{pc1}_PC{pc2}-missing.pdf",
                     f"results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-PC{pc1}_PC{pc2}-missing.rds"
                 ])
+            # Add facet plots (all PC combinations in one plot)
+            for color_by in PCA_groupings:
+                targets.extend([
+                    f"results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-facet-{color_by}.pdf",
+                    f"results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-facet-{color_by}.rds"
+                ])
+            targets.extend([
+                f"results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-facet-labeled.pdf",
+                f"results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-facet-labeled.rds",
+                f"results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-facet-missing.pdf",
+                f"results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-facet-missing.rds"
+                ])
 
         # PCAone targets (with coverage thresholds)
         if analyses.get("pcaone_miss", False):
