@@ -348,7 +348,8 @@ def get_all_targets():
         if analyses.get("relatedness", False):
             targets.extend([
                 "results/" + project + "/relatedness/" + project + ".relatedness",
-                "results/" + project + "/relatedness/" + project + ".relatedness2"
+                "results/" + project + "/relatedness/" + project + ".relatedness2",
+                "results/" + project + "/relatedness/" + project + ".genome"
             ])
         
         # Relatedness filtering targets
