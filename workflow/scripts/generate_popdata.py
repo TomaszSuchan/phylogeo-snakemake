@@ -25,7 +25,17 @@ if popdata_path and popdata_path.strip() and os.path.exists(popdata_path):
     print(f"\nReading popdata file: {popdata_path}")
     # Read the provided popdata file
     popdata_df = pd.read_csv(popdata_path, sep="\t", header=0)
-    print(f"  Found {len(popdata_df)} unique sites in popdata")
+    print(f"  Found {len(popdata_df)} rows in popdata (before deduplication)")
+    
+    # Deduplicate popdata by Site - keep only unique sites (take first occurrence)
+    # This prevents cartesian product when merging with popmap
+    if "Site" in popdata_df.columns:
+        n_before = len(popdata_df)
+        popdata_df = popdata_df.drop_duplicates(subset=["Site"], keep="first")
+        n_after = len(popdata_df)
+        if n_before > n_after:
+            print(f"  Removed {n_before - n_after} duplicate site entries")
+        print(f"  Found {n_after} unique sites in popdata")
 
     # Check if all sites in popmap exist in popdata
     unique_sites_popmap = set(popmap_df["Site"].unique())
