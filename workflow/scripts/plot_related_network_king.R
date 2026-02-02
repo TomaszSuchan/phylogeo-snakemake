@@ -1,10 +1,12 @@
 #!/usr/bin/env Rscript
 # Plot relatedness network graph based on PLINK2 KING kinship table
-# Creates a network visualization where edges are colored by relationship category
-# Uses ggplot2 only (no igraph dependency)
+# Uses ggraph + tidygraph for professional network visualization
 
 library(ggplot2)
 library(dplyr)
+library(igraph)
+library(tidygraph)
+library(ggraph)
 
 # Prevent creation of Rplots.pdf
 pdf(NULL)
@@ -33,7 +35,7 @@ color_scheme <- c(
   "other" = "gray85"
 )
 
-# Linetype scheme (helps distinguish edges even when colors are similar)
+# Linetype scheme
 linetype_scheme <- c(
   "clone" = "solid",
   "1st-degree" = "longdash",
@@ -43,7 +45,6 @@ linetype_scheme <- c(
 
 message("\n=== READING KING DATA ===\n")
 # PLINK2 KING table uses space-separated columns with variable spacing
-# Read with skip=0 to handle header, strip.white=TRUE to handle leading spaces
 king_df <- read.table(king_file, header = TRUE, sep = "", stringsAsFactors = FALSE, 
                       comment.char = "", check.names = FALSE, strip.white = TRUE)
 message(sprintf("Loaded %d pairwise relationships\n", nrow(king_df)))
@@ -98,12 +99,6 @@ all_individuals <- unique(c(king_df$IID1, king_df$IID2))
 n_nodes <- length(all_individuals)
 message(sprintf("\nTotal individuals: %d\n", n_nodes))
 
-# Create node data frame
-nodes_df <- data.frame(
-  id = all_individuals,
-  stringsAsFactors = FALSE
-)
-
 # Create edge data frame
 edges_df <- data.frame(
   from = king_df$IID1,
@@ -113,132 +108,67 @@ edges_df <- data.frame(
   stringsAsFactors = FALSE
 )
 
-# Simple force-directed layout algorithm (Fruchterman-Reingold inspired)
-# This is a simplified version that works reasonably well for small to medium networks
-calculate_layout <- function(nodes, edges, n_iter = 1000) {
-  n <- nrow(nodes)
-  
-  # Initialize positions randomly
-  pos <- matrix(runif(n * 2, -1, 1), ncol = 2)
-  colnames(pos) <- c("x", "y")
-  
-  # Create adjacency matrix for faster lookups
-  node_ids <- nodes$id
-  names(node_ids) <- 1:n
-  
-  # Convert node IDs to indices
-  from_idx <- match(edges$from, node_ids)
-  to_idx <- match(edges$to, node_ids)
-  
-  # Temperature for cooling
-  temp <- 1.0
-  cooling_rate <- 0.99
-  
-  for (iter in 1:n_iter) {
-    # Calculate repulsive forces (all nodes repel each other)
-    forces <- matrix(0, nrow = n, ncol = 2)
-    
-    for (i in 1:(n-1)) {
-      for (j in (i+1):n) {
-        dx <- pos[i, "x"] - pos[j, "x"]
-        dy <- pos[i, "y"] - pos[j, "y"]
-        dist <- sqrt(dx^2 + dy^2)
-        
-        if (dist > 0.001) {  # Avoid division by zero
-          # Repulsive force (inverse square)
-          force <- temp / (dist^2)
-          forces[i, ] <- forces[i, ] + c(dx, dy) * force / dist
-          forces[j, ] <- forces[j, ] - c(dx, dy) * force / dist
-        }
-      }
-    }
-    
-    # Calculate attractive forces (only for connected nodes)
-    for (k in 1:nrow(edges)) {
-      i <- from_idx[k]
-      j <- to_idx[k]
-      
-      if (!is.na(i) && !is.na(j)) {
-        dx <- pos[i, "x"] - pos[j, "x"]
-        dy <- pos[i, "y"] - pos[j, "y"]
-        dist <- sqrt(dx^2 + dy^2)
-        
-        if (dist > 0.001) {
-          # Attractive force (proportional to distance, weighted by edge weight)
-          weight <- edges$weight[k]
-          force <- dist * weight * 0.3  # Adjusted for KING values (typically 0-0.5 range)
-          forces[i, ] <- forces[i, ] - c(dx, dy) * force / dist
-          forces[j, ] <- forces[j, ] + c(dx, dy) * force / dist
-        }
-      }
-    }
-    
-    # Update positions
-    pos <- pos + forces * 0.1
-    
-    # Cool down
-    temp <- temp * cooling_rate
-  }
-  
-  # Normalize to fit in [0, 1] range
-  pos[, "x"] <- (pos[, "x"] - min(pos[, "x"])) / (max(pos[, "x"]) - min(pos[, "x"]) + 0.001)
-  pos[, "y"] <- (pos[, "y"] - min(pos[, "y"])) / (max(pos[, "y"]) - min(pos[, "y"]) + 0.001)
-  
-  nodes$x <- pos[, "x"]
-  nodes$y <- pos[, "y"]
-  
-  return(nodes)
-}
+# Create node data frame
+nodes_df <- data.frame(
+  name = all_individuals,
+  stringsAsFactors = FALSE
+)
 
+# Create tidygraph
+message("Creating network graph...\n")
+tbl_graph <- tbl_graph(nodes = nodes_df, edges = edges_df, directed = FALSE)
+
+message(sprintf("Graph created: %d nodes, %d edges\n", 
+                gorder(tbl_graph), gsize(tbl_graph)))
+
+# Calculate layout using ggraph - automatically handles disconnected components
 message("Calculating layout...\n")
-nodes_df <- calculate_layout(nodes_df, edges_df, n_iter = 1000)
-
-# Merge node positions into edges
-edges_plot <- edges_df %>%
-  left_join(nodes_df, by = c("from" = "id")) %>%
-  rename(x1 = x, y1 = y) %>%
-  left_join(nodes_df, by = c("to" = "id")) %>%
-  rename(x2 = x, y2 = y)
+layout <- create_layout(tbl_graph, layout = "fr", niter = 2000)
 
 message("Creating plot...\n")
 
-# Create the plot
-p <- ggplot() +
-  # Draw edges first (so they appear behind nodes)
-  geom_segment(data = edges_plot,
-               aes(x = x1, y = y1, xend = x2, yend = y2,
-                   color = category, linetype = category),
-               size = 0.8,
-               alpha = 0.75,
-               lineend = "round") +
+# Create the plot using ggraph
+p <- ggraph(layout) +
+  # Draw edges
+  geom_edge_link(
+    aes(color = category, linetype = category),
+    width = 0.8,
+    alpha = 0.75,
+    lineend = "round"
+  ) +
   # Draw nodes
-  geom_point(data = nodes_df,
-             aes(x = x, y = y),
-             color = "lightblue",
-             fill = "lightblue",
-             size = 2,
-             shape = 21,
-             stroke = 0.5) +
+  geom_node_point(
+    color = "lightblue",
+    fill = "lightblue",
+    size = 2,
+    shape = 21,
+    stroke = 0.5
+  ) +
   # Add node labels
-  geom_text(data = nodes_df,
-            aes(x = x, y = y, label = id),
-            size = 2.5,
-            hjust = 0.5,
-            vjust = 1.5,
-            color = "black",
-            check_overlap = FALSE,
-            angle = 0) +
+  geom_node_text(
+    aes(label = name),
+    size = 2.5,
+    hjust = 0.5,
+    vjust = 1.5,
+    color = "black",
+    repel = FALSE
+  ) +
   # Color scale for edges
-  scale_color_manual(values = color_scheme,
-                    name = "Relationship Type",
-                    drop = FALSE) +
+  scale_edge_color_manual(
+    values = color_scheme,
+    name = "Relationship Type",
+    drop = FALSE
+  ) +
   # Linetype scale for edges
-  scale_linetype_manual(values = linetype_scheme,
-                        name = "Relationship Type",
-                        drop = FALSE,
-                        guide = guide_legend(override.aes = list(color = color_scheme))) +
-  labs(title = "KING Network Graph",
-       subtitle = paste("Nodes:", n_nodes, "| Edges:", nrow(edges_df))) +
+  scale_edge_linetype_manual(
+    values = linetype_scheme,
+    name = "Relationship Type",
+    drop = FALSE
+  ) +
+  labs(
+    title = "KING Network Graph",
+    subtitle = paste("Nodes:", n_nodes, "| Edges:", nrow(edges_df))
+  ) +
   theme_void() +
   theme(
     plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
@@ -246,8 +176,7 @@ p <- ggplot() +
     legend.position = "bottom",
     legend.title = element_text(size = 10),
     legend.text = element_text(size = 9)
-  ) +
-  coord_fixed()
+  )
 
 # Create output directory
 dir.create(dirname(output_pdf), recursive = TRUE, showWarnings = FALSE)
@@ -265,6 +194,8 @@ message(sprintf("Plot saved to: %s\n", output_pdf))
 
 # Save data for RDS
 graph_data <- list(
+  graph = tbl_graph,
+  layout = layout,
   nodes = nodes_df,
   edges = edges_df,
   color_scheme = color_scheme,
@@ -274,4 +205,3 @@ saveRDS(graph_data, output_rds)
 
 message(sprintf("Graph data saved to: %s\n", output_rds))
 message("=== DONE ===\n")
-
