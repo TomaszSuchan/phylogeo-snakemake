@@ -7,3 +7,6 @@ dependencies:
   - r-pheatmap
   - r-gridextra
   - r-ggpattern
+  - r-igraph
+  - r-ggraph
+  - r-tidygraph
