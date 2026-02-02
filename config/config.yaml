@@ -228,6 +228,32 @@ parameters: &global_params
     point_size: 3        # size of points on genetic diversity maps
     map_outline: true    # add point outlines (true/false, default: true)
 
+  ## ROH parameters
+  roh:
+    group_by: ["Site"]  # list of columns from indpopdata to group plots by (default: ["Site"])
+                        # Each value in the list generates separate plots grouped by that column
+                        # Use ["none"] or [] for no grouping (overall plots only)
+                        # Example: ["Site", "Region"] generates plots grouped by Site and by Region
+
+  ## Relatedness plot parameters
+  relatedness_plot:
+    color_by: ["none"]  # columns in indpopdata to color nodes by (must match your indpopdata column names!)
+                        # Each value in the list generates separate plots colored by that column
+                        # Use ["none"] for no coloring (default gray nodes)
+                        # Example: ["Site", "Group"] generates plots colored by Site and by Group
+    relatedness_colors:  # color palette for categorical variables in relatedness plots
+      - "#E41A1C"  # red
+      - "#377EB8"  # blue
+      - "#4DAF4A"  # green
+      - "#984EA3"  # purple
+      - "#FF7F00"  # orange
+      - "#FFFF33"  # yellow
+      - "#A65628"  # brown
+      - "#F781BF"  # pink
+      - "#999999"  # gray
+      - "#FFFFFF"  # white
+      - "#000000"  # black
+
   ## fineRADstructure parameters
   fineradstructure:
     cluster:
@@ -313,7 +339,7 @@ parameters: &global_params
     construct:
       threads: 4
       mem_mb: 16000
-      runtime: 1440  # conStruct MCMC can be time-intensive
+      runtime: 1440
     dapc:
       threads: 1
       mem_mb: 8000
@@ -321,11 +347,15 @@ parameters: &global_params
     relatedness_filtering:
       threads: 4
       mem_mb: 16000
-      runtime: 120  # KING calculation can be time-intensive for large datasets
+      runtime: 120 
     amova:
       threads: 1
       mem_mb: 16000
-      runtime: 120  # AMOVA with many permutations can be time-intensive
+      runtime: 120
+    roh:
+      threads: 4
+      mem_mb: 8000
+      runtime: 60
 
 ##############################
 ### Projects configuration ###
@@ -346,7 +376,7 @@ projects:
       pcaone_emu: false
       pcaone_miss: false
       pixy: false
-      relatedness: false
+      relatedness: true
       iqtree: false
       iqtree_trimal: false
       dapc: false
@@ -354,6 +384,8 @@ projects:
       fineradstructure: false
       plot_map: false
       amova: false
+      roh: false
+      roh_viz: false  # Set to true to generate interactive HTML visualization (can be very slow for large VCF files)
     parameters:
       <<: *global_params
       popmap: "data/popmap.txt"

@@ -18,8 +18,22 @@ sink(log_file, type = "message")
 
 # Snakemake inputs/outputs
 king_file <- snakemake@input[["king"]]
+indpopdata_file <- snakemake@input[["indpopdata"]]
 output_pdf <- snakemake@output[["pdf"]]
 output_rds <- snakemake@output[["rds"]]
+
+# Get color_by and relatedness_colors parameters
+color_by_name <- NULL
+relatedness_colors <- NULL
+if ("color_by" %in% names(snakemake@params)) {
+  color_by_name <- as.character(snakemake@params[["color_by"]])
+}
+if ("relatedness_colors" %in% names(snakemake@params)) {
+  relatedness_colors <- snakemake@params[["relatedness_colors"]]
+  if (!is.null(relatedness_colors)) {
+    relatedness_colors <- unlist(relatedness_colors)
+  }
+}
 
 # KING kinship thresholds (standard values from your pipeline)
 clone_threshold <- 0.354      # KING > 0.354 for duplicates/twins
@@ -114,6 +128,22 @@ nodes_df <- data.frame(
   stringsAsFactors = FALSE
 )
 
+# Read indpopdata and merge with nodes if available
+indpopdata <- NULL
+if (file.exists(indpopdata_file)) {
+  message("\n=== READING INDPOPDATA ===\n")
+  indpopdata <- read.table(indpopdata_file, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
+  message(sprintf("Loaded indpopdata with %d samples and %d columns\n", nrow(indpopdata), ncol(indpopdata)))
+  message("Columns:", paste(colnames(indpopdata), collapse = ", "), "\n")
+  
+  # Get the first column name (should be "Ind" or "Sample")
+  ind_col <- colnames(indpopdata)[1]
+  
+  # Merge with nodes
+  nodes_df <- merge(nodes_df, indpopdata, by.x = "name", by.y = ind_col, all.x = TRUE)
+  message(sprintf("Merged indpopdata with nodes: %d nodes\n", nrow(nodes_df)))
+}
+
 # Create tidygraph
 message("Creating network graph...\n")
 tbl_graph <- tbl_graph(nodes = nodes_df, edges = edges_df, directed = FALSE)
@@ -127,56 +157,164 @@ layout <- create_layout(tbl_graph, layout = "fr", niter = 2000)
 
 message("Creating plot...\n")
 
+# Determine node coloring
+node_color_col <- NULL
+node_colors <- NULL
+if (!is.null(color_by_name) && color_by_name != "" && color_by_name != "none" && !is.null(indpopdata)) {
+  if (color_by_name %in% colnames(nodes_df)) {
+    node_color_col <- color_by_name
+    message(sprintf("Coloring nodes by: %s\n", node_color_col))
+    
+    # Remove NA and empty values from color column
+    na_mask <- is.na(nodes_df[[node_color_col]])
+    if (any(na_mask)) {
+      message(sprintf("Warning: %d nodes have NA values in '%s', will be colored gray\n", sum(na_mask), node_color_col))
+    }
+    empty_mask <- nodes_df[[node_color_col]] == ""
+    if (any(empty_mask)) {
+      message(sprintf("Warning: %d nodes have empty values in '%s', will be colored gray\n", sum(empty_mask), node_color_col))
+    }
+    
+    # Determine colors to use
+    unique_vals <- unique(nodes_df[[node_color_col]][!is.na(nodes_df[[node_color_col]]) & nodes_df[[node_color_col]] != ""])
+    n_categories <- length(unique_vals)
+    message(sprintf("Found %d unique values in '%s': %s\n", n_categories, node_color_col, paste(unique_vals, collapse = ", ")))
+    
+    if (!is.null(relatedness_colors) && length(relatedness_colors) > 0) {
+      if (n_categories > length(relatedness_colors)) {
+        node_colors <- colorRampPalette(relatedness_colors)(n_categories)
+      } else {
+        node_colors <- relatedness_colors[1:n_categories]
+      }
+      message(sprintf("Using %d colors from config\n", length(node_colors)))
+    } else {
+      message("No colors defined in config. Using default ggplot2 colors.\n")
+    }
+  } else {
+    message(sprintf("Warning: Column '%s' not found in indpopdata. Using default node colors.\n", color_by_name))
+  }
+}
+
 # Create the plot using ggraph
-p <- ggraph(layout) +
-  # Draw edges
-  geom_edge_link(
-    aes(color = category, linetype = category),
-    width = 0.8,
-    alpha = 0.75,
-    lineend = "round"
-  ) +
-  # Draw nodes
-  geom_node_point(
-    color = "lightblue",
-    fill = "lightblue",
-    size = 2,
-    shape = 21,
-    stroke = 0.5
-  ) +
-  # Add node labels
-  geom_node_text(
-    aes(label = name),
-    size = 2.5,
-    hjust = 0.5,
-    vjust = 1.5,
-    color = "black",
-    repel = FALSE
-  ) +
-  # Color scale for edges
-  scale_edge_color_manual(
-    values = color_scheme,
-    name = "Relationship Type",
-    drop = FALSE
-  ) +
-  # Linetype scale for edges
-  scale_edge_linetype_manual(
-    values = linetype_scheme,
-    name = "Relationship Type",
-    drop = FALSE
-  ) +
-  labs(
-    title = "KING Network Graph",
-    subtitle = paste("Nodes:", n_nodes, "| Edges:", nrow(edges_df))
-  ) +
-  theme_void() +
-  theme(
-    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
-    plot.subtitle = element_text(hjust = 0.5, size = 10),
-    legend.position = "bottom",
-    legend.title = element_text(size = 10),
-    legend.text = element_text(size = 9)
-  )
+# Check if color column exists in layout (layout should have all node attributes)
+if (!is.null(node_color_col) && node_color_col %in% colnames(layout)) {
+  # Color nodes by specified column
+  p <- ggraph(layout) +
+    # Draw edges
+    geom_edge_link(
+      aes(color = category, linetype = category),
+      width = 0.8,
+      alpha = 0.75,
+      lineend = "round"
+    ) +
+    # Draw nodes with color mapping
+    geom_node_point(
+      aes(fill = .data[[node_color_col]]),
+      color = "black",
+      size = 2,
+      shape = 21,
+      stroke = 0.5
+    ) +
+    # Add node labels
+    geom_node_text(
+      aes(label = name),
+      size = 2.5,
+      hjust = 0.5,
+      vjust = 1.5,
+      color = "black",
+      repel = FALSE
+    ) +
+    # Add color scale for nodes if colors were defined
+    (if (!is.null(node_colors)) {
+      scale_fill_manual(
+        values = node_colors,
+        name = node_color_col,
+        na.value = "gray90",
+        guide = guide_legend(override.aes = list(size = 3))
+      )
+    } else {
+      scale_fill_discrete(
+        name = node_color_col,
+        na.value = "gray90",
+        guide = guide_legend(override.aes = list(size = 3))
+      )
+    }) +
+    # Color scale for edges
+    scale_edge_color_manual(
+      values = color_scheme,
+      name = "Relationship Type",
+      drop = FALSE
+    ) +
+    # Linetype scale for edges
+    scale_edge_linetype_manual(
+      values = linetype_scheme,
+      name = "Relationship Type",
+      drop = FALSE
+    ) +
+    labs(
+      title = "KING Network Graph",
+      subtitle = paste("Nodes:", n_nodes, "| Edges:", nrow(edges_df))
+    ) +
+    theme_void() +
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+      plot.subtitle = element_text(hjust = 0.5, size = 10),
+      legend.position = "bottom",
+      legend.title = element_text(size = 10),
+      legend.text = element_text(size = 9)
+    )
+} else {
+  # Default: no coloring (gray nodes)
+  p <- ggraph(layout) +
+    # Draw edges
+    geom_edge_link(
+      aes(color = category, linetype = category),
+      width = 0.8,
+      alpha = 0.75,
+      lineend = "round"
+    ) +
+    # Draw nodes
+    geom_node_point(
+      color = "lightblue",
+      fill = "lightblue",
+      size = 2,
+      shape = 21,
+      stroke = 0.5
+    ) +
+    # Add node labels
+    geom_node_text(
+      aes(label = name),
+      size = 2.5,
+      hjust = 0.5,
+      vjust = 1.5,
+      color = "black",
+      repel = FALSE
+    ) +
+    # Color scale for edges
+    scale_edge_color_manual(
+      values = color_scheme,
+      name = "Relationship Type",
+      drop = FALSE
+    ) +
+    # Linetype scale for edges
+    scale_edge_linetype_manual(
+      values = linetype_scheme,
+      name = "Relationship Type",
+      drop = FALSE
+    ) +
+    labs(
+      title = "KING Network Graph",
+      subtitle = paste("Nodes:", n_nodes, "| Edges:", nrow(edges_df))
+    ) +
+    theme_void() +
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+      plot.subtitle = element_text(hjust = 0.5, size = 10),
+      legend.position = "bottom",
+      legend.title = element_text(size = 10),
+      legend.text = element_text(size = 9)
+    )
+}
 
 # Create output directory
 dir.create(dirname(output_pdf), recursive = TRUE, showWarnings = FALSE)

@@ -29,6 +29,7 @@ include: "rules/fineradstructure.smk"
 include: "rules/construct.smk"
 include: "rules/amova.smk"
 include: "rules/dapc.smk"
+include: "rules/roh.smk"
 
 def get_all_targets():
     """
@@ -362,11 +363,17 @@ def get_all_targets():
                 "results/" + project + "/relatedness/" + project + ".relatedness",
                 "results/" + project + "/relatedness/" + project + ".relatedness2",
                 "results/" + project + "/relatedness/" + project + ".genome",
-                "results/" + project + "/relatedness/" + project + ".king",
-                "results/" + project + "/relatedness/plots/" + project + ".genome_network.pdf",
-                "results/" + project + "/relatedness/plots/" + project + ".genome_network.rds",
-                "results/" + project + "/relatedness/plots/" + project + ".king_network.pdf",
-                "results/" + project + "/relatedness/plots/" + project + ".king_network.rds"
+                "results/" + project + "/relatedness/" + project + ".king"
+            ])
+            # Get relatedness plot color_by values
+            relatedness_groupings = params.get("relatedness_plot", {}).get("color_by", ["none"])
+            # Add plot targets for each color_by value
+            for color_by in relatedness_groupings:
+                targets.extend([
+                    f"results/{project}/relatedness/plots/{project}.genome_network-{color_by}.pdf",
+                    f"results/{project}/relatedness/plots/{project}.genome_network-{color_by}.rds",
+                    f"results/{project}/relatedness/plots/{project}.king_network-{color_by}.pdf",
+                    f"results/{project}/relatedness/plots/{project}.king_network-{color_by}.rds"
             ])
         
         # Relatedness filtering targets
@@ -479,6 +486,14 @@ def get_all_targets():
                     "results/" + project + "/amova/" + project + ".amova_results.txt",
                     "results/" + project + "/amova/plots/" + project + ".amova_variance_components.pdf",
                     "results/" + project + "/amova/plots/" + project + ".amova_variance_components.rds"
+                ])
+        
+        # ROH targets
+        if analyses.get("roh", False):
+            targets.extend([
+                "results/" + project + "/roh/" + project + ".bcftools_roh.txt",
+                "results/" + project + "/roh/" + project + ".roh_summary.txt",
+                "results/" + project + "/roh/" + project + ".roh_per_ind.txt"
                 ])
 
         # DAPC targets

@@ -125,12 +125,16 @@ rule relatedness_king:
 # Rule to plot genome network graph (based on PI_HAT from plink --genome)
 rule plot_genome_network:
     input:
-        genome=rules.relatedness_genome.output
+        genome=rules.relatedness_genome.output,
+        indpopdata=rules.generate_popdata.output.indpopdata
     output:
-        pdf="results/{project}/relatedness/plots/{project}.genome_network.pdf",
-        rds="results/{project}/relatedness/plots/{project}.genome_network.rds"
+        pdf="results/{project}/relatedness/plots/{project}.genome_network-{color_by}.pdf",
+        rds="results/{project}/relatedness/plots/{project}.genome_network-{color_by}.rds"
     log:
-        "logs/{project}/plot_genome_network.log"
+        "logs/{project}/plot_genome_network-{color_by}.log"
+    params:
+        color_by = lambda wildcards: wildcards.color_by,
+        relatedness_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_plot", {}).get("relatedness_colors", None)
     conda:
         "../envs/r-plot.yaml"
     threads: 1
@@ -143,12 +147,16 @@ rule plot_genome_network:
 # Rule to plot KING network graph
 rule plot_king_network:
     input:
-        king=rules.relatedness_king.output
+        king=rules.relatedness_king.output,
+        indpopdata=rules.generate_popdata.output.indpopdata
     output:
-        pdf="results/{project}/relatedness/plots/{project}.king_network.pdf",
-        rds="results/{project}/relatedness/plots/{project}.king_network.rds"
+        pdf="results/{project}/relatedness/plots/{project}.king_network-{color_by}.pdf",
+        rds="results/{project}/relatedness/plots/{project}.king_network-{color_by}.rds"
     log:
-        "logs/{project}/plot_king_network.log"
+        "logs/{project}/plot_king_network-{color_by}.log"
+    params:
+        color_by = lambda wildcards: wildcards.color_by,
+        relatedness_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_plot", {}).get("relatedness_colors", None)
     conda:
         "../envs/r-plot.yaml"
     threads: 1
