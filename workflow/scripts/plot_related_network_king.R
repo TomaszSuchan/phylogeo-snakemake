@@ -44,7 +44,7 @@ second_degree_threshold <- 0.0884  # 0.0884 < KING <= 0.177 for 2nd-degree
 # Color scheme
 color_scheme <- c(
   "clone" = "black",
-  "1st-degree" = "gray20",
+  "1st-degree" = "black",
   "2nd-degree" = "gray50",
   "other" = "gray85"
 )
@@ -52,7 +52,7 @@ color_scheme <- c(
 # Linetype scheme
 linetype_scheme <- c(
   "clone" = "solid",
-  "1st-degree" = "longdash",
+  "1st-degree" = "dashed",
   "2nd-degree" = "dashed",
   "other" = "dotted"
 )

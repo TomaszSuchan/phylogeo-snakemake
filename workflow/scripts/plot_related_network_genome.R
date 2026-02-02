@@ -45,7 +45,7 @@ second_degree_threshold <- 0.25  # 0.25 < PI_HAT <= 0.45 for 2nd-degree
 # Color scheme
 color_scheme <- c(
   "clone" = "black",
-  "1st-degree" = "gray20",
+  "1st-degree" = "black",
   "2nd-degree" = "gray50",
   "other" = "gray85"
 )
@@ -53,7 +53,7 @@ color_scheme <- c(
 # Linetype scheme
 linetype_scheme <- c(
   "clone" = "solid",
-  "1st-degree" = "longdash",
+  "1st-degree" = "dashed",
   "2nd-degree" = "dashed",
   "other" = "dotted"
 )
