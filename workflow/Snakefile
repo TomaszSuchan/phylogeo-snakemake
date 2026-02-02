@@ -361,7 +361,12 @@ def get_all_targets():
             targets.extend([
                 "results/" + project + "/relatedness/" + project + ".relatedness",
                 "results/" + project + "/relatedness/" + project + ".relatedness2",
-                "results/" + project + "/relatedness/" + project + ".genome"
+                "results/" + project + "/relatedness/" + project + ".genome",
+                "results/" + project + "/relatedness/" + project + ".king",
+                "results/" + project + "/relatedness/plots/" + project + ".genome_network.pdf",
+                "results/" + project + "/relatedness/plots/" + project + ".genome_network.rds",
+                "results/" + project + "/relatedness/plots/" + project + ".king_network.pdf",
+                "results/" + project + "/relatedness/plots/" + project + ".king_network.rds"
             ])
         
         # Relatedness filtering targets

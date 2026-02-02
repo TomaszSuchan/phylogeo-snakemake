@@ -79,3 +79,81 @@ rule relatedness_genome:
         
         rm {params.output_prefix}.log {params.output_prefix}.nosex
         """
+
+# Rule to calculate KING kinship on filtered data (for analysis, not filtering)
+# Similar to relatedness_genome but uses plink2 --make-king-table
+rule relatedness_king:
+    input:
+        bed=rules.vcf_to_plink.output.bed,
+        bim=rules.vcf_to_plink.output.bim,
+        fam=rules.vcf_to_plink.output.fam
+    output:
+        "results/{project}/relatedness/{project}.king"
+    log:
+        "logs/{project}/relatedness_king.log"
+    benchmark:
+        "benchmarks/{project}/relatedness_king.txt"
+    params:
+        bfile_prefix="results/{project}/filtered_data/{project}.biallelic_snps_thinned",
+        output_prefix="results/{project}/relatedness/{project}"
+    conda:
+        "../envs/plink.yaml"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    shell:
+        """
+        plink2 --bfile {params.bfile_prefix} \
+               --make-king-table \
+               --out {params.output_prefix} >> {log} 2>&1 || exit 1
+        
+        # Copy KING table to output location
+        if [ -f {params.output_prefix}.kin0 ]; then
+            cp {params.output_prefix}.kin0 {output} || exit 1
+        elif [ -f {params.output_prefix}.kin ]; then
+            cp {params.output_prefix}.kin {output} || exit 1
+        else
+            echo "Error: KING table file not found" >> {log}
+            exit 1
+        fi
+        
+        # Cleanup PLINK side-effect files
+        rm -f {params.output_prefix}.kin0 {params.output_prefix}.kin {params.output_prefix}.log || true
+        """
+
+# Rule to plot genome network graph (based on PI_HAT from plink --genome)
+rule plot_genome_network:
+    input:
+        genome=rules.relatedness_genome.output
+    output:
+        pdf="results/{project}/relatedness/plots/{project}.genome_network.pdf",
+        rds="results/{project}/relatedness/plots/{project}.genome_network.rds"
+    log:
+        "logs/{project}/plot_genome_network.log"
+    conda:
+        "../envs/r-plot.yaml"
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    script:
+        "../scripts/plot_related_network_genome.R"
+
+# Rule to plot KING network graph
+rule plot_king_network:
+    input:
+        king=rules.relatedness_king.output
+    output:
+        pdf="results/{project}/relatedness/plots/{project}.king_network.pdf",
+        rds="results/{project}/relatedness/plots/{project}.king_network.rds"
+    log:
+        "logs/{project}/plot_king_network.log"
+    conda:
+        "../envs/r-plot.yaml"
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    script:
+        "../scripts/plot_related_network_king.R"
