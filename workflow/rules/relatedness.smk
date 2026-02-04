@@ -76,8 +76,7 @@ rule relatedness_genome:
         plink --bfile {params.bfile_prefix} \
               --genome \
               --out {params.output_prefix} >> {log} 2>&1 || exit 1
-        
-        rm {params.output_prefix}.log {params.output_prefix}.nosex
+        rm -f {params.output_prefix}.log {params.output_prefix}.nosex || true
         """
 
 # Rule to calculate KING kinship on filtered data (for analysis, not filtering)
