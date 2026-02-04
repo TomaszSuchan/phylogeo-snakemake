@@ -385,7 +385,6 @@ projects:
       plot_map: false
       amova: false
       roh: false
-      roh_viz: false  # Set to true to generate interactive HTML visualization (can be very slow for large VCF files)
     parameters:
       <<: *global_params
       popmap: "data/popmap.txt"
