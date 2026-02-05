@@ -110,7 +110,7 @@ rule ld_prune_convert_to_vcf:
         "benchmarks/{project}/ld_prune_convert_to_vcf.txt"
     params:
         pruned_prefix = "results/{project}/filtered_data/{project}.ld_prune_temp.pruned",
-        output_prefix = lambda wildcards: "results/{project}/filtered_data/{project}.biallelic_snps_ld_pruned".format(project=wildcards.project)
+        output_prefix = "results/{project}/filtered_data/{project}.biallelic_snps_ld_pruned"
     conda:
         "../envs/plink.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default-long"]["threads"]
@@ -124,7 +124,7 @@ rule ld_prune_convert_to_vcf:
                --out {params.output_prefix} >> {log} 2>&1
         """
 
-# Step 5: Compress VCF to final output
+# Step 5: Compress VCF to final output and convert VCF version from 4.3 to 4.2 for vcftools compatibility
 rule ld_prune_compress:
     input:
         vcf = rules.ld_prune_convert_to_vcf.output.vcf
@@ -142,5 +142,6 @@ rule ld_prune_compress:
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default-long"]["runtime"]
     shell:
         """
-        bgzip {input.vcf}
+        # Convert VCF version from 4.3 to 4.2 for vcftools compatibility
+        sed 's/^##fileformat=VCFv4.3/##fileformat=VCFv4.2/' {input.vcf} | bgzip > {output.vcf}
         """

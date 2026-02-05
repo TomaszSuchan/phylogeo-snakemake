@@ -12,6 +12,7 @@ def get_pca_combinations(pc_max):
 # Include rule files
 include: "rules/preprocessing.smk"
 include: "rules/ld_pruning.smk"
+
 include: "rules/popdata.smk"
 include: "rules/missingness.smk"
 include: "rules/faststructure.smk"
@@ -193,12 +194,12 @@ def get_all_targets():
         ])
         # Thinned dataset (after thinning)
         targets.extend([
-            f"results/{project}/missingness_data/thinned/{project}.biallelic_snps_{strategy_suffix}.imiss",
-            f"results/{project}/missingness_data/thinned/{project}.biallelic_snps_{strategy_suffix}.lmiss",
-            f"results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps_{strategy_suffix}.imiss_histogram.pdf",
-            f"results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps_{strategy_suffix}.imiss_histogram.rds",
-            f"results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps_{strategy_suffix}.lmiss_histogram.pdf",
-            f"results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps_{strategy_suffix}.lmiss_histogram.rds"
+            f"results/{project}/missingness_data/thinned/{project}.biallelic_snps.imiss",
+            f"results/{project}/missingness_data/thinned/{project}.biallelic_snps.lmiss",
+            f"results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps.imiss_histogram.pdf",
+            f"results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps.imiss_histogram.rds",
+            f"results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps.lmiss_histogram.pdf",
+            f"results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps.lmiss_histogram.rds"
         ])
         # PCAone targets (standard)
         if analyses.get("pcaone", False):
@@ -207,7 +208,7 @@ def get_all_targets():
                 "results/" + project + "/pcaone/" + project + ".PCA.eigvals"
             ])
             # Always add missing data calculation target (now in missingness_data)
-            targets.append(f"results/{project}/missingness_data/thinned/{project}.biallelic_snps_{strategy_suffix}.imiss")
+            targets.append(f"results/{project}/missingness_data/thinned/{project}.biallelic_snps.imiss")
             # Add plot targets for each PC combination and color grouping
             for pc1, pc2 in pca_combinations:
                 for color_by in PCA_groupings:
@@ -243,7 +244,7 @@ def get_all_targets():
                 "results/" + project + "/pcaone_EMU/" + project + ".PCA_EMU.eigvals"
             ])
             # Always add missing data calculation target (now in missingness_data)
-            targets.append(f"results/{project}/missingness_data/thinned/{project}.biallelic_snps_{strategy_suffix}.imiss")
+            targets.append(f"results/{project}/missingness_data/thinned/{project}.biallelic_snps.imiss")
             # Add plot targets for each PC combination and color grouping
             for pc1, pc2 in pca_combinations:
                 for color_by in PCA_groupings:
@@ -374,20 +375,20 @@ def get_all_targets():
         # Relatedness targets
         if analyses.get("relatedness", False):
             targets.extend([
-                f"results/{project}/relatedness/{project}.relatedness_{strategy_suffix}",
-                f"results/{project}/relatedness/{project}.relatedness2_{strategy_suffix}",
-                f"results/{project}/relatedness/{project}.genome_{strategy_suffix}",
-                f"results/{project}/relatedness/{project}.king_{strategy_suffix}"
+                f"results/{project}/relatedness/{project}.relatedness",
+                f"results/{project}/relatedness/{project}.relatedness2",
+                f"results/{project}/relatedness/{project}.genome",
+                f"results/{project}/relatedness/{project}.king"
             ])
             # Get relatedness plot color_by values
             relatedness_groupings = params.get("relatedness_plot", {}).get("color_by", ["none"])
             # Add plot targets for each color_by value
             for color_by in relatedness_groupings:
                 targets.extend([
-                    f"results/{project}/relatedness/plots/{project}.genome_network-{color_by}_{strategy_suffix}.pdf",
-                    f"results/{project}/relatedness/plots/{project}.genome_network-{color_by}_{strategy_suffix}.rds",
-                    f"results/{project}/relatedness/plots/{project}.king_network-{color_by}_{strategy_suffix}.pdf",
-                    f"results/{project}/relatedness/plots/{project}.king_network-{color_by}_{strategy_suffix}.rds"
+                    f"results/{project}/relatedness/plots/{project}.genome_network-{color_by}.pdf",
+                    f"results/{project}/relatedness/plots/{project}.genome_network-{color_by}.rds",
+                    f"results/{project}/relatedness/plots/{project}.king_network-{color_by}.pdf",
+                    f"results/{project}/relatedness/plots/{project}.king_network-{color_by}.rds"
                 ])
         
         # Relatedness filtering targets

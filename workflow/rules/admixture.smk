@@ -24,8 +24,8 @@ rule admixture:
         """
         mkdir -p {params.output_dir}
         admixture --cv -j{threads} {input.bed} {wildcards.k} 2>&1 | tee {log}
-        mv {wildcards.project}.biallelic_snps_thinned.{wildcards.k}.Q {params.output_dir}/
-        mv {wildcards.project}.biallelic_snps_thinned.{wildcards.k}.P {params.output_dir}/
+        mv {params.prefix}.{wildcards.k}.Q {params.output_dir}/
+        mv {params.prefix}.{wildcards.k}.P {params.output_dir}/
         """
 
 # Rule to choose optimal K for admixture
