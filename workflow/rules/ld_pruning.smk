@@ -120,7 +120,7 @@ rule ld_prune_convert_to_vcf:
     shell:
         """
         plink2 --bfile {params.pruned_prefix} \
-               --export vcf \
+               --export vcf id-paste=iid \
                --out {params.output_prefix} >> {log} 2>&1
         """
 
