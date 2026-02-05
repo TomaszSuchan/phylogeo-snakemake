@@ -276,6 +276,7 @@ rule plot_pca_emu_colored:
         rds="results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-PC{pc1}_PC{pc2}-{color_by}.rds"
     log:
         "logs/{project}/plot_pca_emu_colored_PC{pc1}_PC{pc2}_{color_by}.log"
+    wildcard_constraints:
         color_by="(?!labeled|missing).*"
     params:
         pc1 = lambda wildcards: wildcards.pc1,
@@ -357,6 +358,7 @@ rule plot_pca_emu_facet_colored:
         rds="results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-facet-{color_by}.rds"
     log:
         "logs/{project}/plot_pca_emu_facet_colored_{color_by}.log"
+    wildcard_constraints:
         color_by="(?!labeled|missing).*"
     params:
         color_by = lambda wildcards: wildcards.color_by,
