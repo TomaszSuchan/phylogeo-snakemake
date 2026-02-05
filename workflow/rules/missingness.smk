@@ -57,13 +57,11 @@ rule calculate_missing_indv_thinned:
     input:
         vcf = lambda wildcards: get_filtered_vcf_output(wildcards)
     output:
-        imiss = "results/{project}/missingness_data/thinned/{project}.biallelic_snps_{thinning_strategy}.imiss"
+        imiss = "results/{project}/missingness_data/thinned/{project}.biallelic_snps.imiss"
     log:
-        "logs/{project}/calculate_missing_indv_thinned_{thinning_strategy}.log"
+        "logs/{project}/calculate_missing_indv_thinned.log"
     params:
-        out_prefix = "results/{project}/missingness_data/thinned/{project}.biallelic_snps_{thinning_strategy}"
-    wildcard_constraints:
-        thinning_strategy="(thinned|ld_pruned|all_snps)"
+        out_prefix = "results/{project}/missingness_data/thinned/{project}.biallelic_snps"
     conda:
         "../envs/vcftools.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -81,13 +79,11 @@ rule calculate_missing_loci_thinned:
     input:
         vcf = lambda wildcards: get_filtered_vcf_output(wildcards)
     output:
-        lmiss = "results/{project}/missingness_data/thinned/{project}.biallelic_snps_{thinning_strategy}.lmiss"
+        lmiss = "results/{project}/missingness_data/thinned/{project}.biallelic_snps.lmiss"
     log:
-        "logs/{project}/calculate_missing_loci_thinned_{thinning_strategy}.log"
+        "logs/{project}/calculate_missing_loci_thinned.log"
     params:
-        out_prefix = "results/{project}/missingness_data/thinned/{project}.biallelic_snps_{thinning_strategy}"
-    wildcard_constraints:
-        thinning_strategy="(thinned|ld_pruned|all_snps)"
+        out_prefix = "results/{project}/missingness_data/thinned/{project}.biallelic_snps"
     conda:
         "../envs/vcftools.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -124,12 +120,10 @@ rule plot_imiss_histogram_thinned:
     input:
         imiss = rules.calculate_missing_indv_thinned.output.imiss
     output:
-        pdf = "results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps_{thinning_strategy}.imiss_histogram.pdf",
-        rds = "results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps_{thinning_strategy}.imiss_histogram.rds"
+        pdf = "results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps.imiss_histogram.pdf",
+        rds = "results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps.imiss_histogram.rds"
     log:
-        "logs/{project}/plot_imiss_histogram_thinned_{thinning_strategy}.log"
-    wildcard_constraints:
-        thinning_strategy="(thinned|ld_pruned|all_snps)"
+        "logs/{project}/plot_imiss_histogram_thinned.log"
     conda:
         "../envs/r-plot.yaml"
     threads: 1
@@ -162,12 +156,10 @@ rule plot_lmiss_histogram_thinned:
     input:
         lmiss = rules.calculate_missing_loci_thinned.output.lmiss
     output:
-        pdf = "results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps_{thinning_strategy}.lmiss_histogram.pdf",
-        rds = "results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps_{thinning_strategy}.lmiss_histogram.rds"
+        pdf = "results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps.lmiss_histogram.pdf",
+        rds = "results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps.lmiss_histogram.rds"
     log:
-        "logs/{project}/plot_lmiss_histogram_thinned_{thinning_strategy}.log"
-    wildcard_constraints:
-        thinning_strategy="(thinned|ld_pruned|all_snps)"
+        "logs/{project}/plot_lmiss_histogram_thinned.log"
     conda:
         "../envs/r-plot.yaml"
     threads: 1
