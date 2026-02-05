@@ -12,7 +12,7 @@ rule faststructure:
     benchmark:
         "benchmarks/{project}/faststructure.{k}.txt"
     params:
-        input_prefix = rules.vcf_to_plink.params.output_prefix,
+        input_prefix = lambda wildcards: f"results/{wildcards.project}/filtered_data/{wildcards.project}.biallelic_snps_thinned",
         output_prefix = "results/{project}/faststructure/{project}.faststructure",
         tol = lambda wildcards:  config["projects"][wildcards.project]["parameters"]["faststructure"].get("tol", "10e-6"),
         prior = lambda wildcards: config["projects"][wildcards.project]["parameters"]["faststructure"].get("prior", "simple")
