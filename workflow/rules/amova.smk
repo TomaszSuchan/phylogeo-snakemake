@@ -11,7 +11,7 @@ rule amova:
     Stratification levels are specified in config (e.g., ["Region", "Site"]).
     """
     input:
-        vcf="results/{project}/filtered_data/{project}.biallelic_snps_thinned.vcf.gz",
+        vcf=lambda wildcards: get_filtered_vcf_output(wildcards),
         popdata="results/{project}/indpopdata.txt"
     output:
         amova="results/{project}/amova/{project}.amova_results.txt",

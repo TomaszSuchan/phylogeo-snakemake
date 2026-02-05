@@ -29,8 +29,7 @@ rule fineradstructure_paint:
     input:
         finestr_input = rules.fineradstructure_prepare_input.output.finestr_input
     output:
-        finestr_chunks = "results/{project}/fineradstructure/{project}_chunks.out",
-        finestr_mcmc = "results/{project}/fineradstructure/{project}_chunks.mcmc.xml"
+        finestr_chunks = "results/{project}/fineradstructure/{project}_chunks.out"
     log:
         "logs/{project}/fineradstructure/run_fineradstructure.log"
     benchmark:
@@ -92,3 +91,26 @@ rule fineradstructure_tree:
         """
         finestructure -m T -x {params.mcmc_iterations} {input.finestr_chunks} {input.finestr_mcmc} {output.finestr_mcmcTree} &> {log}
         """
+
+rule fineradstructure_plot:
+    """
+    Plot fineRADstructure results - visualizes the co-ancestry tree from MCMC output
+    """
+    input:
+        mcmcTree = rules.fineradstructure_tree.output.finestr_mcmcTree,
+        chunks = rules.fineradstructure_paint.output.finestr_chunks
+    output:
+        pdf = "results/{project}/fineradstructure/plots/{project}.fineradstructure_tree.pdf",
+        rds = "results/{project}/fineradstructure/plots/{project}.fineradstructure_tree.rds"
+    log:
+        "logs/{project}/fineradstructure/fineradstructure_plot.log"
+    benchmark:
+        "benchmarks/{project}/fineradstructure_plot.txt"
+    conda:
+        "../envs/r-ggtree.yaml"
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    script:
+        "../scripts/fineradstructure_plot.R"

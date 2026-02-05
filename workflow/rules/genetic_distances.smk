@@ -11,7 +11,7 @@ rule euclidean_distance:
     converting to allele counts (0, 1, 2).
     """
     input:
-        vcf="results/{project}/filtered_data/{project}.biallelic_snps_thinned.vcf.gz",
+        vcf=lambda wildcards: get_filtered_vcf_output(wildcards),
     output:
         dist="results/{project}/gen_dist/{project}.euclidean_distance.tsv",
     conda:
