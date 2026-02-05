@@ -1,5 +1,41 @@
 import os
 
+# Helper function to get thinning strategy for a project
+def get_thinning_strategy(wildcards):
+    """Get thinning strategy for a project, default to 'thinning'."""
+    return config["projects"][wildcards.project]["parameters"].get("thinning_strategy", "thinning")
+
+# Helper function to get output filename suffix based on thinning strategy
+def get_thinning_output_suffix(wildcards):
+    """Get output filename suffix based on thinning strategy."""
+    strategy = get_thinning_strategy(wildcards)
+    if strategy == "thinning":
+        return "thinned"
+    elif strategy == "ld_pruning":
+        return "ld_pruned"
+    elif strategy == "none":
+        return "all_snps"
+    else:
+        raise ValueError(f"Unknown thinning strategy: {strategy}")
+
+# Helper function to get the filtered VCF output file based on strategy
+# This is used by downstream rules to get the correct output file
+def get_filtered_vcf_output(wildcards):
+    """Get the filtered VCF output file based on thinning strategy."""
+    suffix = get_thinning_output_suffix(wildcards)
+    return f"results/{wildcards.project}/filtered_data/{wildcards.project}.biallelic_snps_{suffix}.vcf.gz"
+
+# Helper function to get conda environment based on thinning strategy
+def get_thinning_conda_env(wildcards):
+    """Get conda environment based on thinning strategy."""
+    strategy = get_thinning_strategy(wildcards)
+    if strategy == "thinning":
+        return "../envs/python.yaml"
+    elif strategy == "ld_pruning":
+        return "../envs/plink.yaml"
+    else:  # none
+        return "../envs/bcftools.yaml"  # for copying/compressing VCF
+
 # Helper function to get samples list for a project
 def get_samples(wildcards):
     """Get samples list for a project from comma-separated string, return empty list if not specified."""
@@ -472,7 +508,7 @@ rule select_biallelic_snps:
         -Oz -o {output.biallelic_vcf} &> {log}
         """
 
-# Rule to thin VCF using the custom script
+# Rule to thin VCF using Python script (strategy: "thinning")
 rule thin_vcf:
     input:
         vcf = rules.select_biallelic_snps.output.biallelic_vcf
@@ -506,22 +542,49 @@ rule thin_vcf:
             --id-pattern '{params.id_pattern}' &> {log}
         """
 
+# LD pruning rules are now in ld_pruning.smk
+# The final output rule is ld_prune_compress
+
+# Rule to pass through all SNPs without filtering (strategy: "none")
+rule pass_through_vcf:
+    input:
+        vcf = rules.select_biallelic_snps.output.biallelic_vcf
+    output:
+        vcf = "results/{project}/filtered_data/{project}.biallelic_snps_all_snps.vcf.gz"
+    log:
+        "logs/{project}/pass_through_vcf.log"
+    benchmark:
+        "benchmarks/{project}/pass_through_vcf.txt"
+    conda:
+        "../envs/bcftools.yaml"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default-long"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default-long"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default-long"]["runtime"]
+    shell:
+        """
+        # Just copy the biallelic VCF (it's already compressed)
+        cp {input.vcf} {output.vcf} || exit 1
+        """
+
 ## Rules for exporting data from VCF to other formats
-# Rule to convert thinned VCF to PLINK format
+# Rule to convert filtered VCF to PLINK format
 # renames chromosomes to "0" for downstream compatibility with "--allow-extra-chr 0"
 rule vcf_to_plink:
     input:
-        vcf = rules.thin_vcf.output.vcf
+        vcf = lambda wildcards: get_filtered_vcf_output(wildcards)
     output:
-        bed = "results/{project}/filtered_data/{project}.biallelic_snps_thinned.bed",
-        bim = "results/{project}/filtered_data/{project}.biallelic_snps_thinned.bim",
-        fam = "results/{project}/filtered_data/{project}.biallelic_snps_thinned.fam"
+        bed = "results/{project}/filtered_data/{project}.biallelic_snps_{thinning_strategy}.bed",
+        bim = "results/{project}/filtered_data/{project}.biallelic_snps_{thinning_strategy}.bim",
+        fam = "results/{project}/filtered_data/{project}.biallelic_snps_{thinning_strategy}.fam"
     log:
-        "logs/{project}/vcf_to_plink.log"
+        "logs/{project}/vcf_to_plink_{thinning_strategy}.log"
     benchmark:
-        "benchmarks/{project}/vcf_to_plink.txt"
+        "benchmarks/{project}/vcf_to_plink_{thinning_strategy}.txt"
     params:
-        output_prefix = "results/{project}/filtered_data/{project}.biallelic_snps_thinned"
+        output_prefix = "results/{project}/filtered_data/{project}.biallelic_snps_{thinning_strategy}"
+    wildcard_constraints:
+        thinning_strategy="(thinned|ld_pruned|all_snps)"
     conda:
         "../envs/plink.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -537,12 +600,18 @@ rule vcf_to_plink:
               --double-id &> {log}
         """
 
-# Rule to convert thinned VCF to STRUCTURE format
+# Rule to convert filtered VCF to STRUCTURE format
 rule vcf_to_structure:
     input:
-        vcf = rules.thin_vcf.output.vcf
+        vcf = lambda wildcards: get_filtered_vcf_output(wildcards)
     output:
-        str = "results/{project}/filtered_data/{project}.biallelic_snps_thinned.str"
+        str = "results/{project}/filtered_data/{project}.biallelic_snps_{thinning_strategy}.str"
+    log:
+        "logs/{project}/vcf_to_structure_{thinning_strategy}.log"
+    benchmark:
+        "benchmarks/{project}/vcf_to_structure_{thinning_strategy}.txt"
+    wildcard_constraints:
+        thinning_strategy="(thinned|ld_pruned|all_snps)"
     log:
         "logs/{project}/vcf_to_structure.log"
     benchmark:
@@ -564,9 +633,15 @@ rule vcf_to_structure:
 # Rule to filter VCF for missing data threshold
 rule filter_missing_vcf:
     input:
-        vcf = rules.thin_vcf.output.vcf
+        vcf = lambda wildcards: get_filtered_vcf_output(wildcards)
     output:
-        vcf = "results/{project}/filtered_data/{project}.biallelic_snps_thinned_miss{miss}.vcf.gz"
+        vcf = "results/{project}/filtered_data/{project}.biallelic_snps_{thinning_strategy}_miss{miss}.vcf.gz"
+    log:
+        "logs/{project}/filter_missing_vcf_{thinning_strategy}_{miss}.log"
+    benchmark:
+        "benchmarks/{project}/filter_missing_vcf_{thinning_strategy}_{miss}.txt"
+    wildcard_constraints:
+        thinning_strategy="(thinned|ld_pruned|all_snps)"
     log:
         "logs/{project}/filter_missing_vcf_{miss}.log"
     benchmark:
@@ -590,16 +665,18 @@ rule missing_vcf_to_plink:
     input:
         vcf = rules.filter_missing_vcf.output.vcf
     output:
-        bed = "results/{project}/filtered_data/{project}.biallelic_snps_thinned_miss{miss}.bed",
-        bim = "results/{project}/filtered_data/{project}.biallelic_snps_thinned_miss{miss}.bim",
-        fam = "results/{project}/filtered_data/{project}.biallelic_snps_thinned_miss{miss}.fam"
+        bed = "results/{project}/filtered_data/{project}.biallelic_snps_{thinning_strategy}_miss{miss}.bed",
+        bim = "results/{project}/filtered_data/{project}.biallelic_snps_{thinning_strategy}_miss{miss}.bim",
+        fam = "results/{project}/filtered_data/{project}.biallelic_snps_{thinning_strategy}_miss{miss}.fam"
     log:
-        "logs/{project}/missing_vcf_to_plink_{miss}.log"
+        "logs/{project}/missing_vcf_to_plink_{thinning_strategy}_{miss}.log"
     benchmark:
-        "benchmarks/{project}/missing_vcf_to_plink_{miss}.txt"
+        "benchmarks/{project}/missing_vcf_to_plink_{thinning_strategy}_{miss}.txt"
     params:
         miss = lambda wildcards: wildcards.miss,
-        output_prefix = "results/{project}/filtered_data/{project}.biallelic_snps_thinned_miss{miss}"
+        output_prefix = "results/{project}/filtered_data/{project}.biallelic_snps_{thinning_strategy}_miss{miss}"
+    wildcard_constraints:
+        thinning_strategy="(thinned|ld_pruned|all_snps)"
     conda:
         "../envs/plink.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]

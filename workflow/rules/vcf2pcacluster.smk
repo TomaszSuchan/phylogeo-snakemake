@@ -2,7 +2,7 @@
 
 rule vcf2pcacluster:
     input:
-        vcf=rules.thin_vcf.output.vcf  # Use the output from thin_vcf rule
+        vcf=lambda wildcards: get_filtered_vcf_output(wildcards)  # Use the output based on strategy
     output:
         eigenvectors = "results/{project}/vcf2pcacluster_miss{miss}_MAF{MAF}/{project}.vcf2pcacluster_miss{miss}_MAF{MAF}.eigenvec",
         eigenvalues = "results/{project}/vcf2pcacluster_miss{miss}_MAF{MAF}/{project}.vcf2pcacluster_miss{miss}_MAF{MAF}.eigenval"

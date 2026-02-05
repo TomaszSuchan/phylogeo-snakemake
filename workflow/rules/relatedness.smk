@@ -4,13 +4,15 @@
 # and zero for individuals within a populations.
 rule relatedness:
     input:
-        vcf=rules.thin_vcf.output.vcf
+        vcf=lambda wildcards: get_filtered_vcf_output(wildcards)
     output:
-        "results/{project}/relatedness/{project}.relatedness"
+        "results/{project}/relatedness/{project}.relatedness_{thinning_strategy}"
     log:
-        "logs/{project}/relatedness.log"
+        "logs/{project}/relatedness_{thinning_strategy}.log"
     benchmark:
-        "benchmarks/{project}/relatedness.txt"
+        "benchmarks/{project}/relatedness_{thinning_strategy}.txt"
+    wildcard_constraints:
+        thinning_strategy="(thinned|ld_pruned|all_snps)"
     conda:
         "../envs/vcftools.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -28,14 +30,15 @@ rule relatedness:
 # 1/8 for second degree, 1/16 for third degree, and 0 for unrelated.
 rule relatedness2:
     input:
-        # Use Snakemake's automatic file selection with multiple possible inputs
-        vcf=rules.thin_vcf.output.vcf
+        vcf=lambda wildcards: get_filtered_vcf_output(wildcards)
     output:
-        "results/{project}/relatedness/{project}.relatedness2"
+        "results/{project}/relatedness/{project}.relatedness2_{thinning_strategy}"
     log:
-        "logs/{project}/relatedness2.log"
+        "logs/{project}/relatedness2_{thinning_strategy}.log"
     benchmark:
-        "benchmarks/{project}/relatedness2.txt"
+        "benchmarks/{project}/relatedness2_{thinning_strategy}.txt"
+    wildcard_constraints:
+        thinning_strategy="(thinned|ld_pruned|all_snps)"
     conda:
         "../envs/vcftools.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -57,14 +60,16 @@ rule relatedness_genome:
         bim=rules.vcf_to_plink.output.bim,
         fam=rules.vcf_to_plink.output.fam
     output:
-        "results/{project}/relatedness/{project}.genome"
+        "results/{project}/relatedness/{project}.genome_{thinning_strategy}"
     log:
-        "logs/{project}/relatedness_genome.log"
+        "logs/{project}/relatedness_genome_{thinning_strategy}.log"
     benchmark:
-        "benchmarks/{project}/relatedness_genome.txt"
+        "benchmarks/{project}/relatedness_genome_{thinning_strategy}.txt"
     params:
-        bfile_prefix="results/{project}/filtered_data/{project}.biallelic_snps_thinned",
+        bfile_prefix="results/{project}/filtered_data/{project}.biallelic_snps_{thinning_strategy}",
         output_prefix="results/{project}/relatedness/{project}"
+    wildcard_constraints:
+        thinning_strategy="(thinned|ld_pruned|all_snps)"
     conda:
         "../envs/plink.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -87,14 +92,16 @@ rule relatedness_king:
         bim=rules.vcf_to_plink.output.bim,
         fam=rules.vcf_to_plink.output.fam
     output:
-        "results/{project}/relatedness/{project}.king"
+        "results/{project}/relatedness/{project}.king_{thinning_strategy}"
     log:
-        "logs/{project}/relatedness_king.log"
+        "logs/{project}/relatedness_king_{thinning_strategy}.log"
     benchmark:
-        "benchmarks/{project}/relatedness_king.txt"
+        "benchmarks/{project}/relatedness_king_{thinning_strategy}.txt"
     params:
-        bfile_prefix="results/{project}/filtered_data/{project}.biallelic_snps_thinned",
+        bfile_prefix="results/{project}/filtered_data/{project}.biallelic_snps_{thinning_strategy}",
         output_prefix="results/{project}/relatedness/{project}"
+    wildcard_constraints:
+        thinning_strategy="(thinned|ld_pruned|all_snps)"
     conda:
         "../envs/plink.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -127,10 +134,12 @@ rule plot_genome_network:
         genome=rules.relatedness_genome.output,
         indpopdata=rules.generate_popdata.output.indpopdata
     output:
-        pdf="results/{project}/relatedness/plots/{project}.genome_network-{color_by}.pdf",
-        rds="results/{project}/relatedness/plots/{project}.genome_network-{color_by}.rds"
+        pdf="results/{project}/relatedness/plots/{project}.genome_network-{color_by}_{thinning_strategy}.pdf",
+        rds="results/{project}/relatedness/plots/{project}.genome_network-{color_by}_{thinning_strategy}.rds"
+    wildcard_constraints:
+        thinning_strategy="(thinned|ld_pruned|all_snps)"
     log:
-        "logs/{project}/plot_genome_network-{color_by}.log"
+        "logs/{project}/plot_genome_network-{color_by}_{thinning_strategy}.log"
     params:
         color_by = lambda wildcards: wildcards.color_by,
         relatedness_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_plot", {}).get("relatedness_colors", None)
@@ -149,10 +158,12 @@ rule plot_king_network:
         king=rules.relatedness_king.output,
         indpopdata=rules.generate_popdata.output.indpopdata
     output:
-        pdf="results/{project}/relatedness/plots/{project}.king_network-{color_by}.pdf",
-        rds="results/{project}/relatedness/plots/{project}.king_network-{color_by}.rds"
+        pdf="results/{project}/relatedness/plots/{project}.king_network-{color_by}_{thinning_strategy}.pdf",
+        rds="results/{project}/relatedness/plots/{project}.king_network-{color_by}_{thinning_strategy}.rds"
+    wildcard_constraints:
+        thinning_strategy="(thinned|ld_pruned|all_snps)"
     log:
-        "logs/{project}/plot_king_network-{color_by}.log"
+        "logs/{project}/plot_king_network-{color_by}_{thinning_strategy}.log"
     params:
         color_by = lambda wildcards: wildcards.color_by,
         relatedness_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_plot", {}).get("relatedness_colors", None)

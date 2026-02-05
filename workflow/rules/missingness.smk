@@ -55,13 +55,15 @@ rule calculate_missing_loci_filtered:
 # Missingness from thinned VCF (after thinning)
 rule calculate_missing_indv_thinned:
     input:
-        vcf = rules.thin_vcf.output.vcf
+        vcf = lambda wildcards: get_filtered_vcf_output(wildcards)
     output:
-        imiss = "results/{project}/missingness_data/thinned/{project}.biallelic_snps_thinned.imiss"
+        imiss = "results/{project}/missingness_data/thinned/{project}.biallelic_snps_{thinning_strategy}.imiss"
     log:
-        "logs/{project}/calculate_missing_indv_thinned.log"
+        "logs/{project}/calculate_missing_indv_thinned_{thinning_strategy}.log"
     params:
-        out_prefix = lambda wildcards: f"results/{wildcards.project}/missingness_data/thinned/{wildcards.project}.biallelic_snps_thinned"
+        out_prefix = "results/{project}/missingness_data/thinned/{project}.biallelic_snps_{thinning_strategy}"
+    wildcard_constraints:
+        thinning_strategy="(thinned|ld_pruned|all_snps)"
     conda:
         "../envs/vcftools.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -77,13 +79,15 @@ rule calculate_missing_indv_thinned:
 
 rule calculate_missing_loci_thinned:
     input:
-        vcf = rules.thin_vcf.output.vcf
+        vcf = lambda wildcards: get_filtered_vcf_output(wildcards)
     output:
-        lmiss = "results/{project}/missingness_data/thinned/{project}.biallelic_snps_thinned.lmiss"
+        lmiss = "results/{project}/missingness_data/thinned/{project}.biallelic_snps_{thinning_strategy}.lmiss"
     log:
-        "logs/{project}/calculate_missing_loci_thinned.log"
+        "logs/{project}/calculate_missing_loci_thinned_{thinning_strategy}.log"
     params:
-        out_prefix = lambda wildcards: f"results/{wildcards.project}/missingness_data/thinned/{wildcards.project}.biallelic_snps_thinned"
+        out_prefix = "results/{project}/missingness_data/thinned/{project}.biallelic_snps_{thinning_strategy}"
+    wildcard_constraints:
+        thinning_strategy="(thinned|ld_pruned|all_snps)"
     conda:
         "../envs/vcftools.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -120,10 +124,12 @@ rule plot_imiss_histogram_thinned:
     input:
         imiss = rules.calculate_missing_indv_thinned.output.imiss
     output:
-        pdf = "results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps_thinned.imiss_histogram.pdf",
-        rds = "results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps_thinned.imiss_histogram.rds"
+        pdf = "results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps_{thinning_strategy}.imiss_histogram.pdf",
+        rds = "results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps_{thinning_strategy}.imiss_histogram.rds"
     log:
-        "logs/{project}/plot_imiss_histogram_thinned.log"
+        "logs/{project}/plot_imiss_histogram_thinned_{thinning_strategy}.log"
+    wildcard_constraints:
+        thinning_strategy="(thinned|ld_pruned|all_snps)"
     conda:
         "../envs/r-plot.yaml"
     threads: 1
@@ -156,10 +162,12 @@ rule plot_lmiss_histogram_thinned:
     input:
         lmiss = rules.calculate_missing_loci_thinned.output.lmiss
     output:
-        pdf = "results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps_thinned.lmiss_histogram.pdf",
-        rds = "results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps_thinned.lmiss_histogram.rds"
+        pdf = "results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps_{thinning_strategy}.lmiss_histogram.pdf",
+        rds = "results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps_{thinning_strategy}.lmiss_histogram.rds"
     log:
-        "logs/{project}/plot_lmiss_histogram_thinned.log"
+        "logs/{project}/plot_lmiss_histogram_thinned_{thinning_strategy}.log"
+    wildcard_constraints:
+        thinning_strategy="(thinned|ld_pruned|all_snps)"
     conda:
         "../envs/r-plot.yaml"
     threads: 1

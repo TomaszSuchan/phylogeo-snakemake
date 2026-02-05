@@ -8,7 +8,7 @@ rule construct_analysis:
     for different K values (number of layers).
     """
     input:
-        vcf = rules.thin_vcf.output.vcf,
+        vcf = lambda wildcards: get_filtered_vcf_output(wildcards),
         indpopdata = rules.generate_popdata.output.indpopdata
     output:
         results_rds = "results/{project}/construct/{project}.construct.K{k}.results.rds",
@@ -62,8 +62,8 @@ rule construct_plot:
         "../envs/construct.yaml"
     threads: 1
     resources:
-        mem_mb = 4000,
-        runtime = 30
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"].get("mem_mb", 8000),
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"].get("runtime", 10)
     script:
         "../scripts/construct_plot.R"
 

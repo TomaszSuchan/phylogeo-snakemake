@@ -3,7 +3,7 @@
 # Uses a shell wrapper with timeout to ensure log is written even if script hangs at prompt
 rule dapc_bic_plot:
     input:
-        vcf = rules.thin_vcf.output.vcf
+        vcf = lambda wildcards: get_filtered_vcf_output(wildcards)
     output:
         log_file = "results/{project}/dapc/{project}.dapc.bic_plot.log.txt"
     params:
@@ -33,7 +33,7 @@ rule dapc_bic_plot:
 # DAPC (Discriminant Analysis of Principal Components) rule - run for each K
 rule dapc_analysis:
     input:
-        vcf = rules.thin_vcf.output.vcf
+        vcf = lambda wildcards: get_filtered_vcf_output(wildcards)
     output:
         results_rds = "results/{project}/dapc/{project}.dapc.K{k}.results.rds",
         cluster_assignments = "results/{project}/dapc/{project}.dapc.K{k}.cluster_assignments.txt",
