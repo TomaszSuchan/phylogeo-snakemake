@@ -86,7 +86,7 @@ rule create_population_summary:
     input:
         indpopdata=rules.generate_popdata.output.indpopdata
     output:
-        summary="results/{project}/population_data/{project}.population_summary.txt"
+        summary="results/{project}/stats_samples/{project}.population_summary.txt"
     log:
         "logs/{project}/create_population_summary.log"
     benchmark:
@@ -110,11 +110,11 @@ rule calculate_missing_indv_miss:
     input:
         vcf = rules.filter_missing_vcf.output.vcf
     output:
-        imiss = "results/{project}/missingness_data/thinned/{project}.biallelic_snps_thinned_miss{miss}.imiss"
+        imiss = "results/{project}/stats_vcf/thinned/{project}.biallelic_snps_thinned_miss{miss}.imiss"
     log:
         "logs/{project}/calculate_missing_indv_miss_{miss}.log"
     params:
-        out_prefix = lambda wildcards: f"results/{wildcards.project}/missingness_data/thinned/{wildcards.project}.biallelic_snps_thinned_miss{wildcards.miss}"
+        out_prefix = lambda wildcards: f"results/{wildcards.project}/stats_vcf/thinned/{wildcards.project}.biallelic_snps_thinned_miss{wildcards.miss}"
     conda:
         "../envs/vcftools.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -123,7 +123,7 @@ rule calculate_missing_indv_miss:
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
     shell:
         """
-        mkdir -p results/{wildcards.project}/missingness_data/thinned
+        mkdir -p results/{wildcards.project}/stats_vcf/thinned
         vcftools --gzvcf {input.vcf} \
                  --missing-indv \
                  --out {params.out_prefix} &> {log}

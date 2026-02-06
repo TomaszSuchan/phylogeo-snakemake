@@ -185,21 +185,23 @@ def get_all_targets():
         # Missingness targets (always generated)
         # Filtered dataset (before thinning)
         targets.extend([
-            "results/" + project + "/missingness_data/filtered/" + project + ".filtered.imiss",
-            "results/" + project + "/missingness_data/filtered/" + project + ".filtered.lmiss",
-            "results/" + project + "/missingness_data/filtered/plots/" + project + ".filtered.imiss_histogram.pdf",
-            "results/" + project + "/missingness_data/filtered/plots/" + project + ".filtered.imiss_histogram.rds",
-            "results/" + project + "/missingness_data/filtered/plots/" + project + ".filtered.lmiss_histogram.pdf",
-            "results/" + project + "/missingness_data/filtered/plots/" + project + ".filtered.lmiss_histogram.rds"
+            "results/" + project + "/stats_vcf/filtered/" + project + ".filtered.imiss",
+            "results/" + project + "/stats_vcf/filtered/" + project + ".filtered.lmiss",
+            "results/" + project + "/stats_vcf/filtered/plots/" + project + ".filtered.imiss_histogram.pdf",
+            "results/" + project + "/stats_vcf/filtered/plots/" + project + ".filtered.imiss_histogram.rds",
+            "results/" + project + "/stats_vcf/filtered/plots/" + project + ".filtered.lmiss_histogram.pdf",
+            "results/" + project + "/stats_vcf/filtered/plots/" + project + ".filtered.lmiss_histogram.rds",
+            "results/" + project + "/stats_vcf/filtered/" + project + ".filtered.vcf_stats.txt"
         ])
         # Thinned dataset (after thinning)
         targets.extend([
-            f"results/{project}/missingness_data/thinned/{project}.biallelic_snps.imiss",
-            f"results/{project}/missingness_data/thinned/{project}.biallelic_snps.lmiss",
-            f"results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps.imiss_histogram.pdf",
-            f"results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps.imiss_histogram.rds",
-            f"results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps.lmiss_histogram.pdf",
-            f"results/{project}/missingness_data/thinned/plots/{project}.biallelic_snps.lmiss_histogram.rds"
+            f"results/{project}/stats_vcf/thinned/{project}.biallelic_snps.imiss",
+            f"results/{project}/stats_vcf/thinned/{project}.biallelic_snps.lmiss",
+            f"results/{project}/stats_vcf/thinned/plots/{project}.biallelic_snps.imiss_histogram.pdf",
+            f"results/{project}/stats_vcf/thinned/plots/{project}.biallelic_snps.imiss_histogram.rds",
+            f"results/{project}/stats_vcf/thinned/plots/{project}.biallelic_snps.lmiss_histogram.pdf",
+            f"results/{project}/stats_vcf/thinned/plots/{project}.biallelic_snps.lmiss_histogram.rds",
+            f"results/{project}/stats_vcf/thinned/{project}.biallelic_snps.vcf_stats.txt"
         ])
         # PCAone targets (standard)
         if analyses.get("pcaone", False):
@@ -207,8 +209,8 @@ def get_all_targets():
                 "results/" + project + "/pcaone/" + project + ".PCA.eigvecs",
                 "results/" + project + "/pcaone/" + project + ".PCA.eigvals"
             ])
-            # Always add missing data calculation target (now in missingness_data)
-            targets.append(f"results/{project}/missingness_data/thinned/{project}.biallelic_snps.imiss")
+            # Always add missing data calculation target (now in stats)
+            targets.append(f"results/{project}/stats_vcf/thinned/{project}.biallelic_snps.imiss")
             # Add plot targets for each PC combination and color grouping
             for pc1, pc2 in pca_combinations:
                 for color_by in PCA_groupings:
@@ -243,8 +245,8 @@ def get_all_targets():
                 "results/" + project + "/pcaone_EMU/" + project + ".PCA_EMU.eigvecs",
                 "results/" + project + "/pcaone_EMU/" + project + ".PCA_EMU.eigvals"
             ])
-            # Always add missing data calculation target (now in missingness_data)
-            targets.append(f"results/{project}/missingness_data/thinned/{project}.biallelic_snps.imiss")
+            # Always add missing data calculation target (now in stats)
+            targets.append(f"results/{project}/stats_vcf/thinned/{project}.biallelic_snps.imiss")
             # Add plot targets for each PC combination and color grouping
             for pc1, pc2 in pca_combinations:
                 for color_by in PCA_groupings:
@@ -284,7 +286,7 @@ def get_all_targets():
             ])
             # Always add missing data calculation targets for each threshold
             targets.extend([
-                expand("results/" + project + "/missingness_data/thinned/" + project + ".biallelic_snps_thinned_miss{miss}.imiss",
+                expand("results/" + project + "/stats_vcf/thinned/" + project + ".biallelic_snps_thinned_miss{miss}.imiss",
                        miss=miss_values)
             ])
             # Add plot targets for each miss value, PC combination, and color grouping
@@ -396,18 +398,18 @@ def get_all_targets():
             targets.extend([
                 "results/" + project + "/filtered_data/" + project + ".king_table.tsv",
                 "results/" + project + "/filtered_data/" + project + ".samples_to_keep.txt",
-                "results/" + project + "/population_data/" + project + ".relatedness_filtered_samples.txt",
+                "results/" + project + "/stats_samples/" + project + ".relatedness_filtered_samples.txt",
                 # Plain barplot (no grouping)
-                "results/" + project + "/population_data/plots/" + project + ".removed_individuals_by_none.pdf",
-                "results/" + project + "/population_data/plots/" + project + ".removed_individuals_by_none.rds"
+                "results/" + project + "/stats_samples/plots/" + project + ".removed_individuals_by_none.pdf",
+                "results/" + project + "/stats_samples/plots/" + project + ".removed_individuals_by_none.rds"
             ])
             # Add barplot targets for each group_by value
             group_by_list = params.get("relatedness_filtering", {}).get("group_by", ["Region"])
             for group_by in group_by_list:
                 if group_by != "none" and group_by != "":
                     targets.extend([
-                        f"results/{project}/population_data/plots/{project}.removed_individuals_by_{group_by}.pdf",
-                        f"results/{project}/population_data/plots/{project}.removed_individuals_by_{group_by}.rds"
+                        f"results/{project}/stats_samples/plots/{project}.removed_individuals_by_{group_by}.pdf",
+                        f"results/{project}/stats_samples/plots/{project}.removed_individuals_by_{group_by}.rds"
                     ])
 
         # IQtree targets
@@ -455,14 +457,14 @@ def get_all_targets():
             popdata = params.get("popdata")
             if popdata and popdata != "NULL" and popdata != "":
                 targets.extend([
-                    "results/" + project + "/population_data/" + project + ".population_map.pdf"
+                    "results/" + project + "/stats_samples/" + project + ".population_map.pdf"
                 ])
         
         # Population summary table (always generated if popdata is available)
         popdata = params.get("popdata")
         if popdata and popdata != "NULL" and popdata != "":
             targets.extend([
-                "results/" + project + "/population_data/" + project + ".population_summary.txt"
+                "results/" + project + "/stats_samples/" + project + ".population_summary.txt"
             ])
 
         # fineRADstructure targets

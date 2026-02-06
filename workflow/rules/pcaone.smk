@@ -431,7 +431,7 @@ rule plot_pca_miss_colored:
         eigvecs=rules.pcaone_miss.output.eigenvectors2,
         eigvals=rules.pcaone_miss.output.eigenvalues,
         indpopdata=rules.generate_popdata.output.indpopdata,
-        indmiss="results/{project}/missingness_data/thinned/{project}.biallelic_snps_thinned_miss{miss}.imiss"
+        indmiss="results/{project}/stats_vcf/thinned/{project}.biallelic_snps_thinned_miss{miss}.imiss"
     output:
         pdf="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-{color_by}.pdf",
         rds="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-{color_by}.rds"

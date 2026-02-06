@@ -5,7 +5,7 @@ rule plot_population_map:
         indpopdata = rules.generate_popdata.output.indpopdata,
         install = rules.install_mapmixture.output  # Reuse mapmixture installation
     output:
-        plot = "results/{project}/population_data/{project}.population_map.pdf"
+        plot = "results/{project}/stats_samples/{project}.population_map.pdf"
     params:
         # Map background parameters (shared)
         width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("width", 10),

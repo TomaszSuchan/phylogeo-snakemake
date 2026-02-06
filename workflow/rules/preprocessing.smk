@@ -375,7 +375,7 @@ rule categorize_removed_individuals:
         king_table=rules.filter_related_individuals.output.king_table,
         samples_to_keep=rules.filter_related_individuals.output.samples_to_keep
     output:
-        categorized="results/{project}/population_data/{project}.relatedness_filtered_samples.txt"
+        categorized="results/{project}/stats_samples/{project}.relatedness_filtered_samples.txt"
     log:
         "logs/{project}/categorize_removed_individuals.log"
     params:
@@ -414,8 +414,8 @@ rule plot_removed_individuals_barplot:
         # (so removed individuals can be matched to their Site/Region)
         popdata="results/{project}/indpopdata_all.txt"
     output:
-        pdf="results/{project}/population_data/plots/{project}.removed_individuals_by_{group_by}.pdf",
-        rds="results/{project}/population_data/plots/{project}.removed_individuals_by_{group_by}.rds"
+        pdf="results/{project}/stats_samples/plots/{project}.removed_individuals_by_{group_by}.pdf",
+        rds="results/{project}/stats_samples/plots/{project}.removed_individuals_by_{group_by}.rds"
     log:
         "logs/{project}/plot_removed_individuals_barplot_{group_by}.log"
     wildcard_constraints:
