@@ -38,11 +38,9 @@ message(sprintf("Loaded %d %s\n", nrow(missing_df), tolower(data_type)))
 if (is_imiss) {
   missing_col <- "F_MISS"
   x_label <- "Proportion of missing data per individual"
-  title <- "Individual Missingness Distribution"
 } else {
   missing_col <- "F_MISS"
   x_label <- "Proportion of missing data per locus"
-  title <- "Locus Missingness Distribution"
 }
 
 message(sprintf("Missingness column: %s\n", missing_col))
@@ -50,21 +48,62 @@ message(sprintf("Missingness range: %.4f to %.4f\n",
                 min(missing_df[[missing_col]], na.rm = TRUE),
                 max(missing_df[[missing_col]], na.rm = TRUE)))
 
-# Create histogram
+# Create histogram (no title)
 message("\n=== CREATING HISTOGRAM ===\n")
 p <- ggplot(missing_df, aes(x = .data[[missing_col]])) +
   geom_histogram(bins = 50, fill = "steelblue", color = "black", alpha = 0.7) +
   labs(
     x = x_label,
-    y = "Frequency",
-    title = title
+    y = "Frequency"
   ) +
   theme_bw() +
   theme(
-    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
     axis.title = element_text(size = 12),
     axis.text = element_text(size = 10)
   )
+
+# Create summary statistics and save to text file (if output defined)
+summary_path <- NULL
+if (!is.null(snakemake@output[["summary"]])) {
+  summary_path <- snakemake@output[["summary"]]
+}
+
+if (!is.null(summary_path)) {
+  message("\n=== CALCULATING SUMMARY STATISTICS ===\n")
+  x <- missing_df[[missing_col]]
+  x <- x[is.finite(x)]
+
+  n <- length(x)
+  mean_x <- mean(x)
+  median_x <- median(x)
+  sd_x <- sd(x)
+
+  # Bin into 10% intervals: [0,10), [10,20), ..., [90,100]
+  breaks <- seq(0, 1, by = 0.1)
+  # Include rightmost edge
+  bins <- cut(x, breaks = breaks, include.lowest = TRUE, right = TRUE)
+  bin_counts <- table(bins)
+  bin_perc <- 100 * bin_counts / n
+
+  dir.create(dirname(summary_path), recursive = TRUE, showWarnings = FALSE)
+  con <- file(summary_path, open = "wt")
+
+  writeLines(sprintf("Missingness summary (%s level)", tolower(data_type)), con)
+  writeLines(sprintf("N: %d", n), con)
+  writeLines(sprintf("Mean missingness: %.6f (%.2f%%)", mean_x, 100 * mean_x), con)
+  writeLines(sprintf("Median missingness: %.6f (%.2f%%)", median_x, 100 * median_x), con)
+  writeLines(sprintf("SD missingness: %.6f (%.2f%%)", sd_x, 100 * sd_x), con)
+  writeLines("", con)
+  writeLines("Bin (missingness proportion)\tCount\tPercentage_of_samples", con)
+
+  for (b in names(bin_counts)) {
+    count <- as.integer(bin_counts[[b]])
+    perc <- as.numeric(bin_perc[[b]])
+    writeLines(sprintf("%s\t%d\t%.2f", b, count, perc), con)
+  }
+
+  close(con)
+}
 
 # Save plots
 message("\n=== SAVING OUTPUT ===\n")

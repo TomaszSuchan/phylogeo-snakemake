@@ -105,7 +105,8 @@ rule plot_imiss_histogram_filtered:
         imiss = rules.calculate_missing_indv_filtered.output.imiss
     output:
         pdf = "results/{project}/stats_vcf/filtered/plots/{project}.filtered.imiss_histogram.pdf",
-        rds = "results/{project}/stats_vcf/filtered/plots/{project}.filtered.imiss_histogram.rds"
+        rds = "results/{project}/stats_vcf/filtered/plots/{project}.filtered.imiss_histogram.rds",
+        summary = "results/{project}/stats_vcf/filtered/plots/{project}.filtered.imiss_summary.txt"
     log:
         "logs/{project}/plot_imiss_histogram_filtered.log"
     conda:
@@ -123,7 +124,8 @@ rule plot_imiss_histogram_thinned:
         imiss = rules.calculate_missing_indv_thinned.output.imiss
     output:
         pdf = "results/{project}/stats_vcf/thinned/plots/{project}.biallelic_snps.imiss_histogram.pdf",
-        rds = "results/{project}/stats_vcf/thinned/plots/{project}.biallelic_snps.imiss_histogram.rds"
+        rds = "results/{project}/stats_vcf/thinned/plots/{project}.biallelic_snps.imiss_histogram.rds",
+        summary = "results/{project}/stats_vcf/thinned/plots/{project}.biallelic_snps.imiss_summary.txt"
     log:
         "logs/{project}/plot_imiss_histogram_thinned.log"
     conda:
@@ -141,7 +143,8 @@ rule plot_lmiss_histogram_filtered:
         lmiss = rules.calculate_missing_loci_filtered.output.lmiss
     output:
         pdf = "results/{project}/stats_vcf/filtered/plots/{project}.filtered.lmiss_histogram.pdf",
-        rds = "results/{project}/stats_vcf/filtered/plots/{project}.filtered.lmiss_histogram.rds"
+        rds = "results/{project}/stats_vcf/filtered/plots/{project}.filtered.lmiss_histogram.rds",
+        summary = "results/{project}/stats_vcf/filtered/plots/{project}.filtered.lmiss_summary.txt"
     log:
         "logs/{project}/plot_lmiss_histogram_filtered.log"
     conda:
@@ -159,7 +162,8 @@ rule plot_lmiss_histogram_thinned:
         lmiss = rules.calculate_missing_loci_thinned.output.lmiss
     output:
         pdf = "results/{project}/stats_vcf/thinned/plots/{project}.biallelic_snps.lmiss_histogram.pdf",
-        rds = "results/{project}/stats_vcf/thinned/plots/{project}.biallelic_snps.lmiss_histogram.rds"
+        rds = "results/{project}/stats_vcf/thinned/plots/{project}.biallelic_snps.lmiss_histogram.rds",
+        summary = "results/{project}/stats_vcf/thinned/plots/{project}.biallelic_snps.lmiss_summary.txt"
     log:
         "logs/{project}/plot_lmiss_histogram_thinned.log"
     conda:
