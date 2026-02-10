@@ -98,7 +98,7 @@ if (!is.null(summary_path)) {
     }
     bin_counts[i] <- sum(in_bin)
     bin_perc[i] <- if (n > 0) 100 * bin_counts[i] / n else 0
-    bin_labels[i] <- sprintf("%.1f-%.1f", lower, upper)
+    bin_labels[i] <- sprintf("(%.1f-%.1f]", lower, upper)
   }
   # Cumulative percentage across bins
   if (n > 0) {
