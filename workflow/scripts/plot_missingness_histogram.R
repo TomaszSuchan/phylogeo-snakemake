@@ -77,13 +77,28 @@ if (!is.null(summary_path)) {
   mean_x <- mean(x)
   median_x <- median(x)
   sd_x <- sd(x)
+  min_x <- min(x)
+  max_x <- max(x)
 
-  # Bin into 10% intervals: [0,10), [10,20), ..., [90,100]
+  # Bin into 10% intervals over [0, 1]: [0.0–0.1], (0.1–0.2], ..., (0.9–1.0]
   breaks <- seq(0, 1, by = 0.1)
-  # Include rightmost edge
-  bins <- cut(x, breaks = breaks, include.lowest = TRUE, right = TRUE)
-  bin_counts <- table(bins)
-  bin_perc <- 100 * bin_counts / n
+  bin_counts <- integer(length(breaks) - 1)
+  bin_perc <- numeric(length(breaks) - 1)
+  bin_labels <- character(length(breaks) - 1)
+
+  for (i in seq_len(length(breaks) - 1)) {
+    lower <- breaks[i]
+    upper <- breaks[i + 1]
+    # First bin includes lower bound, others are (lower, upper]
+    if (i == 1) {
+      in_bin <- x >= lower & x <= upper
+    } else {
+      in_bin <- x > lower & x <= upper
+    }
+    bin_counts[i] <- sum(in_bin)
+    bin_perc[i] <- if (n > 0) 100 * bin_counts[i] / n else 0
+    bin_labels[i] <- sprintf("%.1f-%.1f", lower, upper)
+  }
 
   dir.create(dirname(summary_path), recursive = TRUE, showWarnings = FALSE)
   con <- file(summary_path, open = "wt")
@@ -93,13 +108,12 @@ if (!is.null(summary_path)) {
   writeLines(sprintf("Mean missingness: %.6f (%.2f%%)", mean_x, 100 * mean_x), con)
   writeLines(sprintf("Median missingness: %.6f (%.2f%%)", median_x, 100 * median_x), con)
   writeLines(sprintf("SD missingness: %.6f (%.2f%%)", sd_x, 100 * sd_x), con)
+  writeLines(sprintf("Range: %.6f-%.6f (%.2f%%-%.2f%%)", min_x, max_x, 100 * min_x, 100 * max_x), con)
   writeLines("", con)
-  writeLines("Bin (missingness proportion)\tCount\tPercentage_of_samples", con)
+  writeLines("Bin\tCount\tPercentage_of_samples", con)
 
-  for (b in names(bin_counts)) {
-    count <- as.integer(bin_counts[[b]])
-    perc <- as.numeric(bin_perc[[b]])
-    writeLines(sprintf("%s\t%d\t%.2f", b, count, perc), con)
+  for (i in seq_along(bin_labels)) {
+    writeLines(sprintf("%s\t%d\t%.2f", bin_labels[i], bin_counts[i], bin_perc[i]), con)
   }
 
   close(con)
