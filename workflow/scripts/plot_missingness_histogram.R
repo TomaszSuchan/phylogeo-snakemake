@@ -84,6 +84,7 @@ if (!is.null(summary_path)) {
   breaks <- seq(0, 1, by = 0.1)
   bin_counts <- integer(length(breaks) - 1)
   bin_perc <- numeric(length(breaks) - 1)
+  bin_cum_perc <- numeric(length(breaks) - 1)
   bin_labels <- character(length(breaks) - 1)
 
   for (i in seq_len(length(breaks) - 1)) {
@@ -99,6 +100,12 @@ if (!is.null(summary_path)) {
     bin_perc[i] <- if (n > 0) 100 * bin_counts[i] / n else 0
     bin_labels[i] <- sprintf("%.1f-%.1f", lower, upper)
   }
+  # Cumulative percentage across bins
+  if (n > 0) {
+    bin_cum_perc <- cumsum(bin_perc)
+  } else {
+    bin_cum_perc[] <- 0
+  }
 
   dir.create(dirname(summary_path), recursive = TRUE, showWarnings = FALSE)
   con <- file(summary_path, open = "wt")
@@ -110,10 +117,15 @@ if (!is.null(summary_path)) {
   writeLines(sprintf("SD missingness: %.6f (%.2f%%)", sd_x, 100 * sd_x), con)
   writeLines(sprintf("Range: %.6f-%.6f (%.2f%%-%.2f%%)", min_x, max_x, 100 * min_x, 100 * max_x), con)
   writeLines("", con)
-  writeLines("Bin\tCount\tPercentage_of_samples", con)
+  writeLines("Bin\tCount\tPercentage_of_samples\tCumulative_percentage", con)
 
   for (i in seq_along(bin_labels)) {
-    writeLines(sprintf("%s\t%d\t%.2f", bin_labels[i], bin_counts[i], bin_perc[i]), con)
+    writeLines(sprintf("%s\t%d\t%.2f\t%.2f",
+                       bin_labels[i],
+                       bin_counts[i],
+                       bin_perc[i],
+                       bin_cum_perc[i]),
+               con)
   }
 
   close(con)
