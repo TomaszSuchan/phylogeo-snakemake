@@ -25,8 +25,8 @@ rule extract_genome_scan_samples:
 
 rule subset_vcf_genome_scan:
     input:
-        vcf = rules.merge_invariant_sites.output.merged_vcf,
-        vcf_index = rules.merge_invariant_sites.output.index,
+        vcf = rules.prepare_invariant_vcf_gz.output.vcf,
+        vcf_index = rules.prepare_invariant_vcf_gz_index.output.index,
         samples_file = rules.extract_genome_scan_samples.output.samples_file
     output:
         vcf = "results/{project}/genome_scan/{project}.genome_scan_subset.vcf.gz",

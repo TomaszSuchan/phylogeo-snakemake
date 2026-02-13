@@ -60,34 +60,10 @@ rule prepare_invariant_vcf_gz_index:
         bcftools index {input.vcf}  &> {log}
         """
 
-rule merge_invariant_sites:
-    input:
-        vcf_var = rules.subset_vcf_after_relatedness.output.vcf,
-        vcf_var_index = rules.index_vcf_after_relatedness.output.index,
-        vcf_inv = rules.prepare_invariant_vcf_gz.output.vcf,
-        vcf_inv_index = rules.prepare_invariant_vcf_gz_index.output.index
-    output:
-        merged_vcf = "results/{project}/filtered_data/{project}.merged_invariant_sites.vcf.gz",
-        index = "results/{project}/filtered_data/{project}.merged_invariant_sites.vcf.gz.csi"
-    log:
-        "logs/{project}/merge_invariant_sites.log"
-    benchmark:
-        "benchmarks/{project}/merge_invariant_sites.txt"
-    conda:
-        "../envs/bcftools.yaml"
-    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
-    resources:
-        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
-        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
-    shell:
-        """
-        bcftools concat {input.vcf_inv} {input.vcf_var} -Oz -a -o {output.merged_vcf}  >> {log} 2>&1
-        bcftools index {output.merged_vcf}
-        """
-
 rule pixy:
     input:
-        vcf = rules.merge_invariant_sites.output.merged_vcf,
+        vcf = rules.prepare_invariant_vcf_gz.output.vcf,
+        vcf_index = rules.prepare_invariant_vcf_gz_index.output.index,
         popmap = rules.generate_popmap.output
     output:
         pi = "results/{project}/pixy/{project}.pixy_pi.txt",
