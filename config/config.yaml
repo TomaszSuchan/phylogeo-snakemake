@@ -239,6 +239,15 @@ parameters: &global_params
     point_size: 3        # size of points on genetic diversity maps
     map_outline: true    # add point outlines (true/false, default: true)
 
+  ## Genome scan parameters
+  genome_scan:
+    population_column: "Group"  # column name in popdata/indpopdata to extract populations from
+    pop1: "Northern"  # name of first population (must match value in population_column)
+    pop2: "Southern"  # name of second population (must match value in population_column)
+    window_size_fst: 100  # window size in bp for FST (for dot plot visualization)
+    window_size_pi: 1000000  # window size in bp for π (1 Mb for curve visualization)
+    window_size_dxy: 1000000  # window size in bp for dXY (1 Mb for curve visualization)
+
   ## ROH parameters
   roh:
     group_by: ["Site"]  # list of columns from indpopdata to group plots by (default: ["Site"])
@@ -339,6 +348,10 @@ parameters: &global_params
       threads: 24
       mem_mb: 8000
       runtime: 600
+    genome_scan:
+      threads: 24
+      mem_mb: 8000
+      runtime: 720
     iqtree:
       threads: 12
       mem_mb: 8000
@@ -390,7 +403,7 @@ projects:
       relatedness: true
       iqtree: false
       iqtree_trimal: false
-      dapc: false
+      dapc: true
       iqtree_robust: false
       fineradstructure: false
       plot_map: false

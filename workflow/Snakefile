@@ -26,6 +26,7 @@ include: "rules/iqtree.smk"
 include: "rules/mapmixture.smk"
 include: "rules/population_map.smk"
 include: "rules/pixy.smk"
+include: "rules/genome_scan.smk"
 include: "rules/genetic_distances.smk"
 include: "rules/mapi.smk"
 include: "rules/fineradstructure.smk"
@@ -377,6 +378,28 @@ def get_all_targets():
                     "results/" + project + "/pixy/plots/" + project + ".pixy_pi_map.pdf",
                     "results/" + project + "/pixy/plots/" + project + ".pixy_pi_map.rds"
                 ])
+
+        # Genome scan targets
+        if analyses.get("genome_scan", False):
+            targets.extend([
+                "results/" + project + "/genome_scan/" + project + ".genome_scan_samples.txt",
+                "results/" + project + "/genome_scan/" + project + ".genome_scan_subset.vcf.gz",
+                "results/" + project + "/genome_scan/" + project + ".genome_scan_subset.vcf.gz.csi",
+                "results/" + project + "/genome_scan/" + project + ".genome_scan.imiss",
+                "results/" + project + "/genome_scan/" + project + ".genome_scan.lmiss",
+                "results/" + project + "/genome_scan/" + project + ".genome_scan.imiss_summary.txt",
+                "results/" + project + "/genome_scan/" + project + ".genome_scan.lmiss_summary.txt",
+                "results/" + project + "/genome_scan/plots/" + project + ".genome_scan.imiss_histogram.pdf",
+                "results/" + project + "/genome_scan/plots/" + project + ".genome_scan.imiss_histogram.rds",
+                "results/" + project + "/genome_scan/plots/" + project + ".genome_scan.lmiss_histogram.pdf",
+                "results/" + project + "/genome_scan/plots/" + project + ".genome_scan.lmiss_histogram.rds",
+                "results/" + project + "/genome_scan/" + project + ".genome_scan_popmap.txt",
+                "results/" + project + "/genome_scan/" + project + ".genome_scan_fst.txt",
+                "results/" + project + "/genome_scan/" + project + ".genome_scan_pi.txt",
+                "results/" + project + "/genome_scan/" + project + ".genome_scan_dxy.txt",
+                "results/" + project + "/genome_scan/plots/" + project + ".genome_scan_genome_plot.pdf",
+                "results/" + project + "/genome_scan/plots/" + project + ".genome_scan_genome_plot.rds"
+            ])
 
         # Relatedness targets
         if analyses.get("relatedness", False):
