@@ -587,7 +587,7 @@ rule vcf_to_plink:
     benchmark:
         "benchmarks/{project}/vcf_to_plink.txt"
     params:
-        output_prefix = lambda wildcards: f"results/{wildcards.project}/filtered_data/{wildcards.project}.biallelic_snps_{get_thinning_output_suffix(wildcards)}"
+        output_prefix = lambda wildcards: f"results/{wildcards.project}/filtered_data/{wildcards.project}.biallelic_snps_thinned"
     conda:
         "../envs/plink.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -601,10 +601,6 @@ rule vcf_to_plink:
               --out {params.output_prefix} \
               --allow-extra-chr 0 \
               --double-id &> {log}
-        # Move files to fixed output names (always thinned for compatibility)
-        mv {params.output_prefix}.bed {output.bed}
-        mv {params.output_prefix}.bim {output.bim}
-        mv {params.output_prefix}.fam {output.fam}
         """
 
 # Rule to convert filtered VCF to STRUCTURE format
