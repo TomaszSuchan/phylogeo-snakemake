@@ -29,7 +29,7 @@ parameters: &global_params
   # and then thinned to one SNP per RAD fragment using the parameters below.
   #
   vcf_filtering:
-    f_missing: 0 # maximum missing data threshold for variant filtering
+    f_missing: 1 # maximum missing data threshold for variant filtering
                  # variants missing in > f_missing proportion of samples are filtered out
                  # 1 keeps all variants, 0 removes variants with any missing data
     
