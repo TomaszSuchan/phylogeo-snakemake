@@ -29,9 +29,9 @@ parameters: &global_params
   # and then thinned to one SNP per RAD fragment using the parameters below.
   #
   vcf_filtering:
-    f_missing: 0.5 # maximum missing data threshold for variant filtering
-                   # variants missing in > f_missing proportion of samples are filtered out
-                   # 1 keeps all variants, 0 removes variants with any missing data
+    f_missing: 0 # maximum missing data threshold for variant filtering
+                 # variants missing in > f_missing proportion of samples are filtered out
+                 # 1 keeps all variants, 0 removes variants with any missing data
     
   # VCF thinning strategy: "thinning" (one SNP per RAD fragment), "ld_pruning" (LD-based pruning), or "none" (no pruning/thinning)
   thinning_strategy: "ld_pruning"  # options: "thinning", "ld_pruning", or "none"
@@ -399,7 +399,8 @@ projects:
       vcf2pcacluster: false
       pcaone_emu: false
       pcaone_miss: false
-      pixy: false
+      pixy: true
+      genome_scan: false
       relatedness: true
       iqtree: false
       iqtree_trimal: false
