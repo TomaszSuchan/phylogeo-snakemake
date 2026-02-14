@@ -184,6 +184,18 @@ def get_all_targets():
                 ])
 
         # Missingness targets (always generated)
+        # Original dataset (after user sample subset, before relatedness filtering)
+        targets.extend([
+            "results/" + project + "/stats_vcf/original/" + project + ".subset.imiss",
+            "results/" + project + "/stats_vcf/original/" + project + ".subset.lmiss",
+            "results/" + project + "/stats_vcf/original/" + project + ".subset.imiss_summary.txt",
+            "results/" + project + "/stats_vcf/original/" + project + ".subset.lmiss_summary.txt",
+            "results/" + project + "/stats_vcf/original/plots/" + project + ".subset.imiss_histogram.pdf",
+            "results/" + project + "/stats_vcf/original/plots/" + project + ".subset.imiss_histogram.rds",
+            "results/" + project + "/stats_vcf/original/plots/" + project + ".subset.lmiss_histogram.pdf",
+            "results/" + project + "/stats_vcf/original/plots/" + project + ".subset.lmiss_histogram.rds",
+            "results/" + project + "/stats_vcf/original/" + project + ".subset.vcf_stats.txt"
+        ])
         # Filtered dataset (before thinning)
         targets.extend([
             "results/" + project + "/stats_vcf/filtered/" + project + ".filtered.imiss",
