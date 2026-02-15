@@ -11,10 +11,10 @@ rule prepare_invariant_vcf:
         "benchmarks/{project}/prepare_invariant_vcf.txt"
     conda:
         "../envs/python.yaml"
-    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default-long"]["threads"]
     resources:
-        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
-        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default-long"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default-long"]["runtime"]
     shell:
         """
         python workflow/scripts/extract_invariant_vcf.py {input.loci} -o {output.invariant_vcf} --samples-file {input.samples_file} &> {log}
