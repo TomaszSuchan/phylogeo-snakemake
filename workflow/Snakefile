@@ -194,7 +194,7 @@ def get_all_targets():
             "results/" + project + "/stats_vcf/original/plots/" + project + ".subset.imiss_histogram.rds",
             "results/" + project + "/stats_vcf/original/plots/" + project + ".subset.lmiss_histogram.pdf",
             "results/" + project + "/stats_vcf/original/plots/" + project + ".subset.lmiss_histogram.rds",
-            "results/" + project + "/stats_vcf/original/" + project + ".subset.vcf_stats.txt"
+            "results/" + project + "/stats_vcf/original/" + project + ".subset.vcf_stats.txt",
             "results/" + project + "/stats_vcf/original/" + project + ".subset.chromosome_stats.txt"
         ])
         # Filtered dataset (before thinning)
@@ -207,7 +207,7 @@ def get_all_targets():
             "results/" + project + "/stats_vcf/filtered/plots/" + project + ".filtered.imiss_histogram.rds",
             "results/" + project + "/stats_vcf/filtered/plots/" + project + ".filtered.lmiss_histogram.pdf",
             "results/" + project + "/stats_vcf/filtered/plots/" + project + ".filtered.lmiss_histogram.rds",
-            "results/" + project + "/stats_vcf/filtered/" + project + ".filtered.vcf_stats.txt"
+            "results/" + project + "/stats_vcf/filtered/" + project + ".filtered.vcf_stats.txt",
             "results/" + project + "/stats_vcf/filtered/" + project + ".filtered.chromosome_stats.txt"
         ])
         # Thinned dataset (after thinning)
@@ -220,7 +220,7 @@ def get_all_targets():
             f"results/{project}/stats_vcf/thinned/plots/{project}.biallelic_snps.imiss_histogram.rds",
             f"results/{project}/stats_vcf/thinned/plots/{project}.biallelic_snps.lmiss_histogram.pdf",
             f"results/{project}/stats_vcf/thinned/plots/{project}.biallelic_snps.lmiss_histogram.rds",
-            f"results/{project}/stats_vcf/thinned/{project}.biallelic_snps.vcf_stats.txt"
+            f"results/{project}/stats_vcf/thinned/{project}.biallelic_snps.vcf_stats.txt",
             f"results/{project}/stats_vcf/thinned/{project}.biallelic_snps.chromosome_stats.txt"
         ])
         # PCAone targets (standard)
