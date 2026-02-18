@@ -12,7 +12,6 @@ def get_pca_combinations(pc_max):
 # Include rule files
 include: "rules/preprocessing.smk"
 include: "rules/ld_pruning.smk"
-
 include: "rules/popdata.smk"
 include: "rules/missingness.smk"
 include: "rules/faststructure.smk"
@@ -34,6 +33,7 @@ include: "rules/construct.smk"
 include: "rules/amova.smk"
 include: "rules/dapc.smk"
 include: "rules/roh.smk"
+include: "rules/vcfstats.smk"
 
 def get_all_targets():
     """
@@ -195,6 +195,7 @@ def get_all_targets():
             "results/" + project + "/stats_vcf/original/plots/" + project + ".subset.lmiss_histogram.pdf",
             "results/" + project + "/stats_vcf/original/plots/" + project + ".subset.lmiss_histogram.rds",
             "results/" + project + "/stats_vcf/original/" + project + ".subset.vcf_stats.txt"
+            "results/" + project + "/stats_vcf/original/" + project + ".subset.chromosome_stats.txt"
         ])
         # Filtered dataset (before thinning)
         targets.extend([
@@ -207,6 +208,7 @@ def get_all_targets():
             "results/" + project + "/stats_vcf/filtered/plots/" + project + ".filtered.lmiss_histogram.pdf",
             "results/" + project + "/stats_vcf/filtered/plots/" + project + ".filtered.lmiss_histogram.rds",
             "results/" + project + "/stats_vcf/filtered/" + project + ".filtered.vcf_stats.txt"
+            "results/" + project + "/stats_vcf/filtered/" + project + ".filtered.chromosome_stats.txt"
         ])
         # Thinned dataset (after thinning)
         targets.extend([
@@ -219,6 +221,7 @@ def get_all_targets():
             f"results/{project}/stats_vcf/thinned/plots/{project}.biallelic_snps.lmiss_histogram.pdf",
             f"results/{project}/stats_vcf/thinned/plots/{project}.biallelic_snps.lmiss_histogram.rds",
             f"results/{project}/stats_vcf/thinned/{project}.biallelic_snps.vcf_stats.txt"
+            f"results/{project}/stats_vcf/thinned/{project}.biallelic_snps.chromosome_stats.txt"
         ])
         # PCAone targets (standard)
         if analyses.get("pcaone", False):
