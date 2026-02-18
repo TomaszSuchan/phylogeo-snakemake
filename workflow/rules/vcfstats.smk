@@ -67,7 +67,7 @@ rule chromosome_stats_vcf_original:
         | cut -f1 \
         | sort \
         | uniq -c \
-        | awk '{print $2, $1}' > {output.stats} &> {log}
+        | awk '{{print $2, $1}}' > {output.stats} &> {log}
         """
 
 # VCF statistics from filtered VCF (before thinning)
@@ -88,7 +88,7 @@ rule chromosome_stats_vcf_filtered:
         | cut -f1 \
         | sort \
         | uniq -c \
-        | awk '{print $2, $1}' > {output.stats} &> {log}
+        | awk '{{print $2, $1}}' > {output.stats} &> {log}
         """
 
 # VCF statistics from thinned VCF (after thinning)
@@ -109,6 +109,6 @@ rule chromosome_stats_vcf_thinned:
         | cut -f1 \
         | sort \
         | uniq -c \
-        | awk '{print $2, $1}' > {output.stats} &> {log}
+        | awk '{{print $2, $1}}' > {output.stats} &> {log}
         """
 
