@@ -49,14 +49,7 @@ rule calculate_stats_vcf_thinned:
     script:
         "../scripts/calculate_vcf_stats.py"
 
-
-
-
-
-
-
-
- VCF statistics from original VCF (after user sample subset, before relatedness filtering)
+# VCF statistics from original VCF (after user sample subset, before relatedness filtering)
 rule chromosome_stats_vcf_original:
     input:
         vcf = rules.subset_vcf.output.vcf
