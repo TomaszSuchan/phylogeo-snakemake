@@ -92,9 +92,29 @@ rule calculate_genome_scan_missing_loci:
                  --out {params.out_prefix} &> {log}
         """
 
+rule extract_vcf_samples_genome_scan:
+    input:
+        vcf = rules.subset_vcf_genome_scan.output.vcf
+    output:
+        samples_file = "results/{project}/genome_scan/{project}.genome_scan_samples_vcf.txt"
+    log:
+        "logs/{project}/extract_vcf_samples_genome_scan.log"
+    benchmark:
+        "benchmarks/{project}/extract_vcf_samples_genome_scan.txt"
+    conda:
+        "../envs/bcftools.yaml"
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    shell:
+        """
+        bcftools query -l {input.vcf} > {output.samples_file} 2> {log} || exit 1
+        """
+
 rule create_genome_scan_popmap:
     input:
-        vcf = rules.subset_vcf_genome_scan.output.vcf,
+        samples_file = rules.extract_vcf_samples_genome_scan.output.samples_file,
         indpopdata = rules.generate_popdata.output.indpopdata
     output:
         popmap = "results/{project}/genome_scan/{project}.genome_scan_popmap.txt"

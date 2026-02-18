@@ -5,10 +5,9 @@ Create popmap file for genome scan with two populations.
 
 import pandas as pd
 import sys
-import subprocess
 
 # Snakemake automatically passes input/output/log via the 'snakemake' object
-vcf_file = snakemake.input["vcf"]
+samples_file = snakemake.input["samples_file"]
 indpopdata_file = snakemake.input["indpopdata"]
 output_file = snakemake.output["popmap"]
 pop_column = snakemake.params["pop_column"]
@@ -23,7 +22,7 @@ sys.stderr = sys.stdout
 print("=" * 80)
 print("Genome Scan Popmap Creation")
 print("=" * 80)
-print(f"VCF file: {vcf_file}")
+print(f"Samples file: {samples_file}")
 print(f"Indpopdata file: {indpopdata_file}")
 print(f"Population column: {pop_column}")
 print(f"Population 1: {pop1}")
@@ -37,19 +36,14 @@ indpopdata = pd.read_csv(indpopdata_file, sep="\t", header=0)
 print(f"  Loaded {len(indpopdata)} individuals")
 print()
 
-# Get samples from VCF
-print("Extracting samples from VCF...")
+# Read samples from file
+print("Reading samples from file...")
 try:
-    result = subprocess.run(
-        ["bcftools", "query", "-l", vcf_file],
-        capture_output=True,
-        text=True,
-        check=True
-    )
-    vcf_samples = [s.strip() for s in result.stdout.strip().split('\n') if s.strip()]
-except subprocess.CalledProcessError as e:
-    print(f"ERROR: Failed to extract samples from VCF")
-    print(f"Error: {e.stderr}")
+    with open(samples_file, 'r') as f:
+        vcf_samples = [s.strip() for s in f.readlines() if s.strip()]
+except Exception as e:
+    print(f"ERROR: Failed to read samples from file")
+    print(f"Error: {e}")
     sys.exit(1)
 
 print(f"  Found {len(vcf_samples)} samples in VCF")
