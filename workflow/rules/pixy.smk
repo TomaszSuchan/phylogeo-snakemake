@@ -4,7 +4,7 @@ rule prepare_invariant_vcf:
         # Use canonical keep list (already includes relatedness filtering when enabled)
         samples_file = rules.filter_related_individuals.output.samples_to_keep
     output:
-        invariant_vcf = "results/{project}/filtered_data/{project}.invariant_sites.vcf"
+        invariant_vcf = temporary("results/{project}/filtered_data/{project}.invariant_sites.vcf")
     log:
         "logs/{project}/prepare_invariant_vcf.log"
     benchmark:
@@ -24,7 +24,7 @@ rule prepare_invariant_vcf_gz:
     input:
         vcf = rules.prepare_invariant_vcf.output.invariant_vcf
     output:
-        vcf = temporary("results/{project}/filtered_data/{project}.invariant_sites.vcf.gz")
+        vcf = "results/{project}/filtered_data/{project}.invariant_sites.vcf.gz"
     log:
         "logs/{project}/prepare_invariant_vcf_gz.log"
     benchmark:
@@ -37,14 +37,14 @@ rule prepare_invariant_vcf_gz:
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
     shell:
         """
-        bgzip {input.vcf} &> {log}
+        bcftools sort -Oz -o {output.vcf} {input.vcf} &> {log}
         """
 
 rule prepare_invariant_vcf_gz_index:
     input:
         vcf = rules.prepare_invariant_vcf_gz.output.vcf
     output:
-        index = temporary("results/{project}/filtered_data/{project}.invariant_sites.vcf.gz.csi")
+        index = "results/{project}/filtered_data/{project}.invariant_sites.vcf.gz.csi"
     log:
         "logs/{project}/prepare_invariant_vcf_gz_index.log"
     benchmark:
