@@ -43,22 +43,22 @@ message(sprintf("  Loaded %d rows", nrow(dxy_df)))
 message(sprintf("  Columns: %s", paste(colnames(dxy_df), collapse = ", ")))
 
 # Process FST data
-# Pixy FST output has columns: pop1, pop2, chromosome, window_pos_1, window_pos_2, no_sites, avg_pi_pop1, avg_pi_pop2, avg_dxy, fst
+# Pixy FST output (new): pop1, pop2, chromosome, window_pos_1, window_pos_2, avg_wc_fst, no_snps
 message("\n=== PROCESSING FST DATA ===\n")
 fst_plot <- fst_df %>%
-  filter(!is.na(fst)) %>%
+  filter(!is.na(avg_wc_fst)) %>%
   mutate(
     midpoint = (window_pos_1 + window_pos_2) / 2,
     chromosome = as.character(chromosome)
   ) %>%
-  select(chromosome, midpoint, fst) %>%
+  select(chromosome, midpoint, fst = avg_wc_fst) %>%
   arrange(chromosome, midpoint)
 
 message(sprintf("FST data: %d windows", nrow(fst_plot)))
 message(sprintf("Chromosomes: %s", paste(unique(fst_plot$chromosome), collapse = ", ")))
 
 # Process pi data
-# Pixy pi output has columns: pop, chromosome, window_pos_1, window_pos_2, no_sites, avg_pi
+# Pixy pi output (new): pop, chromosome, window_pos_1, window_pos_2, avg_pi, no_sites, count_diffs, count_comparisons, count_missing
 message("\n=== PROCESSING PI DATA ===\n")
 pi_plot <- pi_df %>%
   filter(!is.na(avg_pi)) %>%
@@ -74,7 +74,7 @@ message(sprintf("Pi data: %d windows", nrow(pi_plot)))
 message(sprintf("Populations: %s", paste(unique(pi_plot$population), collapse = ", ")))
 
 # Process dXY data
-# Pixy dXY output has columns: pop1, pop2, chromosome, window_pos_1, window_pos_2, no_sites, avg_dxy
+# Pixy dXY output (new): pop1, pop2, chromosome, window_pos_1, window_pos_2, avg_dxy, no_sites, count_diffs, count_comparisons, count_missing
 message("\n=== PROCESSING DXY DATA ===\n")
 dxy_plot <- dxy_df %>%
   filter(!is.na(avg_dxy)) %>%
