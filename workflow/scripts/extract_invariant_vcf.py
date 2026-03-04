@@ -2,6 +2,14 @@
 """
 Extract invariant and variable sites from ipyrad .loci and generate VCF.
 
+Loci file formats (both supported):
+- Reference-mapped / genome alignment: locus block includes
+  |N:CHROM:START-END| (e.g. |0:OY992832.1:6295-7119|), often on the line
+  with //. START is 0-based (BED-like). VCF uses that CHROM and 1-based
+  POS = START + 1 + offset so positions match ipyrad VCF.
+- De novo assembly: locus block has only |N| (e.g. |0|, |1|). VCF uses
+  synthetic CHROM (RAD_0, RAD_1, ...) and 1-based position within the locus.
+
 Definitions:
 - Valid nucleotides: A, C, G, T
 - Ambiguous/IUPAC (e.g., R, Y, S...) and N are treated as missing by default.
@@ -24,9 +32,13 @@ VCF encoding:
 """
 
 import sys
+import re
 import argparse
 from datetime import datetime
 from collections import defaultdict
+
+# Pattern for locus reference line: |0:OY992832.1:6295-7119|
+LOCUS_REF_PATTERN = re.compile(r"\|\d+:([^:]+):(\d+)-(\d+)\|")
 
 VALID = set("ACGT")
 
@@ -45,33 +57,65 @@ IUPAC_TO_ALLELES = {
 }
 
 def parse_loci_file(filename):
-    """Parse ipyrad .loci file and return a list of dicts: [{sample -> sequence}, ...]"""
+    """
+    Parse ipyrad .loci file and return a list of dicts, each with:
+    - 'sequences': {sample_id -> sequence}
+    - 'chrom': chromosome/contig name from |N:CHROM:START-END| line, or None
+    - 'start': genomic start (0-based), or None
+    - 'end': genomic end, or None
+    """
     loci_data = []
-    current = {}
+    current_sequences = {}
+    current_meta = {"chrom": None, "start": None, "end": None}
     with open(filename, "r") as f:
         for raw in f:
             line = raw.strip()
             if not line:
                 continue
             if line.startswith("//") or "//" in line:
+                # Reference may be on same line as // (e.g. "// ... |0:OY992832.1:6296-7119|")
+                m = LOCUS_REF_PATTERN.search(line)
+                if m:
+                    current_meta["chrom"] = m.group(1)
+                    current_meta["start"] = int(m.group(2))
+                    current_meta["end"] = int(m.group(3))
                 # End of current locus
-                if current:
-                    loci_data.append(current)
-                    current = {}
+                if current_sequences:
+                    loci_data.append({
+                        "sequences": dict(current_sequences),
+                        "chrom": current_meta["chrom"],
+                        "start": current_meta["start"],
+                        "end": current_meta["end"],
+                    })
+                    current_sequences = {}
+                    current_meta = {"chrom": None, "start": None, "end": None}
                 continue
 
-            # Typical lines look like: "sample_id ACTGNN..." (skip indel markers lines like '|' if present)
+            # Locus reference line: |N:CHROM:START-END| (reference-mapped) or |N| (de novo)
             if line.startswith("|"):
+                m = LOCUS_REF_PATTERN.search(line)
+                if m:
+                    current_meta["chrom"] = m.group(1)
+                    current_meta["start"] = int(m.group(2))
+                    current_meta["end"] = int(m.group(3))
+                # If no match (e.g. |0| only), chrom/start/end stay None → VCF uses RAD_* and locus position
                 continue
+
+            # Sample line: "sample_id ACTGNN..."
             parts = line.split()
             if len(parts) >= 2:
                 sample_id, sequence = parts[0], parts[1].upper()
                 if any(c in "ACGTNRYSWKMBVDH" for c in sequence):
-                    current[sample_id] = sequence
+                    current_sequences[sample_id] = sequence
 
     # Capture last locus if file doesn't end with //
-    if current:
-        loci_data.append(current)
+    if current_sequences:
+        loci_data.append({
+            "sequences": dict(current_sequences),
+            "chrom": current_meta["chrom"],
+            "start": current_meta["start"],
+            "end": current_meta["end"],
+        })
     return loci_data
 
 def read_samples_file(filename):
@@ -204,7 +248,7 @@ def generate_vcf(loci_data, output_file, mode="all", use_iupac=False, ref_choice
     Write a VCF including invariant and/or polymorphic sites based on 'mode'.
     
     Args:
-        loci_data: List of dictionaries with sequences by locus
+        loci_data: List of dicts per locus, each with 'sequences', 'chrom', 'start', 'end'
         output_file: Output VCF file path
         mode: 'all', 'invariant', or 'polymorphic'
         use_iupac: Whether to decode IUPAC ambiguity codes
@@ -213,8 +257,8 @@ def generate_vcf(loci_data, output_file, mode="all", use_iupac=False, ref_choice
     """
     # Global sample list across all loci (stable order)
     all_samples = set()
-    for locus_seqs in loci_data:
-        all_samples.update(locus_seqs.keys())
+    for locus in loci_data:
+        all_samples.update(locus["sequences"].keys())
     
     # Apply filter if provided
     if samples_filter is not None:
@@ -225,11 +269,15 @@ def generate_vcf(loci_data, output_file, mode="all", use_iupac=False, ref_choice
     # Filter loci_data to only include samples in filter
     if samples_filter is not None:
         filtered_loci_data = []
-        for locus_seqs in loci_data:
-            filtered_locus = {sample: seq for sample, seq in locus_seqs.items() 
-                            if sample in samples_filter}
-            if filtered_locus:  # Only add locus if it has at least one filtered sample
-                filtered_loci_data.append(filtered_locus)
+        for locus in loci_data:
+            filtered_seqs = {s: seq for s, seq in locus["sequences"].items() if s in samples_filter}
+            if filtered_seqs:
+                filtered_loci_data.append({
+                    "sequences": filtered_seqs,
+                    "chrom": locus.get("chrom"),
+                    "start": locus.get("start"),
+                    "end": locus.get("end"),
+                })
         loci_data = filtered_loci_data
 
     with open(output_file, "w") as vcf:
@@ -249,8 +297,11 @@ def generate_vcf(loci_data, output_file, mode="all", use_iupac=False, ref_choice
         vcf.write("\n")
 
         # Emit records locus by locus
-        for locus_idx, sequences in enumerate(loci_data):
-            chrom = f"RAD_{locus_idx}"
+        for locus_idx, locus in enumerate(loci_data):
+            sequences = locus["sequences"]
+            # Reference-mapped: use locus chrom; de novo: use synthetic RAD_0, RAD_1, ...
+            chrom = locus.get("chrom") or f"RAD_{locus_idx}"
+            locus_start = locus.get("start")  # 0-based genomic start (reference-mapped) or None (de novo)
             # Determine maximum sequence length in this locus
             max_len = max((len(seq) for seq in sequences.values()), default=0)
             for pos in range(max_len):
@@ -259,14 +310,17 @@ def generate_vcf(loci_data, output_file, mode="all", use_iupac=False, ref_choice
                     continue  # no valid alleles at this position
 
                 is_inv = summary["is_invariant"]
-                if mode == "invariant" and not is_inv:
-                    continue
-                if mode == "polymorphic" and is_inv:
-                    continue
-
                 ref = summary["ref"]
                 alt = summary["alt"]
-                vcf_pos = pos + 1
+                if mode == "invariant" and not is_inv:
+                    continue
+                if mode == "polymorphic" and (is_inv or not alt):
+                    # Skip invariant and sites with only IUPAC ambiguity (no actual alternate allele)
+                    continue
+
+                # Reference-mapped: START is 0-based (BED-like), so 1-based VCF POS = start+1+pos
+                # de novo: 1-based position within locus
+                vcf_pos = (locus_start + pos + 1) if locus_start is not None else (pos + 1)
                 var_id = f"loc{locus_idx}_pos{pos}"
 
                 alt_field = ",".join(alt) if alt else "."
@@ -325,8 +379,8 @@ def main():
 
     # Collect all samples in loci
     all_samples_in_loci = set()
-    for locus_seqs in loci_data:
-        all_samples_in_loci.update(locus_seqs.keys())
+    for locus in loci_data:
+        all_samples_in_loci.update(locus["sequences"].keys())
 
     if not all_samples_in_loci:
         print(f"ERROR: No samples found in loci file: {args.input_file}", file=sys.stderr)
