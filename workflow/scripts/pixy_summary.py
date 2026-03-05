@@ -2,14 +2,19 @@
 import pandas as pd
 import numpy as np
 import sys
+import traceback
 
-# Snakemake automatically passes input/output/params via the 'snakemake' object
-bootstrap_replicates = snakemake.params.bootstrap_replicates
-
-# Redirect stdout and stderr to log file
+# Redirect stdout and stderr to log file first so any error is visible in the rule log
 log_file = snakemake.log[0]
-sys.stdout = open(log_file, 'w')
-sys.stderr = sys.stdout
+log_handle = open(log_file, 'w')
+sys.stdout = log_handle
+sys.stderr = log_handle
+
+try:
+    bootstrap_replicates = snakemake.params.bootstrap_replicates
+except Exception:
+    traceback.print_exc()
+    raise
 
 def weighted_mean(values, weights):
     return (values * weights).sum() / weights.sum()
@@ -104,15 +109,27 @@ def process_dxy(file, output, bootstrap_replicates=1000):
     print(f"Dxy results written to {output}")
 
 # Which stat to process is set by the rule (params.stat)
-stat = snakemake.params.stat
-infile = getattr(snakemake.input, stat)
-outfile = getattr(snakemake.output, stat)
+try:
+    stat = getattr(snakemake.params, "stat", None)
+    if stat is None:
+        # Fallback: infer from which input key is present
+        for key in ("pi", "fst", "dxy"):
+            if hasattr(snakemake.input, key):
+                stat = key
+                break
+    if stat is None:
+        raise ValueError("params.stat is required; add params: stat = 'pi'|'fst'|'dxy' to the rule")
+    infile = getattr(snakemake.input, stat)
+    outfile = getattr(snakemake.output, stat)
 
-if stat == "pi":
-    process_pi(infile, outfile, bootstrap_replicates)
-elif stat == "fst":
-    process_fst(infile, outfile, bootstrap_replicates)
-elif stat == "dxy":
-    process_dxy(infile, outfile, bootstrap_replicates)
-else:
-    raise ValueError(f"Unknown stat: {stat}")
+    if stat == "pi":
+        process_pi(infile, outfile, bootstrap_replicates)
+    elif stat == "fst":
+        process_fst(infile, outfile, bootstrap_replicates)
+    elif stat == "dxy":
+        process_dxy(infile, outfile, bootstrap_replicates)
+    else:
+        raise ValueError(f"Unknown stat: {stat}")
+except Exception:
+    traceback.print_exc()
+    raise
