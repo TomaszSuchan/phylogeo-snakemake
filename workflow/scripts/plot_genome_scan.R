@@ -5,6 +5,16 @@
 library(tidyverse)
 library(gridExtra)
 
+# Helper to extract legend from a ggplot
+g_legend <- function(a.gplot) {
+  g <- ggplot_gtable(ggplot_build(a.gplot))
+  guide_index <- which(sapply(g$grobs, function(x) x$name) == "guide-box")
+  if (length(guide_index) == 0) {
+    return(NULL)
+  }
+  g$grobs[[guide_index]]
+}
+
 # Prevent creation of Rplots.pdf
 pdf(NULL)
 
@@ -151,15 +161,23 @@ p1 <- ggplot(fst_plot, aes(x = cumulative_pos, y = fst)) +
   ) +
   theme_bw() +
   theme(
-    plot.title = element_text(size = 10, hjust = 0.5),
+    plot.title = element_blank(),
     axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
     axis.text.y = element_text(size = 8),
     axis.title = element_text(size = 9),
     panel.grid.minor = element_blank()
   )
 
-# Pi plot with both populations
-p2 <- ggplot(pi_plot, aes(x = cumulative_pos, y = avg_pi, color = population)) +
+# Pi plot with both populations; lines continuous only within chromosomes
+p2 <- ggplot(
+    pi_plot,
+    aes(
+      x = cumulative_pos,
+      y = avg_pi,
+      color = population,
+      group = interaction(chromosome, population)
+    )
+  ) +
   geom_line(linewidth = 0.5, alpha = 0.8) +
   geom_vline(xintercept = chr_boundaries$end[-nrow(chr_boundaries)], 
              linetype = "dashed", color = "gray60", linewidth = 0.3) +
@@ -179,16 +197,16 @@ p2 <- ggplot(pi_plot, aes(x = cumulative_pos, y = avg_pi, color = population)) +
   ) +
   theme_bw() +
   theme(
-    plot.title = element_text(size = 10, hjust = 0.5),
+    plot.title = element_blank(),
     axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
     axis.text.y = element_text(size = 8),
     axis.title = element_text(size = 9),
-    legend.position = "right",
+    legend.position = "bottom",
     panel.grid.minor = element_blank()
   )
 
-# dXY plot
-p3 <- ggplot(dxy_plot, aes(x = cumulative_pos, y = avg_dxy)) +
+# dXY plot; lines continuous only within chromosomes
+p3 <- ggplot(dxy_plot, aes(x = cumulative_pos, y = avg_dxy, group = chromosome)) +
   geom_line(linewidth = 0.5, alpha = 0.8, color = "black") +
   geom_vline(xintercept = chr_boundaries$end[-nrow(chr_boundaries)], 
              linetype = "dashed", color = "gray60", linewidth = 0.3) +
@@ -204,19 +222,34 @@ p3 <- ggplot(dxy_plot, aes(x = cumulative_pos, y = avg_dxy)) +
   ) +
   theme_bw() +
   theme(
-    plot.title = element_text(size = 10, hjust = 0.5),
+    plot.title = element_blank(),
     axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
     axis.text.y = element_text(size = 8),
     axis.title = element_text(size = 9),
     panel.grid.minor = element_blank()
   )
 
-# Combine plots using gridExtra
-# Create combined plot
+# Extract legend from pi plot and place it in a separate row
+legend_grob <- g_legend(
+  p2 +
+    theme(
+      legend.position = "bottom",
+      legend.title = element_text(size = 9),
+      legend.text = element_text(size = 8)
+    )
+)
+
+# Remove legend from the main pi panel so all three panels have the same plotting width
+p2_nolegend <- p2 + theme(legend.position = "none")
+
+# Combine plots using gridExtra with a shared legend row
 combined_plot <- grid.arrange(
-  p1, p2, p3,
+  p1,
+  p2_nolegend,
+  p3,
+  legend_grob,
   ncol = 1,
-  heights = c(1, 1, 1)
+  heights = c(1, 1, 1, 0.25)
 )
 
 # Save plot
