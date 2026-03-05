@@ -103,7 +103,16 @@ def process_dxy(file, output, bootstrap_replicates=1000):
     out.to_csv(output, sep="\t", index=False)
     print(f"Dxy results written to {output}")
 
-# Process all three statistics
-process_pi(snakemake.input.pi, snakemake.output.pi, bootstrap_replicates)
-process_fst(snakemake.input.fst, snakemake.output.fst, bootstrap_replicates)
-process_dxy(snakemake.input.dxy, snakemake.output.dxy, bootstrap_replicates)
+# Which stat to process is set by the rule (params.stat)
+stat = snakemake.params.stat
+infile = getattr(snakemake.input, stat)
+outfile = getattr(snakemake.output, stat)
+
+if stat == "pi":
+    process_pi(infile, outfile, bootstrap_replicates)
+elif stat == "fst":
+    process_fst(infile, outfile, bootstrap_replicates)
+elif stat == "dxy":
+    process_dxy(infile, outfile, bootstrap_replicates)
+else:
+    raise ValueError(f"Unknown stat: {stat}")
