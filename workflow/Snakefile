@@ -361,38 +361,60 @@ def get_all_targets():
 
         # Pixy targets
         if analyses.get("pixy", False):
-            targets.extend([
-                "results/" + project + "/pixy/" + project + ".pixy_pi-summary.txt",
-                "results/" + project + "/pixy/" + project + ".pixy_fst-summary.txt",
-                "results/" + project + "/pixy/" + project + ".pixy_dxy-summary.txt",
-                # Heatmaps
-                "results/" + project + "/pixy/plots/" + project + ".pixy_fst_heatmap.pdf",
-                "results/" + project + "/pixy/plots/" + project + ".pixy_fst_heatmap.rds",
-                "results/" + project + "/pixy/plots/" + project + ".pixy_dxy_heatmap.pdf",
-                "results/" + project + "/pixy/plots/" + project + ".pixy_dxy_heatmap.rds",
+            pixy_stats = (
+                params.get("pixy", {})
+                .get("stats", ["pi", "fst", "dxy"])
+            )
+
+            # Summary tables per statistic
+            if "pi" in pixy_stats:
+                targets.append(f"results/{project}/pixy/{project}.pixy_pi-summary.txt")
+            if "fst" in pixy_stats:
+                targets.append(f"results/{project}/pixy/{project}.pixy_fst-summary.txt")
+            if "dxy" in pixy_stats:
+                targets.append(f"results/{project}/pixy/{project}.pixy_dxy-summary.txt")
+
+            # Heatmaps only for enabled pairwise statistics
+            if "fst" in pixy_stats:
+                targets.extend([
+                    f"results/{project}/pixy/plots/{project}.pixy_fst_heatmap.pdf",
+                    f"results/{project}/pixy/plots/{project}.pixy_fst_heatmap.rds",
+                ])
+            if "dxy" in pixy_stats:
+                targets.extend([
+                    f"results/{project}/pixy/plots/{project}.pixy_dxy_heatmap.pdf",
+                    f"results/{project}/pixy/plots/{project}.pixy_dxy_heatmap.rds",
+                ])
+
+            # Pi-based barplots and maps only when pi is requested
+            if "pi" in pixy_stats:
                 # Plain barplot (no coloring)
-                "results/" + project + "/pixy/plots/" + project + ".pixy_pi_barplot-plain.pdf",
-                "results/" + project + "/pixy/plots/" + project + ".pixy_pi_barplot-plain.rds"
-            ])
-            pixy_groupings = params.get("pixy", {}).get("color_by",
-                params.get("pca_plot", {}).get("color_by", ["none"]))
-            for color_by in pixy_groupings:
-                if color_by == "none":
-                    continue
                 targets.extend([
-                    f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-grouped-{color_by}.pdf",
-                    f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-grouped-{color_by}.rds",
+                    f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-plain.pdf",
+                    f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-plain.rds",
                 ])
-                targets.extend([
-                    f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-sorted-{color_by}.pdf",
-                    f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-sorted-{color_by}.rds",
-                ])
-            popdata = params.get("popdata")
-            if popdata and popdata != "NULL" and popdata != "":
-                targets.extend([
-                    "results/" + project + "/pixy/plots/" + project + ".pixy_pi_map.pdf",
-                    "results/" + project + "/pixy/plots/" + project + ".pixy_pi_map.rds"
-                ])
+
+                pixy_groupings = params.get("pixy", {}).get(
+                    "color_by", params.get("pca_plot", {}).get("color_by", ["none"])
+                )
+                for color_by in pixy_groupings:
+                    if color_by == "none":
+                        continue
+                    targets.extend([
+                        f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-grouped-{color_by}.pdf",
+                        f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-grouped-{color_by}.rds",
+                    ])
+                    targets.extend([
+                        f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-sorted-{color_by}.pdf",
+                        f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-sorted-{color_by}.rds",
+                    ])
+
+                popdata = params.get("popdata")
+                if popdata and popdata != "NULL" and popdata != "":
+                    targets.extend([
+                        f"results/{project}/pixy/plots/{project}.pixy_pi_map.pdf",
+                        f"results/{project}/pixy/plots/{project}.pixy_pi_map.rds",
+                    ])
 
         # Genome scan targets
         if analyses.get("genome_scan", False):

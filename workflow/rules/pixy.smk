@@ -60,19 +60,17 @@ rule prepare_invariant_vcf_gz_index:
         bcftools index {input.vcf}  &> {log}
         """
 
-rule pixy:
+rule pixy_pi:
     input:
         vcf = rules.prepare_invariant_vcf_gz.output.vcf,
         vcf_index = rules.prepare_invariant_vcf_gz_index.output.index,
         popmap = rules.generate_popmap.output
     output:
-        pi = "results/{project}/pixy/{project}.pixy_pi.txt",
-        fst = "results/{project}/pixy/{project}.pixy_fst.txt",
-        dxy = "results/{project}/pixy/{project}.pixy_dxy.txt"
+        pi = "results/{project}/pixy/{project}.pixy_pi.txt"
     log:
-        "logs/{project}/pixy.log"
+        "logs/{project}/pixy_pi.log"
     benchmark:
-        "benchmarks/{project}/pixy.txt"
+        "benchmarks/{project}/pixy_pi.txt"
     params:
         window_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("window_size", 10000),
         output_folder = "results/{project}/pixy/",
@@ -86,24 +84,123 @@ rule pixy:
     shell:
         """
         mkdir -p {params.output_folder}
-        pixy --stats pi fst dxy --vcf {input.vcf} --populations {input.popmap} \
+        pixy --stats pi --vcf {input.vcf} --populations {input.popmap} \
              --n_cores {threads} --window_size {params.window_size} \
              --output_folder {params.output_folder} --output_prefix {params.output_prefix} &> {log}
         """
 
-rule pixy_summary:
+
+rule pixy_fst:
     input:
-        pi = rules.pixy.output.pi,
-        fst = rules.pixy.output.fst,
-        dxy = rules.pixy.output.dxy
+        vcf = rules.prepare_invariant_vcf_gz.output.vcf,
+        vcf_index = rules.prepare_invariant_vcf_gz_index.output.index,
+        popmap = rules.generate_popmap.output
+    output:
+        fst = "results/{project}/pixy/{project}.pixy_fst.txt"
+    log:
+        "logs/{project}/pixy_fst.log"
+    benchmark:
+        "benchmarks/{project}/pixy_fst.txt"
+    params:
+        window_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("window_size", 10000),
+        output_folder = "results/{project}/pixy/",
+        output_prefix = "{project}.pixy"
+    conda:
+        "../envs/pixy.yaml"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["pixy"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["pixy"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["pixy"]["runtime"]
+    shell:
+        """
+        mkdir -p {params.output_folder}
+        pixy --stats fst --vcf {input.vcf} --populations {input.popmap} \
+             --n_cores {threads} --window_size {params.window_size} \
+             --output_folder {params.output_folder} --output_prefix {params.output_prefix} &> {log}
+        """
+
+
+rule pixy_dxy:
+    input:
+        vcf = rules.prepare_invariant_vcf_gz.output.vcf,
+        vcf_index = rules.prepare_invariant_vcf_gz_index.output.index,
+        popmap = rules.generate_popmap.output
+    output:
+        dxy = "results/{project}/pixy/{project}.pixy_dxy.txt"
+    log:
+        "logs/{project}/pixy_dxy.log"
+    benchmark:
+        "benchmarks/{project}/pixy_dxy.txt"
+    params:
+        window_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("window_size", 10000),
+        output_folder = "results/{project}/pixy/",
+        output_prefix = "{project}.pixy"
+    conda:
+        "../envs/pixy.yaml"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["pixy"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["pixy"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["pixy"]["runtime"]
+    shell:
+        """
+        mkdir -p {params.output_folder}
+        pixy --stats dxy --vcf {input.vcf} --populations {input.popmap} \
+             --n_cores {threads} --window_size {params.window_size} \
+             --output_folder {params.output_folder} --output_prefix {params.output_prefix} &> {log}
+        """
+
+
+rule pixy_pi_summary:
+    input:
+        pi = rules.pixy_pi.output.pi
     output:
         pi = "results/{project}/pixy/{project}.pixy_pi-summary.txt",
-        fst = "results/{project}/pixy/{project}.pixy_fst-summary.txt",
+    log:
+        "logs/{project}/pixy_pi_summary.log"
+    benchmark:
+        "benchmarks/{project}/pixy_pi_summary.txt"
+    params:
+        bootstrap_replicates = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("bootstrap_replicates", 1000)
+    conda:
+        "../envs/python.yaml"
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    script:
+        "../scripts/pixy_summary.py"
+
+
+rule pixy_fst_summary:
+    input:
+        fst = rules.pixy_fst.output.fst
+    output:
+        fst = "results/{project}/pixy/{project}.pixy_fst-summary.txt"
+    log:
+        "logs/{project}/pixy_fst_summary.log"
+    benchmark:
+        "benchmarks/{project}/pixy_fst_summary.txt"
+    params:
+        bootstrap_replicates = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("bootstrap_replicates", 1000)
+    conda:
+        "../envs/python.yaml"
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    script:
+        "../scripts/pixy_summary.py"
+
+
+rule pixy_dxy_summary:
+    input:
+        dxy = rules.pixy_dxy.output.dxy
+    output:
         dxy = "results/{project}/pixy/{project}.pixy_dxy-summary.txt"
     log:
-        "logs/{project}/pixy_summary.log"
+        "logs/{project}/pixy_dxy_summary.log"
     benchmark:
-        "benchmarks/{project}/pixy_summary.txt"
+        "benchmarks/{project}/pixy_dxy_summary.txt"
     params:
         bootstrap_replicates = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("bootstrap_replicates", 1000)
     conda:
@@ -118,7 +215,7 @@ rule pixy_summary:
 # Rule to plot FST heatmap with dendrogram
 rule plot_pixy_fst_heatmap:
     input:
-        fst_summary = rules.pixy_summary.output.fst
+        fst_summary = rules.pixy_fst_summary.output.fst
     output:
         pdf = "results/{project}/pixy/plots/{project}.pixy_fst_heatmap.pdf",
         rds = "results/{project}/pixy/plots/{project}.pixy_fst_heatmap.rds"
@@ -138,7 +235,7 @@ rule plot_pixy_fst_heatmap:
 # Rule to plot DXY heatmap with dendrogram
 rule plot_pixy_dxy_heatmap:
     input:
-        dxy_summary = rules.pixy_summary.output.dxy
+        dxy_summary = rules.pixy_dxy_summary.output.dxy
     output:
         pdf = "results/{project}/pixy/plots/{project}.pixy_dxy_heatmap.pdf",
         rds = "results/{project}/pixy/plots/{project}.pixy_dxy_heatmap.rds"
@@ -159,7 +256,7 @@ rule plot_pixy_dxy_heatmap:
 # When color_by != "none", generates grouped version (grouped by stratification, then sorted by pi within group)
 rule plot_pixy_pi_barplot:
     input:
-        pi_summary = rules.pixy_summary.output.pi,
+        pi_summary = rules.pixy_pi_summary.output.pi,
         popdata = rules.generate_popdata.output.indpopdata
     output:
         pdf = "results/{project}/pixy/plots/{project}.pixy_pi_barplot-grouped-{color_by}.pdf",
@@ -183,7 +280,7 @@ rule plot_pixy_pi_barplot:
 # Only generated when color_by != "none"
 rule plot_pixy_pi_barplot_sorted:
     input:
-        pi_summary = rules.pixy_summary.output.pi,
+        pi_summary = rules.pixy_pi_summary.output.pi,
         popdata = rules.generate_popdata.output.indpopdata
     output:
         pdf = "results/{project}/pixy/plots/{project}.pixy_pi_barplot-sorted-{color_by}.pdf",
@@ -206,7 +303,7 @@ rule plot_pixy_pi_barplot_sorted:
 # Rule to plot Pi barplot without coloring (plain barplot)
 rule plot_pixy_pi_barplot_plain:
     input:
-        pi_summary = rules.pixy_summary.output.pi,
+        pi_summary = rules.pixy_pi_summary.output.pi,
         popdata = rules.generate_popdata.output.indpopdata
     output:
         pdf = "results/{project}/pixy/plots/{project}.pixy_pi_barplot-plain.pdf",
@@ -231,7 +328,7 @@ rule plot_pixy_pi_map:
     input:
         popmap = rules.generate_popmap.output.popmap,
         indpopdata = rules.generate_popdata.output.indpopdata,
-        summary = rules.pixy_summary.output.pi,
+        summary = rules.pixy_pi_summary.output.pi,
         install = rules.install_mapmixture.output  # Reuse mapmixture installation
     output:
         pdf = "results/{project}/pixy/plots/{project}.pixy_pi_map.pdf",
