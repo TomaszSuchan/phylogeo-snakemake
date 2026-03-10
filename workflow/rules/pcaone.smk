@@ -437,3 +437,151 @@ rule plot_pca_miss_colored:
         rds="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-{color_by}.rds"
     log:
         "logs/{project}/plot_pca_miss{miss}_colored_PC{pc1}_PC{pc2}_{color_by}.log"
+    wildcard_constraints:
+        color_by="(?!labeled|missing).*"
+    params:
+        pc1 = lambda wildcards: wildcards.pc1,
+        pc2 = lambda wildcards: wildcards.pc2,
+        color_by = lambda wildcards: wildcards.color_by,
+        pca_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pca_colors", None),
+        plot_type = "colored"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    group: "plot_pca"
+    conda:
+        "../envs/r-plot.yaml"
+    script:
+        "../scripts/plot_pca_single.R"
+
+# Rule to plot PCA for each miss threshold with labels only
+rule plot_pca_miss_labeled:
+    input:
+        eigvecs=rules.pcaone_miss.output.eigenvectors2,
+        eigvals=rules.pcaone_miss.output.eigenvalues,
+        indpopdata=rules.generate_popdata.output.indpopdata,
+        indmiss="results/{project}/stats_vcf/thinned/{project}.biallelic_snps_thinned_miss{miss}.imiss"
+    output:
+        pdf="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-labeled.pdf",
+        rds="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-labeled.rds"
+    log:
+        "logs/{project}/plot_pca_miss{miss}_labeled_PC{pc1}_PC{pc2}.log"
+    params:
+        pc1 = lambda wildcards: wildcards.pc1,
+        pc2 = lambda wildcards: wildcards.pc2,
+        plot_type = "labeled"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    group: "plot_pca"
+    conda:
+        "../envs/r-plot.yaml"
+    script:
+        "../scripts/plot_pca_single.R"
+
+# Rule to plot PCA for each miss threshold colored by missing data
+rule plot_pca_miss_missing:
+    input:
+        eigvecs=rules.pcaone_miss.output.eigenvectors2,
+        eigvals=rules.pcaone_miss.output.eigenvalues,
+        indpopdata=rules.generate_popdata.output.indpopdata,
+        indmiss="results/{project}/stats_vcf/thinned/{project}.biallelic_snps_thinned_miss{miss}.imiss"
+    output:
+        pdf="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-missing.pdf",
+        rds="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-missing.rds"
+    log:
+        "logs/{project}/plot_pca_miss{miss}_missing_PC{pc1}_PC{pc2}.log"
+    params:
+        pc1 = lambda wildcards: wildcards.pc1,
+        pc2 = lambda wildcards: wildcards.pc2,
+        plot_type = "missing"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    group: "plot_pca"
+    conda:
+        "../envs/r-plot.yaml"
+    script:
+        "../scripts/plot_pca_single.R"
+
+# Rule to plot PCA facet for each miss threshold (all PC combinations, colored)
+rule plot_pca_miss_facet_colored:
+    input:
+        eigvecs=rules.pcaone_miss.output.eigenvectors2,
+        eigvals=rules.pcaone_miss.output.eigenvalues,
+        indpopdata=rules.generate_popdata.output.indpopdata,
+        indmiss="results/{project}/stats_vcf/thinned/{project}.biallelic_snps_thinned_miss{miss}.imiss"
+    output:
+        pdf="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-{color_by}.pdf",
+        rds="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-{color_by}.rds"
+    log:
+        "logs/{project}/plot_pca_miss{miss}_facet_colored_{color_by}.log"
+    wildcard_constraints:
+        color_by="(?!labeled|missing).*"
+    params:
+        color_by = lambda wildcards: wildcards.color_by,
+        pca_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pca_colors", None),
+        pc_max = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pc_max", 2),
+        plot_type = "colored"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    group: "plot_pca"
+    conda:
+        "../envs/r-plot.yaml"
+    script:
+        "../scripts/plot_pca_facet.R"
+
+# Rule to plot PCA facet for each miss threshold (all PC combinations, labeled)
+rule plot_pca_miss_facet_labeled:
+    input:
+        eigvecs=rules.pcaone_miss.output.eigenvectors2,
+        eigvals=rules.pcaone_miss.output.eigenvalues,
+        indpopdata=rules.generate_popdata.output.indpopdata,
+        indmiss="results/{project}/stats_vcf/thinned/{project}.biallelic_snps_thinned_miss{miss}.imiss"
+    output:
+        pdf="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-labeled.pdf",
+        rds="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-labeled.rds"
+    log:
+        "logs/{project}/plot_pca_miss{miss}_facet_labeled.log"
+    params:
+        pc_max = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pc_max", 2),
+        plot_type = "labeled"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    group: "plot_pca"
+    conda:
+        "../envs/r-plot.yaml"
+    script:
+        "../scripts/plot_pca_facet.R"
+
+# Rule to plot PCA facet for each miss threshold (all PC combinations, missing)
+rule plot_pca_miss_facet_missing:
+    input:
+        eigvecs=rules.pcaone_miss.output.eigenvectors2,
+        eigvals=rules.pcaone_miss.output.eigenvalues,
+        indpopdata=rules.generate_popdata.output.indpopdata,
+        indmiss="results/{project}/stats_vcf/thinned/{project}.biallelic_snps_thinned_miss{miss}.imiss"
+    output:
+        pdf="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-missing.pdf",
+        rds="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-missing.rds"
+    log:
+        "logs/{project}/plot_pca_miss{miss}_facet_missing.log"
+    params:
+        pc_max = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pc_max", 2),
+        plot_type = "missing"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    group: "plot_pca"
+    conda:
+        "../envs/r-plot.yaml"
+    script:
+        "../scripts/plot_pca_facet.R"
