@@ -32,6 +32,8 @@ parameters: &global_params
     f_missing: 1 # maximum missing data threshold for variant filtering
                  # variants missing in > f_missing proportion of samples are filtered out
                  # 1 keeps all variants, 0 removes variants with any missing data
+    maf: 0      # minimum minor allele frequency threshold for variant filtering
+                # 0 keeps all variants; e.g. 0.05 removes variants with MAF<0.05
     
   # VCF thinning strategy: "thinning" (one SNP per RAD fragment), "ld_pruning" (LD-based pruning), or "none" (no pruning/thinning)
   thinning_strategy: "thinning"  # options: "thinning", "ld_pruning", or "none"

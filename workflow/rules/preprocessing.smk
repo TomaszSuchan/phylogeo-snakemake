@@ -365,10 +365,6 @@ rule filter_related_individuals:
         fi
         """
 
-#
-# NOTE: We no longer write an extra "{project}.samples_subset_relatedness_filtered.txt" file.
-# All downstream subsetting uses the canonical "{project}.samples_to_keep.txt".
-
 # Rule to categorize removed individuals by relationship type
 rule categorize_removed_individuals:
     input:
@@ -500,6 +496,8 @@ rule select_biallelic_snps:
         "logs/{project}/select_biallelic_snps.log"
     benchmark:
         "benchmarks/{project}/select_biallelic_snps.txt"
+    params:
+        maf_threshold=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("vcf_filtering", {}).get("maf", 0)
     conda:
         "../envs/bcftools.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -508,7 +506,7 @@ rule select_biallelic_snps:
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
     shell:
         """
-        bcftools view -i 'MAC > 1' -m2 -M2 \
+        bcftools view -i 'MAC > 1 && AF[0] >= {params.maf_threshold} && AF[0] <= 1-{params.maf_threshold}' -m2 -M2 \
         -v snps {input.vcf} \
         -Oz -o {output.biallelic_vcf} &> {log}
         """
