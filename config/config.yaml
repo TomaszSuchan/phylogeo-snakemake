@@ -412,6 +412,7 @@ projects:
       plot_map: false
       amova: false
       roh: false
+      gen_dist: false
     parameters:
       <<: *global_params
       popmap: "data/popmap.txt"
