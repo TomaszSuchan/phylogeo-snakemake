@@ -56,13 +56,13 @@ linetype_scheme <- c(
   "other" = "dotted"
 )
 
-# Legend title + labels reflect expected KING kinship values
+# Legend title + labels reflect KING kinship intervals
 edge_legend_title <- "Relationship type (KINSHIP)"
 edge_labels <- c(
-  "clone" = "clone / duplicate (KINSHIP > 0.354, ≈0.5)",
-  "1st-degree" = "1st-degree (0.177–0.354, ≈0.25)",
-  "2nd-degree" = "2nd-degree (0.0884–0.177, ≈0.125)",
-  "other" = "<2nd-degree (0.05–0.0884]"
+  "clone" = "clone / duplicate (0.354, 0.50]",
+  "1st-degree" = "1st-degree (0.177, 0.354]",
+  "2nd-degree" = "2nd-degree (0.0884, 0.177]",
+  "other" = "<2nd-degree (0.05, 0.0884]"
 )
 
 message("\n=== READING KING DATA ===\n")
@@ -238,13 +238,13 @@ if (!is.null(node_color_col) && node_color_col %in% colnames(layout)) {
         values = node_colors,
         name = node_color_col,
         na.value = "gray90",
-        guide = guide_legend(override.aes = list(size = 3))
+        guide = guide_legend(order = 2, override.aes = list(size = 3))
       )
     } else {
       scale_fill_discrete(
         name = node_color_col,
         na.value = "gray90",
-        guide = guide_legend(override.aes = list(size = 3))
+        guide = guide_legend(order = 2, override.aes = list(size = 3))
       )
     }) +
     # Color scale for edges
@@ -252,14 +252,16 @@ if (!is.null(node_color_col) && node_color_col %in% colnames(layout)) {
       values = color_scheme,
       name = edge_legend_title,
       labels = edge_labels,
-      drop = FALSE
+      drop = FALSE,
+      guide = guide_legend(order = 1)
     ) +
     # Linetype scale for edges
     scale_edge_linetype_manual(
       values = linetype_scheme,
       name = edge_legend_title,
       labels = edge_labels,
-      drop = FALSE
+      drop = FALSE,
+      guide = guide_legend(order = 1)
     ) +
     labs(
       title = "KING Network Graph",
@@ -305,14 +307,16 @@ if (!is.null(node_color_col) && node_color_col %in% colnames(layout)) {
       values = color_scheme,
       name = edge_legend_title,
       labels = edge_labels,
-      drop = FALSE
+      drop = FALSE,
+      guide = guide_legend(order = 1)
     ) +
     # Linetype scale for edges
     scale_edge_linetype_manual(
       values = linetype_scheme,
       name = edge_legend_title,
       labels = edge_labels,
-      drop = FALSE
+      drop = FALSE,
+      guide = guide_legend(order = 1)
     ) +
     labs(
       title = "KING Network Graph",

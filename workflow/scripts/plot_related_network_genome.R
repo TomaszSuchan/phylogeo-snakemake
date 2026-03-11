@@ -57,13 +57,13 @@ linetype_scheme <- c(
   "other" = "dotted"
 )
 
-# Legend title + labels reflect expected PI_HAT ranges
+# Legend title + labels reflect PI_HAT intervals
 edge_legend_title <- "Relationship type (PI_HAT)"
 edge_labels <- c(
-  "clone" = "clone / duplicate (PI_HAT > 0.90, ≈1.0 self)",
-  "1st-degree" = "1st-degree (0.45–0.90, ≈0.5)",
-  "2nd-degree" = "2nd-degree (0.25–0.45, ≈0.25)",
-  "other" = "<2nd-degree (0.05–0.25]"
+  "clone" = "clone / duplicate (0.90, 1.00]",
+  "1st-degree" = "1st-degree (0.45, 0.90]",
+  "2nd-degree" = "2nd-degree (0.25, 0.45]",
+  "other" = "<2nd-degree (0.05, 0.25]"
 )
 
 message("\n=== READING RELATEDNESS DATA ===\n")
@@ -238,13 +238,13 @@ if (!is.null(node_color_col) && node_color_col %in% colnames(layout)) {
         values = node_colors,
         name = node_color_col,
         na.value = "gray90",
-        guide = guide_legend(override.aes = list(size = 3))
+        guide = guide_legend(order = 2, override.aes = list(size = 3))
       )
     } else {
       scale_fill_discrete(
         name = node_color_col,
         na.value = "gray90",
-        guide = guide_legend(override.aes = list(size = 3))
+        guide = guide_legend(order = 2, override.aes = list(size = 3))
       )
     }) +
     # Color scale for edges
@@ -252,14 +252,16 @@ if (!is.null(node_color_col) && node_color_col %in% colnames(layout)) {
       values = color_scheme,
       name = edge_legend_title,
       labels = edge_labels,
-      drop = FALSE
+      drop = FALSE,
+      guide = guide_legend(order = 1)
     ) +
     # Linetype scale for edges
     scale_edge_linetype_manual(
       values = linetype_scheme,
       name = edge_legend_title,
       labels = edge_labels,
-      drop = FALSE
+      drop = FALSE,
+      guide = guide_legend(order = 1)
     ) +
     labs(
       title = "Genome Network Graph (PI_HAT)",
@@ -305,14 +307,16 @@ if (!is.null(node_color_col) && node_color_col %in% colnames(layout)) {
       values = color_scheme,
       name = edge_legend_title,
       labels = edge_labels,
-      drop = FALSE
+      drop = FALSE,
+      guide = guide_legend(order = 1)
     ) +
     # Linetype scale for edges
     scale_edge_linetype_manual(
       values = linetype_scheme,
       name = edge_legend_title,
       labels = edge_labels,
-      drop = FALSE
+      drop = FALSE,
+      guide = guide_legend(order = 1)
     ) +
     labs(
       title = "Genome Network Graph (PI_HAT)",
