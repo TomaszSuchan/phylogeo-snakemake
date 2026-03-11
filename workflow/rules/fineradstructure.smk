@@ -11,9 +11,9 @@ rule fineradstructure_prepare_input:
     output:
         finestr_input = "results/{project}/fineradstructure/{project}.input"
     log:
-        "logs/{project}/prepare_finestr_input.log"
+        "logs/{project}/fineradstructure_prepare_input.log"
     benchmark:
-        "benchmarks/{project}/prepare_finestr_input.txt"
+        "benchmarks/{project}/fineradstructure_prepare_input.txt"
     conda:
         "../envs/fineradstructure.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -22,7 +22,7 @@ rule fineradstructure_prepare_input:
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
     shell:
         """
-        RADpainter hapsFromVCF {input.vcf} > {output.finestr_input} &> {log}
+        RADpainter hapsFromVCF {input.vcf} > {output.finestr_input} 2> {log}
         """
 
 rule fineradstructure_paint:
@@ -31,9 +31,9 @@ rule fineradstructure_paint:
     output:
         finestr_chunks = "results/{project}/fineradstructure/{project}_chunks.out"
     log:
-        "logs/{project}/fineradstructure/run_fineradstructure.log"
+        "logs/{project}/fineradstructure_paint.log"
     benchmark:
-        "benchmarks/{project}/run_fineradstructure.txt"
+        "benchmarks/{project}/fineradstructure_paint.txt"
     conda:
         "../envs/fineradstructure.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -55,9 +55,9 @@ rule fineradstructure_cluster:
         burnin = lambda wildcards: config["projects"][wildcards.project]["parameters"]["fineradstructure"]["cluster"]["burnin"],
         thinning = lambda wildcards: config["projects"][wildcards.project]["parameters"]["fineradstructure"]["cluster"]["thinning"]
     log:
-        "logs/{project}/fineradstructure/cluster_fineradstructure.log"
+        "logs/{project}/fineradstructure_cluster.log"
     benchmark:
-        "benchmarks/{project}/cluster_fineradstructure.txt"
+        "benchmarks/{project}/fineradstructure_cluster.txt"
     conda:
         "../envs/fineradstructure.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -78,7 +78,7 @@ rule fineradstructure_tree:
     params:
         mcmc_iterations = lambda wildcards: config["projects"][wildcards.project]["parameters"]["fineradstructure"]["tree"]["mcmc_iterations"]
     log:
-        "logs/{project}/fineradstructure/fineradstructure_tree.log"
+        "logs/{project}/fineradstructure_tree.log"
     benchmark:
         "benchmarks/{project}/fineradstructure_tree.txt"
     conda:
@@ -103,7 +103,7 @@ rule fineradstructure_plot:
         pdf = "results/{project}/fineradstructure/plots/{project}.fineradstructure_tree.pdf",
         rds = "results/{project}/fineradstructure/plots/{project}.fineradstructure_tree.rds"
     log:
-        "logs/{project}/fineradstructure/fineradstructure_plot.log"
+        "logs/{project}/fineradstructure_plot.log"
     benchmark:
         "benchmarks/{project}/fineradstructure_plot.txt"
     conda:
