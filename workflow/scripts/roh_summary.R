@@ -6,12 +6,14 @@ library(data.table)
 library(ggplot2)
 library(dplyr)
 library(tidyr)
+library(multcomp)
 
 # Snakemake inputs/outputs
 roh_file <- snakemake@input[["roh"]]
 indpopdata_file <- snakemake@input[["indpopdata"]]
 output_summary <- snakemake@output[["summary"]]
 output_per_ind <- snakemake@output[["per_ind"]]
+output_stats <- snakemake@output[["stats"]]
 output_plots <- snakemake@output[["plots"]]
 log_file <- snakemake@log[[1]]
 group_by <- snakemake@params[["group_by"]]
@@ -384,7 +386,213 @@ cat("  Created", length(list.files(plot_dir, pattern = "\\.pdf$")), "plot files\
 cat("\n")
 
 # ==============================================================================
-# 5. Write output files
+# 5. Calculate statistics and perform multiple comparison tests
+# ==============================================================================
+
+cat("Calculating statistics and performing multiple comparison tests...\n")
+
+# Initialize output for statistics
+stats_output <- character()
+
+# Process each grouping column
+if (!is.null(indpopdata) && !is.null(group_by) && length(group_by) > 0 && !("none" %in% group_by)) {
+  group_by <- group_by[group_by != "none"]
+  
+  if (length(group_by) > 0) {
+    available_cols <- colnames(per_ind)
+    valid_group_by <- group_by[group_by %in% available_cols]
+    
+    if (length(valid_group_by) > 0) {
+      for (group_col in valid_group_by) {
+        # Check if column has valid data
+        if (sum(!is.na(per_ind[[group_col]])) > 0 && length(unique(per_ind[[group_col]][!is.na(per_ind[[group_col]])])) > 1) {
+          
+          # Filter data for this grouping column
+          data_subset <- per_ind[!is.na(per_ind[[group_col]]), ]
+          groups <- unique(data_subset[[group_col]])
+          
+          if (length(groups) > 1) {
+            stats_output <- c(stats_output, 
+              paste0("\n", "=", paste(rep("=", 79), collapse = ""), "\n"),
+              paste0("STATISTICS FOR GROUPING COLUMN: ", group_col, "\n"),
+              paste0("=", paste(rep("=", 79), collapse = ""), "\n")
+            )
+            
+            # ============================================================
+            # F_ROH Statistics
+            # ============================================================
+            stats_output <- c(stats_output, "\n### F_ROH Statistics ###\n\n")
+            
+            # Calculate statistics by group
+            froh_stats <- data_subset %>%
+              group_by(.data[[group_col]]) %>%
+              summarise(
+                n = n(),
+                mean = mean(F_ROH, na.rm = TRUE),
+                median = median(F_ROH, na.rm = TRUE),
+                sd = sd(F_ROH, na.rm = TRUE),
+                min = min(F_ROH, na.rm = TRUE),
+                max = max(F_ROH, na.rm = TRUE),
+                .groups = "drop"
+              )
+            
+            # Format and add to output
+            stats_output <- c(stats_output, 
+              paste(sprintf("%-20s", c("Group", "n", "mean", "median", "sd", "min", "max")), collapse = "\t"),
+              "\n"
+            )
+            for (i in 1:nrow(froh_stats)) {
+              stats_output <- c(stats_output,
+                paste(sprintf("%-20s", c(
+                  as.character(froh_stats[[group_col]][i]),
+                  froh_stats$n[i],
+                  sprintf("%.6f", froh_stats$mean[i]),
+                  sprintf("%.6f", froh_stats$median[i]),
+                  sprintf("%.6f", froh_stats$sd[i]),
+                  sprintf("%.6f", froh_stats$min[i]),
+                  sprintf("%.6f", froh_stats$max[i])
+                )), collapse = "\t"),
+                "\n"
+              )
+            }
+            
+            # Perform ANOVA
+            stats_output <- c(stats_output, "\n### F_ROH ANOVA ###\n\n")
+            tryCatch({
+              # Create formula dynamically
+              formula_str <- paste("F_ROH ~ as.factor(", group_col, ")", sep = "")
+              aov_froh <- aov(as.formula(formula_str), data = data_subset)
+              aov_summary <- summary(aov_froh)
+              stats_output <- c(stats_output, capture.output(print(aov_summary)), "\n")
+              
+              # Multiple comparison test (Tukey HSD) - always perform regardless of significance
+              p_value <- aov_summary[[1]][["Pr(>F)"]][1]
+              if (!is.na(p_value)) {
+                if (p_value < 0.05) {
+                  stats_output <- c(stats_output, paste0("\nANOVA p-value: ", sprintf("%.6f", p_value), " (significant at α=0.05)\n"))
+                } else {
+                  stats_output <- c(stats_output, paste0("\nANOVA p-value: ", sprintf("%.6f", p_value), " (not significant at α=0.05)\n"))
+                }
+                stats_output <- c(stats_output, "\n### F_ROH Multiple Comparisons (Tukey HSD) ###\n\n")
+                tukey_froh <- TukeyHSD(aov_froh)
+                stats_output <- c(stats_output, capture.output(print(tukey_froh)), "\n")
+                
+                # Also get pairwise comparisons using multcomp
+                tryCatch({
+                  data_subset$group_factor <- as.factor(data_subset[[group_col]])
+                  aov_froh2 <- aov(F_ROH ~ group_factor, data = data_subset)
+                  glht_froh <- glht(aov_froh2, linfct = mcp(group_factor = "Tukey"))
+                  summary_glht <- summary(glht_froh)
+                  stats_output <- c(stats_output, "\n### F_ROH Pairwise Comparisons (multcomp) ###\n\n")
+                  stats_output <- c(stats_output, capture.output(print(summary_glht)), "\n")
+                }, error = function(e) {
+                  stats_output <<- c(stats_output, "Note: multcomp pairwise comparisons skipped (using TukeyHSD results above)\n")
+                })
+              } else {
+                stats_output <- c(stats_output, "\nWarning: Could not calculate ANOVA p-value.\n\n")
+              }
+            }, error = function(e) {
+              stats_output <<- c(stats_output, "Error in ANOVA:", e$message, "\n\n")
+            })
+            
+            # ============================================================
+            # Number of ROH Segments Statistics
+            # ============================================================
+            stats_output <- c(stats_output, "\n### Number of ROH Segments Statistics ###\n\n")
+            
+            # Calculate statistics by group
+            nseg_stats <- data_subset %>%
+              group_by(.data[[group_col]]) %>%
+              summarise(
+                n = n(),
+                mean = mean(N_ROH_segments, na.rm = TRUE),
+                median = median(N_ROH_segments, na.rm = TRUE),
+                sd = sd(N_ROH_segments, na.rm = TRUE),
+                min = min(N_ROH_segments, na.rm = TRUE),
+                max = max(N_ROH_segments, na.rm = TRUE),
+                .groups = "drop"
+              )
+            
+            # Format and add to output
+            stats_output <- c(stats_output,
+              paste(sprintf("%-20s", c("Group", "n", "mean", "median", "sd", "min", "max")), collapse = "\t"),
+              "\n"
+            )
+            for (i in 1:nrow(nseg_stats)) {
+              stats_output <- c(stats_output,
+                paste(sprintf("%-20s", c(
+                  as.character(nseg_stats[[group_col]][i]),
+                  nseg_stats$n[i],
+                  sprintf("%.2f", nseg_stats$mean[i]),
+                  sprintf("%.2f", nseg_stats$median[i]),
+                  sprintf("%.2f", nseg_stats$sd[i]),
+                  sprintf("%.2f", nseg_stats$min[i]),
+                  sprintf("%.2f", nseg_stats$max[i])
+                )), collapse = "\t"),
+                "\n"
+              )
+            }
+            
+            # Perform ANOVA
+            stats_output <- c(stats_output, "\n### Number of ROH Segments ANOVA ###\n\n")
+            tryCatch({
+              # Create formula dynamically
+              formula_str <- paste("N_ROH_segments ~ as.factor(", group_col, ")", sep = "")
+              aov_nseg <- aov(as.formula(formula_str), data = data_subset)
+              aov_summary <- summary(aov_nseg)
+              stats_output <- c(stats_output, capture.output(print(aov_summary)), "\n")
+              
+              # Multiple comparison test (Tukey HSD) - always perform regardless of significance
+              p_value <- aov_summary[[1]][["Pr(>F)"]][1]
+              if (!is.na(p_value)) {
+                if (p_value < 0.05) {
+                  stats_output <- c(stats_output, paste0("\nANOVA p-value: ", sprintf("%.6f", p_value), " (significant at α=0.05)\n"))
+                } else {
+                  stats_output <- c(stats_output, paste0("\nANOVA p-value: ", sprintf("%.6f", p_value), " (not significant at α=0.05)\n"))
+                }
+                stats_output <- c(stats_output, "\n### Number of ROH Segments Multiple Comparisons (Tukey HSD) ###\n\n")
+                tukey_nseg <- TukeyHSD(aov_nseg)
+                stats_output <- c(stats_output, capture.output(print(tukey_nseg)), "\n")
+                
+                # Also get pairwise comparisons using multcomp
+                tryCatch({
+                  data_subset$group_factor <- as.factor(data_subset[[group_col]])
+                  aov_nseg2 <- aov(N_ROH_segments ~ group_factor, data = data_subset)
+                  glht_nseg <- glht(aov_nseg2, linfct = mcp(group_factor = "Tukey"))
+                  summary_glht <- summary(glht_nseg)
+                  stats_output <- c(stats_output, "\n### Number of ROH Segments Pairwise Comparisons (multcomp) ###\n\n")
+                  stats_output <- c(stats_output, capture.output(print(summary_glht)), "\n")
+                }, error = function(e) {
+                  stats_output <<- c(stats_output, "Note: multcomp pairwise comparisons skipped (using TukeyHSD results above)\n")
+                })
+              } else {
+                stats_output <- c(stats_output, "\nWarning: Could not calculate ANOVA p-value.\n\n")
+              }
+            }, error = function(e) {
+              stats_output <<- c(stats_output, "Error in ANOVA:", e$message, "\n\n")
+            })
+          }
+        }
+      }
+    }
+  }
+}
+
+# If no grouping data available, write a message
+if (length(stats_output) == 0) {
+  stats_output <- c("No grouping data available for statistical comparisons.\n",
+                    "Statistics require grouping columns specified in group_by parameter.\n")
+}
+
+# Write statistics to file
+cat("Writing statistics and comparison tests to:", output_stats, "\n")
+writeLines(stats_output, con = output_stats)
+
+cat("  Statistics written to:", output_stats, "\n")
+cat("\n")
+
+# ==============================================================================
+# 6. Write output files
 # ==============================================================================
 
 cat("Writing output files...\n")
