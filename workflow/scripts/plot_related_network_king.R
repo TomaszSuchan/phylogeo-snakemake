@@ -272,6 +272,7 @@ if (!is.null(node_color_col) && node_color_col %in% colnames(layout)) {
       plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
       plot.subtitle = element_text(hjust = 0.5, size = 10),
       legend.position = "bottom",
+      legend.box = "vertical",
       legend.title = element_text(size = 10),
       legend.text = element_text(size = 9)
     )
