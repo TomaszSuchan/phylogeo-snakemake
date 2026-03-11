@@ -60,10 +60,10 @@ rule fineradstructure_cluster:
         "benchmarks/{project}/fineradstructure_cluster.txt"
     conda:
         "../envs/fineradstructure.yaml"
-    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["fineradstructure_cluster"]["threads"]
     resources:
-        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
-        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["fineradstructure_cluster"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["fineradstructure_cluster"]["runtime"]
     shell:
         """
         finestructure -x {params.mcmc_iterations} -y {params.burnin} -z {params.thinning} -X -Y {input.finestr_chunks} {output.finestr_mcmc} &> {log}

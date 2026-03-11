@@ -382,6 +382,10 @@ parameters: &global_params
       threads: 4
       mem_mb: 8000
       runtime: 60
+    fineradstructure_cluster:
+      threads: 1
+      mem_mb: 8000
+      runtime: 120
 
 ##############################
 ### Projects configuration ###
