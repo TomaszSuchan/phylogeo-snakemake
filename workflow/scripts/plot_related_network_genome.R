@@ -42,7 +42,7 @@ first_degree_threshold <- 0.45  # 0.45 < PI_HAT <= 0.9 for 1st-degree (high rela
 second_degree_threshold <- 0.25  # 0.25 < PI_HAT <= 0.45 for 2nd-degree
 # 0.05 < PI_HAT <= 0.25 is "other" (but we'll filter out unrelated pairs with PI_HAT <= 0.05)
 
-# Color scheme
+# Color / linetype scheme and legend labels
 color_scheme <- c(
   "clone" = "black",
   "1st-degree" = "black",
@@ -50,12 +50,20 @@ color_scheme <- c(
   "other" = "gray85"
 )
 
-# Linetype scheme
 linetype_scheme <- c(
   "clone" = "solid",
   "1st-degree" = "dashed",
   "2nd-degree" = "dashed",
   "other" = "dotted"
+)
+
+# Legend title + labels reflect expected PI_HAT ranges
+edge_legend_title <- "Relationship type (PI_HAT)"
+edge_labels <- c(
+  "clone" = "clone / duplicate (PI_HAT > 0.90, ≈1.0 self)",
+  "1st-degree" = "1st-degree (0.45–0.90, ≈0.5)",
+  "2nd-degree" = "2nd-degree (0.25–0.45, ≈0.25)",
+  "other" = "<2nd-degree (0.05–0.25]"
 )
 
 message("\n=== READING RELATEDNESS DATA ===\n")
@@ -242,13 +250,15 @@ if (!is.null(node_color_col) && node_color_col %in% colnames(layout)) {
     # Color scale for edges
     scale_edge_color_manual(
       values = color_scheme,
-      name = "Relationship Type",
+      name = edge_legend_title,
+      labels = edge_labels,
       drop = FALSE
     ) +
     # Linetype scale for edges
     scale_edge_linetype_manual(
       values = linetype_scheme,
-      name = "Relationship Type",
+      name = edge_legend_title,
+      labels = edge_labels,
       drop = FALSE
     ) +
     labs(
@@ -293,13 +303,15 @@ if (!is.null(node_color_col) && node_color_col %in% colnames(layout)) {
     # Color scale for edges
     scale_edge_color_manual(
       values = color_scheme,
-      name = "Relationship Type",
+      name = edge_legend_title,
+      labels = edge_labels,
       drop = FALSE
     ) +
     # Linetype scale for edges
     scale_edge_linetype_manual(
       values = linetype_scheme,
-      name = "Relationship Type",
+      name = edge_legend_title,
+      labels = edge_labels,
       drop = FALSE
     ) +
     labs(

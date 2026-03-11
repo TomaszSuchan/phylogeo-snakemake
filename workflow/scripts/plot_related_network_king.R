@@ -41,7 +41,7 @@ first_degree_threshold <- 0.177  # 0.177 < KING <= 0.354 for 1st-degree
 second_degree_threshold <- 0.0884  # 0.0884 < KING <= 0.177 for 2nd-degree
 # KING <= 0.0884 is "other" (but we'll filter out unrelated pairs)
 
-# Color scheme
+# Color / linetype scheme and legend labels
 color_scheme <- c(
   "clone" = "black",
   "1st-degree" = "black",
@@ -49,12 +49,20 @@ color_scheme <- c(
   "other" = "gray85"
 )
 
-# Linetype scheme
 linetype_scheme <- c(
   "clone" = "solid",
   "1st-degree" = "dashed",
   "2nd-degree" = "dashed",
   "other" = "dotted"
+)
+
+# Legend title + labels reflect expected KING kinship values
+edge_legend_title <- "Relationship type (KINSHIP)"
+edge_labels <- c(
+  "clone" = "clone / duplicate (KINSHIP > 0.354, ≈0.5)",
+  "1st-degree" = "1st-degree (0.177–0.354, ≈0.25)",
+  "2nd-degree" = "2nd-degree (0.0884–0.177, ≈0.125)",
+  "other" = "<2nd-degree (0.05–0.0884]"
 )
 
 message("\n=== READING KING DATA ===\n")
@@ -242,13 +250,15 @@ if (!is.null(node_color_col) && node_color_col %in% colnames(layout)) {
     # Color scale for edges
     scale_edge_color_manual(
       values = color_scheme,
-      name = "Relationship Type",
+      name = edge_legend_title,
+      labels = edge_labels,
       drop = FALSE
     ) +
     # Linetype scale for edges
     scale_edge_linetype_manual(
       values = linetype_scheme,
-      name = "Relationship Type",
+      name = edge_legend_title,
+      labels = edge_labels,
       drop = FALSE
     ) +
     labs(
@@ -293,13 +303,15 @@ if (!is.null(node_color_col) && node_color_col %in% colnames(layout)) {
     # Color scale for edges
     scale_edge_color_manual(
       values = color_scheme,
-      name = "Relationship Type",
+      name = edge_legend_title,
+      labels = edge_labels,
       drop = FALSE
     ) +
     # Linetype scale for edges
     scale_edge_linetype_manual(
       values = linetype_scheme,
-      name = "Relationship Type",
+      name = edge_legend_title,
+      labels = edge_labels,
       drop = FALSE
     ) +
     labs(
