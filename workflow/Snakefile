@@ -17,6 +17,7 @@ include: "rules/missingness.smk"
 include: "rules/faststructure.smk"
 include: "rules/admixture.smk"
 include: "rules/pcaone.smk"
+include: "rules/emu-pca.smk"
 include: "rules/vcf2pcacluster.smk"
 include: "rules/relatedness.smk"
 include: "rules/structure.smk"
@@ -293,6 +294,37 @@ def get_all_targets():
                 f"results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-facet-labeled.rds",
                 f"results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-facet-missing.pdf",
                 f"results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-facet-missing.rds"
+            ])
+
+        # EMU-PCA targets (Rosemeis/emu)
+        if analyses.get("emupca", False):
+            targets.extend([
+                "results/" + project + "/emupca/" + project + ".emupca.eigvecs",
+                "results/" + project + "/emupca/" + project + ".emupca.eigvals"
+            ])
+            targets.append(f"results/{project}/stats_vcf/thinned/{project}.biallelic_snps.imiss")
+            for pc1, pc2 in pca_combinations:
+                for color_by in PCA_groupings:
+                    targets.extend([
+                        f"results/{project}/emupca/plots/{project}.emupca-PC{pc1}_PC{pc2}-{color_by}.pdf",
+                        f"results/{project}/emupca/plots/{project}.emupca-PC{pc1}_PC{pc2}-{color_by}.rds"
+                    ])
+                targets.extend([
+                    f"results/{project}/emupca/plots/{project}.emupca-PC{pc1}_PC{pc2}-labeled.pdf",
+                    f"results/{project}/emupca/plots/{project}.emupca-PC{pc1}_PC{pc2}-labeled.rds",
+                    f"results/{project}/emupca/plots/{project}.emupca-PC{pc1}_PC{pc2}-missing.pdf",
+                    f"results/{project}/emupca/plots/{project}.emupca-PC{pc1}_PC{pc2}-missing.rds"
+                ])
+            for color_by in PCA_groupings:
+                targets.extend([
+                    f"results/{project}/emupca/plots/{project}.emupca-facet-{color_by}.pdf",
+                    f"results/{project}/emupca/plots/{project}.emupca-facet-{color_by}.rds"
+                ])
+            targets.extend([
+                f"results/{project}/emupca/plots/{project}.emupca-facet-labeled.pdf",
+                f"results/{project}/emupca/plots/{project}.emupca-facet-labeled.rds",
+                f"results/{project}/emupca/plots/{project}.emupca-facet-missing.pdf",
+                f"results/{project}/emupca/plots/{project}.emupca-facet-missing.rds"
             ])
 
         # PCAone targets (with coverage thresholds)

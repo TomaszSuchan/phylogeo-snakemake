@@ -194,6 +194,12 @@ parameters: &global_params
     miss: [0.1, 0.2, 0.2, 0.3, 0.4, 0.5] # list of maximum missing data thresholds (F_MISSING<mincov)
     SVD_method: 3 # SVD method to use [0-3]
     PCnum: 10     # number of principal components to compute
+
+  # EMU https://github.com/Rosemeis/emu
+  EMU:
+    eig: 2       # number of eigenvectors to use in iterative estimation
+    eig_out: 10  # number of eigenvectors to output
+
   # PCA plot params:
   pca_plot:
     pc_max: 4  # maximum PC axis number - will generate all combinations up to this value
@@ -342,6 +348,10 @@ parameters: &global_params
       threads: 12
       mem_mb: 8000
       runtime: 10
+    emupca:
+      threads: 12
+      mem_mb: 8000
+      runtime: 30
     vcf2pcacluster:
       threads: 12
       mem_mb: 8000
@@ -405,12 +415,13 @@ projects:
       vcf2pcacluster: false
       pcaone_emu: false
       pcaone_miss: false
-      pixy: true
+      emupca: false
+      pixy: false
       genome_scan: false
       relatedness: true
       iqtree: false
       iqtree_trimal: false
-      dapc: true
+      dapc: false
       iqtree_robust: false
       fineradstructure: false
       plot_map: false
