@@ -66,7 +66,7 @@ rule fineradstructure_cluster:
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["fineradstructure_cluster"]["runtime"]
     shell:
         """
-        finestructure -x {params.mcmc_iterations} -y {params.burnin} -z {params.thinning} -X -Y {input.finestr_chunks} {output.finestr_mcmc} &> {log}
+        finestructure -Y -x {params.mcmc_iterations} -y {params.burnin} -z {params.thinning} -X -Y {input.finestr_chunks} {output.finestr_mcmc} &> {log}
         """
 
 rule fineradstructure_tree:
@@ -89,7 +89,7 @@ rule fineradstructure_tree:
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
     shell:
         """
-        finestructure -m T -x {params.mcmc_iterations} {input.finestr_chunks} {input.finestr_mcmc} {output.finestr_mcmcTree} &> {log}
+        finestructure -Y -m T -x {params.mcmc_iterations} {input.finestr_chunks} {input.finestr_mcmc} {output.finestr_mcmcTree} &> {log}
         """
 
 rule fineradstructure_plot:
