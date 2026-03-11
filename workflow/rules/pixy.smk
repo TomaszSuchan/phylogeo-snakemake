@@ -160,6 +160,7 @@ rule pixy_pi_summary:
     benchmark:
         "benchmarks/{project}/pixy_pi_summary.txt"
     params:
+        stat = "pi",
         bootstrap_replicates = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("bootstrap_replicates", 1000)
     conda:
         "../envs/python.yaml"
@@ -181,6 +182,7 @@ rule pixy_fst_summary:
     benchmark:
         "benchmarks/{project}/pixy_fst_summary.txt"
     params:
+        stat = "fst",
         bootstrap_replicates = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("bootstrap_replicates", 1000)
     conda:
         "../envs/python.yaml"
@@ -202,6 +204,7 @@ rule pixy_dxy_summary:
     benchmark:
         "benchmarks/{project}/pixy_dxy_summary.txt"
     params:
+        stat = "dxy",
         bootstrap_replicates = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("bootstrap_replicates", 1000)
     conda:
         "../envs/python.yaml"
