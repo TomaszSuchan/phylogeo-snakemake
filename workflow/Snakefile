@@ -607,8 +607,10 @@ def get_all_targets():
                 "results/" + project + "/fineradstructure/" + project + "_chunks.out",
                 "results/" + project + "/fineradstructure/" + project + "_chunks.mcmc.xml",
                 "results/" + project + "/fineradstructure/" + project + "_chunks.mcmcTree.xml",
-                "results/" + project + "/fineradstructure/plots/" + project + ".fineradstructure_tree.pdf",
-                "results/" + project + "/fineradstructure/plots/" + project + ".fineradstructure_tree.rds"
+                "results/" + project + "/fineradstructure/plots/" + project + ".SimpleCoancestry.pdf",
+                "results/" + project + "/fineradstructure/plots/" + project + ".PopAveragedCoancestry.pdf",
+                "results/" + project + "/fineradstructure/plots/" + project + ".PopAveragedCoancestryLabeled.pdf",
+                "results/" + project + "/fineradstructure/plots/" + project + ".fineradstructure_plots.rds"
             ])
 
         # conStruct targets
