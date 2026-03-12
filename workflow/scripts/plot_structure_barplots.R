@@ -9,7 +9,7 @@ pdf(NULL)
 
 # Snakemake inputs/outputs
 qmatrix_file <- snakemake@input[["qmatrix"]]
-popmap_file <- snakemake@input[["popmap"]]
+indpopdata_file <- snakemake@input[["indpopdata"]]
 output_barplot <- snakemake@output[["barplot"]]
 output_barplot_rds <- snakemake@output[["barplot_rds"]]
 output_prefix <- snakemake@params[["output_prefix"]]
@@ -45,73 +45,29 @@ n_individuals <- nrow(qmatrix)
 n_clusters <- ncol(qmatrix)
 cat(sprintf("Q matrix dimensions: %d individuals x %d clusters\n", n_individuals, n_clusters))
 
-# Read popmap file, first column is individual, second population
-cat(sprintf("Reading popmap file: %s\n", popmap_file))
-tryCatch({
-  popmap <- read.table(popmap_file, header = FALSE, sep = "\t", comment.char = "", fill = TRUE, blank.lines.skip = TRUE)
-  colnames(popmap) <- c("Ind", "Site")
-  cat(sprintf("Successfully read popmap: %d individuals with %d columns\n", nrow(popmap), ncol(popmap)))
-
-  # Check for lines with missing data
-  incomplete_lines <- which(is.na(popmap$Site) | popmap$Site == "")
-  if (length(incomplete_lines) > 0) {
-    cat(sprintf("WARNING: Found %d line(s) with missing Site column:\n", length(incomplete_lines)))
-    for (i in incomplete_lines[1:min(5, length(incomplete_lines))]) {
-      cat(sprintf("  Line %d: Individual='%s', Site='%s'\n", i, popmap$Ind[i], popmap$Site[i]))
-    }
-    if (length(incomplete_lines) > 5) {
-      cat(sprintf("  ... and %d more lines\n", length(incomplete_lines) - 5))
-    }
-    stop(sprintf("ERROR: Popmap file has %d incomplete line(s). Please check the file format.", length(incomplete_lines)))
-  }
-}, error = function(e) {
-  cat(sprintf("ERROR reading popmap file '%s'\n", popmap_file))
-  cat(sprintf("Error message: %s\n", e$message))
-  # Try to read line by line to find the problematic line
-  lines <- readLines(popmap_file)
-  cat(sprintf("Total lines in file: %d\n", length(lines)))
-  for (i in seq_along(lines)) {
-    fields <- strsplit(lines[i], "\t")[[1]]
-    if (length(fields) != 2) {
-      cat(sprintf("Line %d has %d field(s) instead of 2: '%s'\n", i, length(fields), lines[i]))
-      if (i <= 195 && i >= 185) {
-        cat(sprintf("  Context (lines %d-%d):\n", max(1, i-2), min(length(lines), i+2)))
-        for (j in max(1, i-2):min(length(lines), i+2)) {
-          cat(sprintf("    %d: '%s'\n", j, lines[j]))
-        }
-      }
-      stop(sprintf("Popmap file has malformed line %d", i))
-    }
-  }
-  stop(e$message)
-})
-
-# Remove duplicate individuals (keep first occurrence)
-popmap <- popmap %>%
+# Read indpopdata and use its row order to match the Q matrix order
+cat(sprintf("Reading indpopdata file: %s\n", indpopdata_file))
+indpopdata <- read.table(indpopdata_file, header = TRUE, sep = "\t", comment.char = "", fill = TRUE, blank.lines.skip = TRUE)
+indpopdata <- indpopdata %>%
   distinct(Ind, .keep_all = TRUE)
 
-cat(sprintf("After removing duplicates, popmap contains %d individuals\n", nrow(popmap)))
-
-# Filter popmap to match the number of individuals in Q matrix
-if (nrow(popmap) > nrow(qmatrix)) {
-  cat(sprintf("Filtering popmap from %d to %d individuals to match Q matrix\n", nrow(popmap), nrow(qmatrix)))
-  popmap <- popmap[1:nrow(qmatrix), ]
+if (nrow(indpopdata) > nrow(qmatrix)) {
+  cat(sprintf("Filtering indpopdata from %d to %d individuals to match Q matrix\n", nrow(indpopdata), nrow(qmatrix)))
+  indpopdata <- indpopdata[1:nrow(qmatrix), ]
 }
 
-# Check dimensions match
-if (nrow(qmatrix) != nrow(popmap)) {
-  stop(sprintf("BŁĄD: Q matrix has %d individuals but popmap has %d individuals",
-               nrow(qmatrix), nrow(popmap)))
+if (nrow(qmatrix) != nrow(indpopdata)) {
+  stop(sprintf("ERROR: Q matrix has %d individuals but indpopdata has %d individuals",
+               nrow(qmatrix), nrow(indpopdata)))
 }
 
 # Combine Q matrix with individual-level data, rename colnames
-qmatrix_with_data <- cbind(popmap$Site, popmap$Ind, qmatrix)
+qmatrix_with_data <- cbind(indpopdata$Site, indpopdata$Ind, qmatrix)
 colnames(qmatrix_with_data)[1] <- "Site"
 colnames(qmatrix_with_data)[2] <- "Ind"
 colnames(qmatrix_with_data) <- gsub("V", "Cluster", colnames(qmatrix_with_data))
 
-# For barplots, we don't need popdata (geographic coordinates)
-# We only use the site information from the popmap file
+# For barplots we only need Ind/Site information from indpopdata.
 
 # Get color palette from config - subset first n_clusters colors
 cat(sprintf("\n=== SETTING UP COLOR PALETTE ===\n"))

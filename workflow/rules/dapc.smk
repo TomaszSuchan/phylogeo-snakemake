@@ -81,7 +81,6 @@ rule dapc_bic_plot_from_log:
 rule mapmixture_dapc:
     input:
         dapc_results = rules.dapc_analysis.output.results_rds,
-        popmap = rules.generate_popmap.output.popmap,
         indpopdata = rules.generate_popdata.output.indpopdata,
         install = rules.install_mapmixture.output
     output:

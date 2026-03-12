@@ -246,7 +246,7 @@ rule plot_evaladmix_admixture:
     """
     input:
         corres = rules.evaladmix_admixture.output.corres,
-        popmap = rules.generate_popmap.output,
+        indpopdata = rules.generate_popdata.output.indpopdata,
         qfile = rules.admixture.output.Q,
         visfuns = rules.download_visfuns.output.visfuns
     output:
@@ -274,7 +274,7 @@ rule plot_evaladmix_faststructure:
     """
     input:
         corres = rules.evaladmix_faststructure.output.corres,
-        popmap = rules.generate_popmap.output,
+        indpopdata = rules.generate_popdata.output.indpopdata,
         qfile = rules.faststructure.output.meanQ,
         visfuns = rules.download_visfuns.output.visfuns
     output:
@@ -302,7 +302,7 @@ rule plot_evaladmix_structure:
     """
     input:
         corres = rules.evaladmix_structure.output.corres,
-        popmap = rules.generate_popmap.output,
+        indpopdata = rules.generate_popdata.output.indpopdata,
         qfile = rules.structure_summarize_pophelper.output.qmatrix,
         visfuns = rules.download_visfuns.output.visfuns
     output:

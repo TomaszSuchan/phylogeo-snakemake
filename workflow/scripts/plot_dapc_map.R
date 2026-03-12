@@ -14,7 +14,6 @@ sink(log_file, type = "message")
 
 # Snakemake inputs/outputs
 dapc_results_rds <- snakemake@input[["dapc_results"]]
-popmap_file <- snakemake@input[["popmap"]]
 indpopdata_file <- snakemake@input[["indpopdata"]]
 output_plot <- snakemake@output[["plot"]]
 output_plot_rds <- snakemake@output[["plot_rds"]]
@@ -96,66 +95,34 @@ structure_colors_full <- unlist(snakemake@params[["structure_colors"]])
 strcolors <- structure_colors_full[1:n_clusters]
 message(sprintf("Using first %d colors from palette: %s\n", n_clusters, paste(strcolors, collapse = ", ")))
 
-# Read popmap file, first column is individual, second population
-message("\n=== READING POPMAP ===\n")
-popmap <- read.table(popmap_file, header = FALSE, sep = "\t")
-colnames(popmap) <- c("Ind", "Site")
-message(sprintf("Popmap file: %s\n", popmap_file))
-message(sprintf("Popmap contains %d individuals with %d columns\n", nrow(popmap), ncol(popmap)))
-message(sprintf("Unique sites in popmap: %d\n", length(unique(popmap$Site))))
-message(sprintf("Sites: %s\n", paste(unique(popmap$Site), collapse = ", ")))
-
-# Match membership_probs individuals with popmap
-message("\n=== MATCHING INDIVIDUALS ===\n")
-# Get individual names from membership_probs
-dapc_inds <- membership_probs$Ind
-popmap_inds <- popmap$Ind
-
-# Check if all DAPC individuals are in popmap
-missing_in_popmap <- setdiff(dapc_inds, popmap_inds)
-if (length(missing_in_popmap) > 0) {
-  warning(sprintf("%d individuals in DAPC results are missing from popmap:\n",
-                  length(missing_in_popmap)))
-  cat(paste(head(missing_in_popmap, 20), collapse = ", "))
-  cat("\n")
-}
-
-# Check if all popmap individuals are in DAPC results
-missing_in_dapc <- setdiff(popmap_inds, dapc_inds)
-if (length(missing_in_dapc) > 0) {
-  warning(sprintf("%d individuals in popmap are missing from DAPC results:\n",
-                  length(missing_in_dapc)))
-  cat(paste(head(missing_in_dapc, 20), collapse = ", "))
-  cat("\n")
-}
-
-# Merge membership_probs with popmap
-qmatrix_with_data <- merge(membership_probs, popmap, by = "Ind", all.x = TRUE)
-
-# Check for individuals without Site assignment
-if (any(is.na(qmatrix_with_data$Site))) {
-  n_missing_site <- sum(is.na(qmatrix_with_data$Site))
-  warning(sprintf("%d individuals do not have Site assignments and will be excluded\n", n_missing_site))
-  qmatrix_with_data <- qmatrix_with_data[!is.na(qmatrix_with_data$Site), ]
-}
-
-# Reorder columns: Site, Ind, then cluster columns
-cluster_cols <- colnames(qmatrix)
-qmatrix_with_data <- qmatrix_with_data[, c("Site", "Ind", cluster_cols)]
-
-# Rename cluster columns to Cluster1, Cluster2, etc.
-colnames(qmatrix_with_data)[3:ncol(qmatrix_with_data)] <- paste0("Cluster", 1:n_clusters)
-
-message(sprintf("qmatrix_with_data dimensions: %d rows x %d columns\n",
-            nrow(qmatrix_with_data), ncol(qmatrix_with_data)))
-message(sprintf("Columns: %s\n", paste(colnames(qmatrix_with_data), collapse = ", ")))
-
 # Read indpopdata (generated file has columns: Ind, Site, Lat, Lon, ...)
 message("\n=== READING INDPOPDATA ===\n")
 indpopdata <- read.table(indpopdata_file, header = TRUE, sep = "\t")
 message(sprintf("indpopdata file: %s\n", indpopdata_file))
 message(sprintf("indpopdata dimensions: %d rows x %d columns\n", nrow(indpopdata), ncol(indpopdata)))
 message(sprintf("Columns: %s\n", paste(colnames(indpopdata), collapse = ", ")))
+
+# Match membership probabilities with Site assignments from indpopdata
+message("\n=== MATCHING INDIVIDUALS ===\n")
+site_assignments <- indpopdata %>%
+  select(Ind, Site) %>%
+  distinct(Ind, .keep_all = TRUE)
+
+qmatrix_with_data <- merge(membership_probs, site_assignments, by = "Ind", all.x = TRUE)
+
+if (any(is.na(qmatrix_with_data$Site))) {
+  n_missing_site <- sum(is.na(qmatrix_with_data$Site))
+  warning(sprintf("%d individuals do not have Site assignments and will be excluded\n", n_missing_site))
+  qmatrix_with_data <- qmatrix_with_data[!is.na(qmatrix_with_data$Site), ]
+}
+
+cluster_cols <- colnames(qmatrix)
+qmatrix_with_data <- qmatrix_with_data[, c("Site", "Ind", cluster_cols)]
+colnames(qmatrix_with_data)[3:ncol(qmatrix_with_data)] <- paste0("Cluster", 1:n_clusters)
+
+message(sprintf("qmatrix_with_data dimensions: %d rows x %d columns\n",
+            nrow(qmatrix_with_data), ncol(qmatrix_with_data)))
+message(sprintf("Columns: %s\n", paste(colnames(qmatrix_with_data), collapse = ", ")))
 
 # Filter indpopdata to keep only individuals that are in qmatrix_with_data
 message("\n=== FILTERING INDPOPDATA ===\n")

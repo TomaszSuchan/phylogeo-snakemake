@@ -15,7 +15,6 @@ rule install_mapmixture:
 rule mapmixture_structure:
     input:
         qmatrix = "results/{project}/structure/{project}.structure.K{k}.Qmatrix.txt",
-        popmap = rules.generate_popmap.output.popmap,
         indpopdata = rules.generate_popdata.output.indpopdata,
         install = rules.install_mapmixture.output
     output:
@@ -67,7 +66,6 @@ rule mapmixture_structure:
 rule mapmixture_faststructure:
     input:
         qmatrix = "results/{project}/faststructure/{project}.faststructure.{k}.meanQ",
-        popmap = rules.generate_popmap.output.popmap,
         indpopdata = rules.generate_popdata.output.indpopdata,
         install = rules.install_mapmixture.output
     output:
@@ -119,7 +117,6 @@ rule mapmixture_faststructure:
 rule mapmixture_admixture:
     input:
         qmatrix = "results/{project}/admixture/{project}.biallelic_snps_thinned.{k}.Q",
-        popmap = rules.generate_popmap.output.popmap,
         indpopdata = rules.generate_popdata.output.indpopdata,
         install = rules.install_mapmixture.output
     output:
@@ -171,7 +168,7 @@ rule mapmixture_admixture:
 rule barplot_structure:
     input:
         qmatrix = "results/{project}/structure/{project}.structure.K{k}.Qmatrix.txt",
-        popmap = rules.generate_popmap.output.popmap,
+        indpopdata = rules.generate_popdata.output.indpopdata,
         install = rules.install_mapmixture.output
     output:
         barplot = "results/{project}/structure/plots/{project}.structure.K{k}.barplot.pdf",
@@ -202,7 +199,7 @@ rule barplot_structure:
 rule barplot_faststructure:
     input:
         qmatrix = "results/{project}/faststructure/{project}.faststructure.{k}.meanQ",
-        popmap = rules.generate_popmap.output.popmap,
+        indpopdata = rules.generate_popdata.output.indpopdata,
         install = rules.install_mapmixture.output
     output:
         barplot = "results/{project}/faststructure/plots/{project}.faststructure.K{k}.barplot.pdf",
@@ -233,7 +230,7 @@ rule barplot_faststructure:
 rule barplot_admixture:
     input:
         qmatrix = "results/{project}/admixture/{project}.biallelic_snps_thinned.{k}.Q",
-        popmap = rules.generate_popmap.output.popmap,
+        indpopdata = rules.generate_popdata.output.indpopdata,
         install = rules.install_mapmixture.output
     output:
         barplot = "results/{project}/admixture/plots/{project}.admixture.K{k}.barplot.pdf",
