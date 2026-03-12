@@ -148,11 +148,85 @@ setNodeLabels <- function(din, mylabs) {
   dendrapply(din, edgeLab, mylabs)
 }
 
+.memberDend <- function(x) {
+  attr(x, "x.member") %||% attr(x, "members") %||% 1
+}
+
+.midDend <- function(x) {
+  attr(x, "midpoint") %||% 0
+}
+
+midcache.dendrogram <- function(x, type = "hclust", quiet = FALSE) {
+  type <- match.arg(type)
+  stopifnot(inherits(x, "dendrogram"))
+  verbose <- getOption("verbose", 0) >= 2
+
+  setmid <- function(d, type) {
+    depth <- 0L
+    kk <- integer()
+    jj <- integer()
+    dd <- list()
+
+    repeat {
+      if (!is.leaf(d)) {
+        k <- length(d)
+        if (k < 1) {
+          stop("dendrogram node with non-positive #{branches}")
+        }
+        depth <- depth + 1L
+        if (verbose) {
+          cat(sprintf(" depth(+)=%4d, k=%d\n", depth, k))
+        }
+        kk[depth] <- k
+        if (storage.mode(jj) != storage.mode(kk)) {
+          storage.mode(jj) <- storage.mode(kk)
+        }
+        dd[[depth]] <- d
+        d <- d[[jj[depth] <- 1L]]
+        next
+      }
+
+      while (depth) {
+        k <- kk[depth]
+        j <- jj[depth]
+        r <- dd[[depth]]
+        r[[j]] <- unclass(d)
+        if (j < k) {
+          break
+        }
+        depth <- depth - 1L
+        if (verbose) {
+          cat(sprintf(" depth(-)=%4d, k=%d\n", depth + 1L, k))
+        }
+        midS <- sum(vapply(r, .midDend, 0))
+        if (!quiet && type == "hclust" && k != 2) {
+          warning("midcache() of non-binary dendrograms only partly implemented")
+        }
+        attr(r, "midpoint") <- (.memberDend(r[[1L]]) + midS) / 2
+        d <- r
+      }
+
+      if (!depth) {
+        break
+      }
+
+      dd[[depth]] <- r
+      d <- r[[jj[depth] <- j + 1L]]
+    }
+
+    d
+  }
+
+  suppressWarnings(setmid(x, type = type))
+}
+
 my.as.hclust.phylo <- function(x, tol = 0.01, ...) {
   if (!ape::is.ultrametric(x, tol)) {
     stop("the tree is not ultrametric")
   }
-  if (!ape::is.binary.tree(x)) {
+  is_binary_fn <- get0("is.binary", envir = asNamespace("ape"), inherits = FALSE)
+  is_binary <- if (!is.null(is_binary_fn)) is_binary_fn(x) else ape::is.binary.tree(x)
+  if (!is_binary) {
     stop("the tree is not binary")
   }
   n <- length(x$tip.label)
@@ -230,7 +304,7 @@ makemydend <- function(tdend, lablist, summary = "NameLessSummary") {
     }
   }
   tdend <- dendrapply(tdend, fixMidpointMembers)
-  suppressWarnings(midcache.dendrogram(tdend))
+  midcache.dendrogram(tdend)
 }
 
 PopCenters <- function(popsizes) {
@@ -275,7 +349,7 @@ fs.plot.dendrogram <- function(
   if (edge.root && is.logical(edge.root)) {
     edge.root <- 0.0625 * if (is.leaf(x)) 1 else hgt
   }
-  mem.x <- stats:::.memberDend(x)
+  mem.x <- .memberDend(x)
   yTop <- hgt + edge.root
   if (center) {
     x1 <- 0.5
@@ -355,7 +429,7 @@ fs.plotNode <- function(x1, x2, subtree, type, center, leaflab, dLeaf,
       if (is.null(yBot)) {
         yBot <- 0
       }
-      xBot <- if (center) mean(bx$limit[k:(k + 1)]) else bx$limit[k] + stats:::.midDend(child)
+      xBot <- if (center) mean(bx$limit[k:(k + 1)]) else bx$limit[k] + .midDend(child)
       hasE <- !is.null(ePar <- attr(child, "edgePar"))
       if (!hasE) {
         ePar <- edgePar
@@ -390,11 +464,11 @@ fs.plotNodeLimit <- function(x1, x2, subtree, center) {
   inner <- !is.leaf(subtree) && x1 != x2
   if (inner) {
     K <- length(subtree)
-    mTop <- stats:::.memberDend(subtree)
+    mTop <- .memberDend(subtree)
     limit <- integer(K)
     xx1 <- x1
     for (k in 1L:K) {
-      m <- stats:::.memberDend(subtree[[k]])
+      m <- .memberDend(subtree[[k]])
       xx1 <- xx1 + (if (center) (x2 - x1) * m / mTop else m)
       limit[k] <- xx1
     }
