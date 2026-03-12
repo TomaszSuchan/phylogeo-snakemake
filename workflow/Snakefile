@@ -538,10 +538,37 @@ def get_all_targets():
 
         # PCoA targets (based on Euclidean genetic distance)
         if analyses.get("pcoa", False):
+            # distance matrix needed as input
+            targets.append("results/" + project + "/gen_dist/" + project + ".euclidean_distance.tsv")
+            # ordination coordinates
             targets.extend([
-                "results/" + project + "/gen_dist/" + project + ".euclidean_distance.tsv",
-                "results/" + project + "/gen_dist/" + project + ".euclidean_pcoa.eigvecs",
-                "results/" + project + "/gen_dist/" + project + ".euclidean_pcoa.eigvals"
+                "results/" + project + "/PCoA/" + project + ".euclidean_pcoa.eigvecs",
+                "results/" + project + "/PCoA/" + project + ".euclidean_pcoa.eigvals"
+            ])
+            # PCoA plots, mirroring PCA plot structure
+            for pc1, pc2 in pca_combinations:
+                for color_by in PCA_groupings:
+                    targets.extend([
+                        f"results/{project}/PCoA/plots/{project}.PCoA-PC{pc1}_PC{pc2}-{color_by}.pdf",
+                        f"results/{project}/PCoA/plots/{project}.PCoA-PC{pc1}_PC{pc2}-{color_by}.rds"
+                    ])
+                targets.extend([
+                    f"results/{project}/PCoA/plots/{project}.PCoA-PC{pc1}_PC{pc2}-labeled.pdf",
+                    f"results/{project}/PCoA/plots/{project}.PCoA-PC{pc1}_PC{pc2}-labeled.rds",
+                    f"results/{project}/PCoA/plots/{project}.PCoA-PC{pc1}_PC{pc2}-missing.pdf",
+                    f"results/{project}/PCoA/plots/{project}.PCoA-PC{pc1}_PC{pc2}-missing.rds"
+                ])
+            # Facet plots across axis combinations
+            for color_by in PCA_groupings:
+                targets.extend([
+                    f"results/{project}/PCoA/plots/{project}.PCoA-facet-{color_by}.pdf",
+                    f"results/{project}/PCoA/plots/{project}.PCoA-facet-{color_by}.rds"
+                ])
+            targets.extend([
+                f"results/{project}/PCoA/plots/{project}.PCoA-facet-labeled.pdf",
+                f"results/{project}/PCoA/plots/{project}.PCoA-facet-labeled.rds",
+                f"results/{project}/PCoA/plots/{project}.PCoA-facet-missing.pdf",
+                f"results/{project}/PCoA/plots/{project}.PCoA-facet-missing.rds"
             ])
 
         # MAPI targets
