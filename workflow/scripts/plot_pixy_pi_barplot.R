@@ -45,6 +45,7 @@ if ("plot_type" %in% names(snakemake@params)) {
 
 message("\n=== READING PI SUMMARY ===\n")
 pi_df <- read.table(pi_summary_file, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
+pi_df_original <- pi_df
 message(sprintf("Loaded %d populations\n", nrow(pi_df)))
 
 # Read popdata if stratification is requested
@@ -67,6 +68,19 @@ if (!is.null(color_by_name)) {
   }
   
   if (!is.null(color_by_name)) {
+    # If summary populations already correspond to the grouping column values
+    # (e.g. pixy run with grouping=Region and color_by=Region), avoid Site-based merge.
+    group_values <- unique(as.character(popdata[[color_by_name]]))
+    if (
+      !any(pi_df$population %in% popdata[[site_col]]) &&
+      all(pi_df$population %in% group_values)
+    ) {
+      pi_df[[color_by_name]] <- pi_df$population
+      message(sprintf(
+        "Detected summary grouped by '%s'; using direct population-to-group mapping.",
+        color_by_name
+      ))
+    } else {
     # Get unique population-level data from popdata
     # Aggregate by Site to get population-level metadata
     popdata_unique <- popdata[, c(site_col, color_by_name), drop = FALSE]
@@ -121,6 +135,17 @@ if (!is.null(color_by_name)) {
     
     pi_df <- pi_df_merged
     message(sprintf("After merging with popdata: %d populations\n", nrow(pi_df)))
+    }
+
+    # If grouping removed all rows, fall back to ungrouped plot instead of failing.
+    if (nrow(pi_df) == 0) {
+      warning(sprintf(
+        "No populations left after applying grouping '%s'. Falling back to ungrouped barplot.",
+        color_by_name
+      ))
+      pi_df <- pi_df_original
+      color_by_name <- NULL
+    }
   }
 }
 
