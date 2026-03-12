@@ -28,6 +28,7 @@ include: "rules/population_map.smk"
 include: "rules/pixy.smk"
 include: "rules/genome_scan.smk"
 include: "rules/genetic_distances.smk"
+include: "rules/pcoa.smk"
 include: "rules/mapi.smk"
 include: "rules/fineradstructure.smk"
 include: "rules/construct.smk"
@@ -533,6 +534,14 @@ def get_all_targets():
             targets.extend([
                 "results/" + project + "/gen_dist/" + project + ".kosman_distance.tsv",
                 "results/" + project + "/gen_dist/" + project + ".euclidean_distance.tsv"
+            ])
+
+        # PCoA targets (based on Euclidean genetic distance)
+        if analyses.get("pcoa", False):
+            targets.extend([
+                "results/" + project + "/gen_dist/" + project + ".euclidean_distance.tsv",
+                "results/" + project + "/gen_dist/" + project + ".euclidean_pcoa.eigvecs",
+                "results/" + project + "/gen_dist/" + project + ".euclidean_pcoa.eigvals"
             ])
 
         # MAPI targets
