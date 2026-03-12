@@ -324,6 +324,10 @@ parameters: &global_params
       threads: 1
       mem_mb: 8000
       runtime: 10
+    pixy_summary: # summary bootstrap over windows per stat
+      threads: 1
+      mem_mb: 32000
+      runtime: 60
     gen_dist: # genetic distance calculations (Euclidean, Kosman, etc.)
       threads: 1
       mem_mb: 8000

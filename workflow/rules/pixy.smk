@@ -166,8 +166,8 @@ rule pixy_pi_summary:
         "../envs/python.yaml"
     threads: 1
     resources:
-        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
-        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["pixy_summary"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["pixy_summary"]["runtime"]
     script:
         "../scripts/pixy_summary.py"
 
@@ -188,8 +188,8 @@ rule pixy_fst_summary:
         "../envs/python.yaml"
     threads: 1
     resources:
-        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
-        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["pixy_summary"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["pixy_summary"]["runtime"]
     script:
         "../scripts/pixy_summary.py"
 
@@ -210,8 +210,8 @@ rule pixy_dxy_summary:
         "../envs/python.yaml"
     threads: 1
     resources:
-        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
-        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["pixy_summary"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["pixy_summary"]["runtime"]
     script:
         "../scripts/pixy_summary.py"
 
