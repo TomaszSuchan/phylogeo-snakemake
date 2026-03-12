@@ -1,31 +1,12 @@
-rule generate_popmap:
-    input:
-        vcf=rules.subset_vcf_after_relatedness.output.vcf
-    output:
-        popmap="results/{project}/popmap.txt"
-    params:
-        popmap=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("popmap", ""),
-        separator=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("popseparator", "-")
-    log:
-        "logs/{project}/generate_popmap.log"
-    benchmark:
-        "benchmarks/{project}/generate_popmap.txt"
-    conda:
-        "../envs/python.yaml"
-    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
-    resources:
-        mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
-        runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
-    script:
-        "../scripts/generate_popmap.py"
-
 rule generate_popdata:
     input:
-        popmap=rules.generate_popmap.output.popmap
+        vcf=rules.subset_vcf_after_relatedness.output.vcf
     output:
         indpopdata="results/{project}/indpopdata.txt"
     params:
         popdata=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("popdata", ""),
+        popmap=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("popmap", ""),
+        separator=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("popseparator", "-")
     log:
         "logs/{project}/generate_popdata.log"
     benchmark:
@@ -39,36 +20,15 @@ rule generate_popdata:
     script:
         "../scripts/generate_popdata.py"
 
-# Generate popmap from VCF before relatedness filtering (includes all individuals)
-rule generate_popmap_all:
-    input:
-        vcf=rules.subset_vcf.output.vcf
-    output:
-        popmap="results/{project}/popmap_all.txt"
-    params:
-        popmap=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("popmap", ""),
-        separator=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("popseparator", "-")
-    log:
-        "logs/{project}/generate_popmap_all.log"
-    benchmark:
-        "benchmarks/{project}/generate_popmap_all.txt"
-    conda:
-        "../envs/python.yaml"
-    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
-    resources:
-        mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
-        runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
-    script:
-        "../scripts/generate_popmap.py"
-
-# Generate indpopdata from popmap_all (includes all individuals before filtering)
 rule generate_popdata_all:
     input:
-        popmap=rules.generate_popmap_all.output.popmap
+        vcf=rules.subset_vcf.output.vcf
     output:
         indpopdata="results/{project}/indpopdata_all.txt"
     params:
         popdata=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("popdata", ""),
+        popmap=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("popmap", ""),
+        separator=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("popseparator", "-")
     log:
         "logs/{project}/generate_popdata_all.log"
     benchmark:
