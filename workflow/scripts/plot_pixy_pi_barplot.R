@@ -59,52 +59,54 @@ if (!is.null(color_by_name)) {
   } else {
     site_col <- colnames(popdata)[1]
   }
-  
-  # Get unique population-level data from popdata
-  # Aggregate by Site to get population-level metadata
-  popdata_unique <- popdata[, c(site_col, color_by_name), drop = FALSE]
-  popdata_unique <- popdata_unique[!duplicated(popdata_unique[[site_col]]), ]
-  
-  message(sprintf("Unique populations in popdata: %d\n", nrow(popdata_unique)))
-  
-  # Try matching population names
-  # First try: direct match with full population name (e.g., "Csr_BBE")
-  pi_df_merged <- merge(pi_df, popdata_unique, 
-                        by.x = "population", 
-                        by.y = site_col, 
-                        all.x = TRUE)
-  
-  # If that fails for some populations, try removing project prefix (e.g., "BBE")
-  if (any(is.na(pi_df_merged[[color_by_name]]))) {
-    # Only try alternative matching for populations that didn't match
-    unmatched <- is.na(pi_df_merged[[color_by_name]])
-    pi_df_unmatched <- pi_df[unmatched, ]
-    
-    if (nrow(pi_df_unmatched) > 0) {
-      pi_df_unmatched$population_clean <- gsub("^[^_]+_", "", pi_df_unmatched$population)
-      pi_df_unmatched_merged <- merge(pi_df_unmatched, popdata_unique, 
-                                      by.x = "population_clean", 
-                                      by.y = site_col, 
-                                      all.x = TRUE)
-      # Remove temporary column
-      pi_df_unmatched_merged$population_clean <- NULL
-      
-      # Combine matched and unmatched results
-      pi_df_merged[unmatched, ] <- pi_df_unmatched_merged
-    }
-  }
-  
-  # Check if color_by column exists
-  if (!color_by_name %in% names(pi_df_merged)) {
+
+  # Validate grouping column before subsetting to avoid hard failure
+  if (!color_by_name %in% colnames(popdata)) {
     warning(sprintf("Column '%s' not found in popdata. Plotting without grouping.\n", color_by_name))
     color_by_name <- NULL
-  } else {
+  }
+  
+  if (!is.null(color_by_name)) {
+    # Get unique population-level data from popdata
+    # Aggregate by Site to get population-level metadata
+    popdata_unique <- popdata[, c(site_col, color_by_name), drop = FALSE]
+    popdata_unique <- popdata_unique[!duplicated(popdata_unique[[site_col]]), ]
+    
+    message(sprintf("Unique populations in popdata: %d\n", nrow(popdata_unique)))
+    
+    # Try matching population names
+    # First try: direct match with full population name (e.g., "Csr_BBE")
+    pi_df_merged <- merge(pi_df, popdata_unique, 
+                          by.x = "population", 
+                          by.y = site_col, 
+                          all.x = TRUE)
+    
+    # If that fails for some populations, try removing project prefix (e.g., "BBE")
+    if (any(is.na(pi_df_merged[[color_by_name]]))) {
+      # Only try alternative matching for populations that didn't match
+      unmatched <- is.na(pi_df_merged[[color_by_name]])
+      pi_df_unmatched <- pi_df[unmatched, ]
+      
+      if (nrow(pi_df_unmatched) > 0) {
+        pi_df_unmatched$population_clean <- gsub("^[^_]+_", "", pi_df_unmatched$population)
+        pi_df_unmatched_merged <- merge(pi_df_unmatched, popdata_unique, 
+                                        by.x = "population_clean", 
+                                        by.y = site_col, 
+                                        all.x = TRUE)
+        # Remove temporary column
+        pi_df_unmatched_merged$population_clean <- NULL
+        
+        # Combine matched and unmatched results
+        pi_df_merged[unmatched, ] <- pi_df_unmatched_merged
+      }
+    }
+    
     # Remove populations without stratification data
     na_mask <- is.na(pi_df_merged[[color_by_name]])
     if (any(na_mask)) {
       n_na <- sum(na_mask)
       warning(sprintf("%d populations have missing values in '%s' column and will be excluded\n", 
-                     n_na, color_by_name))
+                      n_na, color_by_name))
       pi_df_merged <- pi_df_merged[!na_mask, ]
     }
     
@@ -113,7 +115,7 @@ if (!is.null(color_by_name)) {
     if (any(empty_mask)) {
       n_empty <- sum(empty_mask)
       warning(sprintf("%d populations have empty strings in '%s' column and will be excluded\n", 
-                     n_empty, color_by_name))
+                      n_empty, color_by_name))
       pi_df_merged <- pi_df_merged[!empty_mask, ]
     }
     
