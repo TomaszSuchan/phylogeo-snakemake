@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-# PCoA on Euclidean genetic distance matrix produced by calculate_euclidean_distance.R
+# PCoA on Euclidean genetic distance matrix produced by calculate_euclidean_distance.py
 # Output format mirrors PCA eigvec/eigval files so it can be plotted with plot_pca_single.R:
 #   - First row: header line that will be skipped (skip = 1)
 #   - First column: sample names (also used as FID/IID)

@@ -6,4 +6,6 @@ dependencies:
   - python>=3.9
   - pandas=2.3.3
   - numpy=2.3.3
+  - scipy
+  - bed-reader
   - vcfpy=0.13.8

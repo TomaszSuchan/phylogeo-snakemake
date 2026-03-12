@@ -6,16 +6,19 @@ clustering, and visualization.
 
 rule euclidean_distance:
     """
-    Calculate Euclidean genetic distance from VCF.
-    Euclidean distance is calculated from the genotype matrix after
-    converting to allele counts (0, 1, 2).
+    Calculate Euclidean genetic distance from PLINK genotypes.
+    Distances are computed from per-SNP dosage values (0, 1, 2 copies
+    of the alternate allele) using the existing PLINK files generated
+    by preprocessing.
     """
     input:
-        vcf=lambda wildcards: get_filtered_vcf_output(wildcards),
+        bed=rules.vcf_to_plink.output.bed,
+        bim=rules.vcf_to_plink.output.bim,
+        fam=rules.vcf_to_plink.output.fam,
     output:
         dist="results/{project}/gen_dist/{project}.euclidean_distance.tsv",
     conda:
-        "../envs/r-popgenreport.yaml"
+        "../envs/python.yaml"
     log:
         "logs/{project}/euclidean_distance.log",
     benchmark:
@@ -25,6 +28,6 @@ rule euclidean_distance:
         mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["gen_dist"]["mem_mb"],
         runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["gen_dist"]["runtime"],
     script:
-        "../scripts/calculate_euclidean_distance.R"
+        "../scripts/calculate_euclidean_distance.py"
 
 
