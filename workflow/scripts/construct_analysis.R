@@ -10,10 +10,13 @@
 # Get log file path from Snakemake
 log_file_path <- snakemake@log[[1]]
 
+# Open connection to log file for writing
+main_log_conn <- file(log_file_path, open = "wt")
+
 # Redirect all output (stdout and stderr) to the log file
 # This ensures all output from R, packages, and external processes (like Stan) goes to the log
-sink(log_file_path, type = "output")
-sink(log_file_path, append = TRUE, type = "message")
+sink(main_log_conn, type = "output")
+sink(main_log_conn, type = "message")
 
 # Install conStruct if not available (from CRAN)
 if (!require("conStruct", quietly = TRUE)) {
@@ -331,4 +334,6 @@ cat("Log file saved to:", log_file, "\n")
 # Close sink to restore normal output
 sink(type = "output")
 sink(type = "message")
+# Close the log file connection
+close(main_log_conn)
 
