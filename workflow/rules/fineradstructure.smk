@@ -94,14 +94,23 @@ rule fineradstructure_tree:
 
 rule fineradstructure_plot:
     """
-    Plot fineRADstructure results - visualizes the co-ancestry tree from MCMC output
+    Plot fineRADstructure results using the upstream-style heatmap workflow
     """
     input:
         mcmcTree = rules.fineradstructure_tree.output.finestr_mcmcTree,
-        chunks = rules.fineradstructure_paint.output.finestr_chunks
+        mcmc = rules.fineradstructure_cluster.output.finestr_mcmc,
+        chunks = rules.fineradstructure_paint.output.finestr_chunks,
+        indpopdata = rules.generate_popdata.output.indpopdata
     output:
-        pdf = "results/{project}/fineradstructure/plots/{project}.fineradstructure_tree.pdf",
-        rds = "results/{project}/fineradstructure/plots/{project}.fineradstructure_tree.rds"
+        simple_pdf = "results/{project}/fineradstructure/plots/{project}.SimpleCoancestry.pdf",
+        popavg_pdf = "results/{project}/fineradstructure/plots/{project}.PopAveragedCoancestry.pdf",
+        labeled_pdf = "results/{project}/fineradstructure/plots/{project}.PopAveragedCoancestryLabeled.pdf",
+        rds = "results/{project}/fineradstructure/plots/{project}.fineradstructure_plots.rds"
+    params:
+        label_by = lambda wildcards: config["projects"][wildcards.project]["parameters"]["fineradstructure"].get("plot", {}).get("label_by", "Site"),
+        max_indv = lambda wildcards: config["projects"][wildcards.project]["parameters"]["fineradstructure"].get("plot", {}).get("max_indv", 10000),
+        max_pop = lambda wildcards: config["projects"][wildcards.project]["parameters"]["fineradstructure"].get("plot", {}).get("max_pop", 10000),
+        max_label_values = lambda wildcards: config["projects"][wildcards.project]["parameters"]["fineradstructure"].get("plot", {}).get("max_label_values", 3)
     log:
         "logs/{project}/fineradstructure_plot.log"
     benchmark:

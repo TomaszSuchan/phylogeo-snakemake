@@ -1,233 +1,270 @@
 #!/usr/bin/env Rscript
-# Plot fineRADstructure results
-# Visualizes the co-ancestry tree from fineRADstructure MCMC tree output
+# Plot fineRADstructure results using the upstream heatmap workflow.
+# Population labels are derived from indpopdata metadata instead of sample-name
+# parsing, so the plot works with arbitrary individual IDs.
 
 library(ape)
-library(ggtree)
-library(ggplot2)
-library(treeio)
+library(XML)
 
-# Try to load XML package, but handle gracefully if not available
-if (!require("XML", quietly = TRUE)) {
-  cat("WARNING: XML package not found. Attempting alternative methods...\n")
-}
-
-# Prevent creation of Rplots.pdf
-pdf(NULL)
-
-# Redirect all output to log file
 log_file <- file(snakemake@log[[1]], open = "wt")
 sink(log_file, type = "output")
 sink(log_file, type = "message")
+on.exit({
+  sink(type = "message")
+  sink(type = "output")
+  close(log_file)
+}, add = TRUE)
 
-# Get Snakemake inputs
-mcmcTree_xml <- snakemake@input[["mcmcTree"]]
+snakemake@source("FinestructureLibrary.R")
+
+NameLessSummary <- function(x) {
+  paste(x, collapse = ";")
+}
+
+safe_read_chunks <- function(path) {
+  as.matrix(read.table(
+    path,
+    row.names = 1,
+    header = TRUE,
+    skip = 1,
+    check.names = FALSE,
+    comment.char = "",
+    quote = ""
+  ))
+}
+
+normalize_pop_list <- function(pop_list) {
+  lapply(pop_list, function(x) {
+    vals <- as.character(x)
+    vals[nzchar(vals)]
+  })
+}
+
+summarize_cluster_label <- function(cluster_inds, indpopdata, label_by, max_values = 3) {
+  if (tolower(label_by) == "none") {
+    return(sprintf("n=%d", length(cluster_inds)))
+  }
+
+  idx <- match(cluster_inds, indpopdata$Ind)
+  if (any(is.na(idx))) {
+    missing_inds <- cluster_inds[is.na(idx)]
+    stop(
+      "Individuals from fineRADstructure are missing in indpopdata: ",
+      paste(head(missing_inds, 10), collapse = ", ")
+    )
+  }
+
+  values <- indpopdata[[label_by]][idx]
+  values <- trimws(as.character(values))
+  values[is.na(values) | values == ""] <- "NA"
+
+  counts <- sort(table(values), decreasing = TRUE)
+  top_counts <- head(counts, max_values)
+  parts <- paste0(names(top_counts), " (", as.integer(top_counts), ")")
+  label <- paste(parts, collapse = ", ")
+  if (length(counts) > max_values) {
+    label <- paste0(label, ", ...")
+  }
+  label
+}
+
+make_unique_labels <- function(labels) {
+  ave(
+    seq_along(labels),
+    labels,
+    FUN = function(x) {
+      if (length(x) == 1) {
+        ""
+      } else {
+        paste0("_", LETTERS[seq_along(x)])
+      }
+    }
+  ) -> suffix
+  paste0(labels, suffix)
+}
+
+validate_inputs <- function(tree, dataraw, indpopdata, label_by) {
+  if (!all(tree$tip.label %in% rownames(dataraw))) {
+    missing_tips <- setdiff(tree$tip.label, rownames(dataraw))
+    stop(
+      "Tree tips are missing from chunks.out matrix: ",
+      paste(head(missing_tips, 10), collapse = ", ")
+    )
+  }
+  if (!"Ind" %in% names(indpopdata)) {
+    stop("indpopdata must contain an 'Ind' column.")
+  }
+  if (tolower(label_by) != "none" && !label_by %in% names(indpopdata)) {
+    stop(
+      "Configured fineradstructure.plot.label_by column '", label_by,
+      "' not found in indpopdata. Available columns: ",
+      paste(names(indpopdata), collapse = ", ")
+    )
+  }
+}
+
+mcmc_tree_xml <- snakemake@input[["mcmcTree"]]
+mcmc_xml <- snakemake@input[["mcmc"]]
 chunks_file <- snakemake@input[["chunks"]]
+indpopdata_file <- snakemake@input[["indpopdata"]]
 
-# Get Snakemake outputs
-output_pdf <- snakemake@output[["pdf"]]
+simple_pdf <- snakemake@output[["simple_pdf"]]
+popavg_pdf <- snakemake@output[["popavg_pdf"]]
+labeled_pdf <- snakemake@output[["labeled_pdf"]]
 output_rds <- snakemake@output[["rds"]]
 
+label_by <- snakemake@params[["label_by"]]
+max_indv <- as.numeric(snakemake@params[["max_indv"]])
+max_pop <- as.numeric(snakemake@params[["max_pop"]])
+max_label_values <- as.integer(snakemake@params[["max_label_values"]])
+
 cat("=== fineRADstructure Plotting ===\n")
-cat("MCMC Tree XML:", mcmcTree_xml, "\n")
+cat("MCMC Tree XML:", mcmc_tree_xml, "\n")
+cat("MCMC XML:", mcmc_xml, "\n")
 cat("Chunks file:", chunks_file, "\n")
-cat("Output PDF:", output_pdf, "\n")
+cat("indpopdata:", indpopdata_file, "\n")
+cat("Label populations by:", label_by, "\n")
+cat("Output simple PDF:", simple_pdf, "\n")
+cat("Output popavg PDF:", popavg_pdf, "\n")
+cat("Output labeled PDF:", labeled_pdf, "\n")
 cat("Output RDS:", output_rds, "\n")
 cat("===============================\n\n")
 
-# Function to extract tree from fineRADstructure XML
-# fineRADstructure uses fineSTRUCTURE's own XML format: the tree is stored as
-# Newick text inside the last <outputFile> node (not phyloXML or BEAST).
-extract_tree_from_xml <- function(xml_file) {
-  cat("Parsing XML file:", xml_file, "\n")
-
-  # Method 1: fineSTRUCTURE native format (official fineRADstructure layout)
-  # Tree is Newick in the last outputFile node; see FinestructureLibrary.R extractTree()
-  if (require("XML", quietly = TRUE)) {
-    tryCatch({
-      cat("Attempting to read as fineSTRUCTURE XML (last outputFile = Newick)...\n")
-      xml_doc <- xmlParse(xml_file)
-      xml_root <- xmlRoot(xml_doc)
-      output_file_nodes <- getNodeSet(xml_root, "//outputFile")
-      if (length(output_file_nodes) > 0) {
-        last_node <- output_file_nodes[[length(output_file_nodes)]]
-        newick_string <- xmlValue(last_node)
-        newick_string <- trimws(newick_string)
-        if (nchar(newick_string) > 0 && grepl("\\(", newick_string)) {
-          cat("Successfully read tree from fineSTRUCTURE outputFile (Newick)\n")
-          tree <- read.tree(text = newick_string)
-          return(tree)
-        }
-      }
-    }, error = function(e) {
-      cat("fineSTRUCTURE outputFile extraction failed:", conditionMessage(e), "\n")
-    })
-  }
-
-  # Method 2: Generic XML fallback – look for //tree or other Newick-containing nodes
-  if (require("XML", quietly = TRUE)) {
-    tryCatch({
-      cat("Attempting to parse XML and extract Newick from //tree or similar...\n")
-      xml_doc <- xmlParse(xml_file)
-      xml_root <- xmlRoot(xml_doc)
-      tree_nodes <- getNodeSet(xml_root, "//tree")
-      if (length(tree_nodes) > 0) {
-        for (node in tree_nodes) {
-          tree_string <- trimws(xmlValue(node))
-          if (nchar(tree_string) > 0 && grepl("\\(", tree_string)) {
-            cat("Found Newick tree string in XML\n")
-            tree <- read.tree(text = tree_string)
-            return(tree)
-          }
-        }
-      }
-      tree_attrs <- xpathApply(xml_root, "//tree", xmlAttrs)
-      if (length(tree_attrs) > 0) {
-        for (attr in tree_attrs) {
-          if ("newick" %in% names(attr)) {
-            cat("Found Newick tree in XML attributes\n")
-            tree <- read.tree(text = attr[["newick"]])
-            return(tree)
-          }
-        }
-      }
-    }, error = function(e) {
-      cat("XML fallback parsing failed:", conditionMessage(e), "\n")
-    })
-  }
-  
-  # Method 3: Try to extract Newick using shell command (if finestructure tools available)
-  cat("Attempting to extract tree using shell command...\n")
-  tryCatch({
-    # fineRADstructure may have command-line tools to extract tree
-    # Try using grep/sed to extract Newick format from XML
-    temp_newick <- tempfile(fileext = ".nwk")
-    cmd <- paste("grep -o '<tree[^>]*>.*</tree>'", xml_file, "| sed 's/<[^>]*>//g' | head -1 >", temp_newick)
-    system(cmd, ignore.stderr = TRUE)
-    
-    if (file.exists(temp_newick) && file.info(temp_newick)$size > 0) {
-      tree_string <- readLines(temp_newick, n = 1, warn = FALSE)
-      if (nchar(tree_string) > 0 && grepl("\\(", tree_string)) {
-        cat("Extracted Newick string using shell command\n")
-        tree <- read.tree(text = tree_string)
-        unlink(temp_newick)
-        return(tree)
-      }
-    }
-    unlink(temp_newick)
-  }, error = function(e) {
-    cat("Shell extraction failed:", conditionMessage(e), "\n")
-  })
-  
-  # Method 4: Try reading file as text and searching for Newick pattern
-  cat("Attempting to extract Newick from file text...\n")
-  tryCatch({
-    file_lines <- readLines(xml_file, warn = FALSE)
-    # Look for lines that look like Newick format
-    for (line in file_lines) {
-      if (grepl("^[^<]*\\(.*\\)[^<]*$", line) && grepl(":", line)) {
-        # Extract potential Newick string (remove XML tags)
-        newick_candidate <- gsub("<[^>]+>", "", line)
-        newick_candidate <- trimws(newick_candidate)
-        if (nchar(newick_candidate) > 10 && grepl("\\(", newick_candidate)) {
-          cat("Found potential Newick string in file text\n")
-          tree <- read.tree(text = newick_candidate)
-          return(tree)
-        }
-      }
-    }
-  }, error = function(e) {
-    cat("Text extraction failed:", conditionMessage(e), "\n")
-  })
-  
-  stop("Could not extract tree from XML file. Tried multiple methods. Please check the XML structure or ensure fineRADstructure tools are available.")
-}
-
-# Function to create tree plot
-create_tree_plot <- function(tree) {
-  cat("Creating tree plot...\n")
-  
-  # Count number of tips to determine plot size
-  n_tips <- length(tree$tip.label)
-  cat("Number of tips:", n_tips, "\n")
-  
-  # Calculate appropriate plot dimensions
-  plot_height <- max(6, min(50, n_tips * 0.3))
-  plot_width <- max(8, min(20, plot_height * 0.8))
-  
-  # Create the base plot
-  p <- ggtree(tree, layout = "rectangular") +
-    geom_tiplab(size = 2.5, hjust = -0.05) +
-    theme_tree2()
-  
-  # Add scale bar
-  p <- p + geom_treescale(x = 0, y = 0, width = NULL, offset = 1)
-  
-  # Adjust x-axis limits to accommodate tip labels
-  max_x <- max(p$data$x, na.rm = TRUE)
-  p <- p + xlim(NA, max_x * 1.3)
-  
-  return(list(plot = p, width = plot_width, height = plot_height))
-}
-
-# Main plotting workflow
 tryCatch({
-  # Extract tree from XML
-  tree <- extract_tree_from_xml(mcmcTree_xml)
-  
-  # Create plot
-  plot_result <- create_tree_plot(tree)
-  p <- plot_result$plot
-  plot_width <- plot_result$width
-  plot_height <- plot_result$height
-  
-  # Save as PDF
-  cat("Saving PDF plot...\n")
-  ggsave(
-    output_pdf,
-    plot = p,
-    width = plot_width,
-    height = plot_height,
-    units = "in",
-    limitsize = FALSE
+  cat("Reading fineRADstructure inputs...\n")
+  dataraw <- safe_read_chunks(chunks_file)
+  treexml <- xmlTreeParse(mcmc_tree_xml)
+  mcmcxml <- xmlTreeParse(mcmc_xml)
+  indpopdata <- read.table(
+    indpopdata_file,
+    header = TRUE,
+    sep = "\t",
+    check.names = FALSE,
+    comment.char = "",
+    quote = "",
+    stringsAsFactors = FALSE
   )
-  
-  # Save as RDS
-  cat("Saving RDS object...\n")
-  saveRDS(p, output_rds)
-  
+
+  cat("Chunk matrix dimensions:", nrow(dataraw), "x", ncol(dataraw), "\n")
+  cat("indpopdata dimensions:", nrow(indpopdata), "x", ncol(indpopdata), "\n")
+  cat("indpopdata columns:", paste(names(indpopdata), collapse = ", "), "\n")
+
+  # This mirrors the upstream script's XML parsing and tree-to-dendrogram workflow.
+  ttree <- extractTree(treexml)
+  tdend <- myapetodend(ttree, factor = 1)
+  validate_inputs(ttree, dataraw, indpopdata, label_by)
+
+  fullorder <- labels(tdend)
+  datamatrix <- dataraw[fullorder, fullorder, drop = FALSE]
+  cat("Ordered matrix dimensions:", nrow(datamatrix), "x", ncol(datamatrix), "\n")
+
+  mcmc_rows <- length(extractValue(mcmcxml, "Number", getNames = FALSE))
+  cat("Read", mcmc_rows, "iterations from MCMC XML\n")
+
+  map_state <- extractValue(treexml, "Pop")
+  if (length(map_state) == 0) {
+    stop("No Pop state found in mcmcTree XML.")
+  }
+  mapstatelist <- normalize_pop_list(popAsList(map_state[[1]]))
+  names(mapstatelist) <- vapply(mapstatelist, NameLessSummary, character(1))
+  cat("MAP state contains", length(mapstatelist), "clusters\n")
+
+  popdend <- makemydend(tdend, mapstatelist, summary = "NameLessSummary")
+  cluster_keys_in_order <- labels(popdend)
+  ordered_clusters <- lapply(cluster_keys_in_order, function(x) strsplit(x, ";", fixed = TRUE)[[1]])
+
+  cluster_labels <- vapply(
+    ordered_clusters,
+    summarize_cluster_label,
+    character(1),
+    indpopdata = indpopdata,
+    label_by = label_by,
+    max_values = max_label_values
+  )
+  cluster_labels <- make_unique_labels(cluster_labels)
+
+  cat("Cluster labels:\n")
+  for (i in seq_along(cluster_labels)) {
+    cat("  ", i, ":", cluster_labels[i], "\n")
+  }
+
+  some.colors_end <- MakeColorYRP(final = c(0.2, 0.2, 0.2))
+
+  tmpmat <- datamatrix
+  tmpmat[tmpmat > max_indv] <- max_indv
+  pdf(file = simple_pdf, height = 25, width = 25)
+  plotFinestructure(
+    tmpmat,
+    dimnames(tmpmat)[[1]],
+    dend = tdend,
+    cols = some.colors_end,
+    cex.axis = 0.45,
+    edgePar = list(p.lwd = 0, t.srt = 90, t.off = -0.1, t.cex = 1.2),
+    main = "Simple coancestry"
+  )
+  dev.off()
+  cat("Saved simple coancestry heatmap\n")
+
+  popmeanmatrix <- getPopMeanMatrix(datamatrix, mapstatelist)
+  tmpmat <- popmeanmatrix
+  tmpmat[tmpmat > max_pop] <- max_pop
+  pdf(file = popavg_pdf, height = 20, width = 20)
+  plotFinestructure(
+    tmpmat,
+    dimnames(tmpmat)[[1]],
+    dend = tdend,
+    cols = some.colors_end,
+    cex.axis = 0.45,
+    edgePar = list(p.lwd = 0, t.srt = 90, t.off = -0.1, t.cex = 1.2),
+    main = "Population-averaged coancestry"
+  )
+  dev.off()
+  cat("Saved population-averaged coancestry heatmap\n")
+
+  mappopsizes <- vapply(ordered_clusters, length, integer(1))
+  labellocs <- PopCenters(mappopsizes)
+  pdf(file = labeled_pdf, height = 25, width = 25)
+  plotFinestructure(
+    tmpmat,
+    labelsx = cluster_labels,
+    labelsatx = labellocs,
+    labelsaty = labellocs,
+    dend = tdend,
+    cols = some.colors_end,
+    xcrt = 90,
+    ycrt = 0,
+    cex.axis = 0.8,
+    edgePar = list(p.lwd = 0, t.srt = 90, t.off = -0.1, t.cex = 1.2),
+    hmmar = c(3, 0, 0, 1),
+    main = paste("Population labels by", label_by)
+  )
+  dev.off()
+  cat("Saved labeled population-averaged coancestry heatmap\n")
+
+  saveRDS(
+    list(
+      tree = ttree,
+      tree_dendrogram = tdend,
+      population_dendrogram = popdend,
+      individual_order = fullorder,
+      map_clusters = ordered_clusters,
+      cluster_labels = cluster_labels,
+      label_by = label_by,
+      chunk_matrix = datamatrix,
+      popmean_matrix = popmeanmatrix
+    ),
+    output_rds
+  )
+  cat("Saved plot objects to RDS\n")
+
   cat("\n=== fineRADstructure Plotting Complete ===\n")
-  cat("Plot dimensions:", plot_width, "x", plot_height, "inches\n")
-  cat("Number of tips:", length(tree$tip.label), "\n")
-  cat("Output PDF:", output_pdf, "\n")
-  cat("Output RDS:", output_rds, "\n")
-  cat("==========================================\n")
-  
+  cat("Simple PDF:", simple_pdf, "\n")
+  cat("Population-average PDF:", popavg_pdf, "\n")
+  cat("Labeled PDF:", labeled_pdf, "\n")
+  cat("RDS:", output_rds, "\n")
+  cat("=========================================\n")
 }, error = function(e) {
   cat("ERROR in fineRADstructure plotting:", conditionMessage(e), "\n")
-  cat("Creating placeholder plot...\n")
-  
-  # Create placeholder PDF
-  pdf(output_pdf, width = 10, height = 8)
-  plot.new()
-  text(0.5, 0.7, "fineRADstructure Tree Plot", cex = 1.8, font = 2)
-  text(0.5, 0.5, paste("MCMC Tree XML:", mcmcTree_xml), cex = 1.2)
-  text(0.5, 0.4, paste("Error:", conditionMessage(e)), cex = 1, col = "red")
-  text(0.5, 0.2, paste("Generated:", Sys.time()), cex = 0.9, col = "gray")
-  dev.off()
-  
-  # Create placeholder RDS
-  p_placeholder <- ggplot() + 
-    annotate("text", x = 0.5, y = 0.5, 
-             label = paste("Plot generation failed:", conditionMessage(e)),
-             size = 5, color = "red")
-  saveRDS(p_placeholder, output_rds)
-  
   stop("fineRADstructure plotting failed: ", conditionMessage(e))
 })
-
-# Close log file
-sink()
-sink(type = "message")
-close(log_file)
 
