@@ -6,7 +6,7 @@ Snakemake pipeline for population genetics and phylogeographic data analysis fro
 
 - **Main configuration**: `config/config.yaml`
 - **Per-project ipyrad output**: `<ipyrad_prefix>.vcf` or `<ipyrad_prefix>.vcf.gz`, and (for pixy) `<ipyrad_prefix>.loci`  
-  - `ipyrad_prefix` is defined per project in `config/config.yaml` under `projects.<project_name>.ipyrad_prefix`
+  - `ipyrad_prefix` is defined per project in `config/config.yaml` under `config["projects"][project_name]["ipyrad_prefix"]`
 - **Population map (individual → population)**: `data/popmap.txt`
 - **Population metadata with coordinates** (optional but required for map-based analyses): `data/popdata.txt`
 - **STRUCTURE run parameters** (optional, if `structure` analysis is enabled): `data/mainparams`, `data/extraparams`
@@ -14,9 +14,30 @@ Snakemake pipeline for population genetics and phylogeographic data analysis fro
 ## Configuration
 
 All settings are in `config/config.yaml`:
-- Define multiple projects under `config["projects"]`, each with its own `ipyrad_prefix` and analysis selection
-- Global parameters (under top-level `parameters:`) are inherited by all projects unless overridden in `config["projects"][project_name]["parameters"]`
+- Define multiple projects under `config["projects"]`, each with its own `config["projects"][project_name]["ipyrad_prefix"]` and `config["projects"][project_name]["analyses"]`
+- Global parameters live under `config["parameters"]` and are inherited by all projects unless overridden in `config["projects"][project_name]["parameters"]`
 - Enable/disable analyses per project in `config["projects"][project_name]["analyses"]`
+
+Project-specific overrides can be defined only for the settings that differ from the global defaults. For example:
+
+```yaml
+parameters:
+  vcf_filtering:
+    f_missing: 0.5
+    maf: 0.0
+
+projects:
+  MyProject:
+    ipyrad_prefix: "data/myproject"
+    analyses:
+      pcaone: true
+    parameters:
+    <<: *global_params
+      vcf_filtering:
+        f_missing: 0.2
+```
+
+In this example, all projects inherit `config["parameters"]["vcf_filtering"]`, but `MyProject` overrides only `config["projects"]["MyProject"]["parameters"]["vcf_filtering"]["f_missing"]`.
 
 ## Running
 
@@ -45,11 +66,12 @@ The pipeline applies filtering steps in the following order:
 
 #### 2. Sample Subsetting (Optional)
 - **User-defined sample subset**: If `config["projects"][project_name]["samples"]` is provided (comma-separated list), only those samples are retained
-- **Parameters**: None (uses sample list from config)
+- **Parameter path**: `config["projects"][project_name]["samples"]`
+- **Type**: STRING (comma-separated sample IDs)
 
 #### 3. Relatedness Filtering (Optional)
 - **KING-based filtering**: Filter related/clonal individuals using plink2 KING method
-- **Parameters** (from `config["projects"][project_name]["parameters"]["relatedness_filtering"]`):
+- **Parameters** (from `config["parameters"]["relatedness_filtering"]`):
   - `enabled` <BOOLEAN>: Enable/disable relatedness filtering (default: `false`)
   - `king_threshold` <FLOAT>: KING kinship threshold for filtering (default: `0.0884`, equivalent to PI-HAT > 0.2, 2nd-degree relatives)
     - Common values: `0.354` (duplicates/twins), `0.177` (1st-degree), `0.0884` (2nd-degree), `0.0442` (3rd-degree)
@@ -59,7 +81,7 @@ The pipeline applies filtering steps in the following order:
 
 #### 4. Missing Data Filtering (After Relatedness)
 - **Variant-level missing data filter**: Applied after relatedness filtering (if enabled)
-- **Parameters** (from `config["projects"][project_name]["parameters"]["vcf_filtering"]`):
+- **Parameters** (from `config["parameters"]["vcf_filtering"]`):
   - `f_missing` <FLOAT>: Maximum missing data threshold for variant filtering (default: `0.5`)
     - Variants missing in > `f_missing` proportion of samples are filtered out
     - `1` keeps all variants, `0` removes variants with any missing data
@@ -67,22 +89,22 @@ The pipeline applies filtering steps in the following order:
 
 #### 5. Biallelic SNP Filtering
 - **Filter**: Retains only biallelic SNPs with Minor Allele Count (MAC) > 1 and, optionally, a minor allele frequency filter
-- **Parameters** (from `config["projects"][project_name]["parameters"]["vcf_filtering"]`):
+- **Parameters** (from `config["parameters"]["vcf_filtering"]`):
   - `maf` <FLOAT>: Minimum minor allele frequency threshold for variant filtering (default: `0`, i.e. no MAF filter)
     - Implemented as `AF[0] >= maf && AF[0] <= 1-maf` in `bcftools`
 
 #### 6. VCF Thinning (One SNP per RAD Fragment)
-- **Thinning / LD-pruning strategy**: Controlled by `config["projects"][project_name]["parameters"]["thinning_strategy"]`:
+- **Thinning / LD-pruning strategy**: Controlled by `config["parameters"]["thinning_strategy"]`:
   - `"thinning"`: Select one SNP per RAD fragment to ensure unlinked markers (default in example config)
   - `"ld_pruning"`: Perform LD-based pruning using `plink` (see LD pruning parameters below)
   - `"none"`: Keep all biallelic SNPs without thinning or pruning
-- **Parameters for `"thinning"`** (from `config["projects"][project_name]["parameters"]["vcf_thinning"]`):
+- **Parameters for `"thinning"`** (from `config["parameters"]["vcf_thinning"]`):
   - `min_coverage` <INTEGER>: Minimum number of samples with data at a locus (default: `0`)
   - `method` <STRING>: SNP selection method - `random`, `max_coverage`, or `weighted` (default: `max_coverage`)
   - `ties` <STRING>: How to handle tied coverage values - `first` or `random` (default: `random`)
   - `ns_tag` <STRING>: VCF INFO field tag for number of samples with data (default: `NS`)
   - `id_pattern` <STRING>: Regex pattern to extract RAD fragment ID from variant names (default: `loc(\d+)_`)
-- **Parameters for `"ld_pruning"`** (from `config["projects"][project_name]["parameters"]["ld_pruning"]`):
+- **Parameters for `"ld_pruning"`** (from `config["parameters"]["ld_pruning"]`):
   - `r2` <FLOAT>: \(r^2\) threshold for LD pruning (default: `0.5`)
   - `window_size` <INTEGER>: Window size in kb for LD pruning (default: `50`)
   - `step_size` <INTEGER>: Step size in kb for LD pruning (default: `5`)
@@ -95,7 +117,7 @@ The pipeline applies filtering steps in the following order:
 #### 7. Format Conversion
 - **PLINK format**: Export thinned VCF to PLINK format (`.bed/.bim/.fam`)
 - **Structure format**: Export thinned VCF to Structure format (`.str`)
-- **Missing data filtered PLINK files**: Generate PLINK files filtered by missing data thresholds defined in `config["projects"][project_name]["parameters"]["PCAone"]["miss"]` for PCAone robustness analysis
+- **Missing data filtered PLINK files**: Generate PLINK files filtered by missing data thresholds defined in `config["parameters"]["PCAone"]["miss"]` for PCAone robustness analysis
   - Output PLINK prefixes are written under `results/<project>/filtered_data/`
 
 #### Summary of Filtering Order
@@ -116,173 +138,84 @@ The pipeline applies filtering steps in the following order:
   - `filtered/`: the same set of files for the post-filtering, pre-thinning VCF
   - `thinned/`: the same set of files for the thinned / LD-pruned VCF
 
-### Population structure
+### Analysis modules and tools descriptions
 
-**Structure** (enabled with `config["projects"][project_name]["analyses"]["structure"]: true`)
+The sections below summarise all analysis modules currently implemented in the workflow. Each entry states the main software, biological question, core inputs, main outputs, and the most relevant parameters.
 
-Bayesian clustering analysis using STRUCTURE. Requires `data/mainparams` and `data/extraparams` configuration files - run parameters can be tweaked by modifying these files. Numbers of individuals and loci are automatically inferred from .ustr file so this does not need to be changed.
+For precision, the workflow uses the following internal genotype datasets:
 
-Parameters (from `config["projects"][project_name]["parameters"]`):
-- `k_values` <LIST[INTEGER]>: List of K values (number of populations) to test (e.g., `[1, 2, 3]`)
+- `raw_sorted.vcf.gz`: the original ipyrad VCF, sorted, compressed, and indexed.
+- `subset.vcf.gz`: the raw VCF after optional user-defined sample subsetting.
+- `filtered.vcf.gz`: the subset VCF after optional relatedness filtering and variant missing-data filtering.
+- `biallelic_snps.vcf.gz`: the filtered VCF restricted to biallelic SNPs with `MAC > 1` and the optional `maf` filter.
+- `biallelic_snps_{thinned|ld_pruned|all_snps}.vcf.gz`: the final analysis SNP set after applying `thinning_strategy`. This is what `get_filtered_vcf_output()` returns and is the main input for most downstream SNP-based analyses.
+- `biallelic_snps_thinned.bed/.bim/.fam` and `biallelic_snps_thinned.str`: PLINK and STRUCTURE exports created from the final analysis VCF above. The filenames keep the historical `thinned` basename even when the underlying SNP set actually comes from `ld_pruning` or `thinning_strategy: none`.
 
-Parameters (from `config["projects"][project_name]["parameters"]["structure"]`):
-- `replicates` <INTEGER>: Number of independent runs per K value (default: 2)
+### Population structure and ancestry
 
-**fastStructure** (enabled with `config["projects"][project_name]["analyses"]["faststructure"]: true`)
+**STRUCTURE** uses Bayesian clustering to estimate ancestry proportions and infer the number of genetic clusters (`K`). It takes the STRUCTURE-format file exported from the final analysis VCF (`biallelic_snps_{thinned|ld_pruned|all_snps}.vcf.gz`, written to `biallelic_snps_thinned.str`) together with `data/mainparams` and `data/extraparams`, and produces per-run output files, aligned `Q` matrices, Evanno summaries, barplots, and optional geographic plots. The main parameters are `config["parameters"]["k_values"]` and `config["parameters"]["structure"]["replicates"]`.
 
-Fast variational inference alternative to STRUCTURE.
+**fastStructure** is a faster variational-Bayesian alternative to STRUCTURE for ancestry estimation across multiple `K` values. It uses the PLINK export of the final analysis VCF (`biallelic_snps_{thinned|ld_pruned|all_snps}.vcf.gz`, written to `biallelic_snps_thinned.bed/.bim/.fam`) and outputs `.meanQ`, `.meanP`, and `chooseK` summaries, plus downstream barplots and maps when metadata are available. The main parameters are `config["parameters"]["k_values"]`, `config["parameters"]["faststructure"]["tol"]`, and `config["parameters"]["faststructure"]["prior"]`.
 
-Parameters (from `config["projects"][project_name]["parameters"]`):
-- `k_values` <LIST[INTEGER]>: List of K values to test
+**ADMIXTURE** estimates ancestry proportions by maximum likelihood and reports cross-validation error for model choice across `K`. It uses the PLINK export of the final analysis VCF (`biallelic_snps_{thinned|ld_pruned|all_snps}.vcf.gz`, written to `biallelic_snps_thinned.bed/.bim/.fam`) and produces `.Q` and `.P` files together with downstream barplots, maps, and `K`-selection summaries. The main parameter is `config["parameters"]["k_values"]`.
 
-Parameters (from `config["projects"][project_name]["parameters"]["faststructure"]`):
-- `tol` <FLOAT>: Convergence criterion (default: `10e-6`)
-- `prior` <STRING>: Prior model - `simple` or `logistic` (default: `simple`)
+**evalAdmix** evaluates the fit of ancestry models by calculating correlations of residuals after ADMIXTURE, fastStructure, or STRUCTURE inference. It uses the same PLINK export of the final analysis VCF together with the corresponding `Q` and `P` matrices and produces residual-correlation files (`.corres`) and diagnostic plots under the relevant ancestry-method directory. This is especially useful for checking whether the inferred admixture model adequately captures covariance among individuals.
 
-**Admixture** (enabled with `config["projects"][project_name]["analyses"]["admixture"]: true`)
+**mapmixture** is the shared geographic visualisation layer for ancestry analyses. It uses ancestry coefficients from STRUCTURE, fastStructure, ADMIXTURE, and DAPC together with `indpopdata.txt` to generate population pie-chart maps and barplots. The main parameters are in `config["parameters"]["mapmixture"]`, with shared map settings in `config["parameters"]["map_background"]`.
 
-Maximum likelihood estimation of ancestry proportions. Outputs cross-validation errors for optimal K selection.
+**conStruct** models spatial population structure by allowing covariance to decay continuously with geography rather than assuming strictly discrete clusters. It uses the final analysis VCF (`biallelic_snps_{thinned|ld_pruned|all_snps}.vcf.gz`) and `indpopdata.txt`, and produces per-`K` `.rds` result files, layer-proportion tables, and map/barplot visualisations. The main parameters are `config["parameters"]["k_values"]` and the block `config["parameters"]["construct"]` (`n_chains`, `n_iterations`, `make.freqs`, `geoDist`, `coords`, `save.files`, `crs`).
 
-Parameters (from `config["projects"][project_name]["parameters"]`):
-- `k_values` <LIST[INTEGER]>: List of K values to test
+**DAPC** (Discriminant Analysis of Principal Components) provides multivariate clustering and assignment based on the final analysis VCF (`biallelic_snps_{thinned|ld_pruned|all_snps}.vcf.gz`). It produces criterion/BIC summaries, cluster assignments, membership probabilities, scatterplots, and optional geographic maps. The main parameters are `config["parameters"]["k_values"]` and the block `config["parameters"]["dapc"]` (`n_pca`, `n_da`, `criterion`).
 
-### Principal Component Analysis
+### Ordination and genetic distances
 
-**PCAone** (enabled with `config["projects"][project_name]["analyses"]["pcaone"]: true`)
+**PCAone** performs principal component analysis on the PLINK export of the final analysis VCF and is intended as the main fast PCA implementation for large SNP matrices. It produces eigenvector/eigenvalue files and a consistent set of single-panel and faceted plots. The main parameters are `config["parameters"]["PCAone"]["SVD_method"]` and `config["parameters"]["PCAone"]["PCnum"]`, while plotting is controlled by `config["parameters"]["pca_plot"]` (`pc_max`, `color_by`, `include_missing`, `pca_colors`).
 
-Fast PCA on complete dataset without missing data filtering.
+**PCAone with EMU** uses the EMU mode within PCAone to model missing genotypes during PCA. It uses the same inputs and output structure as standard PCAone, but is preferable when missingness is substantial and should be handled during ordination rather than by prior filtering. It uses the same `config["parameters"]["PCAone"]` and `config["parameters"]["pca_plot"]` settings as PCAone.
 
-Parameters (from `config["projects"][project_name]["parameters"]["PCAone"]`):
-- `SVD_method` <INTEGER>: Singular value decomposition method - 0=IRAM, 1=randomized, 2=window-based, 3=full SVD (default: 3)
-- `PCnum` <INTEGER>: Number of principal components to compute (default: 10)
+**PCAone with missing-data thresholds** repeats PCAone after creating separate SNP datasets filtered at each value in `config["parameters"]["PCAone"]["miss"]`. This allows explicit sensitivity analysis of ordination results to marker missingness. Each threshold produces separate PLINK files, eigenvectors, eigenvalues, and plot sets.
 
-**PCAone with EMU** (enabled with `config["projects"][project_name]["analyses"]["pcaone_emu"]: true`)
+**EMU-PCA** runs the standalone `emu` program rather than PCAone's internal EMU mode. It is intended for low-coverage or uncertainty-prone genotype data where expectation-maximisation-based PCA is preferred. It uses the PLINK export of the final analysis VCF and produces EMU eigenvectors/eigenvalues plus the same plotting family. The main parameters are `config["parameters"]["EMU"]` (`eig`, `eig_out`) and `config["parameters"]["pca_plot"]`.
 
-PCA using the EMU (Expectation-Maximization-with-Uncertainty) method for handling missing data. Uses same parameters as PCAone above.
+**VCF2PCACluster** performs PCA with its own internal SNP filtering and optional clustering/kinship correction, using the final analysis VCF (`biallelic_snps_{thinned|ld_pruned|all_snps}.vcf.gz`) as input. It therefore starts from the main downstream SNP set and then applies its own internal `MAF`, missingness, heterozygosity, and HWE filters. It outputs eigenvectors and eigenvalues for every tested `MAF × Miss` combination. The main parameters are in `config["parameters"]["vcf2pcacluster"]`, especially `cluster_method`, `PCnum`, `KinshipMethod`, and the nested block `config["parameters"]["vcf2pcacluster"]["SNP_filtering"]` (`MAF`, `Miss`, `Het`, `HWE`, `Fchr`).
 
-**PCAone with missing filters** (enabled with `config["projects"][project_name]["analyses"]["pcaone_miss"]: true`)
+**Euclidean genetic distance** computes pairwise distances between individuals from the PLINK export of the final analysis VCF by treating biallelic genotypes as alternate-allele dosages (`0`, `1`, `2`) and mean-imputing missing values per SNP. It is implemented in Python with `bed-reader` and `scipy` and produces `results/<project>/gen_dist/<project>.euclidean_distance.tsv`. This matrix is the downstream input for PCoA and MAPI.
 
-Run PCA on datasets filtered by different missing data thresholds to assess impact of data completeness. **Note**: This creates separate VCF files filtered by each missing data threshold in the `miss` list, then runs PCAone on each filtered dataset.
+**PCoA** performs principal coordinates analysis on the Euclidean distance matrix. It outputs eigenvector/eigenvalue files in a PCA-like format and reuses the same plotting system as PCAone for colored, labeled, missingness-based, and faceted ordinations. Plot behaviour is controlled by `config["parameters"]["pca_plot"]`.
 
-Parameters (from `config["projects"][project_name]["parameters"]["PCAone"]`):
-- `miss` <LIST[FLOAT]>: List of maximum missing data thresholds to test (e.g., `[0.1, 0.2, 0.3]`)
-  - Each threshold filters variants where `F_MISSING < threshold`
-  - Separate PCAone runs are performed for each threshold
-- `SVD_method`, `PCnum`: Same as PCAone
+### Genetic diversity, relatedness, and demographic summaries
 
-**VCF2PCACluster** (enabled with `config["projects"][project_name]["analyses"]["vcf2pcacluster"]: true`)
+**Pixy** calculates unbiased estimates of nucleotide diversity (`pi`), genetic differentiation (`FST`), and sequence divergence (`dXY`) using both variant and invariant sites extracted from the original ipyrad `.loci` file rather than from the downstream SNP-only VCFs. It uses the project keep-list after sample filtering plus grouping information from `indpopdata.txt`, and produces raw statistic tables, bootstrap summaries, heatmaps, barplots, and optional diversity maps. The main parameters are in `config["parameters"]["pixy"]` (`stats`, `window_size`, `bootstrap_replicates`, `group_by`, `point_size`, `map_outline`).
 
-PCA with kinship correction and flexible SNP filtering. **Note**: VCF2PCACluster applies its own SNP filtering parameters independently from the main preprocessing pipeline. It uses the thinned VCF as input but applies additional filters.
+**Genome scan** performs sliding-window analyses of `FST`, `pi`, and `dXY` between two user-defined groups. It uses an invariant-site VCF reconstructed from the original ipyrad data, together with `indpopdata.txt`, to identify samples whose `config["parameters"]["genome_scan"]["population_column"]` value matches `pop1` or `pop2`. The workflow then subsets the invariant-site VCF to retain only individuals from those two groups, creates a two-population popmap from the same subset, and runs `pixy` on that reduced dataset; it therefore does not use the final thinned SNP set and does not include samples outside the focal comparison. It produces statistic tables and genome-wide plots under `results/<project>/genome_scan/`. The main parameters are in `config["parameters"]["genome_scan"]` (`population_column`, `pop1`, `pop2`, `window_size_fst`, `window_size_pi`, `window_size_dxy`).
 
-Parameters (from `config["projects"][project_name]["parameters"]["vcf2pcacluster"]`):
-- `cluster_method` <STRING>: Clustering algorithm - `EM`, `Kmean`, `DBSCAN`, or `None` (default: `Kmean`)
-- `PCnum` <INTEGER>: Number of principal components (default: 10)
-- `KinshipMethod` <INTEGER>: Kinship calculation method - 1=Normalized_IBS (Yang/BaldingNicols), 2=Centered_IBS (VanRaden), 3=IBSKinshipImpute, 4=IBSKinship, 5=p_dis (default: 1)
+**Relatedness** estimates pairwise kinship using multiple estimators, including the Yang et al. genomic relatedness statistic, Manichaikul/KING-style kinship, PLINK IBD summaries, and PLINK2 KING outputs. The main relatedness analysis uses the final analysis VCF and its derived PLINK files, whereas the earlier relatedness-filtering step in preprocessing uses `subset.vcf.gz` before variant missingness filtering to decide which individuals to retain. Outputs are `.relatedness`, `.relatedness2`, `.genome`, and `.king` tables, plus metadata-coloured network plots. Visualisation is controlled by `config["parameters"]["relatedness_plot"]` (`color_by`, `relatedness_colors`).
 
-**VCF2PCACluster SNP Filtering** (from `config["projects"][project_name]["parameters"]["vcf2pcacluster"]["SNP_filtering"]`):
-- `MAF` <LIST[FLOAT]>: List of minimum minor allele frequency thresholds - multiple thresholds tested (e.g., `[0, 0.001, 0.01, 0.05]`)
-- `Miss` <LIST[FLOAT]>: List of maximum missing data thresholds - multiple thresholds tested (e.g., `[0.3, 0.4, 0.5]`)
-- `Het` <FLOAT>: Maximum heterozygosity ratio filter (default: `1.0`)
-- `HWE` <FLOAT>: Hardy-Weinberg Equilibrium exact test p-value threshold (default: `0`, no filtering)
-- `Fchr` <STRING>: Filter specific chromosome (default: empty string for no filter)
-- **Note**: All combinations of `MAF` and `Miss` values are tested, generating separate PCA results for each combination
+**ROH** uses `bcftools roh` to identify runs of homozygosity and summarises them across individuals and groups. It uses the final analysis VCF (`biallelic_snps_{thinned|ld_pruned|all_snps}.vcf.gz`) together with `indpopdata.txt`, and produces raw ROH calls, per-sample summaries, comparison tables, and grouped plots. The main parameter is `config["parameters"]["roh"]["group_by"]`.
 
-**PCA plotting**
+**AMOVA** partitions molecular variance across hierarchical levels defined in the metadata. It uses the final analysis VCF (`biallelic_snps_{thinned|ld_pruned|all_snps}.vcf.gz`) and `indpopdata.txt`, and produces an AMOVA results table and variance-component plot. The main parameters are `config["parameters"]["amova"]["strata"]` and `config["parameters"]["amova"]["nperm"]`.
 
-Parameters (from `config["projects"][project_name]["parameters"]["pca_plot"]`):
-- `pc1` <STRING>: First principal component axis to plot (default: `"1"`)
-- `pc2` <STRING>: Second principal component axis to plot (default: `"2"`)
-- `color_by` <LIST[STRING]>: List of popdata columns to use for coloring points (e.g., `["Population", "Region"]`)
+### Spatial landscape genetics
 
-### Genetic diversity
+**MAPI** (Mapping Averaged Pairwise Information) identifies spatial regions where observed genetic distances are unusually high or low relative to geography. It uses the Euclidean distance matrix and `indpopdata.txt`, and produces result and significance-tail GeoPackages plus a final PDF map. The main parameters are in `config["parameters"]["mapi"]` (`n_permutations`, `grid_halfwidth`, `crs_projected`, `crs_geographic`, `alpha`, `fill_var`).
 
-**Pixy** (enabled with `config["projects"][project_name]["analyses"]["pixy"]: true`)
+### Phylogenetic and historical inference
 
-Calculate unbiased nucleotide diversity (π), FST, and dXY using both variant and invariant sites extracted from the `.loci` file.
+**IQ-TREE** performs maximum-likelihood phylogenetic inference from the ipyrad `.phy` alignment. It outputs tree files, run logs, support summaries, and plotted trees. The main parameters are in `config["parameters"]["iqtree"]` (`model`, `bootstraps`, optional `outgroup`, `robust-phy`, `support_threshold`).
 
-Parameters (from `config["projects"][project_name]["parameters"]["pixy"]`):
-- `stats` <STRING>: Space-separated statistics to compute - options: `pi`, `fst`, `dxy` (default: `"pi fst dxy"`)
-- `window_size` <INTEGER>: Sliding window size in base pairs (default: 10000)
-- **Main outputs** (per project, under `results/<project>/pixy/`):
-  - `<project>.pixy_pi-summary.txt`, `<project>.pixy_fst-summary.txt`, `<project>.pixy_dxy-summary.txt` (depending on `stats`)
-  - Plots in `results/<project>/pixy/plots/` (heatmaps, barplots, and optional PI maps if `popdata` is provided)
+**trimAl + IQ-TREE** adds an alignment-trimming step before phylogenetic inference. It uses `trimAl` to remove sites with excessive gaps and then runs IQ-TREE on the trimmed alignment, producing trimmed alignments together with the same tree and plotting outputs as the untrimmed workflow. The main trimming parameter is `config["parameters"]["trimal"]["gt"]`; the downstream tree step uses the same `config["parameters"]["iqtree"]` settings.
 
-**Genome scan** (enabled with `config["projects"][project_name]["analyses"]["genome_scan"]: true`)
-
-Sliding-window genome scan for FST, π and dXY across the genome.
-
-Parameters (from `config["projects"][project_name]["parameters"]["genome_scan"]`):
-- `population_column` <STRING>: Column in `popdata` / `indpopdata` defining the two comparison groups
-- `pop1`, `pop2` <STRING>: Names of the two populations/groups to compare
-- `window_size_fst`, `window_size_pi`, `window_size_dxy` <INTEGER>: Window sizes (bp) for each statistic
-- **Main outputs** (per project, under `results/<project>/genome_scan/`):
-  - `<project>.genome_scan_fst.txt`, `<project>.genome_scan_pi.txt`, `<project>.genome_scan_dxy.txt`
-  - Genome-wide plots in `results/<project>/genome_scan/plots/`
-
-### Relatedness
-
-**Relatedness** (enabled with `config["projects"][project_name]["analyses"]["relatedness"]: true`)
-
-Calculate pairwise relatedness between individuals using two methods:
-- Yang et al. (2010) method: Ajk statistic (genomic relatedness matrix; values centered around 0 for unrelated, ≈0.5 for first-degree, 1 for self)
-- Manichaikul et al. (2010) method: Kinship coefficient (KING-style estimator optimised for degree calling; ≈0.25 first-degree, 0.125 second-degree, 0.0625 third-degree, 0 for unrelated)
-- **Main outputs** (per project, under `results/<project>/relatedness/`):
-  - `<project>.relatedness`, `<project>.relatedness2`, `<project>.genome`, `<project>.king`
-  - Network plots in `results/<project>/relatedness/plots/`
+**fineRADstructure** uses `RADpainter` and `fineRADstructure` to infer recent coancestry and hierarchical relationships among individuals from RAD-seq loci. It takes `biallelic_snps.vcf.gz`, that is, the biallelic SNP set before thinning or LD pruning, together with `indpopdata.txt`, and produces the fineRADstructure input matrix, coancestry chunks, MCMC and tree XML outputs, and individual/population-level coancestry heatmaps. The main parameters are in `config["parameters"]["fineradstructure"]`, especially the nested `cluster`, `tree`, and `plot` blocks.
 
 ### Population metadata
 
-**Population assignment**
+**Population assignment** is generated automatically from either a user-provided `popmap`, a richer `popdata` table with geographic coordinates and grouping variables, or a `popseparator` that parses population codes from sample names. The main inputs are `config["parameters"]["popmap"]`, `config["parameters"]["popdata"]`, and `config["parameters"]["popseparator"]`, and the main outputs are `results/<project>/indpopdata.txt`, `results/<project>/indpopdata_all.txt`, and `results/<project>/stats_samples/<project>.population_summary.txt`.
 
-Parameters (from `config["projects"][project_name]["parameters"]`):
-- `popdata` <STRING>: Path to tab-delimited file with columns: population, latitude, longitude, and optional grouping variables (e.g., region)
-- `popseparator` <STRING>: Alternative to popdata - character separating individual ID from population code in sample names (e.g., `"-"` for `ind1-pop1`)
-  
-**Population maps and summaries**
-
-- If `popdata` is provided, the pipeline computes per-population summaries and (optionally) a population map:
-  - `results/<project>/stats_samples/<project>.population_summary.txt`
-  - `results/<project>/stats_samples/<project>.population_map.pdf` (if `analyses.plot_map: true`)
+**Population maps and summaries** use `indpopdata.txt` and the shared map settings to create descriptive sampling maps. If `popdata` is available, the pipeline can generate `results/<project>/stats_samples/<project>.population_map.pdf` together with tabular summaries of sample counts per population. The main map controls are `config["parameters"]["population_map"]`, `config["parameters"]["map_background"]`, and `config["parameters"]["map_boundary"]`.
 
 ### Computational resources
 
-Resources per analysis type defined under `config["projects"][project_name]["parameters"]["resources"]`:
+Resources per analysis type defined under `config["parameters"]["resources"]`:
 - `threads` <INTEGER>: Number of CPU cores
 - `mem_mb` <INTEGER>: Memory allocation in megabytes
 - `runtime` <INTEGER>: Maximum runtime in minutes
-
-## Filtering Parameters Summary
-
-This section provides a quick reference for all filtering parameters used throughout the pipeline.
-
-### Main Preprocessing Filters
-
-| Filter Step | Parameter Path | Parameter | Type | Default | Description |
-|------------|----------------|-----------|------|---------|-------------|
-| Sample subsetting | `config["projects"][project]["samples"]` | `samples` | STRING (comma-separated) | - | Optional: comma-separated list of sample IDs to retain |
-| Thinning strategy | `thinning_strategy` | `thinning_strategy` | STRING | `"thinning"` | SNP pruning strategy: `"thinning"`, `"ld_pruning"`, or `"none"` |
-| Relatedness filtering | `relatedness_filtering.enabled` | `enabled` | BOOLEAN | `false` | Enable/disable KING-based relatedness filtering |
-| Relatedness filtering | `relatedness_filtering.king_threshold` | `king_threshold` | FLOAT | `0.0884` | KING kinship threshold (0.354=twins, 0.177=1st-degree, 0.0884=2nd-degree, 0.0442=3rd-degree) |
-| Relatedness filtering | `relatedness_filtering.mac_threshold` | `mac_threshold` | INTEGER | `1` | Minimum MAC for KING calculation |
-| Missing data | `vcf_filtering.f_missing` | `f_missing` | FLOAT | `0.5` | Maximum missing data threshold (1=keep all, 0=no missing allowed) |
-| MAF filter | `vcf_filtering.maf` | `maf` | FLOAT | `0` | Minimum minor allele frequency threshold (0 = no MAF filter) |
-| VCF thinning | `vcf_thinning.min_coverage` | `min_coverage` | INTEGER | `0` | Minimum number of samples with data at a locus |
-| VCF thinning | `vcf_thinning.method` | `method` | STRING | `"max_coverage"` | SNP selection: `random`, `max_coverage`, or `weighted` |
-| VCF thinning | `vcf_thinning.ties` | `ties` | STRING | `"random"` | Handle ties: `first` or `random` |
-| VCF thinning | `vcf_thinning.ns_tag` | `ns_tag` | STRING | `"NS"` | VCF INFO field tag for number of samples |
-| VCF thinning | `vcf_thinning.id_pattern` | `id_pattern` | STRING | `"loc(\\d+)_"` | Regex pattern to extract RAD fragment ID |
-| LD pruning | `ld_pruning.r2` | `r2` | FLOAT | `0.5` | \(r^2\) threshold for LD pruning |
-| LD pruning | `ld_pruning.window_size` | `window_size` | INTEGER | `50` | LD pruning window size (kb) |
-| LD pruning | `ld_pruning.step_size` | `step_size` | INTEGER | `5` | LD pruning step size (kb) |
-
-### Analysis-Specific Filters
-
-| Analysis | Parameter Path | Parameter | Type | Default | Description |
-|----------|----------------|-----------|------|---------|-------------|
-| PCAone missing | `PCAone.miss` | `miss` | LIST[FLOAT] | `[0.1, 0.2, 0.3, ...]` | List of missing data thresholds for robustness testing |
-| VCF2PCACluster | `vcf2pcacluster.SNP_filtering.MAF` | `MAF` | LIST[FLOAT] | `[0, 0.001, 0.01, 0.05]` | List of minimum minor allele frequency thresholds |
-| VCF2PCACluster | `vcf2pcacluster.SNP_filtering.Miss` | `Miss` | LIST[FLOAT] | `[0.3, 0.4, 0.5]` | List of maximum missing data thresholds |
-| VCF2PCACluster | `vcf2pcacluster.SNP_filtering.Het` | `Het` | FLOAT | `1.0` | Maximum heterozygosity ratio filter |
-| VCF2PCACluster | `vcf2pcacluster.SNP_filtering.HWE` | `HWE` | FLOAT | `0` | Hardy-Weinberg Equilibrium p-value threshold (0=no filter) |
-| VCF2PCACluster | `vcf2pcacluster.SNP_filtering.Fchr` | `Fchr` | STRING | `""` | Filter specific chromosome (empty=no filter) |
-
