@@ -553,7 +553,7 @@ rule pass_through_vcf:
     input:
         vcf = rules.select_biallelic_snps.output.biallelic_vcf
     output:
-        vcf = "results/{project}/filtered_data/{project}.biallelic_snps_all_snps.vcf.gz"
+        vcf = "results/{project}/filtered_data/{project}.biallelic_snps_all.vcf.gz"
     log:
         "logs/{project}/pass_through_vcf.log"
     benchmark:
