@@ -326,7 +326,7 @@ parameters: &global_params
       runtime: 10
     gen_dist: # genetic distance calculations (Euclidean, Kosman, etc.)
       threads: 1
-      mem_mb: 32000
+      mem_mb: 8000
       runtime: 60
     default-long: # default resources for longer steps like filtering
       threads: 1
