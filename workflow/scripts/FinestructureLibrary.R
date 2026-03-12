@@ -539,9 +539,11 @@ plotFinestructure <- function(
 
   par(mar = c(labmargin, labmargin, 0, 1) + hmmar)
   n <- nrow(tmpmat)
+  x_breaks <- seq(0.5, ncol(tmpmat) + 0.5, by = 1)
+  y_breaks <- seq(0.5, nrow(tmpmat) + 0.5, by = 1)
   image(
-    x = seq_len(ncol(tmpmat)),
-    y = seq_len(nrow(tmpmat)),
+    x = x_breaks,
+    y = y_breaks,
     z = t(tmpmat[n:1, , drop = FALSE]),
     col = cols,
     breaks = breaks,
@@ -575,10 +577,10 @@ plotFinestructure <- function(
   }
 
   par(mar = c(labmargin, 1, 0, 4) + scalemar)
-  scale_vals <- matrix(seq(colscale[1], colscale[2], length.out = 200), ncol = 1)
+  scale_vals <- matrix(seq(colscale[1], colscale[2], length.out = 200), nrow = 1)
   image(
-    x = 1,
-    y = seq(colscale[1], colscale[2], length.out = 200),
+    x = c(0, 1),
+    y = seq(colscale[1], colscale[2], length.out = 201),
     z = scale_vals,
     col = cols,
     breaks = breaks,
