@@ -91,7 +91,7 @@ rule pixy_pi:
     output:
         pi = "results/{project}/pixy/{project}.{grouping}.pixy_pi.txt"
     log:
-        "logs/{project}/pixy_pi.log"
+        "logs/{project}/pixy_pi.{grouping}.log"
     benchmark:
         "benchmarks/{project}/pixy_pi.{grouping}.txt"
     params:
@@ -121,7 +121,7 @@ rule pixy_fst:
     output:
         fst = "results/{project}/pixy/{project}.{grouping}.pixy_fst.txt"
     log:
-        "logs/{project}/pixy_fst.log"
+        "logs/{project}/pixy_fst.{grouping}.log"
     benchmark:
         "benchmarks/{project}/pixy_fst.{grouping}.txt"
     params:
@@ -151,7 +151,7 @@ rule pixy_dxy:
     output:
         dxy = "results/{project}/pixy/{project}.{grouping}.pixy_dxy.txt"
     log:
-        "logs/{project}/pixy_dxy.log"
+        "logs/{project}/pixy_dxy.{grouping}.log"
     benchmark:
         "benchmarks/{project}/pixy_dxy.{grouping}.txt"
     params:
@@ -179,7 +179,7 @@ rule pixy_pi_summary:
     output:
         pi = "results/{project}/pixy/{project}.{grouping}.pixy_pi-summary.txt",
     log:
-        "logs/{project}/pixy_pi_summary.log"
+        "logs/{project}/pixy_pi_summary.{grouping}.log"
     benchmark:
         "benchmarks/{project}/pixy_pi_summary.{grouping}.txt"
     params:
@@ -201,7 +201,7 @@ rule pixy_fst_summary:
     output:
         fst = "results/{project}/pixy/{project}.{grouping}.pixy_fst-summary.txt"
     log:
-        "logs/{project}/pixy_fst_summary.log"
+        "logs/{project}/pixy_fst_summary.{grouping}.log"
     benchmark:
         "benchmarks/{project}/pixy_fst_summary.{grouping}.txt"
     params:
@@ -223,7 +223,7 @@ rule pixy_dxy_summary:
     output:
         dxy = "results/{project}/pixy/{project}.{grouping}.pixy_dxy-summary.txt"
     log:
-        "logs/{project}/pixy_dxy_summary.log"
+        "logs/{project}/pixy_dxy_summary.{grouping}.log"
     benchmark:
         "benchmarks/{project}/pixy_dxy_summary.{grouping}.txt"
     params:
@@ -246,7 +246,7 @@ rule plot_pixy_fst_heatmap:
         pdf = "results/{project}/pixy/plots/{project}.{grouping}.pixy_fst_heatmap.pdf",
         rds = "results/{project}/pixy/plots/{project}.{grouping}.pixy_fst_heatmap.rds"
     log:
-        "logs/{project}/plot_pixy_fst_heatmap.log"
+        "logs/{project}/plot_pixy_fst_heatmap.{grouping}.log"
     benchmark:
         "benchmarks/{project}/plot_pixy_fst_heatmap.{grouping}.txt"
     conda:
@@ -266,7 +266,7 @@ rule plot_pixy_dxy_heatmap:
         pdf = "results/{project}/pixy/plots/{project}.{grouping}.pixy_dxy_heatmap.pdf",
         rds = "results/{project}/pixy/plots/{project}.{grouping}.pixy_dxy_heatmap.rds"
     log:
-        "logs/{project}/plot_pixy_dxy_heatmap.log"
+        "logs/{project}/plot_pixy_dxy_heatmap.{grouping}.log"
     benchmark:
         "benchmarks/{project}/plot_pixy_dxy_heatmap.{grouping}.txt"
     conda:
