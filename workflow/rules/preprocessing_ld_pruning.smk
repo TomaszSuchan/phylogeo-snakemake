@@ -145,3 +145,4 @@ rule ld_prune_compress:
         # Convert VCF version from 4.3 to 4.2 for vcftools compatibility
         sed 's/^##fileformat=VCFv4.3/##fileformat=VCFv4.2/' {input.vcf} | bgzip > {output.vcf}
         """
+
