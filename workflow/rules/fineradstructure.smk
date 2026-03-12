@@ -116,7 +116,7 @@ rule fineradstructure_plot:
     benchmark:
         "benchmarks/{project}/fineradstructure_plot.txt"
     conda:
-        "../envs/r-ggtree.yaml"
+        "../envs/fineradstructure_plot.yaml"
     threads: 1
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
