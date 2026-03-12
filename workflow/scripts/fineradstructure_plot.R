@@ -36,36 +36,44 @@ cat("Output RDS:", output_rds, "\n")
 cat("===============================\n\n")
 
 # Function to extract tree from fineRADstructure XML
+# fineRADstructure uses fineSTRUCTURE's own XML format: the tree is stored as
+# Newick text inside the last <outputFile> node (not phyloXML or BEAST).
 extract_tree_from_xml <- function(xml_file) {
   cat("Parsing XML file:", xml_file, "\n")
-  
-  # Method 1: Try using treeio to read phyloXML format
-  if (require("treeio", quietly = TRUE)) {
-    tryCatch({
-      cat("Attempting to read as phyloXML using treeio...\n")
-      tree_obj <- read.phyloXML(xml_file)
-      if (!is.null(tree_obj) && inherits(tree_obj, "phylo")) {
-        cat("Successfully read tree using treeio\n")
-        return(tree_obj)
-      }
-    }, error = function(e) {
-      cat("treeio phyloXML read failed:", conditionMessage(e), "\n")
-    })
-  }
-  
-  # Method 2: Try using XML package to extract Newick string
+
+  # Method 1: fineSTRUCTURE native format (official fineRADstructure layout)
+  # Tree is Newick in the last outputFile node; see FinestructureLibrary.R extractTree()
   if (require("XML", quietly = TRUE)) {
     tryCatch({
-      cat("Attempting to parse XML and extract Newick string...\n")
+      cat("Attempting to read as fineSTRUCTURE XML (last outputFile = Newick)...\n")
       xml_doc <- xmlParse(xml_file)
       xml_root <- xmlRoot(xml_doc)
-      
-      # Try to find Newick tree string in various possible locations
-      # fineRADstructure XML may have tree in different formats
+      output_file_nodes <- getNodeSet(xml_root, "//outputFile")
+      if (length(output_file_nodes) > 0) {
+        last_node <- output_file_nodes[[length(output_file_nodes)]]
+        newick_string <- xmlValue(last_node)
+        newick_string <- trimws(newick_string)
+        if (nchar(newick_string) > 0 && grepl("\\(", newick_string)) {
+          cat("Successfully read tree from fineSTRUCTURE outputFile (Newick)\n")
+          tree <- read.tree(text = newick_string)
+          return(tree)
+        }
+      }
+    }, error = function(e) {
+      cat("fineSTRUCTURE outputFile extraction failed:", conditionMessage(e), "\n")
+    })
+  }
+
+  # Method 2: Generic XML fallback – look for //tree or other Newick-containing nodes
+  if (require("XML", quietly = TRUE)) {
+    tryCatch({
+      cat("Attempting to parse XML and extract Newick from //tree or similar...\n")
+      xml_doc <- xmlParse(xml_file)
+      xml_root <- xmlRoot(xml_doc)
       tree_nodes <- getNodeSet(xml_root, "//tree")
       if (length(tree_nodes) > 0) {
         for (node in tree_nodes) {
-          tree_string <- xmlValue(node)
+          tree_string <- trimws(xmlValue(node))
           if (nchar(tree_string) > 0 && grepl("\\(", tree_string)) {
             cat("Found Newick tree string in XML\n")
             tree <- read.tree(text = tree_string)
@@ -73,8 +81,6 @@ extract_tree_from_xml <- function(xml_file) {
           }
         }
       }
-      
-      # Try attributes
       tree_attrs <- xpathApply(xml_root, "//tree", xmlAttrs)
       if (length(tree_attrs) > 0) {
         for (attr in tree_attrs) {
@@ -86,7 +92,7 @@ extract_tree_from_xml <- function(xml_file) {
         }
       }
     }, error = function(e) {
-      cat("XML parsing failed:", conditionMessage(e), "\n")
+      cat("XML fallback parsing failed:", conditionMessage(e), "\n")
     })
   }
   
