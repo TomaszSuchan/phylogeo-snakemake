@@ -400,25 +400,28 @@ def get_all_targets():
                 .get("stats", ["pi", "fst", "dxy"])
             )
 
-            # Summary tables per statistic
-            if "pi" in pixy_stats:
-                targets.append(f"results/{project}/pixy/{project}.pixy_pi-summary.txt")
-            if "fst" in pixy_stats:
-                targets.append(f"results/{project}/pixy/{project}.pixy_fst-summary.txt")
-            if "dxy" in pixy_stats:
-                targets.append(f"results/{project}/pixy/{project}.pixy_dxy-summary.txt")
+            pixy_groupings = params.get("pixy", {}).get(
+                "group_by", params.get("pca_plot", {}).get("color_by", ["none"])
+            )
 
-            # Heatmaps only for enabled pairwise statistics
-            if "fst" in pixy_stats:
-                targets.extend([
-                    f"results/{project}/pixy/plots/{project}.pixy_fst_heatmap.pdf",
-                    f"results/{project}/pixy/plots/{project}.pixy_fst_heatmap.rds",
-                ])
-            if "dxy" in pixy_stats:
-                targets.extend([
-                    f"results/{project}/pixy/plots/{project}.pixy_dxy_heatmap.pdf",
-                    f"results/{project}/pixy/plots/{project}.pixy_dxy_heatmap.rds",
-                ])
+            # Summary tables and heatmaps per statistic and grouping
+            for grouping in pixy_groupings:
+                if grouping == "none":
+                    continue
+                if "pi" in pixy_stats:
+                    targets.append(f"results/{project}/pixy/{project}.{grouping}.pixy_pi-summary.txt")
+                if "fst" in pixy_stats:
+                    targets.append(f"results/{project}/pixy/{project}.{grouping}.pixy_fst-summary.txt")
+                    targets.extend([
+                        f"results/{project}/pixy/plots/{project}.{grouping}.pixy_fst_heatmap.pdf",
+                        f"results/{project}/pixy/plots/{project}.{grouping}.pixy_fst_heatmap.rds",
+                    ])
+                if "dxy" in pixy_stats:
+                    targets.append(f"results/{project}/pixy/{project}.{grouping}.pixy_dxy-summary.txt")
+                    targets.extend([
+                        f"results/{project}/pixy/plots/{project}.{grouping}.pixy_dxy_heatmap.pdf",
+                        f"results/{project}/pixy/plots/{project}.{grouping}.pixy_dxy_heatmap.rds",
+                    ])
 
             # Pi-based barplots and maps only when pi is requested
             if "pi" in pixy_stats:
@@ -428,9 +431,6 @@ def get_all_targets():
                     f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-plain.rds",
                 ])
 
-                pixy_groupings = params.get("pixy", {}).get(
-                    "color_by", params.get("pca_plot", {}).get("color_by", ["none"])
-                )
                 for color_by in pixy_groupings:
                     if color_by == "none":
                         continue

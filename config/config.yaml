@@ -62,7 +62,7 @@ parameters: &global_params
                             # Common values: 0.354 (duplicates/twins), 0.177 (1st-degree), 0.0884 (2nd-degree), 0.0442 (3rd-degree)
     mac_threshold: 1  # minimum MAC for KING calculation (default: 1)
     group_by: ["Region"]  # list of columns from popdata to group barplots by (default: ["Region"])
-                          # Similar to pixy.color_by and pca_plot.color_by
+                          # Similar to pixy.group_by and pca_plot.color_by
                           # Each value in the list generates a separate barplot grouped by that column
                           # Use ["none"] or [] for no grouping (overall plot only)
                           # Example: ["Region", "Population"] generates plots grouped by Region and by Population
@@ -241,8 +241,10 @@ parameters: &global_params
     stats: ["pi", "fst", "dxy"] # statistics to compute, options: pi, fst, dxy
     window_size: 10000  # size of the sliding window in bp
     bootstrap_replicates: 1000  # number of bootstrap replicates for confidence intervals
-    color_by: ["Region"]  # columns in popdata to color barplots by (must match your popdata column names!)
-                          # separate from pca_plot.color_by - allows different groupings for pixy vs PCA
+    group_by: ["Region"]  # columns in indpopdata/popdata defining hierarchical groupings for pixy
+                          # The first entry is used as the default grouping column to build the pixy popmap
+                          # (i.e. the populations that pixy uses internally).
+                          # The full list is used to define which groupings are available for pixy plots.
     # Map-specific parameters for pixy PI maps
     point_size: 3        # size of points on genetic diversity maps
     map_outline: true    # add point outlines (true/false, default: true)
