@@ -403,6 +403,12 @@ def get_all_targets():
             pixy_groupings = params.get("pixy", {}).get(
                 "group_by", params.get("pca_plot", {}).get("color_by", ["none"])
             )
+            pixy_sort_by = params.get("pixy", {}).get("sort_by", [])
+            # Normalize sort_by to a list; empty/None means "no sorted barplots"
+            if pixy_sort_by is None:
+                pixy_sort_by = []
+            if isinstance(pixy_sort_by, str):
+                pixy_sort_by = [pixy_sort_by]
 
             # Summary tables and heatmaps per statistic and grouping
             for grouping in pixy_groupings:
@@ -438,10 +444,14 @@ def get_all_targets():
                         f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-grouped-{color_by}.pdf",
                         f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-grouped-{color_by}.rds",
                     ])
-                    targets.extend([
-                        f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-sorted-{color_by}.pdf",
-                        f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-sorted-{color_by}.rds",
-                    ])
+                    # Only generate sorted barplots for groupings explicitly
+                    # listed in pixy.sort_by (if any). When sort_by is empty,
+                    # no sorted barplots are requested.
+                    if color_by in pixy_sort_by:
+                        targets.extend([
+                            f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-sorted-{color_by}.pdf",
+                            f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-sorted-{color_by}.rds",
+                        ])
 
                 popdata = params.get("popdata")
                 if popdata and popdata != "NULL" and popdata != "":
