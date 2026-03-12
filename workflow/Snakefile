@@ -454,7 +454,12 @@ def get_all_targets():
                         ])
 
                 popdata = params.get("popdata")
-                if popdata and popdata != "NULL" and popdata != "":
+                # Pi maps only make sense when pixy populations are "Site"
+                # (plot_pixy_maps merges by Site <-> population).
+                if (
+                    popdata and popdata != "NULL" and popdata != ""
+                    and "Site" in pixy_groupings
+                ):
                     targets.extend([
                         f"results/{project}/pixy/plots/{project}.pixy_pi_map.pdf",
                         f"results/{project}/pixy/plots/{project}.pixy_pi_map.rds",

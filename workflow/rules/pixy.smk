@@ -360,14 +360,9 @@ rule plot_pixy_pi_barplot_plain:
 rule plot_pixy_pi_map:
     input:
         indpopdata = rules.generate_popdata.output.indpopdata,
-        summary = lambda wildcards: (
-            "results/{project}/pixy/{project}.{grouping}.pixy_pi-summary.txt".format(
-                project=wildcards.project,
-                grouping=config["projects"][wildcards.project]["parameters"]
-                    .get("pixy", {})
-                    .get("group_by", ["Site"])[0]
-            )
-        ),
+        # Map plotting requires Site-level populations because
+        # plot_pixy_maps.R merges summary population names with Site coords.
+        summary = "results/{project}/pixy/{project}.Site.pixy_pi-summary.txt",
         install = rules.install_mapmixture.output  # Reuse mapmixture installation
     output:
         pdf = "results/{project}/pixy/plots/{project}.pixy_pi_map.pdf",
