@@ -347,6 +347,10 @@ parameters: &global_params
       threads: 1
       mem_mb: 8000
       runtime: 60
+    prepare_invariant_vcf: # build invariant-site VCF from .loci
+      threads: 1
+      mem_mb: 32000
+      runtime: 60
     structure:
       threads: 1
       mem_mb: 8000
