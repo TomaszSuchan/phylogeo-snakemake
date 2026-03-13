@@ -403,12 +403,17 @@ def get_all_targets():
             pixy_groupings = params.get("pixy", {}).get(
                 "group_by", params.get("pca_plot", {}).get("color_by", ["none"])
             )
-            pixy_sort_by = params.get("pixy", {}).get("sort_by", [])
-            # Normalize sort_by to a list; empty/None means "no sorted barplots"
-            if pixy_sort_by is None:
-                pixy_sort_by = []
-            if isinstance(pixy_sort_by, str):
-                pixy_sort_by = [pixy_sort_by]
+            # arrange_by controls whether grouped/sorted Pi barplots are generated.
+            # Backward compatible with deprecated pixy.sort_by.
+            pixy_arrange_by = params.get("pixy", {}).get(
+                "arrange_by",
+                params.get("pixy", {}).get("sort_by", []),
+            )
+            # Normalize arrange_by to a list; empty/None means "no grouped/sorted barplots"
+            if pixy_arrange_by is None:
+                pixy_arrange_by = []
+            if isinstance(pixy_arrange_by, str):
+                pixy_arrange_by = [pixy_arrange_by]
 
             # Summary tables and heatmaps per statistic and grouping
             for grouping in pixy_groupings:
@@ -437,21 +442,22 @@ def get_all_targets():
                     f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-plain.rds",
                 ])
 
-                for color_by in pixy_groupings:
+                # Generate grouped/sorted barplots only when arrange_by is provided.
+                # Also require that the requested arrange_by grouping is part of
+                # pixy.group_by (so matching Pixy summaries exist).
+                for color_by in pixy_arrange_by:
                     if color_by == "none":
+                        continue
+                    if color_by not in pixy_groupings:
                         continue
                     targets.extend([
                         f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-grouped-{color_by}.pdf",
                         f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-grouped-{color_by}.rds",
                     ])
-                    # Only generate sorted barplots for groupings explicitly
-                    # listed in pixy.sort_by (if any). When sort_by is empty,
-                    # no sorted barplots are requested.
-                    if color_by in pixy_sort_by:
-                        targets.extend([
-                            f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-sorted-{color_by}.pdf",
-                            f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-sorted-{color_by}.rds",
-                        ])
+                    targets.extend([
+                        f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-sorted-{color_by}.pdf",
+                        f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-sorted-{color_by}.rds",
+                    ])
 
                 popdata = params.get("popdata")
                 # Pi maps only make sense when pixy populations are "Site"

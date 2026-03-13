@@ -245,10 +245,10 @@ parameters: &global_params
                           # The first entry is used as the default grouping column to build the pixy popmap
                           # (i.e. the populations that pixy uses internally).
                           # The full list is used to define which groupings are available for pixy plots.
-    # Optional: which grouping variables should also get a globally
-    # sorted Pi barplot (ordered by mean_pi). If empty or omitted,
-    # the sorted barplots are not generated.
-    sort_by: []
+    # Optional: grouping variables for Pi barplots that should be
+    # produced as grouped and sorted versions.
+    # If empty or omitted, only the plain Pi barplot is generated.
+    arrange_by: []
     # Map-specific parameters for pixy PI maps
     point_size: 3        # size of points on genetic diversity maps
     map_outline: true    # add point outlines (true/false, default: true)
