@@ -404,11 +404,7 @@ def get_all_targets():
                 "group_by", params.get("pca_plot", {}).get("color_by", ["none"])
             )
             # arrange_by controls whether grouped/sorted Pi barplots are generated.
-            # Backward compatible with deprecated pixy.sort_by.
-            pixy_arrange_by = params.get("pixy", {}).get(
-                "arrange_by",
-                params.get("pixy", {}).get("sort_by", []),
-            )
+            pixy_arrange_by = params.get("pixy", {}).get("arrange_by", [])
             # Normalize arrange_by to a list; empty/None means "no grouped/sorted barplots"
             if pixy_arrange_by is None:
                 pixy_arrange_by = []
