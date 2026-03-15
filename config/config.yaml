@@ -180,12 +180,11 @@ parameters: &global_params
     crs: 4326          # coordinate reference system for plotting (4326 = WGS84)
   
   ## PCAone parameters
-  #
   # SVD method SVD method to be applied.
   # Options are
   # 0: the Implicitly Restarted Arnoldi Method (IRAM);
   # 1: the Yu's single-pass Randomized SVD with power iterations;
-  # 2: the accurate window-based Randomized SVD method (PCAone), recommended for big data;
+  # 2: the accurate window-based Randomized SVD method (PCAone), recommended for big data (default if --emu option is specified)
   # 3: the full Singular Value Decomposition (default).
   # Minimum coverage thresholds to filter VCF for missing data before PCAone analysis.
   # The VCF will be filtered for each threshold in the list and PCAone will be run
@@ -193,6 +192,7 @@ parameters: &global_params
   PCAone:
     miss: [0.1, 0.2, 0.2, 0.3, 0.4, 0.5] # list of maximum missing data thresholds (F_MISSING<mincov)
     SVD_method: 3 # SVD method to use [0-3]
+    EMU_SVD_method: 2 # SVD method to use for EMU [0-3] (default: 2 if --emu option is specified)
     PCnum: 10     # number of principal components to compute
 
   # EMU https://github.com/Rosemeis/emu

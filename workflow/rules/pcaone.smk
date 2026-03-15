@@ -13,7 +13,7 @@ rule pcaone_emu:
     benchmark:
         "benchmarks/{project}/pcaone_emu.txt"
     params:
-        SVD_method = lambda wildcards: config["projects"][wildcards.project]["parameters"]["PCAone"].get("SVD_method", 3),
+        SVD_method = lambda wildcards: config["projects"][wildcards.project]["parameters"]["PCAone"].get("EMU_SVD_method", 2),
         PCnum = lambda wildcards: config["projects"][wildcards.project]["parameters"]["PCAone"].get("PCnum", 10),
         output_prefix = "results/{project}/pcaone_EMU/{project}.PCA_EMU",
         # Get the bfile prefix (remove .bed extension)
