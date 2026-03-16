@@ -432,12 +432,6 @@ def get_all_targets():
 
             # Pi-based barplots and maps only when pi is requested
             if "pi" in pixy_stats:
-                # Plain barplot (no coloring)
-                targets.extend([
-                    f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-plain.pdf",
-                    f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-plain.rds",
-                ])
-
                 # grouped/sorted plots are always generated for each calculation
                 # grouping (pixy.group_by), plus any optional plotting-only
                 # groupings (pixy.sort_by).
@@ -446,17 +440,26 @@ def get_all_targets():
                     if grouping not in pixy_plot_groupings:
                         pixy_plot_groupings.append(grouping)
 
-                for color_by in pixy_plot_groupings:
-                    if color_by == "none":
+                for grouping in pixy_groupings:
+                    if grouping == "none":
                         continue
+                    # Plain barplot (no coloring), one per Pixy calculation grouping
                     targets.extend([
-                        f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-grouped-{color_by}.pdf",
-                        f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-grouped-{color_by}.rds",
+                        f"results/{project}/pixy/plots/{project}.{grouping}.pixy_pi_plain.pdf",
+                        f"results/{project}/pixy/plots/{project}.{grouping}.pixy_pi_plain.rds",
                     ])
-                    targets.extend([
-                        f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-sorted-{color_by}.pdf",
-                        f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-sorted-{color_by}.rds",
-                    ])
+
+                    for color_by in pixy_plot_groupings:
+                        if color_by == "none":
+                            continue
+                        targets.extend([
+                            f"results/{project}/pixy/plots/{project}.{grouping}.pixy_pi_grouped_by_{color_by}.pdf",
+                            f"results/{project}/pixy/plots/{project}.{grouping}.pixy_pi_grouped_by_{color_by}.rds",
+                        ])
+                        targets.extend([
+                            f"results/{project}/pixy/plots/{project}.{grouping}.pixy_pi_sorted_by_{color_by}.pdf",
+                            f"results/{project}/pixy/plots/{project}.{grouping}.pixy_pi_sorted_by_{color_by}.rds",
+                        ])
 
                 popdata = params.get("popdata")
                 # Pi maps only make sense when pixy populations are "Site"

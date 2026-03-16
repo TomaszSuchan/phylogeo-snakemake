@@ -282,26 +282,13 @@ rule plot_pixy_dxy_heatmap:
 # When color_by != "none", generates grouped version (grouped by stratification, then sorted by pi within group)
 rule plot_pixy_pi_barplot:
     input:
-        pi_summary = lambda wildcards: (
-            "results/{project}/pixy/{project}.{grouping}.pixy_pi-summary.txt".format(
-                project=wildcards.project,
-                grouping=(
-                    wildcards.color_by
-                    if wildcards.color_by in config["projects"][wildcards.project]["parameters"]
-                        .get("pixy", {})
-                        .get("group_by", ["Site"])
-                    else config["projects"][wildcards.project]["parameters"]
-                        .get("pixy", {})
-                        .get("group_by", ["Site"])[0]
-                )
-            )
-        ),
+        pi_summary = "results/{project}/pixy/{project}.{grouping}.pixy_pi-summary.txt",
         popdata = rules.generate_popdata.output.indpopdata
     output:
-        pdf = "results/{project}/pixy/plots/{project}.pixy_pi_barplot-grouped-{color_by}.pdf",
-        rds = "results/{project}/pixy/plots/{project}.pixy_pi_barplot-grouped-{color_by}.rds"
+        pdf = "results/{project}/pixy/plots/{project}.{grouping}.pixy_pi_grouped_by_{color_by}.pdf",
+        rds = "results/{project}/pixy/plots/{project}.{grouping}.pixy_pi_grouped_by_{color_by}.rds"
     log:
-        "logs/{project}/plot_pixy_pi_barplot_{color_by}.log"
+        "logs/{project}/plot_pixy_pi_barplot_{grouping}_grouped_by_{color_by}.log"
     params:
         color_by = lambda wildcards: wildcards.color_by if wildcards.color_by != "none" else None,
         pca_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pca_colors", None),
@@ -319,26 +306,13 @@ rule plot_pixy_pi_barplot:
 # Only generated when color_by != "none"
 rule plot_pixy_pi_barplot_sorted:
     input:
-        pi_summary = lambda wildcards: (
-            "results/{project}/pixy/{project}.{grouping}.pixy_pi-summary.txt".format(
-                project=wildcards.project,
-                grouping=(
-                    wildcards.color_by
-                    if wildcards.color_by in config["projects"][wildcards.project]["parameters"]
-                        .get("pixy", {})
-                        .get("group_by", ["Site"])
-                    else config["projects"][wildcards.project]["parameters"]
-                        .get("pixy", {})
-                        .get("group_by", ["Site"])[0]
-                )
-            )
-        ),
+        pi_summary = "results/{project}/pixy/{project}.{grouping}.pixy_pi-summary.txt",
         popdata = rules.generate_popdata.output.indpopdata
     output:
-        pdf = "results/{project}/pixy/plots/{project}.pixy_pi_barplot-sorted-{color_by}.pdf",
-        rds = "results/{project}/pixy/plots/{project}.pixy_pi_barplot-sorted-{color_by}.rds"
+        pdf = "results/{project}/pixy/plots/{project}.{grouping}.pixy_pi_sorted_by_{color_by}.pdf",
+        rds = "results/{project}/pixy/plots/{project}.{grouping}.pixy_pi_sorted_by_{color_by}.rds"
     log:
-        "logs/{project}/plot_pixy_pi_barplot_{color_by}_sorted.log"
+        "logs/{project}/plot_pixy_pi_barplot_{grouping}_sorted_by_{color_by}.log"
     params:
         color_by = lambda wildcards: wildcards.color_by,
         pca_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pca_colors", None),
@@ -355,20 +329,13 @@ rule plot_pixy_pi_barplot_sorted:
 # Rule to plot Pi barplot without coloring (plain barplot)
 rule plot_pixy_pi_barplot_plain:
     input:
-        pi_summary = lambda wildcards: (
-            "results/{project}/pixy/{project}.{grouping}.pixy_pi-summary.txt".format(
-                project=wildcards.project,
-                grouping=config["projects"][wildcards.project]["parameters"]
-                    .get("pixy", {})
-                    .get("group_by", ["Site"])[0]
-            )
-        ),
+        pi_summary = "results/{project}/pixy/{project}.{grouping}.pixy_pi-summary.txt",
         popdata = rules.generate_popdata.output.indpopdata
     output:
-        pdf = "results/{project}/pixy/plots/{project}.pixy_pi_barplot-plain.pdf",
-        rds = "results/{project}/pixy/plots/{project}.pixy_pi_barplot-plain.rds"
+        pdf = "results/{project}/pixy/plots/{project}.{grouping}.pixy_pi_plain.pdf",
+        rds = "results/{project}/pixy/plots/{project}.{grouping}.pixy_pi_plain.rds"
     log:
-        "logs/{project}/plot_pixy_pi_barplot_plain.log"
+        "logs/{project}/plot_pixy_pi_barplot_{grouping}_plain.log"
     params:
         color_by = None,  # No coloring
         pca_colors = None,
