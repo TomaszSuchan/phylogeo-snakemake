@@ -403,13 +403,13 @@ def get_all_targets():
             pixy_groupings = params.get("pixy", {}).get(
                 "group_by", params.get("pca_plot", {}).get("color_by", ["none"])
             )
-            # arrange_by controls whether grouped/sorted Pi barplots are generated.
-            pixy_arrange_by = params.get("pixy", {}).get("arrange_by", [])
-            # Normalize arrange_by to a list; empty/None means "no grouped/sorted barplots"
-            if pixy_arrange_by is None:
-                pixy_arrange_by = []
-            if isinstance(pixy_arrange_by, str):
-                pixy_arrange_by = [pixy_arrange_by]
+            # Optional plotting-only grouping(s) for Pi barplots.
+            # Can differ from pixy.group_by (calculation grouping).
+            pixy_sort_by = params.get("pixy", {}).get("sort_by", [])
+            if pixy_sort_by is None:
+                pixy_sort_by = []
+            if isinstance(pixy_sort_by, str):
+                pixy_sort_by = [pixy_sort_by]
 
             # Summary tables and heatmaps per statistic and grouping
             for grouping in pixy_groupings:
@@ -438,13 +438,16 @@ def get_all_targets():
                     f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-plain.rds",
                 ])
 
-                # Generate grouped/sorted barplots only when arrange_by is provided.
-                # Also require that the requested arrange_by grouping is part of
-                # pixy.group_by (so matching Pixy summaries exist).
-                for color_by in pixy_arrange_by:
+                # grouped/sorted plots are always generated for each calculation
+                # grouping (pixy.group_by), plus any optional plotting-only
+                # groupings (pixy.sort_by).
+                pixy_plot_groupings = []
+                for grouping in pixy_groupings + pixy_sort_by:
+                    if grouping not in pixy_plot_groupings:
+                        pixy_plot_groupings.append(grouping)
+
+                for color_by in pixy_plot_groupings:
                     if color_by == "none":
-                        continue
-                    if color_by not in pixy_groupings:
                         continue
                     targets.extend([
                         f"results/{project}/pixy/plots/{project}.pixy_pi_barplot-grouped-{color_by}.pdf",

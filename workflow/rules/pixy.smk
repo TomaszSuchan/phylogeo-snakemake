@@ -282,7 +282,20 @@ rule plot_pixy_dxy_heatmap:
 # When color_by != "none", generates grouped version (grouped by stratification, then sorted by pi within group)
 rule plot_pixy_pi_barplot:
     input:
-        pi_summary = "results/{project}/pixy/{project}.{color_by}.pixy_pi-summary.txt",
+        pi_summary = lambda wildcards: (
+            "results/{project}/pixy/{project}.{grouping}.pixy_pi-summary.txt".format(
+                project=wildcards.project,
+                grouping=(
+                    wildcards.color_by
+                    if wildcards.color_by in config["projects"][wildcards.project]["parameters"]
+                        .get("pixy", {})
+                        .get("group_by", ["Site"])
+                    else config["projects"][wildcards.project]["parameters"]
+                        .get("pixy", {})
+                        .get("group_by", ["Site"])[0]
+                )
+            )
+        ),
         popdata = rules.generate_popdata.output.indpopdata
     output:
         pdf = "results/{project}/pixy/plots/{project}.pixy_pi_barplot-grouped-{color_by}.pdf",
@@ -306,7 +319,20 @@ rule plot_pixy_pi_barplot:
 # Only generated when color_by != "none"
 rule plot_pixy_pi_barplot_sorted:
     input:
-        pi_summary = "results/{project}/pixy/{project}.{color_by}.pixy_pi-summary.txt",
+        pi_summary = lambda wildcards: (
+            "results/{project}/pixy/{project}.{grouping}.pixy_pi-summary.txt".format(
+                project=wildcards.project,
+                grouping=(
+                    wildcards.color_by
+                    if wildcards.color_by in config["projects"][wildcards.project]["parameters"]
+                        .get("pixy", {})
+                        .get("group_by", ["Site"])
+                    else config["projects"][wildcards.project]["parameters"]
+                        .get("pixy", {})
+                        .get("group_by", ["Site"])[0]
+                )
+            )
+        ),
         popdata = rules.generate_popdata.output.indpopdata
     output:
         pdf = "results/{project}/pixy/plots/{project}.pixy_pi_barplot-sorted-{color_by}.pdf",
