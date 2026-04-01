@@ -6,4 +6,4 @@ dependencies:
   - r-phangorn
   - r-ggplot2
   - bioconductor-ggtree
-  - r-tanggle
+  - bioconductor-tanggle
