@@ -305,9 +305,6 @@ parameters: &global_params
       - "#999999"  # gray
       - "#FFFFFF"  # white
       - "#000000"  # black
-    width: 12
-    height: 12
-    dpi: 300
 
   ## fineRADstructure parameters
   fineradstructure:
