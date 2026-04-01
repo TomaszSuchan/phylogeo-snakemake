@@ -30,6 +30,7 @@ include: "rules/pixy.smk"
 include: "rules/genome_scan.smk"
 include: "rules/genetic_distances.smk"
 include: "rules/pcoa.smk"
+include: "rules/neighbornet.smk"
 include: "rules/mapi.smk"
 include: "rules/fineradstructure.smk"
 include: "rules/construct.smk"
@@ -594,6 +595,24 @@ def get_all_targets():
                 f"results/{project}/PCoA/plots/{project}.PCoA-facet-missing.pdf",
                 f"results/{project}/PCoA/plots/{project}.PCoA-facet-missing.rds"
             ])
+
+        # NeighborNet targets (based on Euclidean genetic distance)
+        if analyses.get("neighbornet", False):
+            neighbornet_groupings = params.get("neighbornet", {}).get("color_by", ["Site"])
+            if isinstance(neighbornet_groupings, str):
+                neighbornet_groupings = [neighbornet_groupings]
+            if neighbornet_groupings is None or len(neighbornet_groupings) == 0:
+                neighbornet_groupings = ["Site"]
+
+            targets.extend([
+                f"results/{project}/gen_dist/{project}.euclidean_distance.tsv",
+                f"results/{project}/neighbornet/{project}.euclidean.neighbornet.rds"
+            ])
+            for color_by in neighbornet_groupings:
+                targets.extend([
+                    f"results/{project}/neighbornet/plots/{project}.euclidean.neighbornet-{color_by}.pdf",
+                    f"results/{project}/neighbornet/plots/{project}.euclidean.neighbornet-{color_by}.rds"
+                ])
 
         # MAPI targets
         if analyses.get("mapi", False):

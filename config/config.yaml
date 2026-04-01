@@ -289,6 +289,26 @@ parameters: &global_params
       - "#FFFFFF"  # white
       - "#000000"  # black
 
+  ## NeighborNet plotting parameters
+  # NeighborNet is inferred from the Euclidean genetic distance matrix.
+  neighbornet:
+    color_by: ["Site"]  # columns in indpopdata used to color network tips
+    neigbournet_colors: # optional categorical palette; recycled/interpolated if needed
+      - "#E41A1C"  # red
+      - "#377EB8"  # blue
+      - "#4DAF4A"  # green
+      - "#984EA3"  # purple
+      - "#FF7F00"  # orange
+      - "#FFFF33"  # yellow
+      - "#A65628"  # brown
+      - "#F781BF"  # pink
+      - "#999999"  # gray
+      - "#FFFFFF"  # white
+      - "#000000"  # black
+    width: 12
+    height: 12
+    dpi: 300
+
   ## fineRADstructure parameters
   fineradstructure:
     cluster:
@@ -440,9 +460,9 @@ projects:
       pcaone_emu: false
       pcaone_miss: false
       emupca: false
-      pixy: false
+      pixy: true
       genome_scan: false
-      relatedness: true
+      relatedness: false
       iqtree: false
       iqtree_trimal: false
       dapc: false
@@ -453,6 +473,7 @@ projects:
       roh: false
       gen_dist: false
       pcoa: false
+      neighbornet: false
     parameters:
       <<: *global_params
       popmap: "data/popmap.txt"
