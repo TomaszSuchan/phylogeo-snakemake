@@ -12,28 +12,29 @@ Loci file formats (both supported):
 
 Definitions:
 - Valid nucleotides: A, C, G, T
-- Ambiguous/IUPAC (e.g., R, Y, S...) and N are treated as missing by default.
+- Ambiguous/IUPAC (e.g., R, Y, S...) and N are treated as missing.
 - Variable site: among valid nucleotides (A,C,G,T) there are >= 2 distinct alleles.
 - Invariant site: among valid nucleotides there is exactly 1 allele.
 
 Options:
-- --mode: output 'all' (default), only 'invariant', or only 'polymorphic'.
-- --use-iupac: decode IUPAC ambiguity codes into heterozygous GT if possible.
-- --ref-choice: 'majority' (default) or 'first-sample' to determine REF allele.
-- --samples-file: file containing sample names to include (one per line)
+- --samples-file: optional; if omitted, all samples in the loci file are included.
+  If given, one sample name per line (only these samples are written to the VCF).
+- --template-vcf: ipyrad VCF(.gz) used as the exact template for polymorphic
+  records (CHROM/POS/REF/ALT). This guarantees polymorphic site congruence.
 
 VCF encoding:
-- REF = chosen allele per --ref-choice
-- ALT = comma-separated remaining observed alleles
+- Polymorphic records: REF/ALT are taken exactly from --template-vcf
+- Invariant records: REF is chosen as majority valid allele; ALT is "."
 - GT per sample:
     - A/C/G/T -> 0/0 if REF, k/k if matches ALT[k]
-    - Ambiguous (IUPAC) -> optionally heterozygous if both alleles are in {REF}+ALT
+    - Ambiguous (IUPAC) or N -> ./.
     - N or missing -> ./.
 """
 
 import sys
 import re
 import argparse
+import gzip
 from datetime import datetime
 from collections import defaultdict
 
@@ -128,29 +129,35 @@ def read_samples_file(filename):
                 samples.add(sample)
     return samples
 
-def choose_ref_allele(counts, sequences, pos, ref_choice, samples_order):
+def parse_template_vcf(vcf_path):
+    """
+    Parse template VCF and return:
+    - variants: {(chrom, pos): {"ref": REF, "alt": [ALT...]}}
+    """
+    opener = gzip.open if vcf_path.endswith(".gz") else open
+    variants = {}
+    with opener(vcf_path, "rt") as f:
+        for line in f:
+            if line.startswith("#"):
+                continue
+            parts = line.rstrip("\n").split("\t")
+            if len(parts) < 5:
+                continue
+            chrom, pos, _vid, ref, alt = parts[:5]
+            alt_list = [a for a in alt.split(",") if a and a != "."]
+            variants[(chrom, int(pos))] = {"ref": ref, "alt": alt_list}
+    return variants
+
+def choose_ref_allele(counts):
     """
     Choose REF allele:
-    - 'majority': allele with highest count
-    - 'first-sample': the base present in the first sample with a valid nucleotide
+    Allele with highest count.
     """
     if not counts:
         return None
-    if ref_choice == "majority":
-        return max(counts.items(), key=lambda kv: kv[1])[0]
-    elif ref_choice == "first-sample":
-        for s in samples_order:
-            seq = sequences.get(s)
-            if seq and pos < len(seq):
-                base = seq[pos].upper()
-                if base in VALID:
-                    return base
-        # fallback to majority if none valid in first sample
-        return max(counts.items(), key=lambda kv: kv[1])[0]
-    else:
-        raise ValueError("ref_choice must be 'majority' or 'first-sample'")
+    return max(counts.items(), key=lambda kv: kv[1])[0]
 
-def summarize_site(sequences, pos, ref_choice, samples_order):
+def summarize_site(sequences, pos):
     """
     Return per-position summary:
     {
@@ -162,37 +169,24 @@ def summarize_site(sequences, pos, ref_choice, samples_order):
       'is_invariant': bool
     }
     Only considers A/C/G/T as valid; ambiguous/N are ignored for allele counting.
-    However, if any IUPAC ambiguity codes are present, the site is marked as variable.
     """
     counts = defaultdict(int)
     ns_valid = 0
-    has_ambiguous = False
-    
-    # IUPAC ambiguity codes: any of these makes a site variable
-    # R=purine, Y=pyrimidine, S=strong, W=weak, K=keto, M=amino,
-    # B=not A, D=not C, H=not G, V=not T, N=any
-    ambiguity_codes = {'R', 'Y', 'S', 'W', 'K', 'M', 'B', 'D', 'H', 'V', 'N'}
-    
     for seq in sequences.values():
         if pos < len(seq):
             b = seq[pos].upper()
             if b in VALID:
                 counts[b] += 1
                 ns_valid += 1
-            elif b in ambiguity_codes:
-                # Any ambiguity code indicates uncertainty and makes site variable
-                has_ambiguous = True
             # else: missing/other characters ignored for counts
 
     if not counts:
         return None
 
     alleles = sorted(counts.keys())
-    # Position is invariant if:
-    # 1. All valid nucleotides are the same (len(alleles) == 1)
-    # 2. No ambiguity codes present (any ambiguity code indicates uncertainty and makes site variable)
-    is_invariant = (len(alleles) == 1) and not has_ambiguous
-    ref = choose_ref_allele(counts, sequences, pos, ref_choice, samples_order)
+    # Position is invariant if all valid nucleotides are the same.
+    is_invariant = len(alleles) == 1
+    ref = choose_ref_allele(counts)
     alt = [a for a in alleles if a != ref]
     return {
         "pos": pos,
@@ -200,18 +194,15 @@ def summarize_site(sequences, pos, ref_choice, samples_order):
         "alt": alt,
         "counts": counts,
         "ns_valid": ns_valid,
-        "is_invariant": is_invariant
+        "is_invariant": is_invariant,
     }
 
-def encode_gt_for_sample(base, ref, alt, use_iupac):
+def encode_gt_for_sample(base, ref, alt):
     """
     Map a per-sample base to VCF GT:
     - If base == ref -> 0/0
     - If base == ALT[k] -> k+1/k+1
-    - If IUPAC and use_iupac:
-        - If exactly two alleles and both in {ref} U alt, encode heterozygote a/b with indices.
-        - Else -> ./.
-    - Else (N/unknown) -> ./.
+    - Any non-ACGT (including IUPAC and N) -> ./.
     """
     if base in VALID:
         if base == ref:
@@ -222,37 +213,17 @@ def encode_gt_for_sample(base, ref, alt, use_iupac):
         except ValueError:
             # Base not in ALT set (shouldn't happen if ALT == all non-REF valid alleles)
             return "./."
-    if use_iupac and base in IUPAC_TO_ALLELES and len(IUPAC_TO_ALLELES[base]) == 2:
-        a1, a2 = sorted(IUPAC_TO_ALLELES[base])
-        # Map each to allele index if present
-        def allele_to_index(a):
-            if a == ref:
-                return 0
-            if a in alt:
-                return alt.index(a) + 1
-            return None
-
-        i1 = allele_to_index(a1)
-        i2 = allele_to_index(a2)
-        if i1 is not None and i2 is not None:
-            # sort to keep canonical representation
-            i_low, i_high = min(i1, i2), max(i1, i2)
-            return f"{i_low}/{i_high}"
-        else:
-            return "./."
-    # N or unsupported ambiguous code
+    # N/IUPAC/unknown
     return "./."
 
-def generate_vcf(loci_data, output_file, mode="all", use_iupac=False, ref_choice="majority", samples_filter=None):
+def generate_vcf(loci_data, output_file, template_variants, samples_filter=None):
     """
     Write a VCF including invariant and/or polymorphic sites based on 'mode'.
     
     Args:
         loci_data: List of dicts per locus, each with 'sequences', 'chrom', 'start', 'end'
         output_file: Output VCF file path
-        mode: 'all', 'invariant', or 'polymorphic'
-        use_iupac: Whether to decode IUPAC ambiguity codes
-        ref_choice: 'majority' or 'first-sample'
+        template_variants: Dict[(chrom, pos) -> {"ref": str, "alt": [str,...]}]
         samples_filter: Optional set of sample names to include
     """
     # Global sample list across all loci (stable order)
@@ -280,6 +251,14 @@ def generate_vcf(loci_data, output_file, mode="all", use_iupac=False, ref_choice
                 })
         loci_data = filtered_loci_data
 
+    emitted_records = 0
+    emitted_invariant = 0
+    emitted_polymorphic = 0
+    skipped_no_summary = 0
+    loci_polymorphic_not_in_template = 0
+    seen_template_positions = set()
+    template_only_rows_written = 0
+
     with open(output_file, "w") as vcf:
         # Header
         vcf.write("##fileformat=VCFv4.2\n")
@@ -305,23 +284,32 @@ def generate_vcf(loci_data, output_file, mode="all", use_iupac=False, ref_choice
             # Determine maximum sequence length in this locus
             max_len = max((len(seq) for seq in sequences.values()), default=0)
             for pos in range(max_len):
-                summary = summarize_site(sequences, pos, ref_choice, samples_order)
+                summary = summarize_site(sequences, pos)
                 if summary is None:
+                    skipped_no_summary += 1
                     continue  # no valid alleles at this position
-
-                is_inv = summary["is_invariant"]
-                ref = summary["ref"]
-                alt = summary["alt"]
-                if mode == "invariant" and not is_inv:
-                    continue
-                if mode == "polymorphic" and (is_inv or not alt):
-                    # Skip invariant and sites with only IUPAC ambiguity (no actual alternate allele)
-                    continue
 
                 # Reference-mapped: START is 0-based (BED-like), so 1-based VCF POS = start+1+pos
                 # de novo: 1-based position within locus
                 vcf_pos = (locus_start + pos + 1) if locus_start is not None else (pos + 1)
                 var_id = f"loc{locus_idx}_pos{pos}"
+                key = (chrom, vcf_pos)
+
+                # Polymorphic sites are taken exactly from template VCF
+                if key in template_variants:
+                    is_inv = False
+                    ref = template_variants[key]["ref"]
+                    alt = list(template_variants[key]["alt"])
+                    seen_template_positions.add(key)
+                else:
+                    # If loci says polymorphic but template does not, keep template congruence:
+                    # do not emit as polymorphic.
+                    if not summary["is_invariant"]:
+                        loci_polymorphic_not_in_template += 1
+                        continue
+                    is_inv = True
+                    ref = summary["ref"]
+                    alt = []
 
                 alt_field = ",".join(alt) if alt else "."
                 info_tags = []
@@ -339,24 +327,62 @@ def generate_vcf(loci_data, output_file, mode="all", use_iupac=False, ref_choice
                         vcf.write("\t./.")
                         continue
                     base = seq[pos].upper()
-                    gt = encode_gt_for_sample(base, ref, alt, use_iupac=use_iupac)
+                    gt = encode_gt_for_sample(base, ref, alt)
                     vcf.write(f"\t{gt}")
                 vcf.write("\n")
+                emitted_records += 1
+                if is_inv:
+                    emitted_invariant += 1
+                else:
+                    emitted_polymorphic += 1
+
+        # Emit template variants that were not encountered in loci iteration
+        # (rare edge-case). This preserves exact polymorphic concordance.
+        missing_template_positions = set(template_variants.keys()) - seen_template_positions
+        for chrom, vcf_pos in sorted(missing_template_positions):
+            tmpl = template_variants[(chrom, vcf_pos)]
+            var_id = f"template_{chrom}_{vcf_pos}"
+            ref = tmpl["ref"]
+            alt = list(tmpl["alt"])
+            alt_field = ",".join(alt) if alt else "."
+            info = "POLYMORPHIC;NS=0"
+            vcf.write(f"{chrom}\t{vcf_pos}\t{var_id}\t{ref}\t{alt_field}\t.\tPASS\t{info}\tGT")
+            for _s in samples_order:
+                vcf.write("\t./.")
+            vcf.write("\n")
+            emitted_records += 1
+            emitted_polymorphic += 1
+            template_only_rows_written += 1
+
+    return {
+        "emitted_records": emitted_records,
+        "emitted_invariant": emitted_invariant,
+        "emitted_polymorphic": emitted_polymorphic,
+        "skipped_no_summary": skipped_no_summary,
+        "template_variants_total": len(template_variants),
+        "template_variants_seen_in_loci": len(seen_template_positions),
+        "template_variants_missing_from_loci": len(set(template_variants.keys()) - seen_template_positions),
+        "loci_polymorphic_not_in_template": loci_polymorphic_not_in_template,
+        "template_only_rows_written": template_only_rows_written,
+        "loci_after_filter": len(loci_data),
+        "samples_after_filter": len(samples_order),
+    }
 
 def main():
     parser = argparse.ArgumentParser(
         description=("Extract invariant and variable sites from ipyrad .loci to VCF.\n"
-                     "Valid bases are A/C/G/T. Ambiguous/N are missing unless --use-iupac.")
+                     "Polymorphic records are taken exactly from --template-vcf for congruence.")
     )
     parser.add_argument("input_file", help="Input ipyrad .loci file")
     parser.add_argument("-o", "--output", default="sites.vcf", help="Output VCF path (default: sites.vcf)")
-    parser.add_argument("--mode", choices=["all", "invariant", "polymorphic"], default="all",
-                        help="Which sites to include (default: all)")
-    parser.add_argument("--use-iupac", action="store_true",
-                        help="Decode IUPAC ambiguity codes into heterozygous GT if possible")
-    parser.add_argument("--ref-choice", choices=["majority", "first-sample"], default="majority",
-                        help="How to choose REF allele per site (default: majority)")
-    parser.add_argument("--samples-file", help="File containing sample names to include (one per line)")
+    parser.add_argument(
+        "--samples-file",
+        default=None,
+        metavar="PATH",
+        help="Optional. Restrict output to these samples (one name per line). "
+        "Default: include every sample present in the loci file.",
+    )
+    parser.add_argument("--template-vcf", required=True, help="Input ipyrad VCF(.gz) used as polymorphic template")
 
     args = parser.parse_args()
 
@@ -400,13 +426,11 @@ def main():
         if not filtered_samples:
             print(f"ERROR: No samples match between filter file and loci file", file=sys.stderr)
             sys.exit(1)
-
+    template_variants = parse_template_vcf(args.template_vcf)
     generate_vcf(
         loci_data,
         output_file=args.output,
-        mode=args.mode,
-        use_iupac=args.use_iupac,
-        ref_choice=args.ref_choice,
+        template_variants=template_variants,
         samples_filter=samples_filter,
     )
     print(f"VCF written: {args.output}")
