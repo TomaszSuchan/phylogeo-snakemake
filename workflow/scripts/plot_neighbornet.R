@@ -6,7 +6,7 @@ TIP_LABEL_OFFSET_FRAC <- 0.01 # fraction of x/y span; offset along edge, outward
 TIP_LABEL_SIZE_MM <- 2.3      # geom_text font size in mm (ggplot2)
 
 # Extra room so angled tip names are not clipped (data limits + panel + outer margins)
-PLOT_EXPAND_MULT_WITH_LABELS <- 0.28   # scale_x/y expansion multipliers when labels are shown
+PLOT_EXPAND_MULT_WITH_LABELS <- 0.1   # scale_x/y expansion multipliers when labels are shown
 PLOT_EXPAND_MULT_NO_LABELS <- 0.06     # smaller padding for the no-label PDF
 PLOT_MARGIN_MM <- 14                   # theme plot.margin on all sides
 
