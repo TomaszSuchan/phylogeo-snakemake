@@ -13,15 +13,15 @@ Purpose
     samples as the VCF, or SNPs can look monomorphic in .loci and the check fails.
 
 Algorithm (high level)
-    1. Parse .loci into ordered loci (sequences + optional reference coordinates).
+    1. Stream .loci in two passes (one locus in memory at a time) to avoid RAM blow-up on
+       large alignments.
     2. Parse --template-vcf: for each row, store CHROM, POS, REF, ALT, and per-sample GT
        (GT subfield via FORMAT).
     3. Optionally restrict to --samples-file (output columns only). Classify invariant vs
        variable using all samples present in each locus (not the filter).
-    4. Build the set of (CHROM, POS) for every column classified as variable in .loci
-       (>=2 A/C/G/T or any R/Y/S/W/K/M). Compare to template variant keys; if unequal, abort
-       (site only in .loci or only in VCF).
-    5. Walk .loci columns again in the same order and write the VCF:
+    4. Pass 1: union of (CHROM, POS) for every column classified as variable in .loci.
+       Compare to template variant keys; if unequal, abort.
+    5. Pass 2: Walk .loci columns again in the same order and write the VCF:
        a. No sample has A/C/G/T at this column → skip (no row).
        b. Classify per Definitions; invariant → INVARIANT; REF/ALT/GT from loci (code).
        c. Variable → POLYMORPHIC; REF/ALT/GT from the template row (exists after step 4).
@@ -60,15 +60,16 @@ IUPAC_VARIABLE = frozenset("RYSWKM")
 DISALLOWED_IUPAC = frozenset("BDHV")
 
 
-def parse_loci_file(filename):
+def iter_loci_file(filename):
     """
-    Parse ipyrad .loci file and return a list of dicts, each with:
+    Stream ipyrad .loci file: yield one locus dict at a time (low memory).
+
+    Each dict has:
     - 'sequences': {sample_id -> sequence}
     - 'chrom': chromosome/contig from |N:CHROM:START-END| on the // line, or None
     - 'start': genomic start (0-based), or None
     - 'end': genomic end, or None
     """
-    loci_data = []
     current_sequences = {}
     current_meta = {"chrom": None, "start": None, "end": None}
     with open(filename, "r") as f:
@@ -77,50 +78,43 @@ def parse_loci_file(filename):
             if not line:
                 continue
             if line.startswith("//") or "//" in line:
-                # Reference may be on same line as // (e.g. "// ... |0:OY992832.1:6296-7119|")
                 m = LOCUS_REF_PATTERN.search(line)
                 if m:
                     current_meta["chrom"] = m.group(1)
                     current_meta["start"] = int(m.group(2))
                     current_meta["end"] = int(m.group(3))
-                # End of current locus
                 if current_sequences:
-                    loci_data.append({
+                    yield {
                         "sequences": dict(current_sequences),
                         "chrom": current_meta["chrom"],
                         "start": current_meta["start"],
                         "end": current_meta["end"],
-                    })
+                    }
                     current_sequences = {}
                     current_meta = {"chrom": None, "start": None, "end": None}
                 continue
 
-            # Locus reference line: |N:CHROM:START-END| (reference-mapped) or |N| (de novo)
             if line.startswith("|"):
                 m = LOCUS_REF_PATTERN.search(line)
                 if m:
                     current_meta["chrom"] = m.group(1)
                     current_meta["start"] = int(m.group(2))
                     current_meta["end"] = int(m.group(3))
-                # If no match (e.g. |0| only), chrom/start/end stay None → VCF uses RAD_* and locus position
                 continue
 
-            # Sample line: "sample_id ACTGNN..."
             parts = line.split()
             if len(parts) >= 2:
                 sample_id, sequence = parts[0], parts[1].upper()
                 if any(c in "ACGTNRYSWKMBVDH" for c in sequence):
                     current_sequences[sample_id] = sequence
 
-    # Capture last locus if file doesn't end with //
     if current_sequences:
-        loci_data.append({
+        yield {
             "sequences": dict(current_sequences),
             "chrom": current_meta["chrom"],
             "start": current_meta["start"],
             "end": current_meta["end"],
-        })
-    return loci_data
+        }
 
 def read_samples_file(filename):
     """Read sample names from a file (one per line)"""
@@ -224,21 +218,20 @@ def summarize_site(sequences, pos):
     }
 
 
-def _iter_loci_columns(loci_data):
-    """Yield (locus_idx, chrom, locus_start, pos, sequences) for each alignment column."""
-    for locus_idx, locus in enumerate(loci_data):
-        sequences = locus["sequences"]
-        chrom = locus.get("chrom") or f"RAD_{locus_idx}"
-        locus_start = locus.get("start")
-        max_len = max((len(seq) for seq in sequences.values()), default=0)
-        for pos in range(max_len):
-            yield locus_idx, chrom, locus_start, pos, sequences
+def _iter_locus_columns(locus, locus_idx):
+    """Yield (locus_idx, chrom, locus_start, pos, sequences) for each column in one locus."""
+    sequences = locus["sequences"]
+    chrom = locus.get("chrom") or f"RAD_{locus_idx}"
+    locus_start = locus.get("start")
+    max_len = max((len(seq) for seq in sequences.values()), default=0)
+    for pos in range(max_len):
+        yield locus_idx, chrom, locus_start, pos, sequences
 
 
-def _loci_variable_keys(loci_data):
-    """Set of (CHROM, POS) for columns classified as variable (not invariant) in loci_data."""
+def _variable_keys_one_locus(locus, locus_idx):
+    """Set of (CHROM, POS) for variable columns in a single locus."""
     keys = set()
-    for _locus_idx, chrom, locus_start, pos, sequences in _iter_loci_columns(loci_data):
+    for _li, chrom, locus_start, pos, sequences in _iter_locus_columns(locus, locus_idx):
         summary = summarize_site(sequences, pos)
         if summary is None or summary["is_invariant"]:
             continue
@@ -252,11 +245,10 @@ def _format_key(k):
     return f"{chrom}:{pos}"
 
 
-def _validate_loci_template_variable_sets(loci_data, template_variants):
+def _validate_loci_template_variable_sets(loci_var, template_variants):
     """
-    Require exact equality: variable columns in .loci vs variant rows in template VCF.
+    Require exact equality: variable (CHROM, POS) from .loci vs variant rows in template VCF.
     """
-    loci_var = _loci_variable_keys(loci_data)
     tmpl = set(template_variants.keys())
     only_loci = sorted(loci_var - tmpl, key=lambda x: (x[0], x[1]))
     only_vcf = sorted(tmpl - loci_var, key=lambda x: (x[0], x[1]))
@@ -298,32 +290,28 @@ def encode_gt_for_sample_invariant(base, ref, warned_bdhv):
     return "./."
 
 
-def generate_vcf(loci_data, output_file, template_variants, samples_filter=None):
+def collect_loci_pass1(loci_path):
     """
-    Write a VCF by walking .loci: invariant rows from alignment, variable rows from template.
-
-    Variable (CHROM, POS) sets in .loci and template must match exactly (validated first).
+    Single streamed pass: variable-site keys (for template check) and union of sample IDs.
+    Returns (loci_var, all_samples, n_loci).
     """
-    # Global sample list across all loci (stable order)
+    loci_var = set()
     all_samples = set()
-    for locus in loci_data:
+    n_loci = 0
+    for locus_idx, locus in enumerate(iter_loci_file(loci_path)):
+        loci_var.update(_variable_keys_one_locus(locus, locus_idx))
         all_samples.update(locus["sequences"].keys())
+        n_loci += 1
+    return loci_var, all_samples, n_loci
 
-    if samples_filter is not None:
-        samples_order = sorted(all_samples.intersection(samples_filter))
-    else:
-        samples_order = sorted(all_samples)
 
-    # Classify invariant vs variable using all samples in each locus (matches ipyrad VCF).
-    # samples_filter only restricts which sample columns are written.
-
+def write_loci_pass2(loci_path, output_file, template_variants, samples_order, n_loci):
+    """Second streamed pass: emit VCF rows (caller must have validated keys vs template)."""
     emitted_records = 0
     emitted_invariant = 0
     emitted_polymorphic = 0
     skipped_no_summary = 0
     warned_bdhv = [False]
-
-    _validate_loci_template_variable_sets(loci_data, template_variants)
 
     with open(output_file, "w") as vcf:
         # Header
@@ -341,48 +329,49 @@ def generate_vcf(loci_data, output_file, template_variants, samples_filter=None)
             vcf.write(f"\t{s}")
         vcf.write("\n")
 
-        for locus_idx, chrom, locus_start, pos, sequences in _iter_loci_columns(loci_data):
-            summary = summarize_site(sequences, pos)
-            if summary is None:
-                skipped_no_summary += 1
-                continue
+        for locus_idx, locus in enumerate(iter_loci_file(loci_path)):
+            for _li, chrom, locus_start, pos, sequences in _iter_locus_columns(locus, locus_idx):
+                summary = summarize_site(sequences, pos)
+                if summary is None:
+                    skipped_no_summary += 1
+                    continue
 
-            vcf_pos = (locus_start + pos + 1) if locus_start is not None else (pos + 1)
-            var_id = f"loc{locus_idx}_pos{pos}"
-            key = (chrom, vcf_pos)
+                vcf_pos = (locus_start + pos + 1) if locus_start is not None else (pos + 1)
+                var_id = f"loc{locus_idx}_pos{pos}"
+                key = (chrom, vcf_pos)
 
-            if summary["is_invariant"]:
-                ref = summary["ref"]
-                alt_field = "."
-                info = f"INVARIANT;NS={summary['ns_valid']}"
+                if summary["is_invariant"]:
+                    ref = summary["ref"]
+                    alt_field = "."
+                    info = f"INVARIANT;NS={summary['ns_valid']}"
+                    vcf.write(f"{chrom}\t{vcf_pos}\t{var_id}\t{ref}\t{alt_field}\t.\tPASS\t{info}\tGT")
+                    for s in samples_order:
+                        seq = sequences.get(s)
+                        if not seq or pos >= len(seq):
+                            vcf.write("\t./.")
+                            continue
+                        base = seq[pos].upper()
+                        gt = encode_gt_for_sample_invariant(base, ref, warned_bdhv)
+                        vcf.write(f"\t{gt}")
+                    vcf.write("\n")
+                    emitted_records += 1
+                    emitted_invariant += 1
+                    continue
+
+                tmpl = template_variants[key]
+                ref = tmpl["ref"]
+                alt = list(tmpl["alt"])
+                alt_field = ",".join(alt) if alt else "."
+                info = f"POLYMORPHIC;NS={summary['ns_valid']}"
+
                 vcf.write(f"{chrom}\t{vcf_pos}\t{var_id}\t{ref}\t{alt_field}\t.\tPASS\t{info}\tGT")
+
+                tmpl_gts = tmpl.get("gts", {})
                 for s in samples_order:
-                    seq = sequences.get(s)
-                    if not seq or pos >= len(seq):
-                        vcf.write("\t./.")
-                        continue
-                    base = seq[pos].upper()
-                    gt = encode_gt_for_sample_invariant(base, ref, warned_bdhv)
-                    vcf.write(f"\t{gt}")
+                    vcf.write(f"\t{tmpl_gts.get(s, './.')}")
                 vcf.write("\n")
                 emitted_records += 1
-                emitted_invariant += 1
-                continue
-
-            tmpl = template_variants[key]
-            ref = tmpl["ref"]
-            alt = list(tmpl["alt"])
-            alt_field = ",".join(alt) if alt else "."
-            info = f"POLYMORPHIC;NS={summary['ns_valid']}"
-
-            vcf.write(f"{chrom}\t{vcf_pos}\t{var_id}\t{ref}\t{alt_field}\t.\tPASS\t{info}\tGT")
-
-            tmpl_gts = tmpl.get("gts", {})
-            for s in samples_order:
-                vcf.write(f"\t{tmpl_gts.get(s, './.')}")
-            vcf.write("\n")
-            emitted_records += 1
-            emitted_polymorphic += 1
+                emitted_polymorphic += 1
 
     return {
         "emitted_records": emitted_records,
@@ -394,7 +383,7 @@ def generate_vcf(loci_data, output_file, template_variants, samples_filter=None)
         "template_variants_missing_from_loci": 0,
         "loci_polymorphic_not_in_template": 0,
         "template_only_rows_written": 0,
-        "loci_after_filter": len(loci_data),
+        "loci_after_filter": n_loci,
         "samples_after_filter": len(samples_order),
     }
 
@@ -430,25 +419,18 @@ def main():
             print(f"ERROR: No samples found in filter file: {args.samples_file}", file=sys.stderr)
             sys.exit(1)
 
-    print(f"Reading loci file: {args.input_file}", flush=True)
-    loci_data = parse_loci_file(args.input_file)
-    print(f"Found {len(loci_data)} loci", flush=True)
+    print(f"Reading loci file (pass 1/2): {args.input_file}", flush=True)
+    loci_var, all_samples_in_loci, n_loci = collect_loci_pass1(args.input_file)
+    print(f"Found {n_loci} loci", flush=True)
 
-    # Check for critical errors
-    if not loci_data:
+    if n_loci == 0:
         print(f"ERROR: No loci found in input file: {args.input_file}", file=sys.stderr)
         sys.exit(1)
-
-    # Collect all samples in loci
-    all_samples_in_loci = set()
-    for locus in loci_data:
-        all_samples_in_loci.update(locus["sequences"].keys())
 
     if not all_samples_in_loci:
         print(f"ERROR: No samples found in loci file: {args.input_file}", file=sys.stderr)
         sys.exit(1)
 
-    # Check if samples in filter file are missing from loci
     if samples_filter:
         samples_in_filter_not_in_loci = samples_filter - all_samples_in_loci
         if samples_in_filter_not_in_loci:
@@ -457,17 +439,27 @@ def main():
                 print(f"  {sample}", file=sys.stderr)
             sys.exit(1)
 
-        # Check if any samples will be included after filtering
         filtered_samples = all_samples_in_loci.intersection(samples_filter)
         if not filtered_samples:
-            print(f"ERROR: No samples match between filter file and loci file", file=sys.stderr)
+            print("ERROR: No samples match between filter file and loci file", file=sys.stderr)
             sys.exit(1)
+
+    print(f"Reading template VCF: {args.template_vcf}", flush=True)
     template_variants = parse_template_vcf(args.template_vcf)
-    generate_vcf(
-        loci_data,
-        output_file=args.output,
-        template_variants=template_variants,
-        samples_filter=samples_filter,
+    _validate_loci_template_variable_sets(loci_var, template_variants)
+
+    if samples_filter is not None:
+        samples_order = sorted(all_samples_in_loci.intersection(samples_filter))
+    else:
+        samples_order = sorted(all_samples_in_loci)
+
+    print("Writing VCF (pass 2/2)...", flush=True)
+    write_loci_pass2(
+        args.input_file,
+        args.output,
+        template_variants,
+        samples_order,
+        n_loci,
     )
     print(f"VCF written: {args.output}")
 
