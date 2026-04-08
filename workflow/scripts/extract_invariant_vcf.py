@@ -33,8 +33,9 @@ Definitions
     column (IUPAC ambiguity counts as variable).
 
 Loci formats
-    Reference-mapped: |N:CHROM:START-END| is always on the // line; POS = START + 1 + column.
-    De novo: |N| only → CHROM = RAD_0, RAD_1, …; POS = 1-based column in alignment.
+    Reference-mapped: |N:CHROM:START-END| on the // line; START is the VCF POS of alignment
+    column 0 (matches ipyrad .vcf), so POS = START + column_index.
+    De novo: |N| only → CHROM = RAD_0, RAD_1, …; POS = column_index + 1 (1-based along locus).
 
 CLI
     --samples-file: optional; one sample name per line. Default: all samples in .loci.
@@ -58,6 +59,18 @@ VALID = set("ACGT")
 IUPAC_VARIABLE = frozenset("RYSWKM")
 
 DISALLOWED_IUPAC = frozenset("BDHV")
+
+
+def vcf_position(locus_start, col_index):
+    """
+    VCF POS (1-based) for alignment column col_index (0-based).
+
+    Reference-mapped: START from |N:CHROM:START-END| is ipyrad's POS for column 0.
+    De novo: locus_start is None → POS counts from 1 along the locus.
+    """
+    if locus_start is not None:
+        return locus_start + col_index
+    return col_index + 1
 
 
 def iter_loci_file(filename):
@@ -235,7 +248,7 @@ def _variable_keys_one_locus(locus, locus_idx):
         summary = summarize_site(sequences, pos)
         if summary is None or summary["is_invariant"]:
             continue
-        vcf_pos = (locus_start + pos + 1) if locus_start is not None else (pos + 1)
+        vcf_pos = vcf_position(locus_start, pos)
         keys.add((chrom, vcf_pos))
     return keys
 
@@ -336,7 +349,7 @@ def write_loci_pass2(loci_path, output_file, template_variants, samples_order, n
                     skipped_no_summary += 1
                     continue
 
-                vcf_pos = (locus_start + pos + 1) if locus_start is not None else (pos + 1)
+                vcf_pos = vcf_position(locus_start, pos)
                 var_id = f"loc{locus_idx}_pos{pos}"
                 key = (chrom, vcf_pos)
 
