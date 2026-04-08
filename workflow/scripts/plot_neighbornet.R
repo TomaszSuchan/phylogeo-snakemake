@@ -2,7 +2,7 @@
 
 # Tip labels: place text along the edge direction (parent → tip), starting just past the tip.
 # ggtree::geom_tiplab2 uses a horizontal x-nudge that does not follow slanted split-network edges.
-TIP_LABEL_OFFSET_FRAC <- 0 # fraction of x/y span; offset along edge, outward from parent
+TIP_LABEL_OFFSET_FRAC <- 0.01 # fraction of x/y span; offset along edge, outward from parent
 TIP_LABEL_SIZE_MM <- 2.3      # geom_text font size in mm (ggplot2)
 
 suppressPackageStartupMessages({
