@@ -5,6 +5,11 @@
 TIP_LABEL_OFFSET_FRAC <- 0.01 # fraction of x/y span; offset along edge, outward from parent
 TIP_LABEL_SIZE_MM <- 2.3      # geom_text font size in mm (ggplot2)
 
+# Extra room so angled tip names are not clipped (data limits + panel + outer margins)
+PLOT_EXPAND_MULT_WITH_LABELS <- 0.28   # scale_x/y expansion multipliers when labels are shown
+PLOT_EXPAND_MULT_NO_LABELS <- 0.06     # smaller padding for the no-label PDF
+PLOT_MARGIN_MM <- 14                   # theme plot.margin on all sides
+
 suppressPackageStartupMessages({
   library(ggplot2)
   library(ggtree)
@@ -148,6 +153,19 @@ p_with <- p_base +
     size = TIP_LABEL_SIZE_MM,
     lineheight = 0.9
   )
+
+# Widen limits and allow drawing past the panel; ggsplitnet already uses coord_fixed(ratio = 1)
+finalize_plot_margins <- function(p, expand_mult) {
+  m <- ggplot2::margin(PLOT_MARGIN_MM, PLOT_MARGIN_MM, PLOT_MARGIN_MM, PLOT_MARGIN_MM, unit = "mm")
+  p +
+    ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = c(expand_mult, expand_mult))) +
+    ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = c(expand_mult, expand_mult))) +
+    ggplot2::coord_fixed(clip = "off") +
+    ggplot2::theme(plot.margin = m)
+}
+
+p_with <- finalize_plot_margins(p_with, PLOT_EXPAND_MULT_WITH_LABELS)
+p_base <- finalize_plot_margins(p_base, PLOT_EXPAND_MULT_NO_LABELS)
 
 dir.create(dirname(output_pdf_with), recursive = TRUE, showWarnings = FALSE)
 
