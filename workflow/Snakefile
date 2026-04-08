@@ -610,8 +610,9 @@ def get_all_targets():
             ])
             for color_by in neighbornet_groupings:
                 targets.extend([
-                    f"results/{project}/neighbornet/plots/{project}.euclidean.neighbornet-{color_by}.pdf",
-                    f"results/{project}/neighbornet/plots/{project}.euclidean.neighbornet-{color_by}.rds"
+                    f"results/{project}/neighbornet/plots/{project}.euclidean.neighbornet-{color_by}.with_tip_labels.pdf",
+                    f"results/{project}/neighbornet/plots/{project}.euclidean.neighbornet-{color_by}.no_tip_labels.pdf",
+                    f"results/{project}/neighbornet/plots/{project}.euclidean.neighbornet-{color_by}.rds",
                 ])
 
         # MAPI targets

@@ -1,22 +1,25 @@
 #!/usr/bin/env Rscript
 
+# Fixed tip-label styling (split networks: align=FALSE avoids misplaced vertical align bars)
+TIP_LABEL_SIZE <- 2
+TIP_LABEL_OFFSET <- 0.08
+
 suppressPackageStartupMessages({
   library(ggplot2)
   library(ggtree)
   library(tanggle)
 })
 
-# Prevent accidental Rplots.pdf creation.
 pdf(NULL)
 
-# Redirect output and messages to Snakemake log.
 log_file <- file(snakemake@log[[1]], open = "wt")
 sink(log_file, type = "output")
 sink(log_file, type = "message")
 
 net_file <- snakemake@input[["net"]]
 indpopdata_file <- snakemake@input[["indpopdata"]]
-output_pdf <- snakemake@output[["pdf"]]
+output_pdf_with <- snakemake@output[["pdf_with_tip_labels"]]
+output_pdf_no <- snakemake@output[["pdf_no_tip_labels"]]
 output_rds <- snakemake@output[["rds"]]
 
 color_by <- as.character(snakemake@params[["color_by"]])
@@ -80,9 +83,8 @@ cat("Number of tips:", length(tip_labels), "\n")
 cat("Coloring tips by:", color_by, "\n")
 cat("Groups:", paste(levels(tip_meta$group), collapse = ", "), "\n")
 
-p <- tanggle::ggsplitnet(net) %<+% tip_meta +
+p_base <- tanggle::ggsplitnet(net) %<+% tip_meta +
   ggtree::geom_tippoint(aes(color = group), size = 2) +
-  ggtree::geom_tiplab2(aes(color = group), size = 2, align = TRUE, linesize = 0.2) +
   ggplot2::labs(color = color_by) +
   ggplot2::theme_void() +
   ggplot2::theme(legend.position = "right")
@@ -94,13 +96,33 @@ if (!is.null(user_colors) && length(user_colors) > 0) {
     palette_vals <- user_colors[seq_len(n_groups)]
   }
   names(palette_vals) <- levels(tip_meta$group)
-  p <- p + ggplot2::scale_color_manual(values = palette_vals)
+  p_base <- p_base + ggplot2::scale_color_manual(values = palette_vals)
 }
 
-dir.create(dirname(output_pdf), recursive = TRUE, showWarnings = FALSE)
+p_with <- p_base +
+  ggtree::geom_tiplab2(
+    aes(label = label, color = group),
+    size = TIP_LABEL_SIZE,
+    align = FALSE,
+    offset = TIP_LABEL_OFFSET,
+    linesize = 0
+  )
+
+dir.create(dirname(output_pdf_with), recursive = TRUE, showWarnings = FALSE)
+
 ggsave(
-  filename = output_pdf,
-  plot = p,
+  filename = output_pdf_with,
+  plot = p_with,
+  width = plot_width,
+  height = plot_height,
+  dpi = plot_dpi,
+  units = "in",
+  limitsize = FALSE
+)
+
+ggsave(
+  filename = output_pdf_no,
+  plot = p_base,
   width = plot_width,
   height = plot_height,
   dpi = plot_dpi,
@@ -110,7 +132,8 @@ ggsave(
 
 saveRDS(
   list(
-    plot = p,
+    with_tip_labels = p_with,
+    no_tip_labels = p_base,
     net = net,
     tip_metadata = tip_meta,
     color_by = color_by
@@ -118,5 +141,6 @@ saveRDS(
   output_rds
 )
 
-cat("Saved plot:", output_pdf, "\n")
-cat("Saved R object:", output_rds, "\n")
+cat("Saved:", output_pdf_with, "\n")
+cat("Saved:", output_pdf_no, "\n")
+cat("Saved:", output_rds, "\n")

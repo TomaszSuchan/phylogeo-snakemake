@@ -33,8 +33,9 @@ rule plot_neighbornet:
         net=rules.neighbornet_euclidean.output.net,
         indpopdata=rules.generate_popdata.output.indpopdata
     output:
-        pdf="results/{project}/neighbornet/plots/{project}.euclidean.neighbornet-{color_by}.pdf",
-        rds="results/{project}/neighbornet/plots/{project}.euclidean.neighbornet-{color_by}.rds"
+        pdf_with_tip_labels="results/{project}/neighbornet/plots/{project}.euclidean.neighbornet-{color_by}.with_tip_labels.pdf",
+        pdf_no_tip_labels="results/{project}/neighbornet/plots/{project}.euclidean.neighbornet-{color_by}.no_tip_labels.pdf",
+        rds="results/{project}/neighbornet/plots/{project}.euclidean.neighbornet-{color_by}.rds",
     log:
         "logs/{project}/plot_neighbornet_{color_by}.log"
     params:
@@ -45,7 +46,7 @@ rule plot_neighbornet:
         ),
         width=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("neighbornet", {}).get("width", 12),
         height=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("neighbornet", {}).get("height", 12),
-        dpi=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("neighbornet", {}).get("dpi", 300)
+        dpi=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("neighbornet", {}).get("dpi", 300),
     conda:
         "../envs/neighbornet.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
