@@ -1,8 +1,9 @@
 #!/usr/bin/env Rscript
 
-# Fixed tip-label styling (split networks: align=FALSE avoids misplaced vertical align bars)
-TIP_LABEL_SIZE <- 2
-TIP_LABEL_OFFSET <- 0.08
+# Tip labels: place text along the edge direction (parent → tip), starting just past the tip.
+# ggtree::geom_tiplab2 uses a horizontal x-nudge that does not follow slanted split-network edges.
+TIP_LABEL_OFFSET_FRAC <- 0.02 # fraction of x/y span; offset along edge, outward from parent
+TIP_LABEL_SIZE_MM <- 2.3      # geom_text font size in mm (ggplot2)
 
 suppressPackageStartupMessages({
   library(ggplot2)
@@ -83,7 +84,9 @@ cat("Number of tips:", length(tip_labels), "\n")
 cat("Coloring tips by:", color_by, "\n")
 cat("Groups:", paste(levels(tip_meta$group), collapse = ", "), "\n")
 
-p_base <- tanggle::ggsplitnet(net) %<+% tip_meta +
+p_net <- tanggle::ggsplitnet(net) %<+% tip_meta
+
+p_base <- p_net +
   ggtree::geom_tippoint(aes(color = group), size = 2) +
   ggplot2::labs(color = color_by) +
   ggplot2::theme_void() +
@@ -99,13 +102,51 @@ if (!is.null(user_colors) && length(user_colors) > 0) {
   p_base <- p_base + ggplot2::scale_color_manual(values = palette_vals)
 }
 
+# Tip label positions: follow edge direction (see tanggle fortify.networx: angle = atan2(y-yend, x-xend))
+d <- p_net$data
+need <- c("x", "y", "angle", "isTip", "label", "node")
+if (!all(need %in% names(d))) {
+  stop(
+    "Unexpected ggsplitnet plot data (missing columns). Have: ",
+    paste(names(d), collapse = ", ")
+  )
+}
+
+tips <- d[as.logical(d$isTip) & !is.na(d$label) & nzchar(as.character(d$label)), , drop = FALSE]
+tips <- tips[!duplicated(tips$node), , drop = FALSE]
+
+span <- max(
+  diff(range(d$x, na.rm = TRUE)),
+  diff(range(d$y, na.rm = TRUE)),
+  na.rm = TRUE
+)
+if (!is.finite(span) || span <= 0) span <- 1
+eps <- span * TIP_LABEL_OFFSET_FRAC
+
+theta_rad <- tips$angle * pi / 180
+tips$x_lab <- tips$x + eps * cos(theta_rad)
+tips$y_lab <- tips$y + eps * sin(theta_rad)
+
+# Same hemisphere rule as ggtree::geom_tiplab2: readable text orientation
+flip <- tips$angle >= 90 & tips$angle <= 270
+tips$text_angle <- tips$angle
+tips$text_angle[flip] <- tips$angle[flip] + 180
+tips$hjust <- ifelse(flip, 1, 0)
+
 p_with <- p_base +
-  ggtree::geom_tiplab2(
-    aes(label = label, color = group),
-    size = TIP_LABEL_SIZE,
-    align = FALSE,
-    offset = TIP_LABEL_OFFSET,
-    linesize = 0
+  ggplot2::geom_text(
+    data = tips,
+    mapping = aes(
+      x = x_lab,
+      y = y_lab,
+      label = label,
+      color = group,
+      angle = text_angle,
+      hjust = hjust
+    ),
+    inherit.aes = FALSE,
+    size = TIP_LABEL_SIZE_MM,
+    lineheight = 0.9
   )
 
 dir.create(dirname(output_pdf_with), recursive = TRUE, showWarnings = FALSE)
@@ -136,6 +177,7 @@ saveRDS(
     no_tip_labels = p_base,
     net = net,
     tip_metadata = tip_meta,
+    tip_label_positions = tips,
     color_by = color_by
   ),
   output_rds
