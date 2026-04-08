@@ -437,6 +437,10 @@ parameters: &global_params
       threads: 1
       mem_mb: 8000
       runtime: 120
+    neighbornet:
+      threads: 1
+      mem_mb: 32000
+      runtime: 600
 
 ##############################
 ### Projects configuration ###

@@ -17,10 +17,10 @@ rule neighbornet_euclidean:
         "benchmarks/{project}/neighbornet_euclidean.txt"
     conda:
         "../envs/neighbornet.yaml"
-    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default-long"]["threads"]
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["neighbornet"]["threads"]
     resources:
-        mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default-long"]["mem_mb"],
-        runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default-long"]["runtime"]
+        mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["neighbornet"]["mem_mb"],
+        runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["neighbornet"]["runtime"]
     script:
         "../scripts/build_neighbornet.R"
 
