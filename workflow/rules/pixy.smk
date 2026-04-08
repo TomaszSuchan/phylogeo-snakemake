@@ -1,6 +1,7 @@
 rule prepare_invariant_vcf:
     input:
         loci = lambda wildcards: config["projects"][wildcards.project]["ipyrad_prefix"] + ".loci",
+        template_vcf = rules.sort_vcf.output.vcf,
         # Use canonical keep list (already includes relatedness filtering when enabled)
         samples_file = rules.filter_related_individuals.output.samples_to_keep
     output:
@@ -17,7 +18,7 @@ rule prepare_invariant_vcf:
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["prepare_invariant_vcf"]["runtime"]
     shell:
         """
-        python workflow/scripts/extract_invariant_vcf.py {input.loci} -o {output.invariant_vcf} --samples-file {input.samples_file} &> {log}
+        python workflow/scripts/extract_invariant_vcf.py {input.loci} -o {output.invariant_vcf} --samples-file {input.samples_file} --template-vcf {input.template_vcf} &> {log}
         """
 
 rule prepare_invariant_vcf_gz:
