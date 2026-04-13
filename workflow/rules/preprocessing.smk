@@ -1,5 +1,15 @@
 import os
 
+
+def ipyrad_original_vcf(wildcards):
+    """Path to ipyrad variant VCF (same site order as .loci); not coordinate-sorted."""
+    prefix = config["projects"][wildcards.project]["ipyrad_prefix"]
+    gz = f"{prefix}.vcf.gz"
+    if os.path.exists(gz):
+        return gz
+    return f"{prefix}.vcf"
+
+
 # Helper function to get thinning strategy for a project
 def get_thinning_strategy(wildcards):
     """Get thinning strategy for a project, default to 'thinning'."""
@@ -57,11 +67,7 @@ def get_samples(wildcards):
 # Rule to sort input vcf
 rule sort_vcf:
     input:
-      vcf=lambda wildcards: (
-          f"{config['projects'][wildcards.project]['ipyrad_prefix']}.vcf.gz"
-          if os.path.exists(f"{config['projects'][wildcards.project]['ipyrad_prefix']}.vcf.gz")
-          else f"{config['projects'][wildcards.project]['ipyrad_prefix']}.vcf"
-      )
+        vcf=lambda wildcards: ipyrad_original_vcf(wildcards),
     output:
         vcf=temporary("results/{project}/filtered_data/{project}.raw_sorted.vcf.gz")
     log:

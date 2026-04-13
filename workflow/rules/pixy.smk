@@ -1,11 +1,15 @@
 rule prepare_invariant_vcf:
+    """
+    Merge invariant + polymorphic rows in .loci order. Template must be the original ipyrad
+    VCF (same row order as .loci); sorted raw_sorted.vcf.gz would mismatch template checks.
+    """
     input:
         loci = lambda wildcards: config["projects"][wildcards.project]["ipyrad_prefix"] + ".loci",
-        template_vcf = rules.sort_vcf.output.vcf,
+        template_vcf = lambda wildcards: ipyrad_original_vcf(wildcards),
         # Use canonical keep list (already includes relatedness filtering when enabled)
         samples_file = rules.filter_related_individuals.output.samples_to_keep
     output:
-        invariant_vcf = temporary("results/{project}/filtered_data/{project}.invariant_sites.vcf")
+        allsites_vcf = temporary("results/{project}/filtered_data/{project}.allsites.vcf")
     log:
         "logs/{project}/prepare_invariant_vcf.log"
     benchmark:
@@ -18,14 +22,14 @@ rule prepare_invariant_vcf:
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["prepare_invariant_vcf"]["runtime"]
     shell:
         """
-        python workflow/scripts/extract_invariant_vcf.py {input.loci} -o {output.invariant_vcf} --samples-file {input.samples_file} --template-vcf {input.template_vcf} &> {log}
+        python workflow/scripts/extract_invariant_vcf.py {input.loci} -o {output.allsites_vcf} --samples-file {input.samples_file} --template-vcf {input.template_vcf} &> {log}
         """
 
 rule prepare_invariant_vcf_gz:
     input:
-        vcf = rules.prepare_invariant_vcf.output.invariant_vcf
+        vcf = rules.prepare_invariant_vcf.output.allsites_vcf
     output:
-        vcf = "results/{project}/filtered_data/{project}.invariant_sites.vcf.gz"
+        vcf = "results/{project}/filtered_data/{project}.allsites.vcf.gz"
     log:
         "logs/{project}/prepare_invariant_vcf_gz.log"
     benchmark:
@@ -45,7 +49,7 @@ rule prepare_invariant_vcf_gz_index:
     input:
         vcf = rules.prepare_invariant_vcf_gz.output.vcf
     output:
-        index = "results/{project}/filtered_data/{project}.invariant_sites.vcf.gz.csi"
+        index = "results/{project}/filtered_data/{project}.allsites.vcf.gz.csi"
     log:
         "logs/{project}/prepare_invariant_vcf_gz_index.log"
     benchmark:
@@ -353,11 +357,7 @@ rule plot_pixy_pi_barplot_plain:
 # Rule to plot Pi on map
 rule plot_pixy_pi_map:
     input:
-        indpopdata = rules.generate_popdata.output.indpopdata,
-        # Map plotting requires Site-level populations because
-        # plot_pixy_maps.R merges summary population names with Site coords.
-        summary = "results/{project}/pixy/{project}.Site.pixy_pi-summary.txt",
-        install = rules.install_mapmixture.output  # Reuse mapmixture installation
+        unpack(_pixy_pi_map_inputs),
     output:
         pdf = "results/{project}/pixy/plots/{project}.pixy_pi_map.pdf",
         rds = "results/{project}/pixy/plots/{project}.pixy_pi_map.rds"
@@ -385,6 +385,7 @@ rule plot_pixy_pi_map:
         basemap_border = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border", True),
         basemap_border_col = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border_col", "black"),
         basemap_border_lwd = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border_lwd", 0.1),
+        use_elevation_bg=lambda wildcards: _use_elevation_bg(wildcards),
         # Pixy-specific parameters
         point_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("point_size", 3),
         map_outline = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("map_outline", True)
