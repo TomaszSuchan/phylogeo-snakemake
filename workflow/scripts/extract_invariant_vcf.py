@@ -34,13 +34,15 @@ Definitions
 
 Loci formats
     Locus boundaries are lines that start with "//" (snpstring + spaces + optional
-    |N:CHROM:START-END|). Coordinates may appear on a leading "//" before samples, on "|"
-    rows, or on the closing "//" after samples (reference-mapped). Sample rows: tab split
-    if a tab is present, else split(None, 1) after rstrip(newlines) only (keep trailing
-    alignment spaces in the sequence field).
-    Reference-mapped: |N:CHROM:START-END| on the // line; START is the VCF POS of alignment
-    column 0 (matches ipyrad .vcf), so POS = START + column_index.
-    De novo: |N| only → CHROM = RAD_0, RAD_1, …; POS = column_index + 1 (1-based along locus).
+    |N:CHROM:START-END|). Coordinates may appear on a leading "//", on "|" rows, or on the
+    closing "//" after samples (reference-mapped). Sample rows: tab split if a tab is
+    present; otherwise take the substring after the first occurrence of the sample id token
+    so leading padding spaces between the padded name field and bases are preserved (split
+    (None, 1) drops those and breaks POS vs VCF). Trailing whitespace on each sequence row is
+    stripped; column iteration uses the resulting lengths, and for reference-mapped loci
+    the column count is capped by (END - START + 1) from |N:CHROM:START-END|.
+    Reference-mapped: START is the VCF POS of alignment column 0; POS = START + column_index.
+    De novo: CHROM = RAD_0, RAD_1, …; POS = column_index + 1 (1-based along locus).
 
 CLI
     --samples-file: optional; one sample name per line. Default: all samples in .loci.
@@ -91,6 +93,32 @@ VALID = set("ACGT")
 IUPAC_VARIABLE = frozenset("RYSWKM")
 
 DISALLOWED_IUPAC = frozenset("BDHV")
+
+
+def _parse_loci_sample_row(line):
+    """
+    Return (sample_id, sequence_upper) or (None, None).
+
+    Keeps leading spaces after the sample id (ipyrad fixed-width alignment). Strips
+    trailing whitespace so column ranges follow meaningful bases only.
+    """
+    if "\t" in line:
+        parts = line.split("\t", 1)
+        if len(parts) != 2:
+            return None, None
+        sid, seq = parts[0].strip(), parts[1].rstrip()
+        return sid, seq.upper()
+
+    parts = line.split(None, 1)
+    if len(parts) != 2:
+        return None, None
+    sid = parts[0]
+    idx = line.find(sid)
+    if idx < 0:
+        seq = parts[1].rstrip()
+    else:
+        seq = line[idx + len(sid) :].rstrip()
+    return sid, seq.upper()
 
 
 def vcf_position(locus_start, col_index):
@@ -163,18 +191,8 @@ def iter_loci_file(filename):
                     current_meta["end"] = int(m.group(3))
                 continue
 
-            sample_id = None
-            sequence = None
-            if "\t" in line:
-                sid, seq = line.split("\t", 1)
-                sample_id, sequence = sid.strip(), seq.upper()
-            else:
-                parts = line.split(None, 1)
-                if len(parts) == 2:
-                    sample_id, sequence = parts[0], parts[1].upper()
-            if sample_id and sequence is not None and any(
-                c in "ACGTNRYSWKMBVDH" for c in sequence
-            ):
+            sample_id, sequence = _parse_loci_sample_row(line)
+            if sample_id and sequence and any(c in "ACGTNRYSWKMBVDH" for c in sequence):
                 current_sequences[sample_id] = sequence
 
     if current_sequences:
@@ -292,7 +310,11 @@ def _iter_locus_columns(locus, locus_idx):
     sequences = locus["sequences"]
     chrom = locus.get("chrom") or f"RAD_{locus_idx}"
     locus_start = locus.get("start")
+    locus_end = locus.get("end")
     max_len = max((len(seq) for seq in sequences.values()), default=0)
+    if locus_start is not None and locus_end is not None:
+        span = locus_end - locus_start + 1
+        max_len = min(max_len, span)
     for pos in range(max_len):
         yield locus_idx, chrom, locus_start, pos, sequences
 
