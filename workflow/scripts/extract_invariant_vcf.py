@@ -30,7 +30,8 @@ Definitions
     Invariant site: at least one A/C/G/T in the column, all counted A/C/G/T are the same
     allele, and no sample has R, Y, S, W, K, or M at that position.
     Variable site: two or more distinct A/C/G/T among samples, or any R/Y/S/W/K/M at the
-    column (IUPAC ambiguity counts as variable).
+    column (IUPAC ambiguity counts as variable), including columns with only R/Y/S/W/K/M
+    and no plain A/C/G/T (still match the template at that POS).
 
 Loci formats
     Locus boundaries are lines that start with "//" (snpstring + spaces + optional
@@ -297,7 +298,9 @@ def summarize_site(sequences, pos):
       'is_invariant': bool
     }
     A/C/G/T are counted for allele multiplicity. N, gap, B/D/H/V are ignored for counts.
-    R/Y/S/W/K/M at any sample force variable (not invariant).
+    R/Y/S/W/K/M at any sample force variable (not invariant). If every sample shows only
+    ambiguity (no plain A/C/G/T), ``counts`` is empty but the column is still variable for
+    template matching and must not return None.
     """
     counts = defaultdict(int)
     ns_valid = 0
@@ -312,6 +315,15 @@ def summarize_site(sequences, pos):
                 ns_valid += 1
 
     if not counts:
+        if has_iupac_variable:
+            return {
+                "pos": pos,
+                "ref": None,
+                "alt": [],
+                "counts": {},
+                "ns_valid": 0,
+                "is_invariant": False,
+            }
         return None
 
     alleles = sorted(counts.keys())
