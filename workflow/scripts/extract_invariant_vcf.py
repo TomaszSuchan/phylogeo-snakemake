@@ -36,9 +36,9 @@ Loci formats
     Locus boundaries are lines that start with "//" (snpstring + spaces + optional
     |N:CHROM:START-END|). Coordinates may appear on a leading "//", on "|" rows, or on the
     closing "//" after samples (reference-mapped). Sample rows: tab split if a tab is
-    present; otherwise take the substring after the first occurrence of the sample id token
-    so leading padding spaces between the padded name field and bases are preserved (split
-    (None, 1) drops those and breaks POS vs VCF). Trailing whitespace on each sequence row is
+    present; otherwise take the substring after the **line-anchored** sample id (``re.match
+    r'^\\s*(\\S+)'`` then ``line[m.end():]``), never ``str.find(id)``, which can match inside
+    the sequence. Trailing whitespace on each sequence row is
     stripped; column iteration uses the resulting lengths, and for reference-mapped loci
     the column count is capped by (END - START + 1) from |N:CHROM:START-END|.
     Reference-mapped: START is the VCF POS of alignment column 0; POS = START + column_index.
@@ -101,6 +101,10 @@ def _parse_loci_sample_row(line):
 
     Keeps leading spaces after the sample id (ipyrad fixed-width alignment). Strips
     trailing whitespace so column ranges follow meaningful bases only.
+
+    The sample id must be taken from a **line-start** match only: ``str.find(id)`` can hit
+    the same substring inside the sequence and shift every column, exploding false
+    variable sites vs the template VCF.
     """
     if "\t" in line:
         parts = line.split("\t", 1)
@@ -109,15 +113,13 @@ def _parse_loci_sample_row(line):
         sid, seq = parts[0].strip(), parts[1].rstrip()
         return sid, seq.upper()
 
-    parts = line.split(None, 1)
-    if len(parts) != 2:
+    m = re.match(r"^\s*(\S+)", line)
+    if not m:
         return None, None
-    sid = parts[0]
-    idx = line.find(sid)
-    if idx < 0:
-        seq = parts[1].rstrip()
-    else:
-        seq = line[idx + len(sid) :].rstrip()
+    sid = m.group(1)
+    seq = line[m.end() :].rstrip()
+    if not seq:
+        return None, None
     return sid, seq.upper()
 
 
