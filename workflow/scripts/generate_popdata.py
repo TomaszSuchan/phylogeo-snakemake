@@ -6,11 +6,14 @@ import sys
 import pandas as pd
 import vcfpy
 
-# Snakemake automatically passes input/output/log via the 'snakemake' object
-vcf_path = snakemake.input.vcf
+# Snakemake automatically passes input/output/log via the 'snakemake' object.
+# Named inputs must use attribute access: `"vcf" in snakemake.input` is False for
+# named keys (membership checks path strings, not dict keys).
+vcf_path = getattr(snakemake.input, "vcf", None)
+generated_popmap_path = getattr(snakemake.input, "popmap", None)
 popdata_path = snakemake.params.popdata
-input_popmap_path = snakemake.params.popmap
-separator = snakemake.params.separator
+input_popmap_path = snakemake.params.get("popmap", "")
+separator = snakemake.params.get("separator", "-")
 output_path = snakemake.output.indpopdata
 log_file = snakemake.log[0]
 
@@ -30,6 +33,30 @@ def load_vcf_samples(vcf_file):
         print(f"ERROR: Failed to read samples from VCF file: {vcf_file}")
         print(f"  {exc}")
         sys.exit(1)
+
+
+def load_existing_popmap(popmap_file):
+    """Read a precomputed two-column popmap and normalize column names."""
+    try:
+        popmap_df = pd.read_csv(
+            popmap_file,
+            sep="\t",
+            header=None,
+            names=["Ind", "Site"],
+        )
+    except FileNotFoundError:
+        print(f"ERROR: Popmap file not found: {popmap_file}")
+        sys.exit(1)
+    except Exception as exc:
+        print(f"ERROR: Failed to read popmap file: {popmap_file}")
+        print(f"  {exc}")
+        sys.exit(1)
+
+    if popmap_df.empty:
+        print(f"ERROR: Popmap file is empty: {popmap_file}")
+        sys.exit(1)
+
+    return popmap_df
 
 
 def build_site_mapping(vcf_samples, popmap_file, popseparator):
@@ -79,11 +106,22 @@ def build_site_mapping(vcf_samples, popmap_file, popseparator):
     return pd.DataFrame(output_rows, columns=["Ind", "Site"])
 
 
-print(f"Reading VCF file: {vcf_path}")
-vcf_samples = load_vcf_samples(vcf_path)
-print(f"  Found {len(vcf_samples)} samples in VCF")
+if vcf_path:
+    print(f"Reading VCF file: {vcf_path}")
+    vcf_samples = load_vcf_samples(vcf_path)
+    print(f"  Found {len(vcf_samples)} samples in VCF")
 
-ind_site_df = build_site_mapping(vcf_samples, input_popmap_path, separator)
+    ind_site_df = build_site_mapping(vcf_samples, input_popmap_path, separator)
+    sample_source = f"VCF file:     {vcf_path}"
+elif generated_popmap_path:
+    print(f"Reading precomputed popmap file: {generated_popmap_path}")
+    ind_site_df = load_existing_popmap(generated_popmap_path)
+    print(f"  Found {len(ind_site_df)} individuals in popmap")
+    sample_source = f"Popmap file:  {generated_popmap_path}"
+else:
+    print("ERROR: generate_popdata requires either an input VCF or an input popmap.")
+    sys.exit(1)
+
 print(f"  Built Site assignments for {len(ind_site_df)} individuals")
 print(f"  Found {ind_site_df['Site'].nunique()} unique sites")
 
@@ -113,7 +151,7 @@ if popdata_path and popdata_path.strip() and os.path.exists(popdata_path):
         print("ERROR: Sites found in VCF/population assignments but missing from popdata file")
         print("=" * 80)
         print(f"\nPopdata file: {popdata_path}")
-        print(f"VCF file:     {vcf_path}")
+        print(sample_source)
         print(f"\nMissing {len(missing_sites)} site(s):\n")
         for site in sorted(missing_sites):
             print(site)
