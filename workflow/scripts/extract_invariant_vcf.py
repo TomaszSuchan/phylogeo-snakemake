@@ -33,6 +33,10 @@ Definitions
     column (IUPAC ambiguity counts as variable).
 
 Loci formats
+    ipyrad writes each sample row as a fixed-width name field plus sequence (see
+    write_loci_and_alleles); shorter sequences are often right-padded with spaces so columns
+    line up with the SNP index used in ipyrad’s VCF. Do not strip() whole lines or that
+    padding is lost and (CHROM, POS) drifts from the template.
     Reference-mapped: |N:CHROM:START-END| on the // line; START is the VCF POS of alignment
     column 0 (matches ipyrad .vcf), so POS = START + column_index.
     De novo: |N| only → CHROM = RAD_0, RAD_1, …; POS = column_index + 1 (1-based along locus).
@@ -114,15 +118,12 @@ def iter_loci_file(filename):
     current_meta = {"chrom": None, "start": None, "end": None}
     with open(filename, "r") as f:
         for raw in f:
-            line = raw.strip()
-            if not line:
+            # ipyrad pads sequences with trailing spaces for column alignment; never strip()
+            # the full line or POS columns no longer match the template VCF.
+            line = raw.rstrip("\r\n")
+            if not line.strip():
                 continue
             if line.startswith("//") or "//" in line:
-                m = LOCUS_REF_PATTERN.search(line)
-                if m:
-                    current_meta["chrom"] = m.group(1)
-                    current_meta["start"] = int(m.group(2))
-                    current_meta["end"] = int(m.group(3))
                 if current_sequences:
                     yield {
                         "sequences": dict(current_sequences),
@@ -131,6 +132,16 @@ def iter_loci_file(filename):
                         "end": current_meta["end"],
                     }
                     current_sequences = {}
+                # Apply reference metadata from *this* delimiter line to the *next* locus only
+                # (not to the locus we just yielded).
+                m = LOCUS_REF_PATTERN.search(line)
+                if m:
+                    current_meta = {
+                        "chrom": m.group(1),
+                        "start": int(m.group(2)),
+                        "end": int(m.group(3)),
+                    }
+                else:
                     current_meta = {"chrom": None, "start": None, "end": None}
                 continue
 
@@ -142,8 +153,10 @@ def iter_loci_file(filename):
                     current_meta["end"] = int(m.group(3))
                 continue
 
-            parts = line.split()
-            if len(parts) >= 2:
+            # One split on first whitespace run: sample id + rest of line is sequence (may
+            # include trailing space padding from ipyrad).
+            parts = line.split(None, 1)
+            if len(parts) == 2:
                 sample_id, sequence = parts[0], parts[1].upper()
                 if any(c in "ACGTNRYSWKMBVDH" for c in sequence):
                     current_sequences[sample_id] = sequence
