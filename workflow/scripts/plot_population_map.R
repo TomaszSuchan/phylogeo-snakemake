@@ -11,6 +11,7 @@ library(tidyverse)
 library(mapmixture)
 library(ggrepel)
 library(sf)
+library(terra)
 
 # Source common map functions
 # Try to get script directory, fallback to relative path
@@ -64,6 +65,7 @@ axis_text_size <- as.numeric(snakemake@params[["axis_text_size"]])
 basemap_border <- as.logical(snakemake@params[["basemap_border"]])
 basemap_border_col <- snakemake@params[["basemap_border_col"]]
 basemap_border_lwd <- as.numeric(snakemake@params[["basemap_border_lwd"]])
+use_elevation_bg <- isTRUE(snakemake@params[["use_elevation_bg"]])
 
 # Label-specific parameters
 point_size <- as.numeric(snakemake@params[["point_size"]])
@@ -129,6 +131,8 @@ map_params <- list(
   basemap_border_col = basemap_border_col,
   basemap_border_lwd = basemap_border_lwd
 )
+map_params$basemap <- resolve_map_basemap(use_elevation_bg, snakemake@input, basemap)
+map_params$raster_is_elevation_dem <- isTRUE(use_elevation_bg)
 
 # Transform coordinates to match map CRS if needed
 message("\n=== TRANSFORMING COORDINATES ===\n")

@@ -7,3 +7,4 @@ dependencies:
   - bioconductor-ggtree
   - bioconductor-treeio
   - r-ape
+  - r-xml

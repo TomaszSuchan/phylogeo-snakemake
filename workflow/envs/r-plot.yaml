@@ -10,3 +10,4 @@ dependencies:
   - r-igraph
   - r-ggraph
   - r-tidygraph
+  - r-multcomp

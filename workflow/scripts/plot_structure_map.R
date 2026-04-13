@@ -3,6 +3,17 @@
 
 library(tidyverse)
 library(mapmixture)
+library(terra)
+
+common_functions <- tryCatch({
+  script_dir <- dirname(normalizePath(snakemake@script))
+  file.path(script_dir, "common_map_functions.R")
+}, error = function(e) "workflow/scripts/common_map_functions.R")
+if (file.exists(common_functions)) {
+  source(common_functions)
+} else {
+  source("workflow/scripts/common_map_functions.R")
+}
 
 # Prevent creation of Rplots.pdf
 pdf(NULL)
@@ -65,6 +76,8 @@ basemap_border_lwd <- as.numeric(snakemake@params[["basemap_border_lwd"]])
 
 # Legend parameter
 legend <- as.logical(snakemake@params[["legend"]])
+
+use_elevation_bg <- isTRUE(snakemake@params[["use_elevation_bg"]])
 
 # Read Q matrix (space or tab delimited, no headers)
 message("\n=== READING Q MATRIX ===\n")
@@ -234,13 +247,15 @@ if (!(length(boundary) == 0 || is.null(boundary) || boundary == "NULL")) {
   })
 }
 
+basemap_resolved <- resolve_map_basemap(use_elevation_bg, snakemake@input, basemap)
+
 p <- mapmixture(
   admixture_df = qmatrix_with_data,
   coords_df = coords_df,
   cluster_cols = strcolors,
   boundary = boundary_parsed,
   crs = crs,
-  basemap = if (length(basemap) == 0 || is.null(basemap) || basemap == "NULL") NULL else basemap,
+  basemap = basemap_resolved,
   pie_size = pie_size,
   pie_border = pie_border,
   pie_border_col = pie_border_col,

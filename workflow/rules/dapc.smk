@@ -80,9 +80,7 @@ rule dapc_bic_plot_from_log:
 # Rule to plot DAPC results on map with mapmixture (for specific K)
 rule mapmixture_dapc:
     input:
-        dapc_results = rules.dapc_analysis.output.results_rds,
-        indpopdata = rules.generate_popdata.output.indpopdata,
-        install = rules.install_mapmixture.output
+        unpack(_dapc_map_inputs),
     output:
         plot = "results/{project}/dapc/plots/{project}.dapc.K{k}.map.pdf",
         plot_rds = "results/{project}/dapc/plots/{project}.dapc.K{k}.map.rds"
@@ -109,6 +107,7 @@ rule mapmixture_dapc:
         basemap_border = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border", True),
         basemap_border_col = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border_col", "black"),
         basemap_border_lwd = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border_lwd", 0.1),
+        use_elevation_bg=lambda wildcards: _use_elevation_bg(wildcards),
         # Mapmixture-specific parameters
         pie_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("pie_size", 1),
         pie_border = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("pie_border", 0.2),

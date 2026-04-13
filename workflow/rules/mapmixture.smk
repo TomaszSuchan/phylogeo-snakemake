@@ -8,15 +8,14 @@ rule install_mapmixture:
         "../envs/mapmixture.yaml"
     shell:
         """
-        Rscript -e 'if (!require("mapmixture", quietly = TRUE)) install.packages("mapmixture", repos = "https://cloud.r-project.org/")'
+        Rscript -e 'for (p in c("mapmixture", "elevatr", "rnaturalearth")) if (!require(p, character.only=TRUE, quietly=TRUE)) install.packages(p, repos="https://cloud.r-project.org/")'
         """
+
 
 # Rule to plot STRUCTURE results on map with mapmixture
 rule mapmixture_structure:
     input:
-        qmatrix = "results/{project}/structure/{project}.structure.K{k}.Qmatrix.txt",
-        indpopdata = rules.generate_popdata.output.indpopdata,
-        install = rules.install_mapmixture.output
+        unpack(_structure_map_inputs),
     output:
         plot = "results/{project}/structure/plots/{project}.structure.K{k}.map.pdf",
         plot_rds = "results/{project}/structure/plots/{project}.structure.K{k}.map.rds"
@@ -44,6 +43,7 @@ rule mapmixture_structure:
         basemap_border = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border", True),
         basemap_border_col = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border_col", "black"),
         basemap_border_lwd = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border_lwd", 0.1),
+        use_elevation_bg=lambda wildcards: _use_elevation_bg(wildcards),
         # Mapmixture-specific parameters
         pie_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("pie_size", 1),
         pie_border = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("pie_border", 0.2),
@@ -65,9 +65,7 @@ rule mapmixture_structure:
 # Rule to plot fastStructure results on map with mapmixture
 rule mapmixture_faststructure:
     input:
-        qmatrix = "results/{project}/faststructure/{project}.faststructure.{k}.meanQ",
-        indpopdata = rules.generate_popdata.output.indpopdata,
-        install = rules.install_mapmixture.output
+        unpack(_faststructure_map_inputs),
     output:
         plot = "results/{project}/faststructure/plots/{project}.faststructure.K{k}.map.pdf",
         plot_rds = "results/{project}/faststructure/plots/{project}.faststructure.K{k}.map.rds"
@@ -95,6 +93,7 @@ rule mapmixture_faststructure:
         basemap_border = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border", True),
         basemap_border_col = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border_col", "black"),
         basemap_border_lwd = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border_lwd", 0.1),
+        use_elevation_bg=lambda wildcards: _use_elevation_bg(wildcards),
         # Mapmixture-specific parameters
         pie_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("pie_size", 1),
         pie_border = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("pie_border", 0.2),
@@ -116,9 +115,7 @@ rule mapmixture_faststructure:
 # Rule to plot ADMIXTURE results on map with mapmixture
 rule mapmixture_admixture:
     input:
-        qmatrix = "results/{project}/admixture/{project}.biallelic_snps_thinned.{k}.Q",
-        indpopdata = rules.generate_popdata.output.indpopdata,
-        install = rules.install_mapmixture.output
+        unpack(_admixture_map_inputs),
     output:
         plot = "results/{project}/admixture/plots/{project}.admixture.K{k}.map.pdf",
         plot_rds = "results/{project}/admixture/plots/{project}.admixture.K{k}.map.rds"
@@ -146,6 +143,7 @@ rule mapmixture_admixture:
         basemap_border = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border", True),
         basemap_border_col = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border_col", "black"),
         basemap_border_lwd = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border_lwd", 0.1),
+        use_elevation_bg=lambda wildcards: _use_elevation_bg(wildcards),
         # Mapmixture-specific parameters
         pie_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("pie_size", 1),
         pie_border = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("pie_border", 0.2),

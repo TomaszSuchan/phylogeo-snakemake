@@ -7,6 +7,7 @@ library(mapmixture)
 library(RColorBrewer)
 library(grid) # for unit()
 library(sf)
+library(terra)
 
 # Source common map functions
 # Try to get script directory, fallback to relative path
@@ -43,6 +44,13 @@ if (is.null(indpopdata_file) || indpopdata_file == "NULL" || indpopdata_file == 
 
 # Extract map parameters
 map_params <- extract_map_params(snakemake@params)
+use_elevation_bg <- isTRUE(snakemake@params[["use_elevation_bg"]])
+map_params$basemap <- resolve_map_basemap(
+  use_elevation_bg,
+  snakemake@input,
+  map_params$basemap
+)
+map_params$raster_is_elevation_dem <- isTRUE(use_elevation_bg)
 
 # Extract pixy-specific parameters
 map_outline <- as.logical(snakemake@params[["map_outline"]])

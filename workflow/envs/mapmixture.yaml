@@ -5,8 +5,11 @@ channels:
 dependencies:
   - r-base
   - r-devtools
+  - r-elevatr
   - r-ggplot2
   - r-ggrepel
+  - r-ggspatial
+  - r-rnaturalearth
   - r-sf
   - r-terra
   - r-tidyverse

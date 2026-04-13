@@ -80,7 +80,13 @@ parameters: &global_params
     height: 8                       # plot height in inches
     dpi: 300                        # dots per inch (resolution)
     crs: 4326                       # coordinate reference system (4326 = WGS84 lat/lon)
-    basemap: NULL                   # optional basemap object
+    # Raster basemap: null | elevatr | ne1 | gray_earth (YAML true = elevatr, false = none)
+    #   elevatr — DEM (cache_map_elevation; written in map_background.crs; network when built)
+    #   ne1 | gray_earth — Natural Earth (cache: clip in WGS84, warp once to map_background.crs)
+    use_elevation_bg: NULL
+    elevatr_z: null                 # null = auto zoom from bbox + width/height + dpi; or set integer 6–14
+    # Local GeoTIFF/VRT when use_elevation_bg is null
+    basemap: NULL
     land_colour: "#d9d9d9"          # color for land masses
     sea_colour: "#deebf7"           # color for water bodies
     expand: FALSE                   # expand map to fill plotting area (TRUE/FALSE)
@@ -461,7 +467,7 @@ projects:
       pcaone_emu: false
       pcaone_miss: false
       emupca: false
-      pixy: true
+      pixy: false
       genome_scan: false
       relatedness: false
       iqtree: false
@@ -469,7 +475,7 @@ projects:
       dapc: false
       iqtree_robust: false
       fineradstructure: false
-      plot_map: false
+      plot_map: true
       amova: false
       roh: false
       gen_dist: false
