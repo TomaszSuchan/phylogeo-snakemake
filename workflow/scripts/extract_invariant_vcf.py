@@ -35,12 +35,12 @@ Definitions
 Loci formats
     Locus boundaries are lines that start with "//" (snpstring + spaces + optional
     |N:CHROM:START-END|). Coordinates may appear on a leading "//", on "|" rows, or on the
-    closing "//" after samples (reference-mapped). Sample rows: tab split if a tab is
-    present; otherwise scan each sample row for id + remainder, then **within a locus**
-    align all rows to a common sequence start column ``P = max(j)`` (``j`` = end of id)
-    so every sample uses ``line[P:]`` after verifying ``line[j:P]`` is only whitespace
-    (ipyrad pads shorter names with spaces). Never ``str.find(id)``, which can match inside
-    the sequence. Trailing whitespace on each sequence row is
+    closing "//" after samples (reference-mapped). Sample rows: always
+    ``line.split(None, 1)`` → ``(sample_id, sequence)`` (any run of whitespace, including
+    tabs, separates id from sequence; never a tab-only split). Same as ipyrad padding
+    without using
+    ``str.find(id)``, which can match inside the sequence). Trailing whitespace on each
+    sequence row is
     stripped; column iteration uses the resulting lengths, and for reference-mapped loci
     the column count is capped by (END - START + 1) from |N:CHROM:START-END|.
     Reference-mapped: START is the VCF POS of alignment column 0; POS = START + column_index.
@@ -97,108 +97,54 @@ IUPAC_VARIABLE = frozenset("RYSWKM")
 DISALLOWED_IUPAC = frozenset("BDHV")
 
 
-def _parse_loci_sample_row(line):
-    """
-    Return (sample_id, sequence_upper) or (None, None).
-
-    Format: optional leading spaces, sample id (no internal whitespace), one or more
-    spaces, then sequence. Keeps leading spaces in the sequence slice (ipyrad padding
-    before the first base). Trailing whitespace on the row is stripped only at the end.
-
-    Never use ``str.find(id)``: the id can recur inside the sequence and slice there,
-    misaligning every column vs the template VCF.
-    """
-    if "\t" in line:
-        parts = line.split("\t", 1)
-        if len(parts) != 2:
-            return None, None
-        sid, seq = parts[0].strip(), parts[1].rstrip()
-        return sid, seq.upper()
-
-    n = len(line)
-    i = 0
-    while i < n and line[i].isspace():
-        i += 1
-    if i >= n:
-        return None, None
-    j = i
-    while j < n and not line[j].isspace():
-        j += 1
-    if j >= n or j == i:
-        return None, None
-    sid = line[i:j]
-    seq = line[j:].rstrip()
-    if not seq:
-        return None, None
-    return sid, seq.upper()
-
-
 def _locus_sample_lines_to_sequences(lines):
     """
     Build {sample_id: sequence_upper} for one locus from raw sample lines.
 
-    Space-delimited ipyrad rows: sample names have different lengths; the alignment
-    block starts at the same file column for every row. We set P = max(name_end) over
-    rows and take ``line[P:]`` when the gap ``line[name_end:P]`` is whitespace-only;
-    otherwise fall back to per-row ``line[name_end:]`` (mixed / odd formats).
+    Always ``line.split(None, 1)``: first token is sample id, rest is sequence (any
+    whitespace run is the delimiter, including tabs). Then strip a shared leading
+    space/tab prefix per locus when all rows agree (:func:`_strip_common_leading_whitespace`).
     """
     if not lines:
         return {}
-    any_tab = any("\t" in ln for ln in lines)
-    all_tab = all("\t" in ln for ln in lines)
-    if any_tab and not all_tab:
-        out = {}
-        for ln in lines:
-            sid, seq = _parse_loci_sample_row(ln)
-            if sid and seq and any(c in "ACGTNRYSWKMBVDH" for c in seq):
-                out[sid] = seq
-        return out
-    if all_tab:
-        out = {}
-        for ln in lines:
-            sid, seq = _parse_loci_sample_row(ln)
-            if sid and seq and any(c in "ACGTNRYSWKMBVDH" for c in seq):
-                out[sid] = seq
-        return out
-
-    parsed = []
-    for ln in lines:
-        n = len(ln)
-        i = 0
-        while i < n and ln[i].isspace():
-            i += 1
-        if i >= n:
-            continue
-        j = i
-        while j < n and not ln[j].isspace():
-            j += 1
-        if j >= n or j == i:
-            continue
-        sid = ln[i:j]
-        parsed.append((sid, ln, j))
-    if not parsed:
-        return {}
-    p_align = max(j for _, _, j in parsed)
     out = {}
-    for sid, ln, j in parsed:
-        gap = ln[j:p_align]
-        if gap.strip():
-            # #region agent log
-            if not getattr(_locus_sample_lines_to_sequences, "_h4_align_fallback_logged", False):
-                _locus_sample_lines_to_sequences._h4_align_fallback_logged = True
-                _agent_debug_log(
-                    "locus_align_gap_non_ws_fallback",
-                    {"sid": sid, "j": j, "p_align": p_align, "gap_head": gap[:48]},
-                    "H4",
-                    "extract_invariant_vcf.py:_locus_sample_lines_to_sequences",
-                )
-            # #endregion
-            seq = ln[j:].rstrip().upper()
-        else:
-            seq = ln[p_align:].rstrip().upper()
+    for ln in lines:
+        parts = ln.split(None, 1)
+        if len(parts) != 2:
+            continue
+        sid, seq = parts[0].strip(), parts[1].rstrip().upper()
         if sid and seq and any(c in "ACGTNRYSWKMBVDH" for c in seq):
             out[sid] = seq
-    return out
+    return _strip_common_leading_whitespace(out)
+
+
+def _strip_common_leading_whitespace(sequences):
+    """If every sequence shares the same leading space/tab count, strip it (one locus)."""
+    if not sequences:
+        return sequences
+    leads = []
+    for s in sequences.values():
+        k = 0
+        n = len(s)
+        while k < n and s[k] in " \t":
+            k += 1
+        leads.append(k)
+    mn, mx = min(leads), max(leads)
+    if mn == 0:
+        return sequences
+    if mx != mn:
+        # #region agent log
+        if not getattr(_strip_common_leading_whitespace, "_h5_logged", False):
+            _strip_common_leading_whitespace._h5_logged = True
+            _agent_debug_log(
+                "leading_ws_strip_skipped_asymmetric",
+                {"min_leading_ws": mn, "max_leading_ws": mx},
+                "H5",
+                "extract_invariant_vcf.py:_strip_common_leading_whitespace",
+            )
+        # #endregion
+        return sequences
+    return {sid: s[mn:] for sid, s in sequences.items()}
 
 
 def vcf_position(locus_start, col_index):
