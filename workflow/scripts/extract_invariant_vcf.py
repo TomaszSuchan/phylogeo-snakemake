@@ -33,10 +33,11 @@ Definitions
     column (IUPAC ambiguity counts as variable).
 
 Loci formats
-    ipyrad writes each sample row as a fixed-width name field plus sequence (see
-    write_loci_and_alleles); shorter sequences are often right-padded with spaces so columns
-    line up with the SNP index used in ipyrad’s VCF. Do not strip() whole lines or that
-    padding is lost and (CHROM, POS) drifts from the template.
+    Locus boundaries are lines that start with "//" (snpstring + spaces + optional
+    |N:CHROM:START-END|). Coordinates may appear on a leading "//" before samples, on "|"
+    rows, or on the closing "//" after samples (reference-mapped). Sample rows: tab split
+    if a tab is present, else split(None, 1) after rstrip(newlines) only (keep trailing
+    alignment spaces in the sequence field).
     Reference-mapped: |N:CHROM:START-END| on the // line; START is the VCF POS of alignment
     column 0 (matches ipyrad .vcf), so POS = START + column_index.
     De novo: |N| only → CHROM = RAD_0, RAD_1, …; POS = column_index + 1 (1-based along locus).
@@ -116,33 +117,42 @@ def iter_loci_file(filename):
     """
     current_sequences = {}
     current_meta = {"chrom": None, "start": None, "end": None}
-    with open(filename, "r") as f:
+    with open(filename, "r", encoding="utf-8", errors="replace") as f:
         for raw in f:
-            # ipyrad pads sequences with trailing spaces for column alignment; never strip()
-            # the full line or POS columns no longer match the template VCF.
             line = raw.rstrip("\r\n")
             if not line.strip():
                 continue
-            if line.startswith("//") or "//" in line:
-                if current_sequences:
-                    yield {
-                        "sequences": dict(current_sequences),
-                        "chrom": current_meta["chrom"],
-                        "start": current_meta["start"],
-                        "end": current_meta["end"],
-                    }
-                    current_sequences = {}
-                # Apply reference metadata from *this* delimiter line to the *next* locus only
-                # (not to the locus we just yielded).
+            # ipyrad locus break: line begins with "//" (snpstring + optional |N:CHROM:start-end|).
+            # Sample rows never start with "//" (unlike using "//" in line, which is ambiguous).
+            if line.startswith("//"):
                 m = LOCUS_REF_PATTERN.search(line)
                 if m:
-                    current_meta = {
+                    meta_from_line = {
                         "chrom": m.group(1),
                         "start": int(m.group(2)),
                         "end": int(m.group(3)),
                     }
                 else:
-                    current_meta = {"chrom": None, "start": None, "end": None}
+                    meta_from_line = {"chrom": None, "start": None, "end": None}
+
+                if current_sequences:
+                    # Closing "//": coords often sit on this line (e.g. reference-mapped after
+                    # all samples). If we already got |N:CHROM:start-end| from a leading "//" or
+                    # "|" rows, keep that; else attach meta parsed from this "//" line.
+                    meta_ready = any(
+                        current_meta.get(k) is not None for k in ("chrom", "start", "end")
+                    )
+                    use_meta = current_meta if meta_ready else meta_from_line
+                    yield {
+                        "sequences": dict(current_sequences),
+                        "chrom": use_meta["chrom"],
+                        "start": use_meta["start"],
+                        "end": use_meta["end"],
+                    }
+                    current_sequences = {}
+                    current_meta = meta_from_line
+                else:
+                    current_meta = meta_from_line
                 continue
 
             if line.startswith("|"):
@@ -153,13 +163,19 @@ def iter_loci_file(filename):
                     current_meta["end"] = int(m.group(3))
                 continue
 
-            # One split on first whitespace run: sample id + rest of line is sequence (may
-            # include trailing space padding from ipyrad).
-            parts = line.split(None, 1)
-            if len(parts) == 2:
-                sample_id, sequence = parts[0], parts[1].upper()
-                if any(c in "ACGTNRYSWKMBVDH" for c in sequence):
-                    current_sequences[sample_id] = sequence
+            sample_id = None
+            sequence = None
+            if "\t" in line:
+                sid, seq = line.split("\t", 1)
+                sample_id, sequence = sid.strip(), seq.upper()
+            else:
+                parts = line.split(None, 1)
+                if len(parts) == 2:
+                    sample_id, sequence = parts[0], parts[1].upper()
+            if sample_id and sequence is not None and any(
+                c in "ACGTNRYSWKMBVDH" for c in sequence
+            ):
+                current_sequences[sample_id] = sequence
 
     if current_sequences:
         yield {
