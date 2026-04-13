@@ -27,6 +27,7 @@ rule roh_summary:
     output:
         summary="results/{project}/roh/{project}.roh_summary.txt",
         per_ind="results/{project}/roh/{project}.roh_per_ind.txt",
+        stats="results/{project}/roh/{project}.roh_stats_comparisons.txt",
         plots=directory("results/{project}/roh/plots")
     params:
         group_by = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("roh", {}).get("group_by", ["Site"])
