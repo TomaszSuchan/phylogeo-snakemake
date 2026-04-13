@@ -36,9 +36,10 @@ Loci formats
     Locus boundaries are lines that start with "//" (snpstring + spaces + optional
     |N:CHROM:START-END|). Coordinates may appear on a leading "//", on "|" rows, or on the
     closing "//" after samples (reference-mapped). Sample rows: tab split if a tab is
-    present; otherwise scan the line: skip leading whitespace, read the sample id as the
-    first contiguous run of non-whitespace, then take the remainder of the line as the
-    sequence (``line[j:].rstrip()``). Never ``str.find(id)``, which can match inside
+    present; otherwise scan each sample row for id + remainder, then **within a locus**
+    align all rows to a common sequence start column ``P = max(j)`` (``j`` = end of id)
+    so every sample uses ``line[P:]`` after verifying ``line[j:P]`` is only whitespace
+    (ipyrad pads shorter names with spaces). Never ``str.find(id)``, which can match inside
     the sequence. Trailing whitespace on each sequence row is
     stripped; column iteration uses the resulting lengths, and for reference-mapped loci
     the column count is capped by (END - START + 1) from |N:CHROM:START-END|.
@@ -132,6 +133,74 @@ def _parse_loci_sample_row(line):
     return sid, seq.upper()
 
 
+def _locus_sample_lines_to_sequences(lines):
+    """
+    Build {sample_id: sequence_upper} for one locus from raw sample lines.
+
+    Space-delimited ipyrad rows: sample names have different lengths; the alignment
+    block starts at the same file column for every row. We set P = max(name_end) over
+    rows and take ``line[P:]`` when the gap ``line[name_end:P]`` is whitespace-only;
+    otherwise fall back to per-row ``line[name_end:]`` (mixed / odd formats).
+    """
+    if not lines:
+        return {}
+    any_tab = any("\t" in ln for ln in lines)
+    all_tab = all("\t" in ln for ln in lines)
+    if any_tab and not all_tab:
+        out = {}
+        for ln in lines:
+            sid, seq = _parse_loci_sample_row(ln)
+            if sid and seq and any(c in "ACGTNRYSWKMBVDH" for c in seq):
+                out[sid] = seq
+        return out
+    if all_tab:
+        out = {}
+        for ln in lines:
+            sid, seq = _parse_loci_sample_row(ln)
+            if sid and seq and any(c in "ACGTNRYSWKMBVDH" for c in seq):
+                out[sid] = seq
+        return out
+
+    parsed = []
+    for ln in lines:
+        n = len(ln)
+        i = 0
+        while i < n and ln[i].isspace():
+            i += 1
+        if i >= n:
+            continue
+        j = i
+        while j < n and not ln[j].isspace():
+            j += 1
+        if j >= n or j == i:
+            continue
+        sid = ln[i:j]
+        parsed.append((sid, ln, j))
+    if not parsed:
+        return {}
+    p_align = max(j for _, _, j in parsed)
+    out = {}
+    for sid, ln, j in parsed:
+        gap = ln[j:p_align]
+        if gap.strip():
+            # #region agent log
+            if not getattr(_locus_sample_lines_to_sequences, "_h4_align_fallback_logged", False):
+                _locus_sample_lines_to_sequences._h4_align_fallback_logged = True
+                _agent_debug_log(
+                    "locus_align_gap_non_ws_fallback",
+                    {"sid": sid, "j": j, "p_align": p_align, "gap_head": gap[:48]},
+                    "H4",
+                    "extract_invariant_vcf.py:_locus_sample_lines_to_sequences",
+                )
+            # #endregion
+            seq = ln[j:].rstrip().upper()
+        else:
+            seq = ln[p_align:].rstrip().upper()
+        if sid and seq and any(c in "ACGTNRYSWKMBVDH" for c in seq):
+            out[sid] = seq
+    return out
+
+
 def vcf_position(locus_start, col_index):
     """
     VCF POS (1-based) for alignment column col_index (0-based).
@@ -154,7 +223,7 @@ def iter_loci_file(filename):
     - 'start': genomic start (0-based), or None
     - 'end': genomic end, or None
     """
-    current_sequences = {}
+    current_sample_lines = []
     current_meta = {"chrom": None, "start": None, "end": None}
     with open(filename, "r", encoding="utf-8", errors="replace") as f:
         for raw in f:
@@ -174,7 +243,7 @@ def iter_loci_file(filename):
                 else:
                     meta_from_line = {"chrom": None, "start": None, "end": None}
 
-                if current_sequences:
+                if current_sample_lines:
                     # Closing "//": coords often sit on this line (e.g. reference-mapped after
                     # all samples). If we already got |N:CHROM:start-end| from a leading "//" or
                     # "|" rows, keep that; else attach meta parsed from this "//" line.
@@ -183,12 +252,12 @@ def iter_loci_file(filename):
                     )
                     use_meta = current_meta if meta_ready else meta_from_line
                     yield {
-                        "sequences": dict(current_sequences),
+                        "sequences": _locus_sample_lines_to_sequences(current_sample_lines),
                         "chrom": use_meta["chrom"],
                         "start": use_meta["start"],
                         "end": use_meta["end"],
                     }
-                    current_sequences = {}
+                    current_sample_lines = []
                     current_meta = meta_from_line
                 else:
                     current_meta = meta_from_line
@@ -202,13 +271,11 @@ def iter_loci_file(filename):
                     current_meta["end"] = int(m.group(3))
                 continue
 
-            sample_id, sequence = _parse_loci_sample_row(line)
-            if sample_id and sequence and any(c in "ACGTNRYSWKMBVDH" for c in sequence):
-                current_sequences[sample_id] = sequence
+            current_sample_lines.append(line)
 
-    if current_sequences:
+    if current_sample_lines:
         yield {
-            "sequences": dict(current_sequences),
+            "sequences": _locus_sample_lines_to_sequences(current_sample_lines),
             "chrom": current_meta["chrom"],
             "start": current_meta["start"],
             "end": current_meta["end"],
@@ -391,8 +458,11 @@ def _diagnose_template_only_keys(loci_path, only_vcf_keys, loci_var, template_va
                     "end": locus.get("end"),
                 }
                 sequences = locus["sequences"]
-                max_len = max((len(seq) for seq in sequences.values()), default=0)
                 locus_start = locus.get("start")
+                locus_end = locus.get("end")
+                max_len = max((len(seq) for seq in sequences.values()), default=0)
+                if locus_start is not None and locus_end is not None:
+                    max_len = min(max_len, locus_end - locus_start + 1)
                 if locus_start is not None:
                     col_idx = pos - locus_start
                 else:
