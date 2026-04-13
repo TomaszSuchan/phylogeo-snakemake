@@ -56,36 +56,10 @@ CLI
 import sys
 import re
 import os
-import json
 import argparse
 import gzip
 from datetime import datetime
 from collections import defaultdict
-
-# #region agent log
-_AGENT_DEBUG_LOG = os.path.normpath(
-    os.path.join(os.path.dirname(__file__), "..", "..", ".cursor", "debug-025317.log")
-)
-
-
-def _agent_debug_log(message, data, hypothesis_id, location):
-    payload = {
-        "sessionId": "025317",
-        "hypothesisId": hypothesis_id,
-        "location": location,
-        "message": message,
-        "data": data,
-        "timestamp": int(datetime.now().timestamp() * 1000),
-    }
-    try:
-        os.makedirs(os.path.dirname(_AGENT_DEBUG_LOG), exist_ok=True)
-        with open(_AGENT_DEBUG_LOG, "a", encoding="utf-8") as _df:
-            _df.write(json.dumps(payload, default=str) + "\n")
-    except OSError:
-        pass
-
-
-# #endregion
 
 # Pattern for locus reference line: |0:OY992832.1:6295-7119|
 LOCUS_REF_PATTERN = re.compile(r"\|\d+:([^:]+):(\d+)-(\d+)\|")
@@ -134,16 +108,6 @@ def _strip_common_leading_whitespace(sequences):
     if mn == 0:
         return sequences
     if mx != mn:
-        # #region agent log
-        if not getattr(_strip_common_leading_whitespace, "_h5_logged", False):
-            _strip_common_leading_whitespace._h5_logged = True
-            _agent_debug_log(
-                "leading_ws_strip_skipped_asymmetric",
-                {"min_leading_ws": mn, "max_leading_ws": mx},
-                "H5",
-                "extract_invariant_vcf.py:_strip_common_leading_whitespace",
-            )
-        # #endregion
         return sequences
     return {sid: s[mn:] for sid, s in sequences.items()}
 
@@ -372,107 +336,13 @@ def _format_key(k):
     return f"{chrom}:{pos}"
 
 
-# #region agent log
-_RAD_CHROM_IDX = re.compile(r"^RAD_(\d+)$")
-
-
-def _diagnose_template_only_keys(loci_path, only_vcf_keys, loci_var, template_variants, max_keys=5):
-    """Runtime evidence for VCF-only variant keys: neighbor keys in loci_var + site summary at mapped locus."""
-    for key in sorted(only_vcf_keys, key=lambda x: (x[0], x[1]))[:max_keys]:
-        chrom, pos = key
-        tmpl = template_variants.get(key, {})
-        neighbors = {
-            "loci_has_same": key in loci_var,
-            "chrom_pos_m1": (chrom, pos - 1) in loci_var,
-            "chrom_pos_p1": (chrom, pos + 1) in loci_var,
-        }
-        mrad = _RAD_CHROM_IDX.match(chrom)
-        if mrad:
-            n = int(mrad.group(1))
-            neighbors["RAD_n_minus_1"] = (f"RAD_{n - 1}", pos) in loci_var if n > 0 else False
-            neighbors["RAD_n_plus_1"] = (f"RAD_{n + 1}", pos) in loci_var
-        _agent_debug_log(
-            "template_only_key_neighbors",
-            {"key": [chrom, pos], "neighbors": neighbors, "tmpl_ref_alt": [tmpl.get("ref"), tmpl.get("alt")]},
-            "H1",
-            "extract_invariant_vcf.py:_diagnose_template_only_keys",
-        )
-
-    for key in sorted(only_vcf_keys, key=lambda x: (x[0], x[1]))[:max_keys]:
-        chrom, pos = key
-        mrad = _RAD_CHROM_IDX.match(chrom or "")
-        target_idx = int(mrad.group(1)) if mrad else None
-        col_idx = None
-        site_summary = None
-        locus_meta = None
-        max_len = None
-        if target_idx is not None:
-            for locus_idx, locus in enumerate(iter_loci_file(loci_path)):
-                if locus_idx != target_idx:
-                    continue
-                locus_meta = {
-                    "chrom": locus.get("chrom"),
-                    "start": locus.get("start"),
-                    "end": locus.get("end"),
-                }
-                sequences = locus["sequences"]
-                locus_start = locus.get("start")
-                locus_end = locus.get("end")
-                max_len = max((len(seq) for seq in sequences.values()), default=0)
-                if locus_start is not None and locus_end is not None:
-                    max_len = min(max_len, locus_end - locus_start + 1)
-                if locus_start is not None:
-                    col_idx = pos - locus_start
-                else:
-                    col_idx = pos - 1
-                if 0 <= col_idx < max_len:
-                    site_summary = summarize_site(sequences, col_idx)
-                break
-        _agent_debug_log(
-            "template_only_key_locus_inspect",
-            {
-                "key": [chrom, pos],
-                "parsed_rad_locus_idx": target_idx,
-                "locus_meta": locus_meta,
-                "max_len": max_len,
-                "col_idx": col_idx,
-                "site_summary": site_summary,
-            },
-            "H3",
-            "extract_invariant_vcf.py:_diagnose_template_only_keys",
-        )
-
-
-# #endregion
-
-
-def _validate_loci_template_variable_sets(loci_path, loci_var, template_variants):
+def _validate_loci_template_variable_sets(loci_var, template_variants):
     """
     Require exact equality: variable (CHROM, POS) from .loci vs variant rows in template VCF.
     """
     tmpl = set(template_variants.keys())
     only_loci = sorted(loci_var - tmpl, key=lambda x: (x[0], x[1]))
     only_vcf = sorted(tmpl - loci_var, key=lambda x: (x[0], x[1]))
-    # #region agent log
-    tkeys = sorted(tmpl, key=lambda x: (x[0], x[1]))
-    vkeys = sorted(loci_var, key=lambda x: (x[0], x[1]))
-    _agent_debug_log(
-        "validate_variable_sets_summary",
-        {
-            "n_loci_var": len(loci_var),
-            "n_template": len(tmpl),
-            "n_only_loci": len(only_loci),
-            "n_only_vcf": len(only_vcf),
-            "sample_only_vcf": [_format_key(k) for k in only_vcf[:8]],
-            "sample_template_keys": [_format_key(k) for k in tkeys[:5]],
-            "sample_loci_var_keys": [_format_key(k) for k in vkeys[:5]],
-        },
-        "H2",
-        "extract_invariant_vcf.py:_validate_loci_template_variable_sets",
-    )
-    if only_vcf:
-        _diagnose_template_only_keys(loci_path, only_vcf, loci_var, template_variants)
-    # #endregion
     if only_loci:
         sample = ", ".join(_format_key(k) for k in only_loci[:15])
         more = f" … (+{len(only_loci) - 15} more)" if len(only_loci) > 15 else ""
@@ -667,7 +537,7 @@ def main():
 
     print(f"Reading template VCF: {args.template_vcf}", flush=True)
     template_variants = parse_template_vcf(args.template_vcf)
-    _validate_loci_template_variable_sets(args.input_file, loci_var, template_variants)
+    _validate_loci_template_variable_sets(loci_var, template_variants)
 
     if samples_filter is not None:
         samples_order = sorted(all_samples_in_loci.intersection(samples_filter))
