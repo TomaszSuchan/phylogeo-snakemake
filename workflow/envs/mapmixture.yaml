@@ -9,6 +9,7 @@ dependencies:
   - r-ggplot2
   - r-ggrepel
   - r-ggspatial
+  - r-rcolorbrewer
   - r-rnaturalearth
   - r-sf
   - r-terra

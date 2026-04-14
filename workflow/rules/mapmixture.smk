@@ -8,7 +8,7 @@ rule install_mapmixture:
         "../envs/mapmixture.yaml"
     shell:
         """
-        Rscript -e 'for (p in c("mapmixture", "elevatr", "rnaturalearth")) if (!require(p, character.only=TRUE, quietly=TRUE)) install.packages(p, repos="https://cloud.r-project.org/")'
+        Rscript -e 'lib <- .libPaths()[1]; options(repos="https://cloud.r-project.org/"); pkgs <- c("mapmixture", "elevatr", "rnaturalearth"); for (p in pkgs) { if (!requireNamespace(p, quietly=TRUE, lib.loc=lib)) install.packages(p, lib=lib) }'
         """
 
 
