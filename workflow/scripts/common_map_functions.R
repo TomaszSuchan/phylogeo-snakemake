@@ -318,16 +318,32 @@ wgs84_bbox_for_elevation <- function(coords_df, boundary_parsed, plot_crs, expan
     bb <- sf::st_bbox(pts)
     bb <- expand_bbox_mapmixture_style(bb, expand_frac)
   } else {
+    # Accept boundary in multiple shapes:
+    # - list(xmin=..., xmax=..., ymin=..., ymax=...)  (e.g. parsed from YAML dict)
+    # - numeric vector c(xmin=..., xmax=..., ymin=..., ymax=...) (common in config as R code)
+    # - unnamed numeric length-4 vector (assume xmin,xmax,ymin,ymax)
     b <- boundary_parsed
+    if (is.list(b)) {
+      b <- unlist(b, use.names = TRUE)
+    }
+    if (is.numeric(b) && is.null(names(b)) && length(b) == 4L) {
+      names(b) <- c("xmin", "xmax", "ymin", "ymax")
+    }
+    if (!is.numeric(b) || length(b) < 4L) {
+      stop("map_boundary must be numeric with xmin,xmax,ymin,ymax")
+    }
+    if (!all(c("xmin", "xmax", "ymin", "ymax") %in% names(b))) {
+      stop("map_boundary must have names xmin,xmax,ymin,ymax")
+    }
     if (plot_crs == 4326) {
       bb <- sf::st_bbox(
-        c(xmin = b$xmin, xmax = b$xmax, ymin = b$ymin, ymax = b$ymax),
+        c(xmin = b[["xmin"]], xmax = b[["xmax"]], ymin = b[["ymin"]], ymax = b[["ymax"]]),
         crs = sf::st_crs(4326)
       )
     } else {
       rect <- sf::st_as_sfc(
         sf::st_bbox(
-          c(xmin = b$xmin, xmax = b$xmax, ymin = b$ymin, ymax = b$ymax),
+          c(xmin = b[["xmin"]], xmax = b[["xmax"]], ymin = b[["ymin"]], ymax = b[["ymax"]]),
           crs = sf::st_crs(plot_crs)
         )
       )
