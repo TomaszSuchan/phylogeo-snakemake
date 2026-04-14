@@ -313,9 +313,14 @@ wgs84_bbox_for_elevation <- function(coords_df, boundary_parsed, plot_crs, expan
   if (nrow(coords_df) == 0) {
     stop("No valid coordinates for elevation bbox")
   }
-  pts <- sf::st_as_sf(coords_df, coords = c("Lon", "Lat"), crs = 4326)
   if (is.null(boundary_parsed)) {
-    bb <- sf::st_bbox(pts)
+    # Robust bbox from numeric ranges (avoids edge cases in sf::st_bbox() when
+    # coordinates are read/converted oddly in some environments).
+    xmin <- min(coords_df$Lon, na.rm = TRUE)
+    xmax <- max(coords_df$Lon, na.rm = TRUE)
+    ymin <- min(coords_df$Lat, na.rm = TRUE)
+    ymax <- max(coords_df$Lat, na.rm = TRUE)
+    bb <- c(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax)
     bb <- expand_bbox_mapmixture_style(bb, expand_frac)
   } else {
     # Accept boundary in multiple shapes:
@@ -335,20 +340,13 @@ wgs84_bbox_for_elevation <- function(coords_df, boundary_parsed, plot_crs, expan
     if (!all(c("xmin", "xmax", "ymin", "ymax") %in% names(b))) {
       stop("map_boundary must have names xmin,xmax,ymin,ymax")
     }
-    if (plot_crs == 4326) {
-      bb <- sf::st_bbox(
-        c(xmin = b[["xmin"]], xmax = b[["xmax"]], ymin = b[["ymin"]], ymax = b[["ymax"]]),
-        crs = sf::st_crs(4326)
-      )
-    } else {
-      rect <- sf::st_as_sfc(
-        sf::st_bbox(
-          c(xmin = b[["xmin"]], xmax = b[["xmax"]], ymin = b[["ymin"]], ymax = b[["ymax"]]),
-          crs = sf::st_crs(plot_crs)
-        )
-      )
-      bb <- sf::st_bbox(sf::st_transform(rect, 4326))
-    }
+
+    # Convention: map_boundary is always provided in EPSG:4326 (lon/lat degrees),
+    # regardless of the target plot CRS.
+    bb <- sf::st_bbox(
+      c(xmin = b[["xmin"]], xmax = b[["xmax"]], ymin = b[["ymin"]], ymax = b[["ymax"]]),
+      crs = sf::st_crs(4326)
+    )
   }
   structure(
     c(xmin = unname(bb["xmin"]), xmax = unname(bb["xmax"]),
