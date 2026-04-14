@@ -62,17 +62,17 @@ if (is.null(elevatr_z_param) || length(elevatr_z_param) == 0 ||
   message(sprintf("elevatr z (config): %d\n", z))
 }
 
-poly <- sf::st_as_sf(sf::st_as_sfc(sf::st_bbox(bb, crs = sf::st_crs(4326))))
+poly_wgs84 <- sf::st_as_sf(sf::st_as_sfc(sf::st_bbox(bb, crs = sf::st_crs(4326))))
 plot_epsg <- as.integer(round(plot_crs))
-if (plot_epsg != 4326L) {
-  target_crs <- sf::st_crs(paste0("EPSG:", plot_epsg))
-  message(sprintf("Requesting elevatr output in EPSG:%d\n", plot_epsg))
-  poly <- sf::st_transform(poly, target_crs)
-} else {
-  message("Requesting elevatr output in EPSG:4326\n")
-}
-r_elev <- elevatr::get_elev_raster(poly, z = z)
+message("Requesting elevatr download in EPSG:4326 (WGS84)\n")
+r_elev <- elevatr::get_elev_raster(poly_wgs84, z = z)
 r_terra <- terra::rast(r_elev)
+
+# elevatr returns a raster in lon/lat; project explicitly if the plot CRS differs.
+if (plot_epsg != 4326L) {
+  message(sprintf("Projecting elevation raster to EPSG:%d\n", plot_epsg))
+  r_terra <- terra::project(r_terra, paste0("EPSG:", plot_epsg), method = "bilinear")
+}
 
 terra::writeRaster(r_terra, out_tif, overwrite = TRUE, datatype = "FLT4S")
 message(sprintf("Wrote %s\n", out_tif))
