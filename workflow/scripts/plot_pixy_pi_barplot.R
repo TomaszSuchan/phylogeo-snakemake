@@ -81,31 +81,36 @@ if (!is.null(color_by_name)) {
         color_by_name
       ))
     } else {
-    # Get unique population-level data from popdata
-    # Aggregate by Site to get population-level metadata
-    popdata_unique <- popdata[, c(site_col, color_by_name), drop = FALSE]
-    popdata_unique <- popdata_unique[!duplicated(popdata_unique[[site_col]]), ]
-    
+    # Get unique population-level data from popdata.
+    # Use a dedicated merge key so site_col == color_by_name (e.g. both "Site") does not
+    # duplicate columns (R renames to Site.1) or drop the fill column after merge().
+    pdu <- popdata[!duplicated(popdata[[site_col]]), , drop = FALSE]
+    popdata_unique <- data.frame(
+      .pixy_merge_key = pdu[[site_col]],
+      stringsAsFactors = FALSE
+    )
+    popdata_unique[[color_by_name]] <- pdu[[color_by_name]]
+
     message(sprintf("Unique populations in popdata: %d\n", nrow(popdata_unique)))
-    
+
     # Try matching population names
     # First try: direct match with full population name (e.g., "Csr_BBE")
-    pi_df_merged <- merge(pi_df, popdata_unique, 
-                          by.x = "population", 
-                          by.y = site_col, 
+    pi_df_merged <- merge(pi_df, popdata_unique,
+                          by.x = "population",
+                          by.y = ".pixy_merge_key",
                           all.x = TRUE)
-    
+
     # If that fails for some populations, try removing project prefix (e.g., "BBE")
     if (any(is.na(pi_df_merged[[color_by_name]]))) {
       # Only try alternative matching for populations that didn't match
       unmatched <- is.na(pi_df_merged[[color_by_name]])
       pi_df_unmatched <- pi_df[unmatched, ]
-      
+
       if (nrow(pi_df_unmatched) > 0) {
         pi_df_unmatched$population_clean <- gsub("^[^_]+_", "", pi_df_unmatched$population)
-        pi_df_unmatched_merged <- merge(pi_df_unmatched, popdata_unique, 
-                                        by.x = "population_clean", 
-                                        by.y = site_col, 
+        pi_df_unmatched_merged <- merge(pi_df_unmatched, popdata_unique,
+                                        by.x = "population_clean",
+                                        by.y = ".pixy_merge_key",
                                         all.x = TRUE)
         # Remove temporary column
         pi_df_unmatched_merged$population_clean <- NULL
