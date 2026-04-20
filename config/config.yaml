@@ -321,10 +321,8 @@ parameters: &global_params
     tree:
       mcmc_iterations: 10000    # -x: number of MCMC iterations for tree building
     plot:
-      label_by: "Site"          # column in indpopdata.txt used to label fineRADstructure clusters
       max_indv: 10000           # cap for the individual-level coancestry heatmap color scale
       max_pop: 10000            # cap for the population-averaged heatmap color scale
-      max_label_values: 3       # maximum number of label_by values to show per cluster label
 
   ## Trimal parameters for alignment trimming before phylogenetic inference
   trimal:
