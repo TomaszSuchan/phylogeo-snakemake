@@ -361,6 +361,10 @@ parameters: &global_params
       threads: 4
       mem_mb: 16000
       runtime: 240
+    gen_dist:
+      threads: 4
+      mem_mb: 16000
+      runtime: 120
     construct:
       threads: 4
       mem_mb: 16000
@@ -405,6 +409,7 @@ projects:
       structure: true
       faststructure: true
       admixture: true
+      gen_dist: false
       mapi: true
       pcaone: true
       vcf2pcacluster: false
