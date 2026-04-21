@@ -28,18 +28,7 @@ parameters: &global_params
   # The VCF file will is first filtered for bilallelic SNPs with MAC>1
   # and then thinned to one SNP per RAD fragment using the parameters below.
   #
-  vcf_filtering:
-    f_missing: 1 # maximum missing data threshold for variant filtering
-                 # variants missing in > f_missing proportion of samples are filtered out
-                 # 1 keeps all variants, 0 removes variants with any missing data
-    maf: 0      # minimum minor allele frequency threshold for variant filtering
-                # 0 keeps all variants; e.g. 0.05 removes variants with MAF<0.05
-    
-  # VCF thinning strategy: "thinning" (one SNP per RAD fragment), "ld_pruning" (LD-based pruning), or "none" (no pruning/thinning)
-  thinning_strategy: "thinning"  # options: "thinning", "ld_pruning", or "none"
-  
   # VCF thinning parameters (defaults shown):
-  # Used when thinning_strategy is "thinning"
   vcf_thinning:
     min_coverage: 0          # minimum number of samples with data
     method: "max_coverage"   # selection method: random, max_coverage, or weighted
@@ -47,46 +36,23 @@ parameters: &global_params
     ns_tag: "NS"             # INFO field tag for number of samples with data
     id_pattern: "loc(\\d+)_" # regex pattern to extract RAD fragment ID
   
-  # LD pruning parameters (defaults shown):
-  # Used when thinning_strategy is "ld_pruning"
-  ld_pruning:
-    r2: 0.5          # R-squared threshold for LD pruning (default: 0.5)
-    window_size: 50  # window size in kb for LD pruning (default: 50)
-    step_size: 5      # step size in kb for LD pruning (default: 5)
-  
-  ## Relatedness filtering parameters
-  # Filter related/clonal individuals using plink2 KING method
-  relatedness_filtering:
-    enabled: true  # enable/disable relatedness filtering (default: false)
-    king_threshold: 0.0884  # KING kinship threshold for filtering (default: 0.0884, equivalent to PI-HAT > 0.2, 2nd-degree relatives)
-                            # Common values: 0.354 (duplicates/twins), 0.177 (1st-degree), 0.0884 (2nd-degree), 0.0442 (3rd-degree)
-    mac_threshold: 1  # minimum MAC for KING calculation (default: 1)
-    group_by: ["Region"]  # list of columns from popdata to group barplots by (default: ["Region"])
-                          # Similar to pixy.group_by and pca_plot.color_by
-                          # Each value in the list generates a separate barplot grouped by that column
-                          # Use ["none"] or [] for no grouping (overall plot only)
-                          # Example: ["Region", "Population"] generates plots grouped by Region and by Population
-  
   ## Population Structure Analysis
   # Common K values to test for population structure (Structure, fastStructure and admixture):
   k_values: [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
-  ## Map background parameters (shared across all map plots)
-  # These parameters control the base map appearance (boundaries, CRS, colors, decorations)
-  # and are shared by mapmixture, population_map, and pixy map plots
-  map_boundary: NULL                  # map boundaries, e.g. c(xmin=-15, xmax=16, ymin=40, ymax=62)
-  map_background:
+  ## Mapmixture plotting parameters
+  # These parameters control the appearance of map-based structure plots
+  mapmixture:
     width: 10                       # plot width in inches
     height: 8                       # plot height in inches
     dpi: 300                        # dots per inch (resolution)
+    boundary: NULL                  # map boundaries, e.g. c(xmin=-15, xmax=16, ymin=40, ymax=62)
     crs: 4326                       # coordinate reference system (4326 = WGS84 lat/lon)
-    # Raster basemap: null | elevatr | ne1 | gray_earth (YAML true = elevatr, false = none)
-    #   elevatr — DEM (cache_map_elevation; written in map_background.crs; network when built)
-    #   ne1 | gray_earth — Natural Earth (cache: clip in WGS84, warp once to map_background.crs)
-    use_elevation_bg: NULL
-    elevatr_z: null                 # null = auto zoom from bbox + width/height + dpi; or set integer 6–14
-    # Local GeoTIFF/VRT when use_elevation_bg is null
-    basemap: NULL
+    basemap: NULL                   # optional basemap object
+    pie_size: 1                     # size of pie charts on map
+    pie_border: 0.2                 # thickness of pie chart borders
+    pie_border_col: "black"         # color of pie chart borders
+    pie_opacity: 1                  # opacity of pie charts (0-1)
     land_colour: "#d9d9d9"          # color for land masses
     sea_colour: "#deebf7"           # color for water bodies
     expand: FALSE                   # expand map to fill plotting area (TRUE/FALSE)
@@ -96,22 +62,19 @@ parameters: &global_params
     scalebar: TRUE                  # show scale bar (TRUE/FALSE)
     scalebar_size: 1                # size of scale bar
     scalebar_position: "tl"         # position of scale bar (tl/tr/bl/br)
+    legend: FALSE                   # show legend (TRUE/FALSE)
     plot_title: ""                  # title for the plot
     axis_title_size: 10             # font size for axis titles
     axis_text_size: 8               # font size for axis text
     basemap_border: TRUE            # show border around basemap (TRUE/FALSE)
     basemap_border_col: "black"     # color of basemap border
     basemap_border_lwd: 0.1         # line width of basemap border
-
-  ## Mapmixture plotting parameters
-  # Parameters specific to structure/admixture map plots (pie charts, colors, barplots)
-  mapmixture:
-    # Pie chart parameters
-    pie_size: 0.2                   # size of pie charts on map
-    pie_border: 0.2                 # thickness of pie chart borders
-    pie_border_col: "black"         # color of pie chart borders
-    pie_opacity: 1                  # opacity of pie charts (0-1)
-    legend: FALSE                   # show legend (TRUE/FALSE)
+    # Structure barplot parameters (based on mapmixture defaults)
+    cluster_cols: NULL              # list of colors for clusters, e.g. ["#f1a340", "#998ec3"]
+    site_dividers: TRUE             # show dividers between sites
+    divider_width: 0.4              # width of site dividers
+    site_order: NULL                # custom site order as list, e.g. ["Site1", "Site2", "Site3"]
+    flip_axis: FALSE                # flip barplot axis
     # Structure color palette 
     structure_colors:
       - "#E41A1C"  # red
@@ -125,15 +88,10 @@ parameters: &global_params
       - "#999999"  # gray
       - "#FFFFFF"  # white
       - "#000000"  # black
-    # Structure barplot parameters
-    site_dividers: TRUE             # show dividers between sites
-    divider_width: 0.4              # width of site dividers
-    site_order: NULL                # custom site order as list, e.g. ["Site1", "Site2", "Site3"]
-    flip_axis: FALSE                # flip barplot axis
-    site_labels_angle: 45           # angle for site labels (90 = perpendicular, 0 = horizontal)
 
   ## Population map plotting parameters
-  # Parameters specific to population location maps (points, labels, leader lines)
+  # Note: Most map parameters (boundary, crs, land_colour, sea_colour, arrow, scalebar, etc.)
+  # are inherited from mapmixture parameters above for consistency
   population_map:
     # Point styling
     point_size: 1                # size of population points
@@ -149,8 +107,8 @@ parameters: &global_params
     force: 10                    # force of repulsion between labels
     force_pull: 1                # force pulling labels toward points
     max.overlaps: Inf            # maximum number of overlapping labels to show (Inf = show all labels)
-    min.segment.length: 0        # minimum length of leader line segment (in map units)
-    segment.color: "black"       # color of leader lines
+    min.segment.length: 0.5      # minimum length of leader line segment (in map units)
+    segment.color: "black"      # color of leader lines
     segment.size: 0.2            # line width of leader lines
 
   ## MAPI parameters
@@ -158,10 +116,20 @@ parameters: &global_params
   # by comparing genetic distances to geographic distances across a hexagonal grid
   mapi:
     n_permutations: 1000        # number of permutations for significance testing
-    grid_halfwidth: NULL      # grid cell halfwidth in meters (NULL for auto-estimation)
+    grid_halfwidth: 100000      # grid cell halfwidth in meters (NULL for auto-estimation)
     crs_projected: "EPSG:8857"  # projected CRS for distance calculations ("EPSG:8857" = Equal Earth, EPSG:3035 = ETRS89 / ETRS-LAEA Europe, EPSG:2180 = Poland CS2000)
     crs_geographic: 4326        # geographic CRS for lat/lon coordinates (4326 = WGS84)
     alpha: 0.05                 # significance level for upper/lower tail identification
+
+  ## wingen parameters
+  # wingen generates continuous maps of genetic diversity using moving window approaches
+  wingen:
+    stat: "pi"                  # statistic to calculate: "pi" (nucleotide diversity), "Ho" (observed heterozygosity), "allelic_richness", "He" (expected heterozygosity)
+    wdim: 3                     # window dimensions (number of cells in each direction)
+    rarify: true                # perform rarefaction to account for unequal sample sizes
+    min_n: 2                    # minimum number of samples required per window
+    res: null                   # raster resolution in degrees (null for auto-estimation based on coordinate spread)
+    crs_geographic: 4326        # geographic CRS for lat/lon coordinates (4326 = WGS84)
 
   ## Structure parameters
   # More run parameters can be tweaked by modifying `data/mainparams` and `data/extraparams`
@@ -174,23 +142,76 @@ parameters: &global_params
     tol: "10e-6"        # convergence criterion
     prior: "simple"     # prior choice: simple or logistic
   
+  ## TESS3 parameters
+  # TESS3 (spatial population structure analysis)
+  tess3:
+    replicates: 1       # number of independent runs per K value
+    max_iteration: 200  # maximum number of iterations
+    tolerance: 1e-5     # convergence tolerance
+    n_colors: 10       # number of colors for visualization
+  
   ## conStruct parameters
   # conStruct (spatial population structure analysis incorporating geography)
   construct:
-    n_chains: 4        # number of MCMC chains to run (recommended: 2-4 for proper convergence diagnostics)
-    n_iterations: 50000  # number of MCMC iterations per chain (recommended: 20000-50000 for better ESS)
+    n_chains: 1        # number of MCMC chains to run
+    n_iterations: 10000  # number of MCMC iterations per chain
     make.freqs: true   # whether to make allele frequencies from genotype data
     geoDist: null      # optional pre-computed geographic distance matrix (null = compute from coords)
     coords: null       # optional coordinate matrix (null = use from indpopdata)
     save.files: true   # whether to save intermediate files
     crs: 4326          # coordinate reference system for plotting (4326 = WGS84)
   
+  ## EEMS parameters
+  # EEMS (Estimating Effective Migration Surfaces) visualizes spatial patterns of migration and genetic diversity
+  eems:
+    n_demes: 300          # number of demes (grid density) - higher values = finer resolution but slower
+    n_mcmc_iter: 1000000  # number of MCMC iterations
+    n_burn_iter: 1000000  # number of burn-in iterations
+    n_thin_iter: 9999     # thinning interval for MCMC samples
+    diploid: true          # whether the species is diploid (true/false)
+    longlat: true          # whether coordinates are in longitude/latitude format (true/false)
+  
+  ## DAPC parameters
+  # DAPC (Discriminant Analysis of Principal Components) - unsupervised population clustering
+  dapc:
+    max_n_clust: 10      # maximum number of clusters to test
+    n_pca: 50            # number of PCA axes to retain (can be informed by PCAone outputs)
+    n_da: 10             # number of discriminant axes to retain
+    find_clust: true     # whether to find optimal number of clusters (true) or use max_n_clust (false)
+    n_rep: 30            # number of cross-validation replicates for finding optimal clusters
+    criterion: "diffNgroup"  # criterion for cluster selection: "diffNgroup", "min", "goesup", "smoothNgoesup", or "goodfit"
+  
+  ## Geneland parameters
+  # Geneland (Bayesian spatial clustering incorporating geography)
+  geneland:
+    n_iterations: 100000  # number of MCMC iterations
+    thinning: 100        # thinning interval (sample every N iterations)
+    burnin: 200          # number of burn-in iterations
+    model: "Correlated"   # model type: "Correlated" or "Uncorrelated"
+    spatial_coords: true  # whether to use spatial coordinates
+    crs: 4326            # coordinate reference system for plotting (4326 = WGS84)
+  
+  ## feems parameters
+  # feems (Fast Estimation of Effective Migration Surfaces)
+  # NOTE: Grid construction is critical - the grid must properly cover all sample locations
+  feems:
+    # Grid construction parameters (most critical step)
+    grid_method: "auto"    # "auto" (use feems built-in) or "custom" (Delaunay triangulation)
+    grid_resolution: null  # Grid resolution in degrees (null for auto-determination)
+    grid_buffer: 0.1       # Buffer around samples as fraction of coordinate range (0.1 = 10%)
+    # feems analysis parameters
+    lambda_value: 1.0      # Regularization parameter (higher = more smoothing)
+    n_iterations: 1000     # Number of optimization iterations
+    # Visualization
+    crs: 4326              # Coordinate reference system for plotting (4326 = WGS84)
+  
   ## PCAone parameters
+  #
   # SVD method SVD method to be applied.
   # Options are
   # 0: the Implicitly Restarted Arnoldi Method (IRAM);
   # 1: the Yu's single-pass Randomized SVD with power iterations;
-  # 2: the accurate window-based Randomized SVD method (PCAone), recommended for big data (default if --emu option is specified)
+  # 2: the accurate window-based Randomized SVD method (PCAone), recommended for big data;
   # 3: the full Singular Value Decomposition (default).
   # Minimum coverage thresholds to filter VCF for missing data before PCAone analysis.
   # The VCF will be filtered for each threshold in the list and PCAone will be run
@@ -198,14 +219,7 @@ parameters: &global_params
   PCAone:
     miss: [0.1, 0.2, 0.2, 0.3, 0.4, 0.5] # list of maximum missing data thresholds (F_MISSING<mincov)
     SVD_method: 3 # SVD method to use [0-3]
-    EMU_SVD_method: 2 # SVD method to use for EMU [0-3] (default: 2 if --emu option is specified)
     PCnum: 10     # number of principal components to compute
-
-  # EMU https://github.com/Rosemeis/emu
-  EMU:
-    eig: 2       # number of eigenvectors to use in iterative estimation
-    eig_out: 10  # number of eigenvectors to output
-
   # PCA plot params:
   pca_plot:
     pc_max: 4  # maximum PC axis number - will generate all combinations up to this value
@@ -244,73 +258,8 @@ parameters: &global_params
   
   ## Pixy parameters
   pixy:
-    stats: ["pi", "fst", "dxy"] # statistics to compute, options: pi, fst, dxy
+    stats: "pi fst dxy"  # statistics to compute, options: pi, fst, dxy
     window_size: 10000  # size of the sliding window in bp
-    bootstrap_replicates: 1000  # number of bootstrap replicates for confidence intervals
-    group_by: ["Region"]  # columns in indpopdata/popdata defining hierarchical groupings for pixy
-                          # The first entry is used as the default grouping column to build the pixy popmap
-                          # (i.e. the populations that pixy uses internally).
-                          # Grouped and sorted Pi barplots are always generated for each value here.
-    # Optional plotting-only grouping(s) for Pi barplots.
-    # These do not affect Pixy calculations and can differ from group_by.
-    # Example: group_by: ["Site"], sort_by: ["Region"] to calculate Pi by population
-    # and color/order grouped/sorted barplots by region.
-    sort_by: []
-    # Map-specific parameters for pixy PI maps
-    point_size: 3        # size of points on genetic diversity maps
-    map_outline: true    # add point outlines (true/false, default: true)
-
-  ## Genome scan parameters
-  genome_scan:
-    population_column: "Group"  # column name in popdata/indpopdata to extract populations from
-    pop1: "Northern"  # name of first population (must match value in population_column)
-    pop2: "Southern"  # name of second population (must match value in population_column)
-    window_size_fst: 100  # window size in bp for FST (for dot plot visualization)
-    window_size_pi: 1000000  # window size in bp for π (1 Mb for curve visualization)
-    window_size_dxy: 1000000  # window size in bp for dXY (1 Mb for curve visualization)
-
-  ## ROH parameters
-  roh:
-    group_by: ["Site"]  # list of columns from indpopdata to group plots by (default: ["Site"])
-                        # Each value in the list generates separate plots grouped by that column
-                        # Use ["none"] or [] for no grouping (overall plots only)
-                        # Example: ["Site", "Region"] generates plots grouped by Site and by Region
-
-  ## Relatedness plot parameters
-  relatedness_plot:
-    color_by: ["none"]  # columns in indpopdata to color nodes by (must match your indpopdata column names!)
-                        # Each value in the list generates separate plots colored by that column
-                        # Use ["none"] for no coloring (default gray nodes)
-                        # Example: ["Site", "Group"] generates plots colored by Site and by Group
-    relatedness_colors:  # color palette for categorical variables in relatedness plots
-      - "#E41A1C"  # red
-      - "#377EB8"  # blue
-      - "#4DAF4A"  # green
-      - "#984EA3"  # purple
-      - "#FF7F00"  # orange
-      - "#FFFF33"  # yellow
-      - "#A65628"  # brown
-      - "#F781BF"  # pink
-      - "#999999"  # gray
-      - "#FFFFFF"  # white
-      - "#000000"  # black
-
-  ## NeighborNet plotting parameters
-  # NeighborNet is inferred from the Euclidean genetic distance matrix.
-  neighbornet:
-    color_by: ["Site"]  # columns in indpopdata used to color network tips
-    neigbournet_colors: # optional categorical palette; recycled/interpolated if needed
-      - "#E41A1C"  # red
-      - "#377EB8"  # blue
-      - "#4DAF4A"  # green
-      - "#984EA3"  # purple
-      - "#FF7F00"  # orange
-      - "#FFFF33"  # yellow
-      - "#A65628"  # brown
-      - "#F781BF"  # pink
-      - "#999999"  # gray
-      - "#FFFFFF"  # white
-      - "#000000"  # black
 
   ## fineRADstructure parameters
   fineradstructure:
@@ -320,9 +269,6 @@ parameters: &global_params
       thinning: 1000            # -z: thinning interval (sample every z iterations)
     tree:
       mcmc_iterations: 10000    # -x: number of MCMC iterations for tree building
-    plot:
-      max_indv: 10000           # cap for the individual-level coancestry heatmap color scale
-      max_pop: 10000            # cap for the population-averaged heatmap color scale
 
   ## Trimal parameters for alignment trimming before phylogenetic inference
   trimal:
@@ -333,19 +279,28 @@ parameters: &global_params
     model: "MFP"      # substitution model, MFP for ModelFinder Plus
     bootstraps: 1000  # number of ultrafast bootstrap replicates
     robust-phy: 0.95 # robustness threshold for phylogenetic inference (0-1)
-    # outgroup: "sample1,sample2"  # optional: comma-separated list of outgroup taxa
+    # outgroup: "sample1,sample2"  # optional rooting set for plotted/output rooted tree; when omitted, midpoint rooting is used
     support_threshold: 70  # minimum bootstrap support value to display on tree (0-100)
+    # IQ-TREE plotting now writes both rooted and unrooted outputs:
+    # - plots: .tree_plot.unrooted.{pdf,rds} and .tree_plot.rooted.{pdf,rds}
+    # - Newick: .iqtree.unrooted.treefile and .iqtree.rooted.treefile
 
-  ## AMOVA parameters
-  # AMOVA (Analysis of Molecular Variance) partitions genetic variance into hierarchical components
-  amova:
-    strata: ["Region", "Site"]  # hierarchical stratification levels (e.g., ["Region", "Site"])
-                                 # Each level must be a column name in popdata.txt
-                                 # Order matters: first element is the highest level, last is the population level
-                                 # Example: ["Region", "Site"] creates hierarchy: Region > Site
-                                 #           where Site is the population level (most nested)
-                                 # Must specify at least one level (the population level)
-    nperm: 999  # number of permutations for significance testing
+  ## currentNe2 parameters (CLI: https://github.com/esrud/currentNe2 )
+  # Estimates contemporary Ne from LD. Install the `currentne2` binary and ensure it is on PATH.
+  # -r is recombination in cM/Mb (converts physical positions to genetic map). Set null only if
+  #   your map file already has genetic distances in cM (see program manual).
+  # genome_size_morgans: optional second positional argument (~genome length in Morgans); null omits it.
+  # population_column: null = one run on all samples in the VCF/PLINK set. Otherwise a column name
+  #   in indpopdata.txt (same individuals as in the .fam); one run per distinct value (e.g. Site, Region).
+  # metapopulation_two_equal: passes -x (two equal subpopulations); only for a single full-sample run,
+  #   not combined with -k; ignored when population_column is set (per-group runs are separate Ne estimates).
+  currentne2:
+    genome_size_morgans: null
+    recombination_rate_cM_per_Mb: 1.0
+    n_snps: null
+    sibs_k: null
+    metapopulation_two_equal: false
+    population_column: null
 
   ## Analysis resources
   #
@@ -357,26 +312,14 @@ parameters: &global_params
       threads: 1
       mem_mb: 8000
       runtime: 10
-    pixy_summary: # summary bootstrap over windows per stat
-      threads: 1
-      mem_mb: 32000
-      runtime: 60
-    gen_dist: # genetic distance calculations (Euclidean, Kosman, etc.)
-      threads: 1
-      mem_mb: 8000
-      runtime: 60
     default-long: # default resources for longer steps like filtering
       threads: 1
       mem_mb: 8000
       runtime: 60
-    prepare_invariant_vcf: # build invariant-site VCF from .loci
-      threads: 1
-      mem_mb: 32000
-      runtime: 60
     structure:
       threads: 1
       mem_mb: 8000
-      runtime: 4320
+      runtime: 1440
     faststructure:
       threads: 4
       mem_mb: 8000
@@ -393,10 +336,6 @@ parameters: &global_params
       threads: 12
       mem_mb: 8000
       runtime: 10
-    emupca:
-      threads: 12
-      mem_mb: 8000
-      runtime: 30
     vcf2pcacluster:
       threads: 12
       mem_mb: 8000
@@ -405,10 +344,6 @@ parameters: &global_params
       threads: 24
       mem_mb: 8000
       runtime: 600
-    genome_scan:
-      threads: 24
-      mem_mb: 8000
-      runtime: 720
     iqtree:
       threads: 12
       mem_mb: 8000
@@ -420,66 +355,61 @@ parameters: &global_params
     construct:
       threads: 4
       mem_mb: 16000
-      runtime: 1440
+      runtime: 1440  # conStruct MCMC can be time-intensive
+    tess3:
+      threads: 4
+      mem_mb: 8000
+      runtime: 120
+    wingen:
+      threads: 4
+      mem_mb: 16000
+      runtime: 180
+    eems:
+      threads: 4
+      mem_mb: 16000
+      runtime: 1440  # EEMS MCMC can be time-intensive
     dapc:
-      threads: 1
-      mem_mb: 8000
-      runtime: 10
-    relatedness_filtering:
       threads: 4
       mem_mb: 16000
-      runtime: 120 
-    amova:
-      threads: 1
-      mem_mb: 16000
-      runtime: 120
-    roh:
+      runtime: 120   # DAPC analysis (cross-validation can add time)
+    geneland:
       threads: 4
-      mem_mb: 8000
-      runtime: 60
-    fineradstructure:
-      threads: 1
-      mem_mb: 8000
-      runtime: 120
-    neighbornet:
-      threads: 1
-      mem_mb: 32000
-      runtime: 600
+      mem_mb: 16000
+      runtime: 1440  # Geneland MCMC can be time-intensive
+    feems:
+      threads: 4
+      mem_mb: 16000
+      runtime: 240   # feems optimization (grid construction can add time)
+    currentne2:
+      threads: 4
+      mem_mb: 16000
+      runtime: 240   # currentNe2 neural network analysis
 
 ##############################
 ### Projects configuration ###
 ##############################
 projects:
-  TestProject:
-    ipyrad_prefix: "test_data/test"
+  Vcardui_medium-497_filtered:
+    ipyrad_prefix: "/net/pr2/projects/plgrid/plggpam/Vcardui-global/medium-497_filtered"
     ## Analysis selection - set to true/false to enable/disable
     analyses:
-      structure: false
-      faststructure: false
-      admixture: false
-      evaladmix: false
-      construct: false
-      mapi: false
-      pcaone: false
+      structure: true
+      faststructure: true
+      admixture: true
+      mapi: true
+      pcaone: true
       vcf2pcacluster: false
       pcaone_emu: false
       pcaone_miss: false
-      emupca: false
       pixy: false
-      genome_scan: false
-      relatedness: false
+      relatedness: true
       iqtree: false
       iqtree_trimal: false
-      dapc: false
       iqtree_robust: false
       fineradstructure: false
-      plot_map: true
-      amova: false
-      roh: false
-      gen_dist: false
-      pcoa: false
-      neighbornet: false
+      tess3: false
+      feems: false
     parameters:
       <<: *global_params
-      popmap: "data/popmap.txt"
-      popdata: "data/popdata.txt"
+      popmap: "data/Vcardui-popmap.txt"
+      popdata: "data/Vcardui-popdata.txt"

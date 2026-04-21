@@ -1,3 +1,6 @@
+# Load configuration
+configfile: "config/config.yaml"
+
 def get_pca_combinations(pc_max):
     """
     Generate all unique combinations of PC axes up to pc_max.
@@ -9,196 +12,30 @@ def get_pca_combinations(pc_max):
             combinations.append((i, j))
     return combinations
 
-
-from snakemake.io import unpack
-
-
-def _map_background(wildcards):
-    return config["projects"][wildcards.project]["parameters"]["map_background"]
-
-
-def _raster_basemap_mode(wildcards):
-    """
-    Raster basemap: None | 'elevatr' | 'ne1' | 'gray_earth'.
-    map_background.use_elevation_bg: YAML null/false, or string elevatr | ne1 | gray_earth.
-    YAML boolean true is treated as elevatr.
-    """
-    mb = _map_background(wildcards)
-    v = mb.get("use_elevation_bg")
-    if v is True:
-        return "elevatr"
-    if v is False or v is None or v == "NULL" or v == "":
-        return None
-    if not isinstance(v, str):
-        return None
-    s = v.strip().lower()
-    if s in ("elevatr", "elevation", "dem"):
-        return "elevatr"
-    if s in ("ne1", "natural_earth_1", "natural_earth1", "ne_1"):
-        return "ne1"
-    if s in ("gray_earth", "gray", "natural_earth_gray", "grey_earth"):
-        return "gray_earth"
-    return None
-
-
-def _use_elevation_bg(wildcards):
-    """True only when elevatr DEM is the chosen raster basemap (R param + input wiring)."""
-    return _raster_basemap_mode(wildcards) == "elevatr"
-
-
-def _natural_earth_kind(wildcards):
-    """Return 'ne1', 'gray_earth', or None (for fetch_naturalearth_hr_global params in population_map.smk)."""
-    mode = _raster_basemap_mode(wildcards)
-    if mode == "ne1":
-        return "ne1"
-    if mode == "gray_earth":
-        return "gray_earth"
-    return None
-
-
-def _use_naturalearth_raster(wildcards):
-    return _raster_basemap_mode(wildcards) in ("ne1", "gray_earth")
-
-
-def _basemap_geotiff_path(wildcards):
-    """Path to a GeoTIFF/VRT basemap. Unused when elevatr or rnaturalearth raster is active."""
-    if _raster_basemap_mode(wildcards) is not None:
-        return None
-    mb = _map_background(wildcards).get("basemap")
-    if mb is None or mb == "NULL" or mb == "":
-        return None
-    s = str(mb).strip().strip('"').strip("'")
-    low = s.lower()
-    if low.endswith((".tif", ".tiff", ".vrt")):
-        return s
-    return None
-
-
-def _add_basemap_geotiff_input(d, wildcards):
-    gt = _basemap_geotiff_path(wildcards)
-    if gt:
-        d["basemap_geotiff"] = gt
-    return d
-
-
-def _structure_map_inputs(wildcards):
-    p, k = wildcards.project, wildcards.k
-    d = {
-        "qmatrix": f"results/{p}/structure/{p}.structure.K{k}.Qmatrix.txt",
-        "indpopdata": f"results/{p}/indpopdata.txt",
-        "install": ".snakemake/mapmixture_installed",
-    }
-    if _use_elevation_bg(wildcards):
-        d["elevation_basemap"] = f"results/{p}/maps/elevation_basemap.tif"
-    elif _use_naturalearth_raster(wildcards):
-        d["naturalearth_basemap"] = f"results/{p}/maps/naturalearth_basemap.tif"
-    _add_basemap_geotiff_input(d, wildcards)
-    return d
-
-
-def _faststructure_map_inputs(wildcards):
-    p, k = wildcards.project, wildcards.k
-    d = {
-        "qmatrix": f"results/{p}/faststructure/{p}.faststructure.{k}.meanQ",
-        "indpopdata": f"results/{p}/indpopdata.txt",
-        "install": ".snakemake/mapmixture_installed",
-    }
-    if _use_elevation_bg(wildcards):
-        d["elevation_basemap"] = f"results/{p}/maps/elevation_basemap.tif"
-    elif _use_naturalearth_raster(wildcards):
-        d["naturalearth_basemap"] = f"results/{p}/maps/naturalearth_basemap.tif"
-    _add_basemap_geotiff_input(d, wildcards)
-    return d
-
-
-def _admixture_map_inputs(wildcards):
-    p, k = wildcards.project, wildcards.k
-    d = {
-        "qmatrix": f"results/{p}/admixture/{p}.biallelic_snps_thinned.{k}.Q",
-        "indpopdata": f"results/{p}/indpopdata.txt",
-        "install": ".snakemake/mapmixture_installed",
-    }
-    if _use_elevation_bg(wildcards):
-        d["elevation_basemap"] = f"results/{p}/maps/elevation_basemap.tif"
-    elif _use_naturalearth_raster(wildcards):
-        d["naturalearth_basemap"] = f"results/{p}/maps/naturalearth_basemap.tif"
-    _add_basemap_geotiff_input(d, wildcards)
-    return d
-
-
-def _population_map_inputs(wildcards):
-    p = wildcards.project
-    d = {
-        "indpopdata": f"results/{p}/indpopdata.txt",
-        "install": ".snakemake/mapmixture_installed",
-    }
-    if _use_elevation_bg(wildcards):
-        d["elevation_basemap"] = f"results/{p}/maps/elevation_basemap.tif"
-    elif _use_naturalearth_raster(wildcards):
-        d["naturalearth_basemap"] = f"results/{p}/maps/naturalearth_basemap.tif"
-    _add_basemap_geotiff_input(d, wildcards)
-    return d
-
-
-def _pixy_pi_map_inputs(wildcards):
-    p = wildcards.project
-    d = {
-        "indpopdata": f"results/{p}/indpopdata.txt",
-        "summary": f"results/{p}/pixy/{p}.Site.pixy_pi-summary.txt",
-        "install": ".snakemake/mapmixture_installed",
-    }
-    if _use_elevation_bg(wildcards):
-        d["elevation_basemap"] = f"results/{p}/maps/elevation_basemap.tif"
-    elif _use_naturalearth_raster(wildcards):
-        d["naturalearth_basemap"] = f"results/{p}/maps/naturalearth_basemap.tif"
-    _add_basemap_geotiff_input(d, wildcards)
-    return d
-
-
-def _dapc_map_inputs(wildcards):
-    p, k = wildcards.project, wildcards.k
-    d = {
-        "dapc_results": f"results/{p}/dapc/{p}.dapc.K{k}.results.rds",
-        "indpopdata": f"results/{p}/indpopdata.txt",
-        "install": ".snakemake/mapmixture_installed",
-    }
-    if _use_elevation_bg(wildcards):
-        d["elevation_basemap"] = f"results/{p}/maps/elevation_basemap.tif"
-    elif _use_naturalearth_raster(wildcards):
-        d["naturalearth_basemap"] = f"results/{p}/maps/naturalearth_basemap.tif"
-    _add_basemap_geotiff_input(d, wildcards)
-    return d
-
-
 # Include rule files
 include: "rules/preprocessing.smk"
-include: "rules/preprocessing_exports.smk"
-include: "rules/preprocessing_ld_pruning.smk"
 include: "rules/popdata.smk"
-include: "rules/missingness.smk"
 include: "rules/faststructure.smk"
 include: "rules/admixture.smk"
 include: "rules/pcaone.smk"
-include: "rules/emu-pca.smk"
 include: "rules/vcf2pcacluster.smk"
 include: "rules/relatedness.smk"
-include: "rules/structure.smk"
-include: "rules/evaladmix.smk"
-include: "rules/iqtree.smk"
-include: "rules/mapmixture.smk"  # install_mapmixture; must precede population_map (basemap cache rules)
-include: "rules/population_map.smk"
 include: "rules/pixy.smk"
-include: "rules/genome_scan.smk"
+include: "rules/structure.smk"
+include: "rules/iqtree.smk"
+include: "rules/mapmixture.smk"
+include: "rules/population_map.smk"
 include: "rules/genetic_distances.smk"
-include: "rules/pcoa.smk"
-include: "rules/neighbornet.smk"
 include: "rules/mapi.smk"
 include: "rules/fineradstructure.smk"
+include: "rules/tess3.smk"
+include: "rules/wingen.smk"
 include: "rules/construct.smk"
-include: "rules/amova.smk"
+include: "rules/eems.smk"
+include: "rules/geneland.smk"
 include: "rules/dapc.smk"
-include: "rules/roh.smk"
-include: "rules/vcfstats.smk"
+include: "rules/feems.smk"
+include: "rules/currentne2.smk"
 
 def get_all_targets():
     """
@@ -214,17 +51,6 @@ def get_all_targets():
         project_config = config["projects"][project]
         analyses = project_config.get("analyses", {})
         params = project_config.get("parameters", {})
-        
-        # Get thinning strategy to determine suffix (used in multiple places)
-        thinning_strategy = params.get("thinning_strategy", "thinning")
-        if thinning_strategy == "thinning":
-            strategy_suffix = "thinned"
-        elif thinning_strategy == "ld_pruning":
-            strategy_suffix = "ld_pruned"
-        elif thinning_strategy == "none":
-            strategy_suffix = "all_snps"
-        else:
-            strategy_suffix = "thinned"  # default
         
         # Get project-specific parameters
         k_values = params.get("k_values", [1, 2, 3])
@@ -259,17 +85,6 @@ def get_all_targets():
                 expand("results/" + project + "/faststructure/plots/" + project + ".faststructure.K{k}.barplot.rds",
                        k=k_values)
             ])
-            # Evaladmix targets for fastStructure (only if evaladmix is also enabled)
-            if analyses.get("evaladmix", False):
-                faststructure_evaladmix_targets = [
-                    expand("results/" + project + "/faststructure/evaladmix/" + project + ".faststructure.K{k}.corres",
-                           k=k_values),
-                    expand("results/" + project + "/faststructure/evaladmix/plots/" + project + ".faststructure.K{k}.evaladmix.pdf",
-                           k=k_values),
-                    expand("results/" + project + "/faststructure/evaladmix/plots/" + project + ".faststructure.K{k}.evaladmix.rds",
-                           k=k_values)
-                ]
-                targets.extend(faststructure_evaladmix_targets)
 
         # ADMIXTURE targets
         if analyses.get("admixture", False):
@@ -296,16 +111,6 @@ def get_all_targets():
                 expand("results/" + project + "/admixture/plots/" + project + ".admixture.K{k}.barplot.rds",
                        k=k_values)
             ])
-            # Evaladmix targets for ADMIXTURE (only if evaladmix is also enabled)
-            if analyses.get("evaladmix", False):
-                targets.extend([
-                    expand("results/" + project + "/admixture/evaladmix/" + project + ".admixture.K{k}.corres",
-                           k=k_values),
-                    expand("results/" + project + "/admixture/evaladmix/plots/" + project + ".admixture.K{k}.evaladmix.pdf",
-                           k=k_values),
-                    expand("results/" + project + "/admixture/evaladmix/plots/" + project + ".admixture.K{k}.evaladmix.rds",
-                           k=k_values)
-                ])
 
         # STRUCTURE targets
         if analyses.get("structure", False):
@@ -335,67 +140,15 @@ def get_all_targets():
                 expand("results/" + project + "/structure/plots/" + project + ".structure.K{k}.barplot.rds",
                        k=k_values)
             ])
-            # Evaladmix targets for STRUCTURE (only if evaladmix is also enabled)
-            if analyses.get("evaladmix", False):
-                targets.extend([
-                    # .P files are intermediate outputs, created automatically by structure_extract_pfile
-                    # when needed by evaladmix_structure, so we don't need to list them as targets
-                    expand("results/" + project + "/structure/evaladmix/" + project + ".structure.K{k}.corres",
-                           k=k_values),
-                    expand("results/" + project + "/structure/evaladmix/plots/" + project + ".structure.K{k}.evaladmix.pdf",
-                           k=k_values),
-                    expand("results/" + project + "/structure/evaladmix/plots/" + project + ".structure.K{k}.evaladmix.rds",
-                           k=k_values)
-                ])
 
-        # Missingness targets (always generated)
-        # Original dataset (after user sample subset, before relatedness filtering)
-        targets.extend([
-            "results/" + project + "/stats_vcf/original/" + project + ".subset.imiss",
-            "results/" + project + "/stats_vcf/original/" + project + ".subset.lmiss",
-            "results/" + project + "/stats_vcf/original/" + project + ".subset.imiss_summary.txt",
-            "results/" + project + "/stats_vcf/original/" + project + ".subset.lmiss_summary.txt",
-            "results/" + project + "/stats_vcf/original/plots/" + project + ".subset.imiss_histogram.pdf",
-            "results/" + project + "/stats_vcf/original/plots/" + project + ".subset.imiss_histogram.rds",
-            "results/" + project + "/stats_vcf/original/plots/" + project + ".subset.lmiss_histogram.pdf",
-            "results/" + project + "/stats_vcf/original/plots/" + project + ".subset.lmiss_histogram.rds",
-            "results/" + project + "/stats_vcf/original/" + project + ".subset.vcf_stats.txt",
-            "results/" + project + "/stats_vcf/original/" + project + ".subset.chromosome_stats.txt"
-        ])
-        # Filtered dataset (before thinning)
-        targets.extend([
-            "results/" + project + "/stats_vcf/filtered/" + project + ".filtered.imiss",
-            "results/" + project + "/stats_vcf/filtered/" + project + ".filtered.lmiss",
-            "results/" + project + "/stats_vcf/filtered/" + project + ".filtered.imiss_summary.txt",
-            "results/" + project + "/stats_vcf/filtered/" + project + ".filtered.lmiss_summary.txt",
-            "results/" + project + "/stats_vcf/filtered/plots/" + project + ".filtered.imiss_histogram.pdf",
-            "results/" + project + "/stats_vcf/filtered/plots/" + project + ".filtered.imiss_histogram.rds",
-            "results/" + project + "/stats_vcf/filtered/plots/" + project + ".filtered.lmiss_histogram.pdf",
-            "results/" + project + "/stats_vcf/filtered/plots/" + project + ".filtered.lmiss_histogram.rds",
-            "results/" + project + "/stats_vcf/filtered/" + project + ".filtered.vcf_stats.txt",
-            "results/" + project + "/stats_vcf/filtered/" + project + ".filtered.chromosome_stats.txt"
-        ])
-        # Thinned dataset (after thinning)
-        targets.extend([
-            f"results/{project}/stats_vcf/thinned/{project}.biallelic_snps.imiss",
-            f"results/{project}/stats_vcf/thinned/{project}.biallelic_snps.lmiss",
-            f"results/{project}/stats_vcf/thinned/{project}.biallelic_snps.imiss_summary.txt",
-            f"results/{project}/stats_vcf/thinned/{project}.biallelic_snps.lmiss_summary.txt",
-            f"results/{project}/stats_vcf/thinned/plots/{project}.biallelic_snps.imiss_histogram.pdf",
-            f"results/{project}/stats_vcf/thinned/plots/{project}.biallelic_snps.imiss_histogram.rds",
-            f"results/{project}/stats_vcf/thinned/plots/{project}.biallelic_snps.lmiss_histogram.pdf",
-            f"results/{project}/stats_vcf/thinned/plots/{project}.biallelic_snps.lmiss_histogram.rds",
-            f"results/{project}/stats_vcf/thinned/{project}.biallelic_snps.vcf_stats.txt",
-            f"results/{project}/stats_vcf/thinned/{project}.biallelic_snps.chromosome_stats.txt"
-        ])
         # PCAone targets (standard)
         if analyses.get("pcaone", False):
             targets.extend([
                 "results/" + project + "/pcaone/" + project + ".PCA.eigvecs",
                 "results/" + project + "/pcaone/" + project + ".PCA.eigvals"
             ])
-            # Always add missing data calculation target (now in stats)
-            targets.append(f"results/{project}/stats_vcf/thinned/{project}.biallelic_snps.imiss")
+            # Always add missing data calculation target
+            targets.append("results/" + project + "/filtered_data/" + project + ".biallelic_snps_thinned.imiss")
             # Add plot targets for each PC combination and color grouping
             for pc1, pc2 in pca_combinations:
                 for color_by in PCA_groupings:
@@ -430,8 +183,8 @@ def get_all_targets():
                 "results/" + project + "/pcaone_EMU/" + project + ".PCA_EMU.eigvecs",
                 "results/" + project + "/pcaone_EMU/" + project + ".PCA_EMU.eigvals"
             ])
-            # Always add missing data calculation target (now in stats)
-            targets.append(f"results/{project}/stats_vcf/thinned/{project}.biallelic_snps.imiss")
+            # Always add missing data calculation target (reuses same .imiss as pcaone)
+            targets.append("results/" + project + "/filtered_data/" + project + ".biallelic_snps_thinned.imiss")
             # Add plot targets for each PC combination and color grouping
             for pc1, pc2 in pca_combinations:
                 for color_by in PCA_groupings:
@@ -447,49 +200,6 @@ def get_all_targets():
                     f"results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-PC{pc1}_PC{pc2}-missing.pdf",
                     f"results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-PC{pc1}_PC{pc2}-missing.rds"
                 ])
-            # Add facet plots (all PC combinations in one plot)
-            for color_by in PCA_groupings:
-                targets.extend([
-                    f"results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-facet-{color_by}.pdf",
-                    f"results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-facet-{color_by}.rds"
-                ])
-            targets.extend([
-                f"results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-facet-labeled.pdf",
-                f"results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-facet-labeled.rds",
-                f"results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-facet-missing.pdf",
-                f"results/{project}/pcaone_EMU/plots/{project}.PCA_EMU-facet-missing.rds"
-            ])
-
-        # EMU-PCA targets (Rosemeis/emu)
-        if analyses.get("emupca", False):
-            targets.extend([
-                "results/" + project + "/emupca/" + project + ".emupca.eigvecs",
-                "results/" + project + "/emupca/" + project + ".emupca.eigvals"
-            ])
-            targets.append(f"results/{project}/stats_vcf/thinned/{project}.biallelic_snps.imiss")
-            for pc1, pc2 in pca_combinations:
-                for color_by in PCA_groupings:
-                    targets.extend([
-                        f"results/{project}/emupca/plots/{project}.emupca-PC{pc1}_PC{pc2}-{color_by}.pdf",
-                        f"results/{project}/emupca/plots/{project}.emupca-PC{pc1}_PC{pc2}-{color_by}.rds"
-                    ])
-                targets.extend([
-                    f"results/{project}/emupca/plots/{project}.emupca-PC{pc1}_PC{pc2}-labeled.pdf",
-                    f"results/{project}/emupca/plots/{project}.emupca-PC{pc1}_PC{pc2}-labeled.rds",
-                    f"results/{project}/emupca/plots/{project}.emupca-PC{pc1}_PC{pc2}-missing.pdf",
-                    f"results/{project}/emupca/plots/{project}.emupca-PC{pc1}_PC{pc2}-missing.rds"
-                ])
-            for color_by in PCA_groupings:
-                targets.extend([
-                    f"results/{project}/emupca/plots/{project}.emupca-facet-{color_by}.pdf",
-                    f"results/{project}/emupca/plots/{project}.emupca-facet-{color_by}.rds"
-                ])
-            targets.extend([
-                f"results/{project}/emupca/plots/{project}.emupca-facet-labeled.pdf",
-                f"results/{project}/emupca/plots/{project}.emupca-facet-labeled.rds",
-                f"results/{project}/emupca/plots/{project}.emupca-facet-missing.pdf",
-                f"results/{project}/emupca/plots/{project}.emupca-facet-missing.rds"
-            ])
 
         # PCAone targets (with coverage thresholds)
         if analyses.get("pcaone_miss", False):
@@ -502,7 +212,7 @@ def get_all_targets():
             ])
             # Always add missing data calculation targets for each threshold
             targets.extend([
-                expand("results/" + project + "/stats_vcf/thinned/" + project + ".biallelic_snps_thinned_miss{miss}.imiss",
+                expand("results/" + project + "/filtered_data/" + project + ".biallelic_snps_thinned_miss{miss}.imiss",
                        miss=miss_values)
             ])
             # Add plot targets for each miss value, PC combination, and color grouping
@@ -521,18 +231,6 @@ def get_all_targets():
                         f"results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-missing.pdf",
                         f"results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-missing.rds"
                     ])
-                # Add facet plots (all PC combinations in one plot)
-                for color_by in PCA_groupings:
-                    targets.extend([
-                        f"results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-{color_by}.pdf",
-                        f"results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-{color_by}.rds"
-                    ])
-                targets.extend([
-                    f"results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-labeled.pdf",
-                    f"results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-labeled.rds",
-                    f"results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-missing.pdf",
-                    f"results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-missing.rds"
-                ])
         
         # VCF2PCACluster targets
         if analyses.get("vcf2pcacluster", False):
@@ -557,152 +255,31 @@ def get_all_targets():
 
         # Pixy targets
         if analyses.get("pixy", False):
-            pixy_stats = (
-                params.get("pixy", {})
-                .get("stats", ["pi", "fst", "dxy"])
-            )
-
-            pixy_groupings = params.get("pixy", {}).get(
-                "group_by", params.get("pca_plot", {}).get("color_by", ["none"])
-            )
-            # Optional plotting-only grouping(s) for Pi barplots.
-            # Can differ from pixy.group_by (calculation grouping).
-            pixy_sort_by = params.get("pixy", {}).get("sort_by", [])
-            if pixy_sort_by is None:
-                pixy_sort_by = []
-            if isinstance(pixy_sort_by, str):
-                pixy_sort_by = [pixy_sort_by]
-
-            # Summary tables and heatmaps per statistic and grouping
-            for grouping in pixy_groupings:
-                if grouping == "none":
-                    continue
-                if "pi" in pixy_stats:
-                    targets.append(f"results/{project}/pixy/{project}.{grouping}.pixy_pi-summary.txt")
-                if "fst" in pixy_stats:
-                    targets.append(f"results/{project}/pixy/{project}.{grouping}.pixy_fst-summary.txt")
-                    targets.extend([
-                        f"results/{project}/pixy/plots/{project}.{grouping}.pixy_fst_heatmap.pdf",
-                        f"results/{project}/pixy/plots/{project}.{grouping}.pixy_fst_heatmap.rds",
-                    ])
-                if "dxy" in pixy_stats:
-                    targets.append(f"results/{project}/pixy/{project}.{grouping}.pixy_dxy-summary.txt")
-                    targets.extend([
-                        f"results/{project}/pixy/plots/{project}.{grouping}.pixy_dxy_heatmap.pdf",
-                        f"results/{project}/pixy/plots/{project}.{grouping}.pixy_dxy_heatmap.rds",
-                    ])
-
-            # Pi-based barplots and maps only when pi is requested
-            if "pi" in pixy_stats:
-                # grouped/sorted plots are always generated for each calculation
-                # grouping (pixy.group_by), plus any optional plotting-only
-                # groupings (pixy.sort_by).
-                pixy_plot_groupings = []
-                for grouping in pixy_groupings + pixy_sort_by:
-                    if grouping not in pixy_plot_groupings:
-                        pixy_plot_groupings.append(grouping)
-
-                for grouping in pixy_groupings:
-                    if grouping == "none":
-                        continue
-                    # Plain barplot (no coloring), one per Pixy calculation grouping
-                    targets.extend([
-                        f"results/{project}/pixy/plots/{project}.{grouping}.pixy_pi_plain.pdf",
-                        f"results/{project}/pixy/plots/{project}.{grouping}.pixy_pi_plain.rds",
-                    ])
-
-                    for color_by in pixy_plot_groupings:
-                        if color_by == "none":
-                            continue
-                        targets.extend([
-                            f"results/{project}/pixy/plots/{project}.{grouping}.pixy_pi_grouped_by_{color_by}.pdf",
-                            f"results/{project}/pixy/plots/{project}.{grouping}.pixy_pi_grouped_by_{color_by}.rds",
-                        ])
-                        targets.extend([
-                            f"results/{project}/pixy/plots/{project}.{grouping}.pixy_pi_sorted_by_{color_by}.pdf",
-                            f"results/{project}/pixy/plots/{project}.{grouping}.pixy_pi_sorted_by_{color_by}.rds",
-                        ])
-
-                popdata = params.get("popdata")
-                # Pi maps only make sense when pixy populations are "Site"
-                # (plot_pixy_maps merges by Site <-> population).
-                if (
-                    popdata and popdata != "NULL" and popdata != ""
-                    and "Site" in pixy_groupings
-                ):
-                    targets.extend([
-                        f"results/{project}/pixy/plots/{project}.pixy_pi_map.pdf",
-                        f"results/{project}/pixy/plots/{project}.pixy_pi_map.rds",
-                    ])
-
-        # Genome scan targets
-        if analyses.get("genome_scan", False):
             targets.extend([
-                "results/" + project + "/genome_scan/" + project + ".genome_scan_samples.txt",
-                "results/" + project + "/genome_scan/" + project + ".genome_scan_subset.vcf.gz",
-                "results/" + project + "/genome_scan/" + project + ".genome_scan_subset.vcf.gz.csi",
-                "results/" + project + "/genome_scan/" + project + ".genome_scan.imiss",
-                "results/" + project + "/genome_scan/" + project + ".genome_scan.lmiss",
-                "results/" + project + "/genome_scan/" + project + ".genome_scan.imiss_summary.txt",
-                "results/" + project + "/genome_scan/" + project + ".genome_scan.lmiss_summary.txt",
-                "results/" + project + "/genome_scan/plots/" + project + ".genome_scan.imiss_histogram.pdf",
-                "results/" + project + "/genome_scan/plots/" + project + ".genome_scan.imiss_histogram.rds",
-                "results/" + project + "/genome_scan/plots/" + project + ".genome_scan.lmiss_histogram.pdf",
-                "results/" + project + "/genome_scan/plots/" + project + ".genome_scan.lmiss_histogram.rds",
-                "results/" + project + "/genome_scan/" + project + ".genome_scan_popmap.txt",
-                "results/" + project + "/genome_scan/" + project + ".genome_scan_fst.txt",
-                "results/" + project + "/genome_scan/" + project + ".genome_scan_pi.txt",
-                "results/" + project + "/genome_scan/" + project + ".genome_scan_dxy.txt",
-                "results/" + project + "/genome_scan/plots/" + project + ".genome_scan_genome_plot.pdf",
-                "results/" + project + "/genome_scan/plots/" + project + ".genome_scan_genome_plot.rds"
+                "results/" + project + "/pixy/" + project + ".pixy_pi-summary.txt",
+                "results/" + project + "/pixy/" + project + ".pixy_fst-summary.txt",
+                "results/" + project + "/pixy/" + project + ".pixy_dxy-summary.txt"
             ])
 
         # Relatedness targets
         if analyses.get("relatedness", False):
             targets.extend([
-                f"results/{project}/relatedness/{project}.relatedness",
-                f"results/{project}/relatedness/{project}.relatedness2",
-                f"results/{project}/relatedness/{project}.genome",
-                f"results/{project}/relatedness/{project}.king"
+                "results/" + project + "/relatedness/" + project + ".relatedness",
+                "results/" + project + "/relatedness/" + project + ".relatedness2"
             ])
-            # Get relatedness plot color_by values
-            relatedness_groupings = params.get("relatedness_plot", {}).get("color_by", ["none"])
-            # Add plot targets for each color_by value
-            for color_by in relatedness_groupings:
-                targets.extend([
-                    f"results/{project}/relatedness/plots/{project}.genome_network-{color_by}.pdf",
-                    f"results/{project}/relatedness/plots/{project}.genome_network-{color_by}.rds",
-                    f"results/{project}/relatedness/plots/{project}.king_network-{color_by}.pdf",
-                    f"results/{project}/relatedness/plots/{project}.king_network-{color_by}.rds"
-                ])
         
-        # Relatedness filtering targets
-        if params.get("relatedness_filtering", {}).get("enabled", False):
-            targets.extend([
-                "results/" + project + "/filtered_data/" + project + ".king_table.tsv",
-                "results/" + project + "/filtered_data/" + project + ".samples_to_keep.txt",
-                "results/" + project + "/stats_samples/" + project + ".relatedness_filtered_samples.txt",
-                # Plain barplot (no grouping)
-                "results/" + project + "/stats_samples/plots/" + project + ".removed_individuals_by_none.pdf",
-                "results/" + project + "/stats_samples/plots/" + project + ".removed_individuals_by_none.rds"
-            ])
-            # Add barplot targets for each group_by value
-            group_by_list = params.get("relatedness_filtering", {}).get("group_by", ["Region"])
-            for group_by in group_by_list:
-                if group_by != "none" and group_by != "":
-                    targets.extend([
-                        f"results/{project}/stats_samples/plots/{project}.removed_individuals_by_{group_by}.pdf",
-                        f"results/{project}/stats_samples/plots/{project}.removed_individuals_by_{group_by}.rds"
-                    ])
-
         # IQtree targets
         if analyses.get("iqtree", False):
             targets.extend([
                 "results/" + project + "/iqtree/" + project + ".iqtree.treefile",
                 "results/" + project + "/iqtree/" + project + ".iqtree.iqtree",
                 "results/" + project + "/iqtree/" + project + ".iqtree.log",
-                "results/" + project + "/iqtree/plots/" + project + ".tree_plot.pdf",
-                "results/" + project + "/iqtree/plots/" + project + ".tree_plot.rds"
+                "results/" + project + "/iqtree/plots/" + project + ".tree_plot.unrooted.pdf",
+                "results/" + project + "/iqtree/plots/" + project + ".tree_plot.unrooted.rds",
+                "results/" + project + "/iqtree/plots/" + project + ".tree_plot.rooted.pdf",
+                "results/" + project + "/iqtree/plots/" + project + ".tree_plot.rooted.rds",
+                "results/" + project + "/iqtree/" + project + ".iqtree.unrooted.treefile",
+                "results/" + project + "/iqtree/" + project + ".iqtree.rooted.treefile"
             ])
 
         # IQtree robust targets
@@ -711,8 +288,12 @@ def get_all_targets():
                 "results/" + project + "/iqtree_robust/" + project + ".iqtree_robust.treefile",
                 "results/" + project + "/iqtree_robust/" + project + ".iqtree_robust.iqtree",
                 "results/" + project + "/iqtree_robust/" + project + ".iqtree_robust.log",
-                "results/" + project + "/iqtree_robust/plots/" + project + ".tree_plot.pdf",
-                "results/" + project + "/iqtree_robust/plots/" + project + ".tree_plot.rds"
+                "results/" + project + "/iqtree_robust/plots/" + project + ".tree_plot.unrooted.pdf",
+                "results/" + project + "/iqtree_robust/plots/" + project + ".tree_plot.unrooted.rds",
+                "results/" + project + "/iqtree_robust/plots/" + project + ".tree_plot.rooted.pdf",
+                "results/" + project + "/iqtree_robust/plots/" + project + ".tree_plot.rooted.rds",
+                "results/" + project + "/iqtree_robust/" + project + ".iqtree_robust.unrooted.treefile",
+                "results/" + project + "/iqtree_robust/" + project + ".iqtree_robust.rooted.treefile"
             ])
 
         # Genetic distance targets
@@ -721,60 +302,6 @@ def get_all_targets():
                 "results/" + project + "/gen_dist/" + project + ".kosman_distance.tsv",
                 "results/" + project + "/gen_dist/" + project + ".euclidean_distance.tsv"
             ])
-
-        # PCoA targets (based on Euclidean genetic distance)
-        if analyses.get("pcoa", False):
-            # distance matrix needed as input
-            targets.append("results/" + project + "/gen_dist/" + project + ".euclidean_distance.tsv")
-            # ordination coordinates
-            targets.extend([
-                "results/" + project + "/PCoA/" + project + ".euclidean_pcoa.eigvecs",
-                "results/" + project + "/PCoA/" + project + ".euclidean_pcoa.eigvals"
-            ])
-            # PCoA plots, mirroring PCA plot structure
-            for pc1, pc2 in pca_combinations:
-                for color_by in PCA_groupings:
-                    targets.extend([
-                        f"results/{project}/PCoA/plots/{project}.PCoA-PC{pc1}_PC{pc2}-{color_by}.pdf",
-                        f"results/{project}/PCoA/plots/{project}.PCoA-PC{pc1}_PC{pc2}-{color_by}.rds"
-                    ])
-                targets.extend([
-                    f"results/{project}/PCoA/plots/{project}.PCoA-PC{pc1}_PC{pc2}-labeled.pdf",
-                    f"results/{project}/PCoA/plots/{project}.PCoA-PC{pc1}_PC{pc2}-labeled.rds",
-                    f"results/{project}/PCoA/plots/{project}.PCoA-PC{pc1}_PC{pc2}-missing.pdf",
-                    f"results/{project}/PCoA/plots/{project}.PCoA-PC{pc1}_PC{pc2}-missing.rds"
-                ])
-            # Facet plots across axis combinations
-            for color_by in PCA_groupings:
-                targets.extend([
-                    f"results/{project}/PCoA/plots/{project}.PCoA-facet-{color_by}.pdf",
-                    f"results/{project}/PCoA/plots/{project}.PCoA-facet-{color_by}.rds"
-                ])
-            targets.extend([
-                f"results/{project}/PCoA/plots/{project}.PCoA-facet-labeled.pdf",
-                f"results/{project}/PCoA/plots/{project}.PCoA-facet-labeled.rds",
-                f"results/{project}/PCoA/plots/{project}.PCoA-facet-missing.pdf",
-                f"results/{project}/PCoA/plots/{project}.PCoA-facet-missing.rds"
-            ])
-
-        # NeighborNet targets (based on Euclidean genetic distance)
-        if analyses.get("neighbornet", False):
-            neighbornet_groupings = params.get("neighbornet", {}).get("color_by", ["Site"])
-            if isinstance(neighbornet_groupings, str):
-                neighbornet_groupings = [neighbornet_groupings]
-            if neighbornet_groupings is None or len(neighbornet_groupings) == 0:
-                neighbornet_groupings = ["Site"]
-
-            targets.extend([
-                f"results/{project}/gen_dist/{project}.euclidean_distance.tsv",
-                f"results/{project}/neighbornet/{project}.euclidean.neighbornet.rds"
-            ])
-            for color_by in neighbornet_groupings:
-                targets.extend([
-                    f"results/{project}/neighbornet/plots/{project}.euclidean.neighbornet-{color_by}.with_tip_labels.pdf",
-                    f"results/{project}/neighbornet/plots/{project}.euclidean.neighbornet-{color_by}.no_tip_labels.pdf",
-                    f"results/{project}/neighbornet/plots/{project}.euclidean.neighbornet-{color_by}.rds",
-                ])
 
         # MAPI targets
         if analyses.get("mapi", False):
@@ -789,19 +316,11 @@ def get_all_targets():
                     "results/" + project + "/mapi/" + project + ".mapi_lower_tails.gpkg"
                 ])
         
-        # Population map targets (only run if plot_map is enabled and popdata is available)
-        if analyses.get("plot_map", False):
-            popdata = params.get("popdata")
-            if popdata and popdata != "NULL" and popdata != "":
-                targets.extend([
-                    "results/" + project + "/stats_samples/" + project + ".population_map.pdf"
-                ])
-        
-        # Population summary table (always generated if popdata is available)
+        # Population map targets (always run if popdata is available)
         popdata = params.get("popdata")
         if popdata and popdata != "NULL" and popdata != "":
             targets.extend([
-                "results/" + project + "/stats_samples/" + project + ".population_summary.txt"
+                "results/" + project + "/population_map/" + project + ".population_map.pdf"
             ])
 
         # fineRADstructure targets
@@ -810,12 +329,20 @@ def get_all_targets():
                 "results/" + project + "/fineradstructure/" + project + ".input",
                 "results/" + project + "/fineradstructure/" + project + "_chunks.out",
                 "results/" + project + "/fineradstructure/" + project + "_chunks.mcmc.xml",
-                "results/" + project + "/fineradstructure/" + project + "_chunks.mcmcTree.xml",
-                "results/" + project + "/fineradstructure/plots/" + project + ".SimpleCoancestry.pdf",
-                "results/" + project + "/fineradstructure/plots/" + project + ".PopAveragedCoancestry.pdf",
-                "results/" + project + "/fineradstructure/plots/" + project + ".PopAveragedCoancestryLabeled.pdf",
-                "results/" + project + "/fineradstructure/plots/" + project + ".fineradstructure_plots.rds"
+                "results/" + project + "/fineradstructure/" + project + "_chunks.mcmcTree.xml"
             ])
+
+        # TESS3 targets
+        if analyses.get("tess3", False):
+            # Only run if popdata is specified (required for geographic coordinates)
+            popdata = params.get("popdata")
+            if popdata and popdata != "NULL" and popdata != "":
+                targets.extend([
+                    expand("results/" + project + "/tess3/" + project + ".tess3.K{k}.Qmatrix.txt",
+                           k=k_values),
+                    expand("results/" + project + "/tess3/" + project + ".tess3.K{k}.gif",
+                           k=k_values)
+                ])
 
         # conStruct targets
         if analyses.get("construct", False):
@@ -833,48 +360,81 @@ def get_all_targets():
                            k=k_values)
                 ])
 
-        # AMOVA targets
-        if analyses.get("amova", False):
-            # Only run if popdata is specified (required for stratification)
+        # wingen targets
+        if analyses.get("wingen", False):
+            # Only run if popdata is specified (required for geographic coordinates)
             popdata = params.get("popdata")
             if popdata and popdata != "NULL" and popdata != "":
                 targets.extend([
-                    "results/" + project + "/amova/" + project + ".amova_results.txt",
-                    "results/" + project + "/amova/plots/" + project + ".amova_variance_components.pdf",
-                    "results/" + project + "/amova/plots/" + project + ".amova_variance_components.rds"
+                    "results/" + project + "/wingen/" + project + ".wingen_diversity.tif",
+                    "results/" + project + "/wingen/" + project + ".wingen_summary.txt",
+                    "results/" + project + "/wingen/" + project + ".wingen_diversity.pdf"
                 ])
-        
-        # ROH targets
-        if analyses.get("roh", False):
-            targets.extend([
-                "results/" + project + "/roh/" + project + ".bcftools_roh.txt",
-                "results/" + project + "/roh/" + project + ".roh_summary.txt",
-                "results/" + project + "/roh/" + project + ".roh_per_ind.txt"
-            ])
+
+        # EEMS targets
+        if analyses.get("eems", False):
+            # Only run if popdata is specified (required for geographic coordinates)
+            popdata = params.get("popdata")
+            if popdata and popdata != "NULL" and popdata != "":
+                targets.extend([
+                    "results/" + project + "/eems/" + project + ".diffs",
+                    "results/" + project + "/eems/" + project + ".coord",
+                    "results/" + project + "/eems/" + project + ".outer",
+                    "results/" + project + "/eems/" + project + ".eems_complete.txt",
+                    "results/" + project + "/eems/" + project + ".mcmcpath/mcmcmigration.txt",
+                    "results/" + project + "/eems/" + project + ".mcmcpath/mcmcdiversity.txt",
+                    "results/" + project + "/eems/plots/" + project + ".eems_migration.pdf",
+                    "results/" + project + "/eems/plots/" + project + ".eems_diversity.pdf",
+                    "results/" + project + "/eems/plots/" + project + ".eems_combined.pdf"
+                ])
 
         # DAPC targets
         if analyses.get("dapc", False):
-            k_values = params.get("k_values", [1, 2, 3, 4, 5, 6, 7, 8, 9])
-            # Filter out K=1 (DAPC requires at least 2 clusters)
-            k_values = [k for k in k_values if k >= 2]
-            
             targets.extend([
-                expand("results/" + project + "/dapc/" + project + ".dapc.K{k}.results.rds", k=k_values),
-                expand("results/" + project + "/dapc/" + project + ".dapc.K{k}.cluster_assignments.txt", k=k_values),
-                expand("results/" + project + "/dapc/" + project + ".dapc.K{k}.membership_probs.txt", k=k_values),
-                expand("results/" + project + "/dapc/plots/" + project + ".dapc.K{k}.scatter.pdf", k=k_values),
-                expand("results/" + project + "/dapc/plots/" + project + ".dapc.K{k}.scatter.rds", k=k_values),
-                "results/" + project + "/dapc/plots/" + project + ".dapc.criterion_plot.pdf",
-                "results/" + project + "/dapc/plots/" + project + ".dapc.criterion_plot.rds"
+                "results/" + project + "/dapc/" + project + ".dapc.results.rds",
+                "results/" + project + "/dapc/" + project + ".dapc.cluster_assignments.txt",
+                "results/" + project + "/dapc/" + project + ".dapc.membership_probs.txt",
+                "results/" + project + "/dapc/plots/" + project + ".dapc.scatter.pdf"
             ])
-            # Add DAPC map targets (only if popdata is specified, like AMOVA)
+        
+        # Geneland targets
+        if analyses.get("geneland", False):
+            # Only run if popdata is specified (required for geographic coordinates)
             popdata = params.get("popdata")
             if popdata and popdata != "NULL" and popdata != "":
                 targets.extend([
-                    expand("results/" + project + "/dapc/plots/" + project + ".dapc.K{k}.map.pdf", k=k_values),
-                    expand("results/" + project + "/dapc/plots/" + project + ".dapc.K{k}.map.rds", k=k_values)
+                    expand("results/" + project + "/geneland/" + project + ".geneland.K{k}.results.rds",
+                           k=k_values),
+                    expand("results/" + project + "/geneland/" + project + ".geneland.K{k}.cluster_assignments.txt",
+                           k=k_values),
+                    expand("results/" + project + "/geneland/plots/" + project + ".geneland.K{k}.map.pdf",
+                           k=k_values),
+                    expand("results/" + project + "/geneland/plots/" + project + ".geneland.K{k}.barplot.pdf",
+                           k=k_values)
                 ])
-    
+
+        # feems targets
+        if analyses.get("feems", False):
+            # Only run if popdata is specified (required for geographic coordinates)
+            popdata = params.get("popdata")
+            if popdata and popdata != "NULL" and popdata != "":
+                targets.extend([
+                    "results/" + project + "/feems/" + project + ".genotype_matrix.npy",
+                    "results/" + project + "/feems/" + project + ".coords.txt",
+                    "results/" + project + "/feems/" + project + ".grid_vertices.txt",
+                    "results/" + project + "/feems/" + project + ".grid_edges.txt",
+                    "results/" + project + "/feems/" + project + ".feems_results.pkl",
+                    "results/" + project + "/feems/" + project + ".migration_surface.txt",
+                    "results/" + project + "/feems/plots/" + project + ".feems_migration.pdf"
+                ])
+
+        # currentNe2 targets
+        if analyses.get("currentne2", False):
+            targets.extend([
+                "results/" + project + "/currentne2/" + project + ".currentne2_summary.tsv",
+                "results/" + project + "/currentne2/" + project + ".currentne2_runs",
+            ])
+
     return targets
 
 # Main target rule

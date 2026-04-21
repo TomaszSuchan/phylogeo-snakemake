@@ -95,12 +95,17 @@ rule plot_tree:
     input:
         treefile=rules.iqtree.output.treefile
     output:
-        pdf="results/{project}/iqtree_trimal/plots/{project}.tree_plot.pdf",
-        rds="results/{project}/iqtree_trimal/plots/{project}.tree_plot.rds"
+        unrooted_pdf="results/{project}/iqtree_trimal/plots/{project}.tree_plot.unrooted.pdf",
+        unrooted_rds="results/{project}/iqtree_trimal/plots/{project}.tree_plot.unrooted.rds",
+        rooted_pdf="results/{project}/iqtree_trimal/plots/{project}.tree_plot.rooted.pdf",
+        rooted_rds="results/{project}/iqtree_trimal/plots/{project}.tree_plot.rooted.rds",
+        unrooted_tree="results/{project}/iqtree_trimal/{project}.iqtree.unrooted.treefile",
+        rooted_tree="results/{project}/iqtree_trimal/{project}.iqtree.rooted.treefile"
     benchmark:
         "benchmarks/{project}/iqtree_trimal_plot.txt"
     params:
-        support_threshold=lambda wildcards: config["projects"][wildcards.project]["parameters"]["iqtree"].get("support_threshold", 70)
+        support_threshold=lambda wildcards: config["projects"][wildcards.project]["parameters"]["iqtree"].get("support_threshold", 70),
+        outgroup=lambda wildcards: config["projects"][wildcards.project]["parameters"]["iqtree"].get("outgroup", "")
     conda:
         "../envs/r-ggtree.yaml"
     threads: 1
@@ -115,12 +120,17 @@ rule plot_tree_robust:
     input:
         treefile=rules.iqtree_robust.output.treefile
     output:
-        pdf="results/{project}/iqtree_trimal_robust/plots/{project}.tree_plot.pdf",
-        rds="results/{project}/iqtree_trimal_robust/plots/{project}.tree_plot.rds"
+        unrooted_pdf="results/{project}/iqtree_trimal_robust/plots/{project}.tree_plot.unrooted.pdf",
+        unrooted_rds="results/{project}/iqtree_trimal_robust/plots/{project}.tree_plot.unrooted.rds",
+        rooted_pdf="results/{project}/iqtree_trimal_robust/plots/{project}.tree_plot.rooted.pdf",
+        rooted_rds="results/{project}/iqtree_trimal_robust/plots/{project}.tree_plot.rooted.rds",
+        unrooted_tree="results/{project}/iqtree_trimal_robust/{project}.iqtree_robust.unrooted.treefile",
+        rooted_tree="results/{project}/iqtree_trimal_robust/{project}.iqtree_robust.rooted.treefile"
     benchmark:
         "benchmarks/{project}/iqtree_trimal_robust_plot.txt"
     params:
-        support_threshold=lambda wildcards: config["projects"][wildcards.project]["parameters"]["iqtree"].get("support_threshold", 70)
+        support_threshold=lambda wildcards: config["projects"][wildcards.project]["parameters"]["iqtree"].get("support_threshold", 70),
+        outgroup=lambda wildcards: config["projects"][wildcards.project]["parameters"]["iqtree"].get("outgroup", "")
     conda:
         "../envs/r-ggtree.yaml"
     threads: 1

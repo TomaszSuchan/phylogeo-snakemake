@@ -207,7 +207,7 @@ For precision, the workflow uses the following internal genotype datasets:
 
 ### Phylogenetic and historical inference
 
-**IQ-TREE** performs maximum-likelihood phylogenetic inference from the ipyrad `.phy` alignment. It outputs tree files, run logs, support summaries, and plotted trees. The main parameters are in `config["parameters"]["iqtree"]` (`model`, `bootstraps`, optional `outgroup`, `robust-phy`, `support_threshold`).
+**IQ-TREE** performs maximum-likelihood phylogenetic inference from the ipyrad `.phy` alignment. It outputs tree files, run logs, support summaries, and both rooted and unrooted plotted trees/Newick trees. Rooting for the rooted outputs uses `config["parameters"]["iqtree"]["outgroup"]` when provided (single sample or comma-separated sample set), otherwise midpoint rooting is used automatically. The main parameters are in `config["parameters"]["iqtree"]` (`model`, `bootstraps`, optional `outgroup`, `robust-phy`, `support_threshold`).
 
 **trimAl + IQ-TREE** adds an alignment-trimming step before phylogenetic inference. It uses `trimAl` to remove sites with excessive gaps and then runs IQ-TREE on the trimmed alignment, producing trimmed alignments together with the same tree and plotting outputs as the untrimmed workflow. The main trimming parameter is `config["parameters"]["trimal"]["gt"]`; the downstream tree step uses the same `config["parameters"]["iqtree"]` settings.
 
