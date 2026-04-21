@@ -3,7 +3,8 @@ rule dapc_analysis:
     input:
         vcf = lambda wildcards: get_filtered_vcf_output(wildcards)
     wildcard_constraints:
-        k = r"[2-9]\d*"
+        # K>=2 as decimal strings: [2-9]\d* wrongly rejects 10,11,... (first digit is 1).
+        k = r"(?:[2-9]|[1-9]\d+)"
     output:
         results_rds = "results/{project}/dapc/{project}.dapc.K{k}.results.rds",
         cluster_assignments = "results/{project}/dapc/{project}.dapc.K{k}.cluster_assignments.txt",
