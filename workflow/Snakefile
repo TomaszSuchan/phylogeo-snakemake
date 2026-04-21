@@ -94,18 +94,46 @@ def _population_map_inputs(wildcards):
     return inputs
 
 
-def _pixy_grouping_for_map(wildcards):
-    pixy_cfg = (
-        config["projects"][wildcards.project]
-        .get("parameters", {})
-        .get("pixy", {})
-    )
+def _pixy_grouping_columns(project_params):
+    """
+    Columns used as pixy `{grouping}` wildcards (and in result filenames).
+
+    Reads, in order: `pixy.group_by` (list or string), then legacy `groupings`
+    / `grouping`. Defaults to Site when nothing is set.
+    """
+    pixy_cfg = project_params.get("pixy", {})
+    gb = pixy_cfg.get("group_by")
+    if isinstance(gb, list) and gb:
+        return [str(x) for x in gb if x and str(x) != "none"]
+    if isinstance(gb, str) and gb and gb != "none":
+        return [gb]
     groupings = pixy_cfg.get("groupings")
     if isinstance(groupings, list) and groupings:
-        return str(groupings[0])
+        return [str(g) for g in groupings]
     if isinstance(groupings, str) and groupings:
-        return groupings
-    return str(pixy_cfg.get("grouping", "Site"))
+        return [groupings]
+    grouping = pixy_cfg.get("grouping")
+    if grouping:
+        return [str(grouping)]
+    return ["Site"]
+
+
+def _pixy_enabled_stats(project_params):
+    """Which pixy statistics are requested (`pi`, `fst`, `dxy`)."""
+    pixy_cfg = project_params.get("pixy", {})
+    stats = pixy_cfg.get("stats", "pi fst dxy")
+    if isinstance(stats, list):
+        return {str(s).strip().lower() for s in stats if str(s).strip()}
+    if isinstance(stats, str):
+        return {t.lower() for t in stats.replace(",", " ").split() if t.strip()}
+    return {"pi", "fst", "dxy"}
+
+
+def _pixy_grouping_for_map(wildcards):
+    """First grouping column (used for PI map summary path)."""
+    project_params = config["projects"][wildcards.project].get("parameters", {})
+    cols = _pixy_grouping_columns(project_params)
+    return cols[0] if cols else "Site"
 
 
 def _pixy_pi_map_inputs(wildcards):
@@ -117,6 +145,7 @@ def _pixy_pi_map_inputs(wildcards):
     }
     inputs.update(_map_background_inputs(wildcards))
     return inputs
+
 
 # Include rule files
 include: "rules/preprocessing.smk"
@@ -354,13 +383,31 @@ def get_all_targets():
                 )
             )
 
-        # Pixy targets
+        # Pixy targets (summaries only; matches enabled stats and grouping columns)
         if analyses.get("pixy", False):
-            targets.extend([
-                "results/" + project + "/pixy/" + project + ".pixy_pi-summary.txt",
-                "results/" + project + "/pixy/" + project + ".pixy_fst-summary.txt",
-                "results/" + project + "/pixy/" + project + ".pixy_dxy-summary.txt"
-            ])
+            pixy_groupings = _pixy_grouping_columns(params)
+            pixy_stats = _pixy_enabled_stats(params)
+            if "pi" in pixy_stats:
+                targets.extend(
+                    expand(
+                        "results/" + project + "/pixy/" + project + ".{grouping}.pixy_pi-summary.txt",
+                        grouping=pixy_groupings
+                    )
+                )
+            if "fst" in pixy_stats:
+                targets.extend(
+                    expand(
+                        "results/" + project + "/pixy/" + project + ".{grouping}.pixy_fst-summary.txt",
+                        grouping=pixy_groupings
+                    )
+                )
+            if "dxy" in pixy_stats:
+                targets.extend(
+                    expand(
+                        "results/" + project + "/pixy/" + project + ".{grouping}.pixy_dxy-summary.txt",
+                        grouping=pixy_groupings
+                    )
+                )
 
         # Relatedness targets
         if analyses.get("relatedness", False):
