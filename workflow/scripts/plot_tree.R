@@ -46,35 +46,17 @@ add_support_labels <- function(plot_obj, tree_phylo, threshold) {
     )
 }
 
-compute_scale_width <- function(tree_phylo, fraction = 0.1) {
-  root_to_tip <- node.depth.edgelength(tree_phylo)[seq_along(tree_phylo$tip.label)]
-  total_depth <- max(root_to_tip, na.rm = TRUE)
-
-  if (!is.finite(total_depth) || total_depth <= 0) {
-    return(1)
-  }
-
-  target_width <- total_depth * fraction
-  exponent <- floor(log10(target_width))
-  candidates <- c(1, 2, 5) * (10 ^ exponent)
-  candidates <- c(candidates, c(1, 2, 5) * (10 ^ (exponent - 1)), c(1, 2, 5) * (10 ^ (exponent + 1)))
-  candidates <- unique(candidates[candidates > 0])
-
-  candidates[which.min(abs(candidates - target_width))]
-}
-
 build_tree_plot <- function(tree_phylo, threshold, layout = "rectangular") {
   p <- ggtree(tree_phylo, layout = layout)
 
   if (layout == "daylight") {
     p <- p + geom_tiplab(size = 2.5) + theme_tree()
   } else {
-    p <- p + geom_tiplab(size = 2.5, hjust = -0.05) + theme_tree2()
+    p <- p + geom_tiplab(size = 2.5, hjust = -0.05) + theme_tree()
   }
 
   p <- add_support_labels(p, tree_phylo, threshold)
-  scale_width <- compute_scale_width(tree_phylo, fraction = 0.1)
-  p + geom_treescale(x = 0, y = 0, width = scale_width)
+  p + geom_treescale(x = 0, y = 0, width = 1)
 }
 
 plot_dimensions <- function(tree_phylo) {
