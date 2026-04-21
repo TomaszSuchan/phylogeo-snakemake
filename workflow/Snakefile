@@ -491,15 +491,16 @@ def get_all_targets():
 
         # DAPC targets
         if analyses.get("dapc", False):
+            dapc_k_values = [k for k in k_values if int(k) >= 2]
             targets.extend([
                 expand("results/" + project + "/dapc/" + project + ".dapc.K{k}.results.rds",
-                       k=k_values),
+                       k=dapc_k_values),
                 expand("results/" + project + "/dapc/" + project + ".dapc.K{k}.cluster_assignments.txt",
-                       k=k_values),
+                       k=dapc_k_values),
                 expand("results/" + project + "/dapc/" + project + ".dapc.K{k}.membership_probs.txt",
-                       k=k_values),
+                       k=dapc_k_values),
                 expand("results/" + project + "/dapc/plots/" + project + ".dapc.K{k}.scatter.pdf",
-                       k=k_values),
+                       k=dapc_k_values),
                 "results/" + project + "/dapc/plots/" + project + ".dapc.criterion_plot.pdf"
             ])
         

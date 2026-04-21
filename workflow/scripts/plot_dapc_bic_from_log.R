@@ -1,6 +1,5 @@
-# Script to plot BIC values from dapc_bic_plot.log.txt
-# Parses the native BIC values extracted from find.clusters and creates a plot
-# matching the aesthetics of the original criterion plot
+# Script to plot BIC values from per-K DAPC log files
+# Parses "BIC value:" entries from each dapc.K*.log.txt file
 
 # Prevent creation of Rplots.pdf - set before loading libraries
 Sys.setenv(R_INSTALL_PKG = "")
@@ -26,79 +25,73 @@ if (file.exists("Rplots.pdf")) {
 }
 
 # Snakemake inputs/outputs
-log_file <- snakemake@input[["log_file"]]
+log_files <- as.character(snakemake@input)
 output_plot <- snakemake@output[["plot"]]
 output_plot_rds <- snakemake@output[["plot_rds"]]
 
 cat("=== DAPC BIC Plot from Log ===\n")
-cat("Log file:", log_file, "\n")
+cat("Input log files:\n")
+for (lf in log_files) {
+  cat("  ", lf, "\n")
+}
 cat("Output plot:", output_plot, "\n\n")
 
-# Read the log file
-log_content <- readLines(log_file)
-
-# Find the line with "BIC values extracted from Kstat:"
-bic_header_idx <- grep("BIC values extracted from Kstat:", log_content)
-if (length(bic_header_idx) == 0) {
-  stop("Could not find 'BIC values extracted from Kstat:' in log file")
-}
-
-# Get the next few lines (usually 2-3 lines contain all K and BIC values)
-bic_lines <- log_content[(bic_header_idx + 1):min(bic_header_idx + 5, length(log_content))]
-bic_lines <- bic_lines[bic_lines != ""]  # Remove empty lines
-
-# Parse K values and BIC values
-k_values <- integer()
-bic_values <- numeric()
-
-for (line in bic_lines) {
-  line <- trimws(line)
-  if (line == "") next
-  
-  # Check if line contains K= pattern
-  if (grepl("K=\\d+", line)) {
-    # Extract all K values from this line
-    k_matches <- regmatches(line, gregexpr("K=(\\d+)", line))[[1]]
-    k_vals <- as.integer(sub("K=(\\d+)", "\\1", k_matches))
-    k_values <- c(k_values, k_vals)
-  } else if (grepl("^\\d+\\.\\d+", line)) {
-    # This line contains BIC values (numbers)
-    # Extract all numbers
-    bic_vals <- as.numeric(strsplit(line, "\\s+")[[1]])
-    bic_values <- c(bic_values, bic_vals)
+extract_k <- function(lines, path) {
+  header_line <- grep("^=== DAPC Analysis \\(K\\s*=\\s*[0-9]+\\s*\\) ===$", lines, value = TRUE)
+  if (length(header_line) > 0) {
+    k_match <- regmatches(header_line[1], regexpr("[0-9]+", header_line[1]))
+    if (length(k_match) > 0) return(as.integer(k_match))
   }
-}
-
-# Create data frame - match K values with BIC values
-# The format is: K values on one line, BIC values on the next line(s)
-# They should be in the same order
-
-if (length(k_values) == 0 || length(bic_values) == 0) {
-  stop("Could not extract K values or BIC values from log file")
-}
-
-if (length(k_values) != length(bic_values)) {
-  cat("WARNING: Mismatch between K values and BIC values\n")
-  cat("K values (", length(k_values), "):", paste(k_values, collapse = ", "), "\n")
-  cat("BIC values (", length(bic_values), "):", paste(bic_values, collapse = ", "), "\n")
-  cat("BIC lines:\n")
-  for (line in bic_lines) {
-    cat("  ", line, "\n")
+  params_line <- grep("^\\s*K:\\s*[0-9]+\\s*$", lines, value = TRUE)
+  if (length(params_line) > 0) {
+    k_match <- regmatches(params_line[1], regexpr("[0-9]+", params_line[1]))
+    if (length(k_match) > 0) return(as.integer(k_match))
   }
-  # Try to match what we can
-  min_len <- min(length(k_values), length(bic_values))
-  k_values <- k_values[1:min_len]
-  bic_values <- bic_values[1:min_len]
-  cat("Using first", min_len, "values\n")
+  basename_k <- regmatches(basename(path), regexpr("K[0-9]+", basename(path)))
+  if (length(basename_k) > 0) {
+    return(as.integer(sub("K", "", basename_k)))
+  }
+  return(NA_integer_)
 }
 
-bic_data <- data.frame(K = k_values, BIC = bic_values)
+extract_bic <- function(lines) {
+  bic_line <- grep("^\\s*BIC value:\\s*[-+]?[0-9]*\\.?[0-9]+\\s*$", lines, value = TRUE)
+  if (length(bic_line) == 0) return(NA_real_)
+  bic_match <- regmatches(bic_line[1], regexpr("[-+]?[0-9]*\\.?[0-9]+", bic_line[1]))
+  as.numeric(bic_match)
+}
+
+parsed <- lapply(log_files, function(path) {
+  if (!file.exists(path)) {
+    return(data.frame(K = NA_integer_, BIC = NA_real_, source = path, stringsAsFactors = FALSE))
+  }
+  lines <- readLines(path, warn = FALSE)
+  data.frame(
+    K = extract_k(lines, path),
+    BIC = extract_bic(lines),
+    source = path,
+    stringsAsFactors = FALSE
+  )
+})
+
+bic_data <- do.call(rbind, parsed)
+bic_data <- bic_data[is.finite(bic_data$BIC) & !is.na(bic_data$K), c("K", "BIC", "source")]
+bic_data <- bic_data[bic_data$K >= 2, ]
+
+if (nrow(bic_data) == 0) {
+  stop("Could not parse any valid K/BIC pairs from DAPC log files")
+}
+
+if (any(duplicated(bic_data$K))) {
+  cat("WARNING: Duplicate K values found in log files; keeping first occurrence per K.\n")
+  bic_data <- bic_data[!duplicated(bic_data$K), ]
+}
 
 # Sort by K
 bic_data <- bic_data[order(bic_data$K), ]
 
 cat("Parsed BIC values:\n")
-print(bic_data)
+print(bic_data[, c("K", "BIC")])
 
 # Determine optimal K (minimum BIC)
 optimal_k <- bic_data$K[which.min(bic_data$BIC)]

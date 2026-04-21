@@ -43,6 +43,10 @@ n_pca <- snakemake@params[["n_pca"]]
 n_da <- snakemake@params[["n_da"]]
 criterion <- snakemake@params[["criterion"]]
 
+if (k < 2) {
+  stop("DAPC requires K >= 2. Update config k_values to exclude K=1 for DAPC.")
+}
+
 cat("Parameters:\n")
 cat("  K:", k, "\n")
 cat("  n_pca:", n_pca, "\n")

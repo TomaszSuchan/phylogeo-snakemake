@@ -1,39 +1,9 @@
-# Rule to extract BIC values from find.clusters
-# Extracts BIC values from Kstat and writes them to log file
-# Uses a shell wrapper with timeout to ensure log is written even if script hangs at prompt
-rule dapc_bic_plot:
-    input:
-        vcf = lambda wildcards: get_filtered_vcf_output(wildcards)
-    output:
-        log_file = "results/{project}/dapc/{project}.dapc.bic_plot.log.txt"
-    params:
-        k_values = lambda wildcards: config["projects"][wildcards.project]["parameters"]["k_values"],
-        k_values_str = lambda wildcards: ",".join(map(str, config["projects"][wildcards.project]["parameters"]["k_values"])),
-        n_pca = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("dapc", {}).get("n_pca", "retained"),
-        criterion = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("dapc", {}).get("criterion", "diffNgroup"),
-        script = "scripts/dapc_bic_plot.R"
-    conda:
-        "../envs/dapc.yaml"
-    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["dapc"]["threads"]
-    resources:
-        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["dapc"]["mem_mb"],
-        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["dapc"]["runtime"]
-    log:
-        "logs/{project}/dapc_bic_plot.log"
-    shell:
-        """
-        # Use Python wrapper script with timeout (works on macOS and Linux)
-        # The BIC values are extracted and written to log file, no PDF is generated
-        # Snakemake runs from project root, so use workflow/scripts/ path
-        # Pass arguments to R script: vcf_file, log_file, k_values, n_pca, criterion
-        # Use pre-formatted k_values string from params
-        python3 workflow/scripts/run_with_timeout.py 90 {output.log_file} workflow/{params.script} {input.vcf} {output.log_file} {params.k_values_str} {params.n_pca} {params.criterion} 2>&1 | tee {log}
-        """
-
 # DAPC (Discriminant Analysis of Principal Components) rule - run for each K
 rule dapc_analysis:
     input:
         vcf = lambda wildcards: get_filtered_vcf_output(wildcards)
+    wildcard_constraints:
+        k = r"[2-9]\d*"
     output:
         results_rds = "results/{project}/dapc/{project}.dapc.K{k}.results.rds",
         cluster_assignments = "results/{project}/dapc/{project}.dapc.K{k}.cluster_assignments.txt",
@@ -59,10 +29,14 @@ rule dapc_analysis:
     script:
         "../scripts/dapc_analysis.R"
 
-# Rule to plot BIC values from native find.clusters output
+# Rule to plot BIC values parsed from per-K DAPC logs
 rule dapc_bic_plot_from_log:
     input:
-        log_file = rules.dapc_bic_plot.output.log_file
+        log_files = lambda wildcards: expand(
+            "results/{project}/dapc/{project}.dapc.K{k}.log.txt",
+            project=wildcards.project,
+            k=[k for k in config["projects"][wildcards.project]["parameters"]["k_values"] if int(k) >= 2]
+        )
     output:
         plot = "results/{project}/dapc/plots/{project}.dapc.criterion_plot.pdf",
         plot_rds = "results/{project}/dapc/plots/{project}.dapc.criterion_plot.rds"
