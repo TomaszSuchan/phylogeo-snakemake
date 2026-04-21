@@ -4,7 +4,7 @@ Snakemake pipeline for population genetics and phylogeographic data analysis fro
 
 ## Inputs
 
-- **Main configuration**: `config/config.yaml`
+- **Main configuration**: pass explicitly with `--configfile` (e.g. `config/config.yaml`)
 - **Per-project ipyrad output**: `<ipyrad_prefix>.vcf` or `<ipyrad_prefix>.vcf.gz`, and (for pixy) `<ipyrad_prefix>.loci`  
   - `ipyrad_prefix` is defined per project in `config/config.yaml` under `config["projects"][project_name]["ipyrad_prefix"]`
 - **Population map (individual → population)**: `data/popmap.txt`
@@ -43,13 +43,13 @@ In this example, all projects inherit `config["parameters"]["vcf_filtering"]`, b
 
 Best is to use conda/mamba:
 ```
-snakemake --use-conda --conda-frontend mamba
+snakemake --configfile config/config.yaml --use-conda --conda-frontend mamba
 ```
 
 On HPC you need to specify the executor and resources, eg.:
 
 ```
-snakemake --executor slurm --cores 10 --default-resource slurm_account=plgapollo2-cpu slurm_partition=plgrid --use-conda --conda-frontend mamba --jobs 10
+snakemake --configfile config/config.yaml --executor slurm --cores 10 --default-resource slurm_account=plgapollo2-cpu slurm_partition=plgrid --use-conda --conda-frontend mamba --jobs 10
 ```
 
 Other useful flags are `--rerun-incomplete`,  `--rerun-triggers mtime`. Add `-n` for a dry-run.
