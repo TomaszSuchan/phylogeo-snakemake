@@ -143,7 +143,7 @@ build_tree_plot <- function(tree_phylo, threshold, layout = "rectangular", scale
       ) +
       annotate(
         "text",
-        x = x_start + scale_width / 2,
+        x = x_start + plot_scale_width / 2,
         y = label_y,
         label = format(scale_width, scientific = FALSE, trim = TRUE),
         size = 3
