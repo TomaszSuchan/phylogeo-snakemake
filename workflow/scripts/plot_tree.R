@@ -119,10 +119,10 @@ build_tree_plot <- function(tree_phylo, threshold, layout = "rectangular", scale
 
   if (layout == "daylight") {
     p <- p + geom_tiplab(size = 2.5) + theme_tree() + coord_equal() +
-      theme(plot.margin = margin(10, 10, 10, 10))
+      theme(plot.margin = margin(14, 14, 14, 14))
   } else {
     p <- p + geom_tiplab(size = 2.5, hjust = -0.05) + theme_tree() +
-      theme(plot.margin = margin(10, 20, 10, 10))
+      theme(plot.margin = margin(14, 26, 14, 14))
   }
 
   p <- add_support_labels(p, tree_phylo, threshold)
@@ -131,9 +131,9 @@ build_tree_plot <- function(tree_phylo, threshold, layout = "rectangular", scale
     y_range <- range(p$data$y, na.rm = TRUE)
     x_span <- diff(x_range)
     y_span <- diff(y_range)
-    x_start <- x_range[1] + 0.02 * x_span
-    y_pos <- y_range[1] + 0.02 * y_span
-    label_y <- y_pos + 0.02 * y_span
+    x_start <- x_range[1] + 0.08 * x_span
+    y_pos <- y_range[1] + 0.08 * y_span
+    label_y <- y_pos + 0.025 * y_span
     plot_scale_width <- compute_daylight_scale_plot_width(tree_phylo, p$data, scale_width)
 
     p +
