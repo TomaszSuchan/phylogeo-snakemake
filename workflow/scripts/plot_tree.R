@@ -56,7 +56,7 @@ build_tree_plot <- function(tree_phylo, threshold, layout = "rectangular") {
   }
 
   p <- add_support_labels(p, tree_phylo, threshold)
-  p + geom_treescale(x = 0, y = 0, width = 1)
+  p + geom_treescale(x = 0, y = 0)
 }
 
 plot_dimensions <- function(tree_phylo) {
