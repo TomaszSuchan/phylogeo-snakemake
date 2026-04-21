@@ -16,6 +16,7 @@ def get_pca_combinations(pc_max):
 include: "rules/preprocessing.smk"
 include: "rules/preprocessing_exports.smk"
 include: "rules/popdata.smk"
+include: "rules/missingness.smk"
 include: "rules/faststructure.smk"
 include: "rules/admixture.smk"
 include: "rules/pcaone.smk"
