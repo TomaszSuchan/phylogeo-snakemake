@@ -61,6 +61,59 @@ compute_scale_width <- function(tree_phylo, fraction = 0.1) {
   candidates[which.min(abs(candidates - target))]
 }
 
+compute_daylight_scale_plot_width <- function(tree_phylo, plot_data, scale_width) {
+  edge_df <- plot_data[!is.na(plot_data$parent), c("node", "parent", "x", "y")]
+  if (nrow(edge_df) == 0) {
+    return(scale_width)
+  }
+
+  parent_coords <- edge_df[, c("node", "x", "y")]
+  names(parent_coords) <- c("parent", "x_parent", "y_parent")
+  merged_coords <- merge(edge_df, parent_coords, by = "parent", all.x = TRUE)
+  merged_coords$plot_edge_length <- sqrt(
+    (merged_coords$x - merged_coords$x_parent) ^ 2 +
+      (merged_coords$y - merged_coords$y_parent) ^ 2
+  )
+
+  tree_edges <- data.frame(
+    parent = tree_phylo$edge[, 1],
+    node = tree_phylo$edge[, 2],
+    tree_edge_length = tree_phylo$edge.length
+  )
+  merged_edges <- merge(
+    merged_coords[, c("parent", "node", "plot_edge_length")],
+    tree_edges,
+    by = c("parent", "node"),
+    all.x = TRUE
+  )
+
+  valid <- is.finite(merged_edges$plot_edge_length) &
+    is.finite(merged_edges$tree_edge_length) &
+    merged_edges$tree_edge_length > 0
+
+  if (any(valid)) {
+    units_per_tree_distance <- median(
+      merged_edges$plot_edge_length[valid] / merged_edges$tree_edge_length[valid],
+      na.rm = TRUE
+    )
+    if (is.finite(units_per_tree_distance) && units_per_tree_distance > 0) {
+      return(scale_width * units_per_tree_distance)
+    }
+  }
+
+  # Fallback conversion when edge matching fails.
+  root_to_tip <- node.depth.edgelength(tree_phylo)[seq_along(tree_phylo$tip.label)]
+  total_depth <- max(root_to_tip, na.rm = TRUE)
+  x_span <- diff(range(plot_data$x, na.rm = TRUE))
+  y_span <- diff(range(plot_data$y, na.rm = TRUE))
+  radial_span <- max(x_span, y_span)
+  if (is.finite(total_depth) && total_depth > 0 && is.finite(radial_span) && radial_span > 0) {
+    return(scale_width * (radial_span / (2 * total_depth)))
+  }
+
+  scale_width
+}
+
 build_tree_plot <- function(tree_phylo, threshold, layout = "rectangular", scale_width = 1) {
   p <- ggtree(tree_phylo, layout = layout)
 
@@ -79,11 +132,12 @@ build_tree_plot <- function(tree_phylo, threshold, layout = "rectangular", scale
     x_start <- x_range[1] + 0.06 * x_span
     y_pos <- y_range[1] + 0.06 * y_span
     label_y <- y_pos + 0.03 * y_span
+    plot_scale_width <- compute_daylight_scale_plot_width(tree_phylo, p$data, scale_width)
 
     p +
       annotate(
         "segment",
-        x = x_start, xend = x_start + scale_width,
+        x = x_start, xend = x_start + plot_scale_width,
         y = y_pos, yend = y_pos,
         linewidth = 0.5, color = "black"
       ) +
