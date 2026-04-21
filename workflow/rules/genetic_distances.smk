@@ -4,13 +4,6 @@ These distance matrices can be used for various analyses including MAPI,
 clustering, and visualization.
 """
 
-def _gen_dist_resource(wildcards, key):
-    resources_cfg = config["projects"][wildcards.project]["parameters"]["resources"]
-    gen_dist_cfg = resources_cfg.get("gen_dist", {})
-    default_cfg = resources_cfg.get("default", {})
-    return gen_dist_cfg.get(key, default_cfg.get(key))
-
-
 rule euclidean_distance:
     """
     Calculate Euclidean genetic distance from PLINK genotypes.
@@ -30,11 +23,37 @@ rule euclidean_distance:
         "logs/{project}/euclidean_distance.log",
     benchmark:
         "benchmarks/{project}/euclidean_distance.txt",
-    threads: lambda wildcards: _gen_dist_resource(wildcards, "threads")
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["gen_dist"]["threads"]
     resources:
-        mem_mb=lambda wildcards: _gen_dist_resource(wildcards, "mem_mb"),
-        runtime=lambda wildcards: _gen_dist_resource(wildcards, "runtime"),
+        mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["gen_dist"]["mem_mb"],
+        runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["gen_dist"]["runtime"],
     script:
         "../scripts/calculate_euclidean_distance.py"
 
+
+rule average_squared_genetic_difference:
+    """
+    Calculate the average squared genetic difference matrix.
+    Uses the bed2diffs_v2-style formulation:
+      similarity = G G^T / n_sites
+      diffs_ij = similarity_ii + similarity_jj - 2 * similarity_ij
+    """
+    input:
+        bed=rules.vcf_to_plink.output.bed,
+        bim=rules.vcf_to_plink.output.bim,
+        fam=rules.vcf_to_plink.output.fam,
+    output:
+        dist="results/{project}/gen_dist/{project}.average_squared_genetic_difference.tsv",
+    conda:
+        "../envs/python.yaml"
+    log:
+        "logs/{project}/average_squared_genetic_difference.log",
+    benchmark:
+        "benchmarks/{project}/average_squared_genetic_difference.txt",
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["gen_dist"]["threads"]
+    resources:
+        mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["gen_dist"]["mem_mb"],
+        runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["gen_dist"]["runtime"],
+    script:
+        "../scripts/calculate_average_squared_genetic_difference.py"
 
