@@ -40,19 +40,16 @@ parameters: &global_params
   # Common K values to test for population structure (Structure, fastStructure and admixture):
   k_values: [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
-  ## Mapmixture plotting parameters
-  # These parameters control the appearance of map-based structure plots
-  mapmixture:
+  ## Shared map background parameters (used by all mapping functions)
+  # This section is read by mapmixture/population_map/pixy/dapc and other map rules.
+  map_boundary: NULL                # optional map boundary extent e.g. c(xmin=18.5, xmax=23.4, ymin=48.8, ymax=49.8)
+
+  map_background:
     width: 10                       # plot width in inches
     height: 8                       # plot height in inches
     dpi: 300                        # dots per inch (resolution)
-    boundary: NULL                  # map boundaries, e.g. c(xmin=-15, xmax=16, ymin=40, ymax=62)
     crs: 4326                       # coordinate reference system (4326 = WGS84 lat/lon)
-    basemap: NULL                   # optional basemap object
-    pie_size: 1                     # size of pie charts on map
-    pie_border: 0.2                 # thickness of pie chart borders
-    pie_border_col: "black"         # color of pie chart borders
-    pie_opacity: 1                  # opacity of pie charts (0-1)
+    basemap: NULL                   # background style (e.g. NULL, ne1, gray_earth, elevation)
     land_colour: "#d9d9d9"          # color for land masses
     sea_colour: "#deebf7"           # color for water bodies
     expand: FALSE                   # expand map to fill plotting area (TRUE/FALSE)
@@ -62,14 +59,27 @@ parameters: &global_params
     scalebar: TRUE                  # show scale bar (TRUE/FALSE)
     scalebar_size: 1                # size of scale bar
     scalebar_position: "tl"         # position of scale bar (tl/tr/bl/br)
-    legend: FALSE                   # show legend (TRUE/FALSE)
     plot_title: ""                  # title for the plot
     axis_title_size: 10             # font size for axis titles
     axis_text_size: 8               # font size for axis text
     basemap_border: TRUE            # show border around basemap (TRUE/FALSE)
     basemap_border_col: "black"     # color of basemap border
     basemap_border_lwd: 0.1         # line width of basemap border
+    elevatr_z: null                 # optional elevation zoom level (null = auto)
+
+
+  ## Mapmixture plotting parameters
+  # These parameters control STRUCTURE/ADMIXTURE pie plots and barplots.
+  mapmixture:
+    pie_size: 1                     # size of pie charts on map
+    pie_border: 0.2                 # thickness of pie chart borders
+    pie_border_col: "black"         # color of pie chart borders
+    pie_opacity: 1                  # opacity of pie charts (0-1)
+    legend: FALSE                   # show legend (TRUE/FALSE)
     # Structure barplot parameters (based on mapmixture defaults)
+    width: 10                       # barplot width in inches (legacy key)
+    height: 8                       # barplot height in inches (legacy key)
+    dpi: 300                        # barplot dpi (legacy key)
     cluster_cols: NULL              # list of colors for clusters, e.g. ["#f1a340", "#998ec3"]
     site_dividers: TRUE             # show dividers between sites
     divider_width: 0.4              # width of site dividers
@@ -90,8 +100,7 @@ parameters: &global_params
       - "#000000"  # black
 
   ## Population map plotting parameters
-  # Note: Most map parameters (boundary, crs, land_colour, sea_colour, arrow, scalebar, etc.)
-  # are inherited from mapmixture parameters above for consistency
+  # Note: shared map appearance comes from map_background above.
   population_map:
     # Point styling
     point_size: 1                # size of population points
