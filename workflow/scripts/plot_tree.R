@@ -46,16 +46,26 @@ add_support_labels <- function(plot_obj, tree_phylo, threshold) {
     )
 }
 
-build_tree_plot <- function(tree_phylo, threshold) {
-  p <- ggtree(tree_phylo, layout = "rectangular") +
-    geom_tiplab(size = 2.5, hjust = -0.05) +
-    theme_tree2()
+build_tree_plot <- function(tree_phylo, threshold, layout = "rectangular") {
+  p <- ggtree(tree_phylo, layout = layout)
+
+  if (layout == "daylight") {
+    p <- p + geom_tiplab(size = 2.5) + theme_tree()
+  } else {
+    p <- p + geom_tiplab(size = 2.5, hjust = -0.05) + theme_tree2()
+  }
 
   p <- add_support_labels(p, tree_phylo, threshold)
-  p <- p + geom_treescale(x = 0, y = 0, width = NULL, offset = 1)
+  if (layout != "daylight") {
+    p <- p + geom_treescale(x = 0, y = 0, width = NULL, offset = 1)
+  }
 
-  max_x <- max(p$data$x, na.rm = TRUE)
-  p + xlim(NA, max_x * 1.3)
+  if (layout == "daylight") {
+    p
+  } else {
+    max_x <- max(p$data$x, na.rm = TRUE)
+    p + xlim(NA, max_x * 1.3)
+  }
 }
 
 plot_dimensions <- function(tree_phylo) {
@@ -65,9 +75,9 @@ plot_dimensions <- function(tree_phylo) {
   list(n_tips = n_tips, width = plot_width, height = plot_height)
 }
 
-save_plot_outputs <- function(tree_phylo, pdf_path, rds_path, threshold) {
+save_plot_outputs <- function(tree_phylo, pdf_path, rds_path, threshold, layout = "rectangular") {
   dims <- plot_dimensions(tree_phylo)
-  p <- build_tree_plot(tree_phylo, threshold)
+  p <- build_tree_plot(tree_phylo, threshold, layout = layout)
 
   ggsave(
     pdf_path,
@@ -108,13 +118,15 @@ unrooted_result <- save_plot_outputs(
   base_tree,
   snakemake@output[["unrooted_pdf"]],
   snakemake@output[["unrooted_rds"]],
-  support_threshold
+  support_threshold,
+  layout = "daylight"
 )
 rooted_result <- save_plot_outputs(
   rooted_tree,
   snakemake@output[["rooted_pdf"]],
   snakemake@output[["rooted_rds"]],
-  support_threshold
+  support_threshold,
+  layout = "rectangular"
 )
 
 write.tree(base_tree, file = snakemake@output[["unrooted_tree"]])
