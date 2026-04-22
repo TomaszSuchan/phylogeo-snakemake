@@ -33,11 +33,17 @@ Definitions
     column (IUPAC ambiguity counts as variable), including columns with only R/Y/S/W/K/M
     and no plain A/C/G/T (still match the template at that POS).
 
-Loci formats
-    Locus boundaries are lines that start with "//" (snpstring + spaces + optional
-    |N:CHROM:START-END|). Coordinates may appear on a leading "//", on "|" rows, or on the
-    closing "//" after samples (reference-mapped). Sample rows: always
-    ``line.split(None, 1)`` → ``(sample_id, sequence)`` (any run of whitespace, including
+Loci formats (ipyrad .loci block layout)
+    Each locus is one or more sample alignment rows first, then a single closing line
+    that starts with "//". That "//" line is the same width as the alignment (snpstring over
+    columns, spaces, then a short trailer). At the end of that line: reference-mapped data use
+    ``|N:CHROM:START-END|``; de novo assemblies use ``|locus_number|`` (digits only inside the
+    pipes). Genomic POS for reference-mapped loci is START + column_index using START parsed from
+    that trailer—not from snpstring symbols (*, -, etc.), which describe variation along the locus
+    but are not the VCF site list. There are no separate ``|`` metadata lines and no ``//`` line
+    before the first sample row; anything else is invalid and the parser exits with an error.
+    Sample rows use ``line.split(None, 1)`` → ``(sample_id, sequence)``
+    (any run of whitespace, including
     tabs, separates id from sequence; never a tab-only split). Same as ipyrad padding
     without using
     ``str.find(id)``, which can match inside the sequence). Trailing whitespace on each
@@ -61,7 +67,7 @@ import gzip
 from datetime import datetime
 from collections import defaultdict
 
-# Pattern for locus reference line: |0:OY992832.1:6295-7119|
+# Reference-mapped trailer on the closing "//" line: |N:CHROM:START-END| (e.g. |0:OY992832.1:6295-7119|)
 LOCUS_REF_PATTERN = re.compile(r"\|\d+:([^:]+):(\d+)-(\d+)\|")
 
 VALID = set("ACGT")
@@ -128,69 +134,69 @@ def iter_loci_file(filename):
     """
     Stream ipyrad .loci file: yield one locus dict at a time (low memory).
 
+    Strict layout: sample alignment rows, then one closing "//" line (alignment width + trailer).
+    CHROM/START/END are parsed only from ``|N:CHROM:START-END|`` on that "//" line when present;
+    de novo blocks end with ``|locus_number|`` only, leaving chrom/start/end as None (RAD_* /
+    1-based locus POS in callers). A "//" line without preceding sample rows, a line starting
+    with "|", or EOF before the closing "//" are errors.
+
     Each dict has:
     - 'sequences': {sample_id -> sequence}
-    - 'chrom': chromosome/contig from |N:CHROM:START-END| on the // line, or None
-    - 'start': genomic start (0-based), or None
-    - 'end': genomic end, or None
+    - 'chrom', 'start', 'end': from the closing "//" line when the reference-mapped trailer matches, else None
     """
     current_sample_lines = []
-    current_meta = {"chrom": None, "start": None, "end": None}
+    lineno = 0
     with open(filename, "r", encoding="utf-8", errors="replace") as f:
         for raw in f:
+            lineno += 1
             line = raw.rstrip("\r\n")
             if not line.strip():
                 continue
-            # ipyrad locus break: line begins with "//" (snpstring + optional |N:CHROM:start-end|).
-            # Sample rows never start with "//" (unlike using "//" in line, which is ambiguous).
+            # Closing "//" line after the alignment: snpstring + spaces + trailer; ref-mapped
+            # ends with |N:CHROM:START-END|, de novo with |locus_number|. Sample rows never start
+            # with "//".
             if line.startswith("//"):
+                if not current_sample_lines:
+                    print(
+                        f"ERROR: {filename}:{lineno}: \"//\" line with no preceding sample rows "
+                        "(not valid ipyrad .loci; expect alignment rows then one \"//\" line per locus).",
+                        file=sys.stderr,
+                    )
+                    sys.exit(1)
                 m = LOCUS_REF_PATTERN.search(line)
                 if m:
-                    meta_from_line = {
+                    meta = {
                         "chrom": m.group(1),
                         "start": int(m.group(2)),
                         "end": int(m.group(3)),
                     }
                 else:
-                    meta_from_line = {"chrom": None, "start": None, "end": None}
-
-                if current_sample_lines:
-                    # Closing "//": coords often sit on this line (e.g. reference-mapped after
-                    # all samples). If we already got |N:CHROM:start-end| from a leading "//" or
-                    # "|" rows, keep that; else attach meta parsed from this "//" line.
-                    meta_ready = any(
-                        current_meta.get(k) is not None for k in ("chrom", "start", "end")
-                    )
-                    use_meta = current_meta if meta_ready else meta_from_line
-                    yield {
-                        "sequences": _locus_sample_lines_to_sequences(current_sample_lines),
-                        "chrom": use_meta["chrom"],
-                        "start": use_meta["start"],
-                        "end": use_meta["end"],
-                    }
-                    current_sample_lines = []
-                    current_meta = meta_from_line
-                else:
-                    current_meta = meta_from_line
+                    meta = {"chrom": None, "start": None, "end": None}
+                yield {
+                    "sequences": _locus_sample_lines_to_sequences(current_sample_lines),
+                    "chrom": meta["chrom"],
+                    "start": meta["start"],
+                    "end": meta["end"],
+                }
+                current_sample_lines = []
                 continue
 
             if line.startswith("|"):
-                m = LOCUS_REF_PATTERN.search(line)
-                if m:
-                    current_meta["chrom"] = m.group(1)
-                    current_meta["start"] = int(m.group(2))
-                    current_meta["end"] = int(m.group(3))
-                continue
+                print(
+                    f"ERROR: {filename}:{lineno}: line begins with \"|\" (strict .loci is sample rows "
+                    "then a single \"//\" line per locus; no separate \"|\" metadata lines).",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
 
             current_sample_lines.append(line)
 
     if current_sample_lines:
-        yield {
-            "sequences": _locus_sample_lines_to_sequences(current_sample_lines),
-            "chrom": current_meta["chrom"],
-            "start": current_meta["start"],
-            "end": current_meta["end"],
-        }
+        print(
+            f"ERROR: {filename}: file ends after sample rows without a closing \"//\" line.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
 def read_samples_file(filename):
     """Read sample names from a file (one per line)"""
