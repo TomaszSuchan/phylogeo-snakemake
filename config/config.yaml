@@ -267,8 +267,20 @@ parameters: &global_params
   
   ## Pixy parameters
   pixy:
-    stats: "pi fst dxy"  # statistics to compute, options: pi, fst, dxy
+    stats: ["pi"] # statistics to compute, options: pi, fst, dxy
     window_size: 10000  # size of the sliding window in bp
+    bootstrap_replicates: 1000  # number of bootstrap replicates for confidence intervals
+    group_by: ["Region", "Region2"]  # columns in indpopdata/popdata defining hierarchical groupings for pixy
+                          # The first entry is used as the default grouping column to build the pixy popmap
+                          # (i.e. the populations that pixy uses internally).
+                          # The full list is used to define which groupings are available for pixy plots.
+    # Optional: grouping variables for Pi barplots that should be
+    # produced as grouped and sorted versions.
+    # If empty or omitted, only the plain Pi barplot is generated.
+    arrange_by: ["Region"]
+    # Map-specific parameters for pixy PI maps
+    point_size: 3        # size of points on genetic diversity maps
+    map_outline: true    # add point outlines (true/false, default: true)
 
   ## fineRADstructure parameters
   fineradstructure:
@@ -353,6 +365,10 @@ parameters: &global_params
       threads: 24
       mem_mb: 8000
       runtime: 600
+    pixy_summary:
+      threads: 1
+      mem_mb: 8000
+      runtime: 60
     iqtree:
       threads: 12
       mem_mb: 8000
