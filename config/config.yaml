@@ -130,16 +130,6 @@ parameters: &global_params
     crs_geographic: 4326        # geographic CRS for lat/lon coordinates (4326 = WGS84)
     alpha: 0.05                 # significance level for upper/lower tail identification
 
-  ## wingen parameters
-  # wingen generates continuous maps of genetic diversity using moving window approaches
-  wingen:
-    stat: "pi"                  # statistic to calculate: "pi" (nucleotide diversity), "Ho" (observed heterozygosity), "allelic_richness", "He" (expected heterozygosity)
-    wdim: 3                     # window dimensions (number of cells in each direction)
-    rarify: true                # perform rarefaction to account for unequal sample sizes
-    min_n: 2                    # minimum number of samples required per window
-    res: null                   # raster resolution in degrees (null for auto-estimation based on coordinate spread)
-    crs_geographic: 4326        # geographic CRS for lat/lon coordinates (4326 = WGS84)
-
   ## Structure parameters
   # More run parameters can be tweaked by modifying `data/mainparams` and `data/extraparams`
   # Numbers of individuals and loci are automatically inferred from .ustr file so this does not need to be changed.
@@ -150,14 +140,6 @@ parameters: &global_params
   faststructure:
     tol: "10e-6"        # convergence criterion
     prior: "simple"     # prior choice: simple or logistic
-  
-  ## TESS3 parameters
-  # TESS3 (spatial population structure analysis)
-  tess3:
-    replicates: 1       # number of independent runs per K value
-    max_iteration: 200  # maximum number of iterations
-    tolerance: 1e-5     # convergence tolerance
-    n_colors: 10       # number of colors for visualization
   
   ## conStruct parameters
   # conStruct (spatial population structure analysis incorporating geography)
@@ -170,16 +152,6 @@ parameters: &global_params
     save.files: true   # whether to save intermediate files
     crs: 4326          # coordinate reference system for plotting (4326 = WGS84)
   
-  ## EEMS parameters
-  # EEMS (Estimating Effective Migration Surfaces) visualizes spatial patterns of migration and genetic diversity
-  eems:
-    n_demes: 300          # number of demes (grid density) - higher values = finer resolution but slower
-    n_mcmc_iter: 1000000  # number of MCMC iterations
-    n_burn_iter: 1000000  # number of burn-in iterations
-    n_thin_iter: 9999     # thinning interval for MCMC samples
-    diploid: true          # whether the species is diploid (true/false)
-    longlat: true          # whether coordinates are in longitude/latitude format (true/false)
-  
   ## DAPC parameters
   # DAPC (Discriminant Analysis of Principal Components) - unsupervised population clustering
   dapc:
@@ -189,30 +161,6 @@ parameters: &global_params
     find_clust: true     # whether to find optimal number of clusters (true) or use max_n_clust (false)
     n_rep: 30            # number of cross-validation replicates for finding optimal clusters
     criterion: "diffNgroup"  # criterion for cluster selection: "diffNgroup", "min", "goesup", "smoothNgoesup", or "goodfit"
-  
-  ## Geneland parameters
-  # Geneland (Bayesian spatial clustering incorporating geography)
-  geneland:
-    n_iterations: 100000  # number of MCMC iterations
-    thinning: 100        # thinning interval (sample every N iterations)
-    burnin: 200          # number of burn-in iterations
-    model: "Correlated"   # model type: "Correlated" or "Uncorrelated"
-    spatial_coords: true  # whether to use spatial coordinates
-    crs: 4326            # coordinate reference system for plotting (4326 = WGS84)
-  
-  ## feems parameters
-  # feems (Fast Estimation of Effective Migration Surfaces)
-  # NOTE: Grid construction is critical - the grid must properly cover all sample locations
-  feems:
-    # Grid construction parameters (most critical step)
-    grid_method: "auto"    # "auto" (use feems built-in) or "custom" (Delaunay triangulation)
-    grid_resolution: null  # Grid resolution in degrees (null for auto-determination)
-    grid_buffer: 0.1       # Buffer around samples as fraction of coordinate range (0.1 = 10%)
-    # feems analysis parameters
-    lambda_value: 1.0      # Regularization parameter (higher = more smoothing)
-    n_iterations: 1000     # Number of optimization iterations
-    # Visualization
-    crs: 4326              # Coordinate reference system for plotting (4326 = WGS84)
   
   ## PCAone parameters
   #
@@ -308,23 +256,6 @@ parameters: &global_params
     # - plots: .tree_plot.unrooted.{pdf,rds} and .tree_plot.rooted.{pdf,rds}
     # - Newick: .iqtree.unrooted.treefile and .iqtree.rooted.treefile
 
-  ## currentNe2 parameters (CLI: https://github.com/esrud/currentNe2 )
-  # Estimates contemporary Ne from LD. Install the `currentne2` binary and ensure it is on PATH.
-  # -r is recombination in cM/Mb (converts physical positions to genetic map). Set null only if
-  #   your map file already has genetic distances in cM (see program manual).
-  # genome_size_morgans: optional second positional argument (~genome length in Morgans); null omits it.
-  # population_column: null = one run on all samples in the VCF/PLINK set. Otherwise a column name
-  #   in indpopdata.txt (same individuals as in the .fam); one run per distinct value (e.g. Site, Region).
-  # metapopulation_two_equal: passes -x (two equal subpopulations); only for a single full-sample run,
-  #   not combined with -k; ignored when population_column is set (per-group runs are separate Ne estimates).
-  currentne2:
-    genome_size_morgans: null
-    recombination_rate_cM_per_Mb: 1.0
-    n_snps: null
-    sibs_k: null
-    metapopulation_two_equal: false
-    population_column: null
-
   ## Analysis resources
   #
   # Define computational resources for different analysis steps.
@@ -387,34 +318,10 @@ parameters: &global_params
       threads: 4
       mem_mb: 16000
       runtime: 1440  # conStruct MCMC can be time-intensive
-    tess3:
-      threads: 4
-      mem_mb: 8000
-      runtime: 120
-    wingen:
-      threads: 4
-      mem_mb: 16000
-      runtime: 180
-    eems:
-      threads: 4
-      mem_mb: 16000
-      runtime: 1440  # EEMS MCMC can be time-intensive
     dapc:
       threads: 4
       mem_mb: 16000
       runtime: 120   # DAPC analysis (cross-validation can add time)
-    geneland:
-      threads: 4
-      mem_mb: 16000
-      runtime: 1440  # Geneland MCMC can be time-intensive
-    feems:
-      threads: 4
-      mem_mb: 16000
-      runtime: 240   # feems optimization (grid construction can add time)
-    currentne2:
-      threads: 4
-      mem_mb: 16000
-      runtime: 240   # currentNe2 neural network analysis
 
 ##############################
 ### Projects configuration ###
@@ -439,8 +346,6 @@ projects:
       iqtree_trimal: false
       iqtree_robust: false
       fineradstructure: false
-      tess3: false
-      feems: false
     parameters:
       <<: *global_params
       popmap: "data/Vcardui-popmap.txt"
