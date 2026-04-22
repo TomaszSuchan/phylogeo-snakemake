@@ -129,17 +129,13 @@ def _pixy_enabled_stats(project_params):
     return {"pi", "fst", "dxy"}
 
 
-def _pixy_grouping_for_map(wildcards):
-    """First grouping column (used for PI map summary path)."""
-    project_params = config["projects"][wildcards.project].get("parameters", {})
-    cols = _pixy_grouping_columns(project_params)
-    return cols[0] if cols else "Site"
-
-
 def _pixy_pi_map_inputs(wildcards):
-    grouping = _pixy_grouping_for_map(wildcards)
+    """
+    PI maps merge summary `population` with indpopdata `Site` coordinates.
+    Only Site-stratified pixy π summaries are valid; path is fixed to `.Site.`.
+    """
     inputs = {
-        "summary": f"results/{wildcards.project}/pixy/{wildcards.project}.{grouping}.pixy_pi-summary.txt",
+        "summary": f"results/{wildcards.project}/pixy/{wildcards.project}.Site.pixy_pi-summary.txt",
         "indpopdata": f"results/{wildcards.project}/indpopdata.txt",
         "install": ".snakemake/mapmixture_installed",
     }
@@ -394,6 +390,16 @@ def get_all_targets():
                         grouping=pixy_groupings
                     )
                 )
+                # π map uses Site-level summary only (merge to geographic Site coordinates)
+                if "Site" in pixy_groupings:
+                    popdata = params.get("popdata")
+                    if popdata and popdata != "NULL" and popdata != "":
+                        targets.extend(
+                            [
+                                f"results/{project}/pixy/plots/{project}.pixy_pi_map.pdf",
+                                f"results/{project}/pixy/plots/{project}.pixy_pi_map.rds",
+                            ]
+                        )
             if "fst" in pixy_stats:
                 targets.extend(
                     expand(

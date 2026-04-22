@@ -274,6 +274,8 @@ parameters: &global_params
                           # The first entry is used as the default grouping column to build the pixy popmap
                           # (i.e. the populations that pixy uses internally).
                           # The full list is used to define which groupings are available for pixy plots.
+                          # Include "Site" in this list to run per-site pixy π and build the geographic π map
+                          # (e.g. ["Site", "Region", "Region2"]).
     # Optional: grouping variables for Pi barplots that should be
     # produced as grouped and sorted versions.
     # If empty or omitted, only the plain Pi barplot is generated.
