@@ -129,6 +129,17 @@ def _pixy_enabled_stats(project_params):
     return {"pi", "fst", "dxy"}
 
 
+def _pixy_arrange_by_columns(project_params):
+    """Stratification columns for colored/grouped π barplots (`pixy.arrange_by`)."""
+    pixy_cfg = project_params.get("pixy", {})
+    ab = pixy_cfg.get("arrange_by")
+    if isinstance(ab, list) and ab:
+        return [str(x) for x in ab if x and str(x).strip().lower() != "none"]
+    if isinstance(ab, str) and ab.strip() and ab.strip().lower() != "none":
+        return [ab.strip()]
+    return []
+
+
 def _pixy_pi_map_inputs(wildcards):
     """
     PI maps merge summary `population` with indpopdata `Site` coordinates.
@@ -379,17 +390,75 @@ def get_all_targets():
                 )
             )
 
-        # Pixy targets (summaries only; matches enabled stats and grouping columns)
+        # Pixy: summaries, plot_pixy_* outputs (barplots, heatmaps, boxplots, optional π map)
         if analyses.get("pixy", False):
             pixy_groupings = _pixy_grouping_columns(params)
             pixy_stats = _pixy_enabled_stats(params)
+            arrange_by = _pixy_arrange_by_columns(params)
             if "pi" in pixy_stats:
                 targets.extend(
                     expand(
                         "results/" + project + "/pixy/" + project + ".{grouping}.pixy_pi-summary.txt",
-                        grouping=pixy_groupings
+                        grouping=pixy_groupings,
                     )
                 )
+                targets.extend(
+                    expand(
+                        "results/" + project + "/pixy/plots/" + project + ".{grouping}.pixy_pi_plain.pdf",
+                        grouping=pixy_groupings,
+                    )
+                )
+                targets.extend(
+                    expand(
+                        "results/" + project + "/pixy/plots/" + project + ".{grouping}.pixy_pi_plain.rds",
+                        grouping=pixy_groupings,
+                    )
+                )
+                if arrange_by:
+                    targets.extend(
+                        expand(
+                            "results/"
+                            + project
+                            + "/pixy/plots/"
+                            + project
+                            + ".{grouping}.pixy_pi_grouped_by_{color_by}.pdf",
+                            grouping=pixy_groupings,
+                            color_by=arrange_by,
+                        )
+                    )
+                    targets.extend(
+                        expand(
+                            "results/"
+                            + project
+                            + "/pixy/plots/"
+                            + project
+                            + ".{grouping}.pixy_pi_grouped_by_{color_by}.rds",
+                            grouping=pixy_groupings,
+                            color_by=arrange_by,
+                        )
+                    )
+                    targets.extend(
+                        expand(
+                            "results/"
+                            + project
+                            + "/pixy/plots/"
+                            + project
+                            + ".{grouping}.pixy_pi_sorted_by_{color_by}.pdf",
+                            grouping=pixy_groupings,
+                            color_by=arrange_by,
+                        )
+                    )
+                    targets.extend(
+                        expand(
+                            "results/"
+                            + project
+                            + "/pixy/plots/"
+                            + project
+                            + ".{grouping}.pixy_pi_sorted_by_{color_by}.rds",
+                            grouping=pixy_groupings,
+                            color_by=arrange_by,
+                        )
+                    )
                 # π map uses Site-level summary only (merge to geographic Site coordinates)
                 if "Site" in pixy_groupings:
                     popdata = params.get("popdata")
@@ -400,18 +469,118 @@ def get_all_targets():
                                 f"results/{project}/pixy/plots/{project}.pixy_pi_map.rds",
                             ]
                         )
+                targets.extend(
+                    expand(
+                        "results/"
+                        + project
+                        + "/pixy/plots/"
+                        + project
+                        + ".{grouping}.pixy_pi_boxplot.pdf",
+                        grouping=pixy_groupings,
+                    )
+                )
+                targets.extend(
+                    expand(
+                        "results/"
+                        + project
+                        + "/pixy/plots/"
+                        + project
+                        + ".{grouping}.pixy_pi_boxplot.rds",
+                        grouping=pixy_groupings,
+                    )
+                )
             if "fst" in pixy_stats:
                 targets.extend(
                     expand(
                         "results/" + project + "/pixy/" + project + ".{grouping}.pixy_fst-summary.txt",
-                        grouping=pixy_groupings
+                        grouping=pixy_groupings,
+                    )
+                )
+                targets.extend(
+                    expand(
+                        "results/"
+                        + project
+                        + "/pixy/plots/"
+                        + project
+                        + ".{grouping}.pixy_fst_heatmap.pdf",
+                        grouping=pixy_groupings,
+                    )
+                )
+                targets.extend(
+                    expand(
+                        "results/"
+                        + project
+                        + "/pixy/plots/"
+                        + project
+                        + ".{grouping}.pixy_fst_heatmap.rds",
+                        grouping=pixy_groupings,
+                    )
+                )
+                targets.extend(
+                    expand(
+                        "results/"
+                        + project
+                        + "/pixy/plots/"
+                        + project
+                        + ".{grouping}.pixy_fst_boxplot.pdf",
+                        grouping=pixy_groupings,
+                    )
+                )
+                targets.extend(
+                    expand(
+                        "results/"
+                        + project
+                        + "/pixy/plots/"
+                        + project
+                        + ".{grouping}.pixy_fst_boxplot.rds",
+                        grouping=pixy_groupings,
                     )
                 )
             if "dxy" in pixy_stats:
                 targets.extend(
                     expand(
                         "results/" + project + "/pixy/" + project + ".{grouping}.pixy_dxy-summary.txt",
-                        grouping=pixy_groupings
+                        grouping=pixy_groupings,
+                    )
+                )
+                targets.extend(
+                    expand(
+                        "results/"
+                        + project
+                        + "/pixy/plots/"
+                        + project
+                        + ".{grouping}.pixy_dxy_heatmap.pdf",
+                        grouping=pixy_groupings,
+                    )
+                )
+                targets.extend(
+                    expand(
+                        "results/"
+                        + project
+                        + "/pixy/plots/"
+                        + project
+                        + ".{grouping}.pixy_dxy_heatmap.rds",
+                        grouping=pixy_groupings,
+                    )
+                )
+                targets.extend(
+                    expand(
+                        "results/"
+                        + project
+                        + "/pixy/plots/"
+                        + project
+                        + ".{grouping}.pixy_dxy_boxplot.pdf",
+                        grouping=pixy_groupings,
+                    )
+                )
+                targets.extend(
+                    expand(
+                        "results/"
+                        + project
+                        + "/pixy/plots/"
+                        + project
+                        + ".{grouping}.pixy_dxy_boxplot.rds",
+                        grouping=pixy_groupings,
                     )
                 )
 

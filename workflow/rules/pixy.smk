@@ -283,6 +283,30 @@ rule plot_pixy_dxy_heatmap:
     script:
         "../scripts/plot_pixy_dxy_heatmap.R"
 
+# Boxplot-style π / FST / DXY summaries (one rule; `stat` matches summary filename stem)
+rule plot_pixy_boxplot:
+    input:
+        summary = "results/{project}/pixy/{project}.{grouping}.pixy_{stat}-summary.txt",
+    output:
+        pdf = "results/{project}/pixy/plots/{project}.{grouping}.pixy_{stat}_boxplot.pdf",
+        rds = "results/{project}/pixy/plots/{project}.{grouping}.pixy_{stat}_boxplot.rds",
+    params:
+        stat_type = lambda wildcards: wildcards.stat,
+    log:
+        "logs/{project}/plot_pixy_boxplot.{grouping}.{stat}.log",
+    benchmark:
+        "benchmarks/{project}/plot_pixy_boxplot.{grouping}.{stat}.txt",
+    conda:
+        "../envs/r-plot.yaml"
+    threads: 1
+    wildcard_constraints:
+        stat = "pi|fst|dxy",
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"],
+    script:
+        "../scripts/plot_pixy_boxplots.R"
+
 # Rule to plot Pi barplot with confidence intervals
 # When color_by != "none", generates grouped version (grouped by stratification, then sorted by pi within group)
 rule plot_pixy_pi_barplot:
