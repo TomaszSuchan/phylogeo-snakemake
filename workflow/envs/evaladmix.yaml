@@ -1,0 +1,12 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - make
+  - c-compiler  # Cross-platform C compiler (gcc on Linux/macOS)
+  - cxx-compiler  # Cross-platform C++ compiler (g++ on Linux/macOS)
+  - zlib
+  - git
+
+
