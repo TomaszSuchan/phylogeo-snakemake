@@ -596,18 +596,6 @@ def get_all_targets():
                 "results/" + project + "/fineradstructure/" + project + "_chunks.mcmcTree.xml"
             ])
 
-        # TESS3 targets
-        if analyses.get("tess3", False):
-            # Only run if popdata is specified (required for geographic coordinates)
-            popdata = params.get("popdata")
-            if popdata and popdata != "NULL" and popdata != "":
-                targets.extend([
-                    expand("results/" + project + "/tess3/" + project + ".tess3.K{k}.Qmatrix.txt",
-                           k=k_values),
-                    expand("results/" + project + "/tess3/" + project + ".tess3.K{k}.gif",
-                           k=k_values)
-                ])
-
         # conStruct targets
         if analyses.get("construct", False):
             # Only run if popdata is specified (required for geographic coordinates)
@@ -624,34 +612,6 @@ def get_all_targets():
                            k=k_values)
                 ])
 
-        # wingen targets
-        if analyses.get("wingen", False):
-            # Only run if popdata is specified (required for geographic coordinates)
-            popdata = params.get("popdata")
-            if popdata and popdata != "NULL" and popdata != "":
-                targets.extend([
-                    "results/" + project + "/wingen/" + project + ".wingen_diversity.tif",
-                    "results/" + project + "/wingen/" + project + ".wingen_summary.txt",
-                    "results/" + project + "/wingen/" + project + ".wingen_diversity.pdf"
-                ])
-
-        # EEMS targets
-        if analyses.get("eems", False):
-            # Only run if popdata is specified (required for geographic coordinates)
-            popdata = params.get("popdata")
-            if popdata and popdata != "NULL" and popdata != "":
-                targets.extend([
-                    "results/" + project + "/eems/" + project + ".diffs",
-                    "results/" + project + "/eems/" + project + ".coord",
-                    "results/" + project + "/eems/" + project + ".outer",
-                    "results/" + project + "/eems/" + project + ".eems_complete.txt",
-                    "results/" + project + "/eems/" + project + ".mcmcpath/mcmcmigration.txt",
-                    "results/" + project + "/eems/" + project + ".mcmcpath/mcmcdiversity.txt",
-                    "results/" + project + "/eems/plots/" + project + ".eems_migration.pdf",
-                    "results/" + project + "/eems/plots/" + project + ".eems_diversity.pdf",
-                    "results/" + project + "/eems/plots/" + project + ".eems_combined.pdf"
-                ])
-
         # DAPC targets
         if analyses.get("dapc", False):
             dapc_k_values = [k for k in k_values if int(k) >= 2]
@@ -665,44 +625,6 @@ def get_all_targets():
                 expand("results/" + project + "/dapc/plots/" + project + ".dapc.K{k}.scatter.pdf",
                        k=dapc_k_values),
                 "results/" + project + "/dapc/plots/" + project + ".dapc.criterion_plot.pdf"
-            ])
-        
-        # Geneland targets
-        if analyses.get("geneland", False):
-            # Only run if popdata is specified (required for geographic coordinates)
-            popdata = params.get("popdata")
-            if popdata and popdata != "NULL" and popdata != "":
-                targets.extend([
-                    expand("results/" + project + "/geneland/" + project + ".geneland.K{k}.results.rds",
-                           k=k_values),
-                    expand("results/" + project + "/geneland/" + project + ".geneland.K{k}.cluster_assignments.txt",
-                           k=k_values),
-                    expand("results/" + project + "/geneland/plots/" + project + ".geneland.K{k}.map.pdf",
-                           k=k_values),
-                    expand("results/" + project + "/geneland/plots/" + project + ".geneland.K{k}.barplot.pdf",
-                           k=k_values)
-                ])
-
-        # feems targets
-        if analyses.get("feems", False):
-            # Only run if popdata is specified (required for geographic coordinates)
-            popdata = params.get("popdata")
-            if popdata and popdata != "NULL" and popdata != "":
-                targets.extend([
-                    "results/" + project + "/feems/" + project + ".genotype_matrix.npy",
-                    "results/" + project + "/feems/" + project + ".coords.txt",
-                    "results/" + project + "/feems/" + project + ".grid_vertices.txt",
-                    "results/" + project + "/feems/" + project + ".grid_edges.txt",
-                    "results/" + project + "/feems/" + project + ".feems_results.pkl",
-                    "results/" + project + "/feems/" + project + ".migration_surface.txt",
-                    "results/" + project + "/feems/plots/" + project + ".feems_migration.pdf"
-                ])
-
-        # currentNe2 targets
-        if analyses.get("currentne2", False):
-            targets.extend([
-                "results/" + project + "/currentne2/" + project + ".currentne2_summary.tsv",
-                "results/" + project + "/currentne2/" + project + ".currentne2_runs",
             ])
 
     return targets
