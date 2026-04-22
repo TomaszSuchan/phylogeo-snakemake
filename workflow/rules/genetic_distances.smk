@@ -6,14 +6,17 @@ clustering, and visualization.
 
 rule kosman_distance:
     """
-    Calculate Kosman genetic distance between individuals (PopGenReport / adegenet).
+    Kosman–Leonard (2005) pairwise genetic distance from PLINK dosages (0/1/2).
+    Implemented in Python with bed-reader to avoid vcfR/genind OOM on large VCFs.
     """
     input:
-        vcf=lambda wildcards: get_filtered_vcf_output(wildcards),
+        bed=rules.vcf_to_plink.output.bed,
+        bim=rules.vcf_to_plink.output.bim,
+        fam=rules.vcf_to_plink.output.fam,
     output:
         dist="results/{project}/gen_dist/{project}.kosman_distance.tsv",
     conda:
-        "../envs/r-popgenreport.yaml"
+        "../envs/python.yaml"
     log:
         "logs/{project}/kosman_distance.log",
     benchmark:
@@ -23,7 +26,7 @@ rule kosman_distance:
         mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["gen_dist"]["mem_mb"],
         runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["gen_dist"]["runtime"],
     script:
-        "../scripts/calculate_kosman_distance.R"
+        "../scripts/calculate_kosman_distance.py"
 
 
 rule euclidean_distance:
