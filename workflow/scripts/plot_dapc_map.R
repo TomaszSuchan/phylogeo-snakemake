@@ -111,6 +111,7 @@ message(sprintf("Using first %d colors from palette: %s\n", n_clusters, paste(st
 # Read indpopdata (generated file has columns: Ind, Site, Lat, Lon, ...)
 message("\n=== READING INDPOPDATA ===\n")
 indpopdata <- read.table(indpopdata_file, header = TRUE, sep = "\t")
+indpopdata <- coerce_indpopdata_lat_lon(indpopdata)
 message(sprintf("indpopdata file: %s\n", indpopdata_file))
 message(sprintf("indpopdata dimensions: %d rows x %d columns\n", nrow(indpopdata), ncol(indpopdata)))
 message(sprintf("Columns: %s\n", paste(colnames(indpopdata), collapse = ", ")))

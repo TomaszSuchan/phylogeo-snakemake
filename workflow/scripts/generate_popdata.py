@@ -142,6 +142,27 @@ if popdata_path and popdata_path.strip() and os.path.exists(popdata_path):
         print(f"  Removed {n_before - n_after} duplicate site entries")
     print(f"  Found {n_after} unique sites in popdata")
 
+    if "Lat" in popdata_df.columns and "Lon" in popdata_df.columns:
+        lat_num = pd.to_numeric(popdata_df["Lat"], errors="coerce")
+        lon_num = pd.to_numeric(popdata_df["Lon"], errors="coerce")
+        bad = lat_num.isna() | lon_num.isna()
+        if bad.any():
+            bad_df = popdata_df.loc[bad, ["Site", "Lat", "Lon"]].copy()
+            print("\n" + "=" * 80)
+            print("ERROR: Non-numeric or missing Lat/Lon in popdata file")
+            print("=" * 80)
+            print(f"\nPopdata file: {popdata_path}")
+            print(f"Problematic row(s) ({bad.sum()}):\n")
+            print(bad_df.to_string(index=False))
+            print(
+                "\nFix typos or fill missing coordinates, then re-run."
+            )
+            print("=" * 80)
+            sys.exit(1)
+        popdata_df = popdata_df.copy()
+        popdata_df["Lat"] = lat_num
+        popdata_df["Lon"] = lon_num
+
     unique_sites_ind = set(ind_site_df["Site"].unique())
     unique_sites_popdata = set(popdata_df["Site"].unique())
     missing_sites = unique_sites_ind - unique_sites_popdata

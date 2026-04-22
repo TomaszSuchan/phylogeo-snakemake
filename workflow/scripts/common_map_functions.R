@@ -8,6 +8,36 @@ library(ggrepel)
 library(sf)
 library(terra)
 
+#' Coerce Lat/Lon to numeric; stop with row diagnostics if any value is invalid.
+#' @noRd
+coerce_indpopdata_lat_lon <- function(df) {
+  if (!all(c("Lat", "Lon") %in% names(df))) {
+    return(df)
+  }
+  lat_chr <- as.character(df$Lat)
+  lon_chr <- as.character(df$Lon)
+  df$Lat <- suppressWarnings(as.numeric(lat_chr))
+  df$Lon <- suppressWarnings(as.numeric(lon_chr))
+  bad <- is.na(df$Lat) | is.na(df$Lon)
+  if (any(bad)) {
+    bad_idx <- which(bad)
+    lines <- vapply(bad_idx, function(i) {
+      ind <- if ("Ind" %in% names(df)) as.character(df$Ind[i]) else "?"
+      site <- if ("Site" %in% names(df)) as.character(df$Site[i]) else "?"
+      sprintf("  Ind=%s Site=%s Lat=%s Lon=%s", ind, site, lat_chr[i], lon_chr[i])
+    }, character(1))
+    n_extra <- length(lines) - 20L
+    stop(
+      "Non-numeric or missing Lat/Lon in indpopdata (check your popdata / coordinate columns). ",
+      "Examples:\n",
+      paste(head(lines, 20), collapse = "\n"),
+      if (isTRUE(n_extra > 0)) sprintf("\n  ... and %d more row(s)", n_extra) else "",
+      call. = FALSE
+    )
+  }
+  df
+}
+
 #' Build mapmixture-style ggplot with a terra raster basemap but without the dummy
 #' legend geom (discrete fill). mapmixture::mapmixture adds geom_point + scale_fill_manual
 #' for the cluster legend; that clashes with ggspatial::layer_spatial raster (continuous fill)
