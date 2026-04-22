@@ -4,6 +4,28 @@ These distance matrices can be used for various analyses including MAPI,
 clustering, and visualization.
 """
 
+rule kosman_distance:
+    """
+    Calculate Kosman genetic distance between individuals (PopGenReport / adegenet).
+    """
+    input:
+        vcf=lambda wildcards: get_filtered_vcf_output(wildcards),
+    output:
+        dist="results/{project}/gen_dist/{project}.kosman_distance.tsv",
+    conda:
+        "../envs/r-popgenreport.yaml"
+    log:
+        "logs/{project}/kosman_distance.log",
+    benchmark:
+        "benchmarks/{project}/kosman_distance.txt",
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["gen_dist"]["threads"]
+    resources:
+        mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["gen_dist"]["mem_mb"],
+        runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["gen_dist"]["runtime"],
+    script:
+        "../scripts/calculate_kosman_distance.R"
+
+
 rule euclidean_distance:
     """
     Calculate Euclidean genetic distance from PLINK genotypes.
