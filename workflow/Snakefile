@@ -390,7 +390,7 @@ def get_all_targets():
                 )
             )
 
-        # Pixy: summaries, plot_pixy_* outputs (barplots, heatmaps, boxplots, optional π map)
+        # Pixy: summaries, plot_pixy_* outputs (barplots, heatmaps, optional π map)
         if analyses.get("pixy", False):
             pixy_groupings = _pixy_grouping_columns(params)
             pixy_stats = _pixy_enabled_stats(params)
@@ -469,26 +469,6 @@ def get_all_targets():
                                 f"results/{project}/pixy/plots/{project}.pixy_pi_map.rds",
                             ]
                         )
-                targets.extend(
-                    expand(
-                        "results/"
-                        + project
-                        + "/pixy/plots/"
-                        + project
-                        + ".{grouping}.pixy_pi_boxplot.pdf",
-                        grouping=pixy_groupings,
-                    )
-                )
-                targets.extend(
-                    expand(
-                        "results/"
-                        + project
-                        + "/pixy/plots/"
-                        + project
-                        + ".{grouping}.pixy_pi_boxplot.rds",
-                        grouping=pixy_groupings,
-                    )
-                )
             if "fst" in pixy_stats:
                 targets.extend(
                     expand(
@@ -516,26 +496,6 @@ def get_all_targets():
                         grouping=pixy_groupings,
                     )
                 )
-                targets.extend(
-                    expand(
-                        "results/"
-                        + project
-                        + "/pixy/plots/"
-                        + project
-                        + ".{grouping}.pixy_fst_boxplot.pdf",
-                        grouping=pixy_groupings,
-                    )
-                )
-                targets.extend(
-                    expand(
-                        "results/"
-                        + project
-                        + "/pixy/plots/"
-                        + project
-                        + ".{grouping}.pixy_fst_boxplot.rds",
-                        grouping=pixy_groupings,
-                    )
-                )
             if "dxy" in pixy_stats:
                 targets.extend(
                     expand(
@@ -560,26 +520,6 @@ def get_all_targets():
                         + "/pixy/plots/"
                         + project
                         + ".{grouping}.pixy_dxy_heatmap.rds",
-                        grouping=pixy_groupings,
-                    )
-                )
-                targets.extend(
-                    expand(
-                        "results/"
-                        + project
-                        + "/pixy/plots/"
-                        + project
-                        + ".{grouping}.pixy_dxy_boxplot.pdf",
-                        grouping=pixy_groupings,
-                    )
-                )
-                targets.extend(
-                    expand(
-                        "results/"
-                        + project
-                        + "/pixy/plots/"
-                        + project
-                        + ".{grouping}.pixy_dxy_boxplot.rds",
                         grouping=pixy_groupings,
                     )
                 )
