@@ -167,6 +167,7 @@ def _pixy_pi_map_inputs(wildcards):
 
 # Include rule files
 include: "rules/preprocessing.smk"
+include: "rules/preprocessing_ld_pruning.smk"
 include: "rules/preprocessing_exports.smk"
 include: "rules/popdata.smk"
 include: "rules/missingness.smk"
