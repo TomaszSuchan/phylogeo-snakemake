@@ -140,6 +140,17 @@ def _pixy_arrange_by_columns(project_params):
     return []
 
 
+def _relatedness_color_by_columns(project_params):
+    """Columns used as relatedness plot `{color_by}` wildcards."""
+    relatedness_cfg = project_params.get("relatedness_plot", {})
+    cb = relatedness_cfg.get("color_by")
+    if isinstance(cb, list) and cb:
+        return [str(x) for x in cb if x and str(x).strip().lower() != "none"] or ["none"]
+    if isinstance(cb, str) and cb.strip() and cb.strip().lower() != "none":
+        return [cb.strip()]
+    return ["none"]
+
+
 def _pixy_pi_map_inputs(wildcards):
     """
     PI maps merge summary `population` with indpopdata `Site` coordinates.
@@ -526,10 +537,37 @@ def get_all_targets():
 
         # Relatedness targets
         if analyses.get("relatedness", False):
+            relatedness_color_by = _relatedness_color_by_columns(params)
             targets.extend([
                 "results/" + project + "/relatedness/" + project + ".relatedness",
-                "results/" + project + "/relatedness/" + project + ".relatedness2"
+                "results/" + project + "/relatedness/" + project + ".relatedness2",
+                "results/" + project + "/relatedness/" + project + ".genome",
+                "results/" + project + "/relatedness/" + project + ".king"
             ])
+            targets.extend(
+                expand(
+                    "results/" + project + "/relatedness/plots/" + project + ".genome_network-{color_by}.pdf",
+                    color_by=relatedness_color_by,
+                )
+            )
+            targets.extend(
+                expand(
+                    "results/" + project + "/relatedness/plots/" + project + ".genome_network-{color_by}.rds",
+                    color_by=relatedness_color_by,
+                )
+            )
+            targets.extend(
+                expand(
+                    "results/" + project + "/relatedness/plots/" + project + ".king_network-{color_by}.pdf",
+                    color_by=relatedness_color_by,
+                )
+            )
+            targets.extend(
+                expand(
+                    "results/" + project + "/relatedness/plots/" + project + ".king_network-{color_by}.rds",
+                    color_by=relatedness_color_by,
+                )
+            )
         
         # IQtree targets
         if analyses.get("iqtree", False):
