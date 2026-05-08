@@ -22,7 +22,7 @@ rule prepare_invariant_vcf:
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["prepare_invariant_vcf"]["runtime"]
     shell:
         """
-        python workflow/scripts/extract_invariant_vcf.py {input.loci} -o {output.allsites_vcf} --samples-file {input.samples_file} --template-vcf {input.template_vcf} &> {log}
+        python workflow/scripts/extract-invariant-vcf/extract_invariant_vcf.py {input.loci} -o {output.allsites_vcf} --samples-file {input.samples_file} --template-vcf {input.template_vcf} &> {log}
         """
 
 rule prepare_invariant_vcf_gz:

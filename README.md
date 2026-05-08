@@ -2,6 +2,20 @@
 
 Snakemake pipeline for population genetics and phylogeographic data analysis from ipyrad output (`.vcf` and `.loci` files).
 
+## Cloning
+
+This repository uses a git submodule. Clone with:
+
+```bash
+git clone --recurse-submodules https://github.com/TomaszSuchan/phylogeo-snakemake.git
+```
+
+If you already have a clone without the submodule:
+
+```bash
+git submodule update --init --recursive
+```
+
 ## Inputs
 
 - **Main configuration**: pass explicitly with `--configfile` (e.g. `config/config.yaml`)
