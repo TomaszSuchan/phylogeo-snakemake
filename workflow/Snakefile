@@ -151,6 +151,17 @@ def _relatedness_color_by_columns(project_params):
     return ["none"]
 
 
+def _neighbornet_color_by_columns(project_params):
+    """Columns used as NeighborNet plot `{color_by}` wildcards."""
+    neighbornet_cfg = project_params.get("neighbornet", {})
+    cb = neighbornet_cfg.get("color_by")
+    if isinstance(cb, list) and cb:
+        return [str(x) for x in cb if x and str(x).strip().lower() != "none"] or ["Site"]
+    if isinstance(cb, str) and cb.strip() and cb.strip().lower() != "none":
+        return [cb.strip()]
+    return ["Site"]
+
+
 def _pixy_pi_map_inputs(wildcards):
     """
     PI maps merge summary `population` with indpopdata `Site` coordinates.
@@ -182,6 +193,7 @@ include: "rules/iqtree.smk"
 include: "rules/mapmixture.smk"
 include: "rules/population_map.smk"
 include: "rules/genetic_distances.smk"
+include: "rules/neighbornet.smk"
 include: "rules/mapi.smk"
 include: "rules/fineradstructure.smk"
 include: "rules/dapc.smk"
@@ -605,6 +617,32 @@ def get_all_targets():
                 "results/" + project + "/gen_dist/" + project + ".euclidean_distance.tsv",
                 "results/" + project + "/gen_dist/" + project + ".average_squared_genetic_difference.tsv"
             ])
+
+        # NeighborNet targets
+        if analyses.get("neighbornet", False):
+            neighbornet_color_by = _neighbornet_color_by_columns(params)
+            targets.extend([
+                "results/" + project + "/gen_dist/" + project + ".euclidean_distance.tsv",
+                "results/" + project + "/neighbornet/" + project + ".euclidean.neighbornet.rds",
+            ])
+            targets.extend(
+                expand(
+                    "results/" + project + "/neighbornet/plots/" + project + ".euclidean.neighbornet-{color_by}.with_tip_labels.pdf",
+                    color_by=neighbornet_color_by,
+                )
+            )
+            targets.extend(
+                expand(
+                    "results/" + project + "/neighbornet/plots/" + project + ".euclidean.neighbornet-{color_by}.no_tip_labels.pdf",
+                    color_by=neighbornet_color_by,
+                )
+            )
+            targets.extend(
+                expand(
+                    "results/" + project + "/neighbornet/plots/" + project + ".euclidean.neighbornet-{color_by}.rds",
+                    color_by=neighbornet_color_by,
+                )
+            )
 
         # MAPI targets
         if analyses.get("mapi", False):

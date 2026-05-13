@@ -232,6 +232,15 @@ parameters: &global_params
     point_size: 3        # size of points on genetic diversity maps
     map_outline: true    # add point outlines (true/false, default: true)
 
+  ## NeighborNet parameters
+  # NeighborNet split network from Euclidean genetic distances.
+  neighbornet:
+    color_by: ["Site"]   # columns in indpopdata used to color tips
+    width: 12            # plot width in inches
+    height: 12           # plot height in inches
+    dpi: 300             # plot dpi
+    neigbournet_colors: null  # optional manual palette (kept for backwards compatibility)
+
   ## fineRADstructure parameters
   fineradstructure:
     cluster:
@@ -314,6 +323,10 @@ parameters: &global_params
       threads: 4
       mem_mb: 16000
       runtime: 120
+    neighbornet:
+      threads: 4
+      mem_mb: 16000
+      runtime: 120
     construct:
       threads: 4
       mem_mb: 16000
@@ -335,6 +348,7 @@ projects:
       faststructure: true
       admixture: true
       gen_dist: false
+      neighbornet: true
       mapi: true
       pcaone: true
       vcf2pcacluster: false
