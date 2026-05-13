@@ -615,7 +615,7 @@ def get_all_targets():
             targets.extend([
                 "results/" + project + "/gen_dist/" + project + ".kosman_distance.tsv",
                 "results/" + project + "/gen_dist/" + project + ".euclidean_distance.tsv",
-                "results/" + project + "/gen_dist/" + project + ".average_squared_genetic_difference.tsv"
+                "results/" + project + "/gen_dist/" + project + ".avgsquared_distance.tsv"
             ])
 
         # NeighborNet targets

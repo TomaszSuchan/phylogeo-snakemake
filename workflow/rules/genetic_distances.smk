@@ -68,7 +68,7 @@ rule average_squared_genetic_difference:
         bim=rules.vcf_to_plink.output.bim,
         fam=rules.vcf_to_plink.output.fam,
     output:
-        dist="results/{project}/gen_dist/{project}.average_squared_genetic_difference.tsv",
+        dist="results/{project}/gen_dist/{project}.avgsquared_distance.tsv",
     conda:
         "../envs/python.yaml"
     log:
