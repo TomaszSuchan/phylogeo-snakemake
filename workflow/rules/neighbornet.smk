@@ -41,8 +41,7 @@ rule plot_neighbornet:
     params:
         color_by=lambda wildcards: wildcards.color_by,
         neighbornet_colors=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("neighbornet", {}).get(
-            "neigbournet_colors",
-            config["projects"][wildcards.project]["parameters"].get("neighbornet", {}).get("colors", None)
+            "neigbournet_colors", None
         ),
         width=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("neighbornet", {}).get("width", 12),
         height=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("neighbornet", {}).get("height", 12),

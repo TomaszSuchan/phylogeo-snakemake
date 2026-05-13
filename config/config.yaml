@@ -239,7 +239,7 @@ parameters: &global_params
     width: 12            # plot width in inches
     height: 12           # plot height in inches
     dpi: 300             # plot dpi
-    neigbournet_colors: null  # optional manual palette (kept for backwards compatibility)
+    neigbournet_colors: null  # optional manual palette
 
   ## fineRADstructure parameters
   fineradstructure:
