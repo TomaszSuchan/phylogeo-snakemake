@@ -228,7 +228,7 @@ plot_mapi <- function(
     geom_sf(
       data = world_cropped,
       fill = NA,
-      color = ifelse(isTRUE(basemap_border), basemap_border_col, "grey30"),
+      color = ifelse(isTRUE(basemap_border), basemap_border_col, NA),
       linewidth = basemap_border_lwd
     )
 
