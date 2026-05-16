@@ -42,6 +42,8 @@ point_size <- as.numeric(snakemake@params[['point_size']])
 point_color <- snakemake@params[['point_color']]
 point_alpha <- as.numeric(snakemake@params[['point_alpha']])
 tail_linewidth <- as.numeric(snakemake@params[['tail_linewidth']])
+upper_tail_color <- snakemake@params[['upper_tail_color']]
+lower_tail_color <- snakemake@params[['lower_tail_color']]
 
 cat("=== MAPI Plotting Script ===\n")
 cat("Input MAPI results:", mapi_gpkg, "\n")
@@ -139,7 +141,9 @@ plot_mapi <- function(
   point_size = 0.8,
   point_color = "black",
   point_alpha = 0.6,
-  tail_linewidth = 0.4
+  tail_linewidth = 0.4,
+  upper_tail_color = "red",
+  lower_tail_color = "green"
 ) {
 
   # mapi_results, upper_tails, and lower_tails should be sf objects
@@ -212,7 +216,7 @@ plot_mapi <- function(
         geom_sf(
           data = upper_merged,
           fill = NA,
-          color = "black",
+          color = upper_tail_color,
           linewidth = tail_linewidth
         )
     }
@@ -225,7 +229,7 @@ plot_mapi <- function(
         geom_sf(
           data = lower_merged,
           fill = NA,
-          color = "grey35",
+          color = lower_tail_color,
           linewidth = tail_linewidth
         )
     }
@@ -331,7 +335,9 @@ if (nrow(mapi_results) > 0) {
       point_size = point_size,
       point_color = point_color,
       point_alpha = point_alpha,
-      tail_linewidth = tail_linewidth
+      tail_linewidth = tail_linewidth,
+      upper_tail_color = upper_tail_color,
+      lower_tail_color = lower_tail_color
     )
 
     ggsave(mapi_plot, plot = pl, width = width, height = height, dpi = dpi)

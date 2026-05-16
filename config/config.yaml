@@ -130,6 +130,8 @@ parameters: &global_params
     crs_geographic: 4326        # geographic CRS for lat/lon coordinates (4326 = WGS84)
     alpha: 0.05                 # significance level for upper/lower tail identification
     tail_linewidth: 0.4         # line width for upper/lower MAPI tail outlines
+    upper_tail_color: "red"     # color for upper tails (high resistance)
+    lower_tail_color: "green"   # color for lower tails (low resistance)
 
   ## Structure parameters
   # More run parameters can be tweaked by modifying `data/mainparams` and `data/extraparams`
