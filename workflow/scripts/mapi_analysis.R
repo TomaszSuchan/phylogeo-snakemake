@@ -187,18 +187,22 @@ mapi_results_euclidean <- MAPI_RunOnGrid(
 # Calculate significance tails
 mapi_tails_euclidean <- MAPI_Tails(mapi_results_euclidean, alpha = alpha)
 
-# Extract upper and lower tails
-upper_tails_euclidean <- st_intersection(
-  mapi_results_euclidean,
-  mapi_tails_euclidean[mapi_tails_euclidean$tail == "upper", ]
-)
-upper_tails_euclidean <- upper_tails_euclidean[, colnames(mapi_results_euclidean)]
+# Extract upper and lower tails directly from MAPI_Tails output.
+# This avoids topology artifacts from st_intersection() that can introduce tiny
+# slivers/gaps and later prevent clean neighboring-cell dissolves in plotting.
+result_cols <- colnames(mapi_results_euclidean)
 
-lower_tails_euclidean <- st_intersection(
-  mapi_results_euclidean,
-  mapi_tails_euclidean[mapi_tails_euclidean$tail == "lower", ]
-)
-lower_tails_euclidean <- lower_tails_euclidean[, colnames(mapi_results_euclidean)]
+upper_tails_euclidean <- mapi_tails_euclidean[mapi_tails_euclidean$tail == "upper", ]
+if (nrow(upper_tails_euclidean) > 0) {
+  keep_cols <- intersect(result_cols, colnames(upper_tails_euclidean))
+  upper_tails_euclidean <- upper_tails_euclidean[, keep_cols, drop = FALSE]
+}
+
+lower_tails_euclidean <- mapi_tails_euclidean[mapi_tails_euclidean$tail == "lower", ]
+if (nrow(lower_tails_euclidean) > 0) {
+  keep_cols <- intersect(result_cols, colnames(lower_tails_euclidean))
+  lower_tails_euclidean <- lower_tails_euclidean[, keep_cols, drop = FALSE]
+}
 
 cat("MAPI analysis with Euclidean distance complete\n")
 cat("Significant upper tail cells:", nrow(upper_tails_euclidean), "\n")

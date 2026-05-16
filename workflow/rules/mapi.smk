@@ -43,7 +43,7 @@ rule mapi_plot:
         lower_tails_gpkg="results/{project}/mapi/{project}.mapi_lower_tails.gpkg",
         indpopdata=rules.generate_popdata.output.indpopdata,
     output:
-        mapi_plot="results/{project}/mapi/{project}.mapi_euclidean.pdf",
+        mapi_plot="results/{project}/mapi/plots/{project}.mapi_euclidean.pdf",
     conda:
         "../envs/mapi.yaml"
     log:
@@ -56,5 +56,22 @@ rule mapi_plot:
         runtime=10,
     params:
         fill_var=lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapi"].get("fill_var", "avg_value"),
+        width=lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("width", 10),
+        height=lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("height", 8),
+        dpi=lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("dpi", 300),
+        boundary=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("map_boundary", "NULL"),
+        crs_plot=lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("crs", 4326),
+        land_colour=lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("land_colour", "#d9d9d9"),
+        sea_colour=lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("sea_colour", "#deebf7"),
+        expand=lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("expand", False),
+        plot_title=lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("plot_title", ""),
+        axis_title_size=lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("axis_title_size", 10),
+        axis_text_size=lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("axis_text_size", 8),
+        basemap_border=lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border", True),
+        basemap_border_col=lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border_col", "black"),
+        basemap_border_lwd=lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border_lwd", 0.1),
+        point_size=lambda wildcards: config["projects"][wildcards.project]["parameters"]["population_map"].get("point_size", 1),
+        point_color=lambda wildcards: config["projects"][wildcards.project]["parameters"]["population_map"].get("point_color", "black"),
+        point_alpha=lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapi"].get("point_alpha", 0.6),
     script:
         "../scripts/mapi_plot.R"
