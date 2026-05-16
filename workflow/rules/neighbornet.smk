@@ -1,20 +1,20 @@
 """
 Rules for phylogenetic network inference and visualization using NeighborNet.
-NeighborNet is inferred from the Euclidean genetic distance matrix.
+NeighborNet is inferred from the p-distance genetic distance matrix.
 """
 
-rule neighbornet_euclidean:
+rule neighbornet_pdistance:
     """
-    Build a NeighborNet network from the Euclidean genetic distance matrix.
+    Build a NeighborNet network from the p-distance genetic distance matrix.
     """
     input:
-        dist=rules.euclidean_distance.output.dist
+        dist=rules.p_distance.output.dist
     output:
-        net="results/{project}/neighbornet/{project}.euclidean.neighbornet.rds"
+        net="results/{project}/neighbornet/{project}.pdistance.neighbornet.rds"
     log:
-        "logs/{project}/neighbornet_euclidean.log"
+        "logs/{project}/neighbornet_pdistance.log"
     benchmark:
-        "benchmarks/{project}/neighbornet_euclidean.txt"
+        "benchmarks/{project}/neighbornet_pdistance.txt"
     conda:
         "../envs/neighbornet.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["neighbornet"]["threads"]
@@ -30,12 +30,12 @@ rule plot_neighbornet:
     Plot NeighborNet with tip colors from a configured indpopdata column.
     """
     input:
-        net=rules.neighbornet_euclidean.output.net,
+        net=rules.neighbornet_pdistance.output.net,
         indpopdata=rules.generate_popdata.output.indpopdata
     output:
-        pdf_with_tip_labels="results/{project}/neighbornet/plots/{project}.euclidean.neighbornet-{color_by}.with_tip_labels.pdf",
-        pdf_no_tip_labels="results/{project}/neighbornet/plots/{project}.euclidean.neighbornet-{color_by}.no_tip_labels.pdf",
-        rds="results/{project}/neighbornet/plots/{project}.euclidean.neighbornet-{color_by}.rds",
+        pdf_with_tip_labels="results/{project}/neighbornet/plots/{project}.pdistance.neighbornet-{color_by}.with_tip_labels.pdf",
+        pdf_no_tip_labels="results/{project}/neighbornet/plots/{project}.pdistance.neighbornet-{color_by}.no_tip_labels.pdf",
+        rds="results/{project}/neighbornet/plots/{project}.pdistance.neighbornet-{color_by}.rds",
     log:
         "logs/{project}/plot_neighbornet_{color_by}.log"
     params:

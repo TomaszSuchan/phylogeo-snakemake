@@ -615,6 +615,7 @@ def get_all_targets():
             targets.extend([
                 "results/" + project + "/gen_dist/" + project + ".kosman_distance.tsv",
                 "results/" + project + "/gen_dist/" + project + ".euclidean_distance.tsv",
+                "results/" + project + "/gen_dist/" + project + ".p_distance.tsv",
                 "results/" + project + "/gen_dist/" + project + ".avgsquared_distance.tsv"
             ])
 
@@ -622,24 +623,24 @@ def get_all_targets():
         if analyses.get("neighbornet", False):
             neighbornet_color_by = _neighbornet_color_by_columns(params)
             targets.extend([
-                "results/" + project + "/gen_dist/" + project + ".euclidean_distance.tsv",
-                "results/" + project + "/neighbornet/" + project + ".euclidean.neighbornet.rds",
+                "results/" + project + "/gen_dist/" + project + ".p_distance.tsv",
+                "results/" + project + "/neighbornet/" + project + ".pdistance.neighbornet.rds",
             ])
             targets.extend(
                 expand(
-                    "results/" + project + "/neighbornet/plots/" + project + ".euclidean.neighbornet-{color_by}.with_tip_labels.pdf",
+                    "results/" + project + "/neighbornet/plots/" + project + ".pdistance.neighbornet-{color_by}.with_tip_labels.pdf",
                     color_by=neighbornet_color_by,
                 )
             )
             targets.extend(
                 expand(
-                    "results/" + project + "/neighbornet/plots/" + project + ".euclidean.neighbornet-{color_by}.no_tip_labels.pdf",
+                    "results/" + project + "/neighbornet/plots/" + project + ".pdistance.neighbornet-{color_by}.no_tip_labels.pdf",
                     color_by=neighbornet_color_by,
                 )
             )
             targets.extend(
                 expand(
-                    "results/" + project + "/neighbornet/plots/" + project + ".euclidean.neighbornet-{color_by}.rds",
+                    "results/" + project + "/neighbornet/plots/" + project + ".pdistance.neighbornet-{color_by}.rds",
                     color_by=neighbornet_color_by,
                 )
             )

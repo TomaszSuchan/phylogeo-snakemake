@@ -56,6 +56,32 @@ rule euclidean_distance:
         "../scripts/calculate_euclidean_distance.py"
 
 
+rule p_distance:
+    """
+    Calculate p-distance (normalized Hamming distance) from PLINK genotypes.
+    For diploid biallelic dosages (0, 1, 2), per-locus dissimilarity is
+    |g_i - g_j| / 2, averaged over loci where both samples are non-missing.
+    """
+    input:
+        bed=rules.vcf_to_plink.output.bed,
+        bim=rules.vcf_to_plink.output.bim,
+        fam=rules.vcf_to_plink.output.fam,
+    output:
+        dist="results/{project}/gen_dist/{project}.p_distance.tsv",
+    conda:
+        "../envs/python.yaml"
+    log:
+        "logs/{project}/p_distance.log",
+    benchmark:
+        "benchmarks/{project}/p_distance.txt",
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["gen_dist"]["threads"]
+    resources:
+        mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["gen_dist"]["mem_mb"],
+        runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["gen_dist"]["runtime"],
+    script:
+        "../scripts/calculate_p_distance.py"
+
+
 rule average_squared_genetic_difference:
     """
     Calculate the average squared genetic difference matrix.

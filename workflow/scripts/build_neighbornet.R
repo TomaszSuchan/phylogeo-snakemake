@@ -15,7 +15,7 @@ sink(log_file, type = "message")
 dist_file <- snakemake@input[["dist"]]
 output_net <- snakemake@output[["net"]]
 
-cat("Reading Euclidean distance matrix:", dist_file, "\n")
+cat("Reading distance matrix:", dist_file, "\n")
 dist_df <- read.table(
   dist_file,
   header = TRUE,
