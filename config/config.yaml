@@ -236,7 +236,7 @@ parameters: &global_params
     map_outline: true    # add point outlines (true/false, default: true)
 
   ## NeighborNet parameters
-  # NeighborNet split network from Euclidean genetic distances.
+  # NeighborNet split network from p-distance genetic distances.
   neighbornet:
     color_by: ["Site"]   # columns in indpopdata used to color tips
     width: 12            # plot width in inches
