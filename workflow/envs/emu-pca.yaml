@@ -4,4 +4,4 @@ channels:
   - defaults
 dependencies:
   - emu-pca
-  - mkl=2025*
+  - mkl=2025.*
