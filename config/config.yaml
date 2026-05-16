@@ -24,6 +24,21 @@ parameters: &global_params
   
   ## Preprocessing parameters
   #
+  # Variant-level filtering prior to thinning
+  vcf_filtering:
+    f_missing: 1.0            # max missing-data threshold; 1.0 disables missingness filtering
+    maf: 0.0                  # minimum minor allele frequency filter
+  thinning_strategy: "thinning"  # thinning|ld_pruning|none
+  ld_pruning:
+    r2: 0.5                   # LD r^2 threshold
+    window_size: 50           # LD window size
+    step_size: 5              # LD step size
+  relatedness_filtering:
+    enabled: false            # enable KING-based relatedness filtering in preprocessing
+    king_threshold: 0.0884    # 2nd-degree relatives threshold
+    mac_threshold: 1          # minimum MAC used for KING calculation
+    group_by: ["Region"]      # grouping columns for removed-individual plots
+  
   # Many analyses require unlinkesd SNPs (one SNP per RAD fragment).
   # The VCF file will is first filtered for bilallelic SNPs with MAC>1
   # and then thinned to one SNP per RAD fragment using the parameters below.
@@ -85,6 +100,9 @@ parameters: &global_params
     divider_width: 0.4              # width of site dividers
     site_order: NULL                # custom site order as list, e.g. ["Site1", "Site2", "Site3"]
     flip_axis: FALSE                # flip barplot axis
+    barplot_width: 10               # width for fastStructure/admixture barplots
+    barplot_height: 6               # height for fastStructure/admixture barplots
+    site_labels_angle: 90           # rotation angle for site labels in barplots
     # Structure color palette 
     structure_colors:
       - "#E41A1C"  # red
@@ -129,6 +147,8 @@ parameters: &global_params
     crs_projected: "EPSG:8857"  # projected CRS for distance calculations ("EPSG:8857" = Equal Earth, EPSG:3035 = ETRS89 / ETRS-LAEA Europe, EPSG:2180 = Poland CS2000)
     crs_geographic: 4326        # geographic CRS for lat/lon coordinates (4326 = WGS84)
     alpha: 0.05                 # significance level for upper/lower tail identification
+    fill_var: "avg_value"       # variable used to fill MAPI grid cells in plots
+    point_alpha: 0.6            # opacity of sampling points on MAPI maps
     tail_linewidth: 0.4         # line width for upper/lower MAPI tail outlines
     upper_tail_color: "#B2182B" # color for upper tails (high resistance; muted red)
     lower_tail_color: "#1B7837" # color for lower tails (low resistance; muted green)
@@ -179,7 +199,11 @@ parameters: &global_params
   PCAone:
     miss: [0.1, 0.2, 0.2, 0.3, 0.4, 0.5] # list of maximum missing data thresholds (F_MISSING<mincov)
     SVD_method: 3 # SVD method to use [0-3]
+    EMU_SVD_method: 3 # SVD method for PCAone EMU mode [0-3]
     PCnum: 10     # number of principal components to compute
+  EMU:
+    eig: 2        # first principal component to output (EMU --eig)
+    eig_out: 10   # number of principal components to output (EMU --eig-out)
   # PCA plot params:
   pca_plot:
     pc_max: 4  # maximum PC axis number - will generate all combinations up to this value
@@ -199,6 +223,8 @@ parameters: &global_params
       - "#999999"  # gray
       - "#FFFFFF"  # white
       - "#000000"  # black
+  relatedness_plot:
+    relatedness_colors: null   # optional custom palette for relatedness network plots
   
   ## VCF2PCACluster parameters
   #
@@ -235,6 +261,24 @@ parameters: &global_params
     point_size: 3        # size of points on genetic diversity maps
     map_outline: true    # add point outlines (true/false, default: true)
 
+  ## AMOVA parameters
+  amova:
+    strata: []           # e.g. ["Region", "Site"]
+    nperm: 999           # number of permutations
+
+  ## ROH parameters
+  roh:
+    group_by: ["Site"]   # columns in indpopdata to summarize/compare ROH
+
+  ## Genome scan parameters
+  genome_scan:
+    population_column: "Group"   # indpopdata column used to define comparison groups
+    pop1: ""                     # first population value from population_column
+    pop2: ""                     # second population value from population_column
+    window_size_fst: 100         # window size for FST
+    window_size_pi: 1000000      # window size for pi
+    window_size_dxy: 1000000     # window size for dxy
+
   ## NeighborNet parameters
   # NeighborNet split network from p-distance genetic distances.
   neighbornet:
@@ -252,6 +296,9 @@ parameters: &global_params
       thinning: 1000            # -z: thinning interval (sample every z iterations)
     tree:
       mcmc_iterations: 10000    # -x: number of MCMC iterations for tree building
+    plot:
+      max_indv: 10000           # max individuals for plotting
+      max_pop: 10000            # max populations for plotting
 
   ## Trimal parameters for alignment trimming before phylogenetic inference
   trimal:
@@ -262,6 +309,7 @@ parameters: &global_params
     model: "MFP"      # substitution model, MFP for ModelFinder Plus
     bootstraps: 1000  # number of ultrafast bootstrap replicates
     robust-phy: 0.95 # robustness threshold for phylogenetic inference (0-1)
+    outgroup: null    # optional rooting set for plotted/output rooted tree
     # outgroup: "sample1,sample2"  # optional rooting set for plotted/output rooted tree; when omitted, midpoint rooting is used
     support_threshold: 70  # minimum bootstrap support value to display on tree (0-100)
     # IQ-TREE plotting now writes both rooted and unrooted outputs:
@@ -310,6 +358,10 @@ parameters: &global_params
       threads: 24
       mem_mb: 8000
       runtime: 600
+    prepare_invariant_vcf:
+      threads: 1
+      mem_mb: 8000
+      runtime: 120
     pixy_summary:
       threads: 1
       mem_mb: 8000
@@ -338,6 +390,30 @@ parameters: &global_params
       threads: 4
       mem_mb: 16000
       runtime: 120   # DAPC analysis (cross-validation can add time)
+    amova:
+      threads: 1
+      mem_mb: 16000
+      runtime: 120
+    relatedness_filtering:
+      threads: 4
+      mem_mb: 16000
+      runtime: 60
+    fineradstructure:
+      threads: 4
+      mem_mb: 16000
+      runtime: 1440
+    roh:
+      threads: 4
+      mem_mb: 8000
+      runtime: 120
+    genome_scan:
+      threads: 8
+      mem_mb: 16000
+      runtime: 240
+    emupca:
+      threads: 12
+      mem_mb: 8000
+      runtime: 30
 
 ##############################
 ### Projects configuration ###

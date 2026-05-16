@@ -96,7 +96,7 @@ The pipeline applies filtering steps in the following order:
 #### 4. Missing Data Filtering (After Relatedness)
 - **Variant-level missing data filter**: Applied after relatedness filtering (if enabled)
 - **Parameters** (from `config["parameters"]["vcf_filtering"]`):
-  - `f_missing` <FLOAT>: Maximum missing data threshold for variant filtering (default: `0.5`)
+  - `f_missing` <FLOAT>: Maximum missing data threshold for variant filtering (default: `1.0`)
     - Variants missing in > `f_missing` proportion of samples are filtered out
     - `1` keeps all variants, `0` removes variants with any missing data
 - **Note**: If `f_missing >= 1`, missing data filtering is skipped
@@ -109,7 +109,7 @@ The pipeline applies filtering steps in the following order:
 
 #### 6. VCF Thinning (One SNP per RAD Fragment)
 - **Thinning / LD-pruning strategy**: Controlled by `config["parameters"]["thinning_strategy"]`:
-  - `"thinning"`: Select one SNP per RAD fragment to ensure unlinked markers (default in example config)
+  - `"thinning"`: Select one SNP per RAD fragment to ensure unlinked markers (default)
   - `"ld_pruning"`: Perform LD-based pruning using `plink` (see LD pruning parameters below)
   - `"none"`: Keep all biallelic SNPs without thinning or pruning
 - **Parameters for `"thinning"`** (from `config["parameters"]["vcf_thinning"]`):
@@ -206,11 +206,11 @@ For precision, the workflow uses the following internal genotype datasets:
 
 ### Genetic diversity, relatedness, and demographic summaries
 
-**Pixy** calculates unbiased estimates of nucleotide diversity (`pi`), genetic differentiation (`FST`), and sequence divergence (`dXY`) using both variant and invariant sites extracted from the original ipyrad `.loci` file rather than from the downstream SNP-only VCFs. It uses the project keep-list after sample filtering plus grouping information from `indpopdata.txt`, and produces raw statistic tables, bootstrap summaries, heatmaps, barplots, and optional diversity maps. Summary files are constructed from the raw window-level `pixy` outputs by grouping windows by population (`pi`) or population pair (`FST`, `dXY`), calculating weighted means across windows (`no_sites` weights for `pi` and `dXY`, `no_snps` weights for `FST`), and estimating bootstrap standard errors and 95% confidence intervals from resampled windows. The main parameters are in `config["parameters"]["pixy"]` (`stats`, `window_size`, `bootstrap_replicates`, `group_by`, `sort_by`, `point_size`, `map_outline`). Parameter `group_by` controls the column from `indpopdata.txt` by which the individuals are divided into population, whereas `sort_by` the grouping column for the plots.
+**Pixy** calculates unbiased estimates of nucleotide diversity (`pi`), genetic differentiation (`FST`), and sequence divergence (`dXY`) using both variant and invariant sites extracted from the original ipyrad `.loci` file rather than from the downstream SNP-only VCFs. It uses the project keep-list after sample filtering plus grouping information from `indpopdata.txt`, and produces raw statistic tables, bootstrap summaries, heatmaps, barplots, and optional diversity maps. Summary files are constructed from the raw window-level `pixy` outputs by grouping windows by population (`pi`) or population pair (`FST`, `dXY`), calculating weighted means across windows (`no_sites` weights for `pi` and `dXY`, `no_snps` weights for `FST`), and estimating bootstrap standard errors and 95% confidence intervals from resampled windows. The main parameters are in `config["parameters"]["pixy"]` (`stats`, `window_size`, `bootstrap_replicates`, `group_by`, `arrange_by`, `point_size`, `map_outline`). Parameter `group_by` controls the column from `indpopdata.txt` by which the individuals are divided into populations, whereas `arrange_by` controls grouped/sorted Pi barplot variants.
 
 **Genome scan** performs sliding-window analyses of `FST`, `pi`, and `dXY` between two user-defined groups. It uses an invariant-site VCF reconstructed from the original ipyrad data, together with `indpopdata.txt`, to identify samples whose `config["parameters"]["genome_scan"]["population_column"]` value matches `pop1` or `pop2`. The workflow then subsets the invariant-site VCF to retain only individuals from those two groups, creates a two-population popmap from the same subset, and runs `pixy` on that reduced dataset; it therefore does not use the final thinned SNP set and does not include samples outside the focal comparison. It produces statistic tables and genome-wide plots under `results/<project>/genome_scan/`. The main parameters are in `config["parameters"]["genome_scan"]` (`population_column`, `pop1`, `pop2`, `window_size_fst`, `window_size_pi`, `window_size_dxy`).
 
-**Relatedness** estimates pairwise kinship using multiple estimators, including the Yang et al. genomic relatedness statistic, Manichaikul/KING-style kinship, PLINK IBD summaries, and PLINK2 KING outputs. The main relatedness analysis uses the final analysis VCF and its derived PLINK files, whereas the earlier relatedness-filtering step in preprocessing uses `subset.vcf.gz` before variant missingness filtering to decide which individuals to retain. Outputs are `.relatedness`, `.relatedness2`, `.genome`, and `.king` tables, plus metadata-coloured network plots. Visualisation is controlled by `config["parameters"]["relatedness_plot"]` (`color_by`, `relatedness_colors`).
+**Relatedness** estimates pairwise kinship using multiple estimators, including the Yang et al. genomic relatedness statistic, Manichaikul/KING-style kinship, PLINK IBD summaries, and PLINK2 KING outputs. The main relatedness analysis uses the final analysis VCF and its derived PLINK files, whereas the earlier relatedness-filtering step in preprocessing uses `subset.vcf.gz` before variant missingness filtering to decide which individuals to retain. Outputs are `.relatedness`, `.relatedness2`, `.genome`, and `.king` tables, plus metadata-coloured network plots. Visualisation is controlled by `config["parameters"]["relatedness_plot"]` (`relatedness_colors`).
 
 **ROH** uses `bcftools roh` to identify runs of homozygosity and summarises them across individuals and groups. It uses the final analysis VCF (`biallelic_snps_{thinned|ld_pruned|all_snps}.vcf.gz`) together with `indpopdata.txt`, and produces raw ROH calls, per-sample summaries, comparison tables, and grouped plots. The main parameter is `config["parameters"]["roh"]["group_by"]`.
 
@@ -218,7 +218,7 @@ For precision, the workflow uses the following internal genotype datasets:
 
 ### Spatial landscape genetics
 
-**MAPI** (Mapping Averaged Pairwise Information) identifies spatial regions where observed genetic distances are unusually high or low relative to geography. It uses the Euclidean distance matrix and `indpopdata.txt`, and produces result and significance-tail GeoPackages plus a final PDF map. The main parameters are in `config["parameters"]["mapi"]` (`n_permutations`, `grid_halfwidth`, `crs_projected`, `crs_geographic`, `alpha`, `fill_var`).
+**MAPI** (Mapping Averaged Pairwise Information) identifies spatial regions where observed genetic distances are unusually high or low relative to geography. It uses the Euclidean distance matrix and `indpopdata.txt`, and produces result and significance-tail GeoPackages plus a final PDF map. The main parameters are in `config["parameters"]["mapi"]` (`n_permutations`, `grid_halfwidth`, `crs_projected`, `crs_geographic`, `alpha`, `fill_var`, `point_alpha`).
 
 ### Phylogenetic and historical inference
 
