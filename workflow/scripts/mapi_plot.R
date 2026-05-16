@@ -166,12 +166,6 @@ plot_mapi <- function(
 
   # --- base plot ---
   p <- ggplot() +
-    geom_sf(
-      data = world_cropped,
-      fill = land_colour,
-      color = ifelse(isTRUE(basemap_border), basemap_border_col, NA),
-      linewidth = basemap_border_lwd
-    ) +
     geom_sf(data = mapi_results,
             aes(fill = .data[[fill_var]]),
             color = NA) +
@@ -184,12 +178,15 @@ plot_mapi <- function(
       xlim = if (!is.null(boundary_limits)) boundary_limits$x else NULL,
       ylim = if (!is.null(boundary_limits)) boundary_limits$y else NULL,
       expand = expand,
-      crs = st_crs(mapi_results)
+      crs = st_crs(mapi_results),
+      datum = st_crs(4326),
+      label_graticule = "SW"
     ) +
     theme_minimal() +
     theme(
       panel.background = element_rect(fill = sea_colour, color = NA),
-      panel.grid = element_blank(),
+      panel.grid.major = element_line(color = "grey85", linewidth = 0.25),
+      panel.grid.minor = element_line(color = "grey92", linewidth = 0.15),
       axis.text = element_text(size = axis_text_size),
       axis.title = element_text(size = axis_title_size),
       legend.position = "right",
@@ -225,6 +222,15 @@ plot_mapi <- function(
         )
     }
   }
+
+  # --- country boundaries overlay as transparent outlines on top ---
+  p <- p +
+    geom_sf(
+      data = world_cropped,
+      fill = NA,
+      color = ifelse(isTRUE(basemap_border), basemap_border_col, "grey30"),
+      linewidth = basemap_border_lwd
+    )
 
   # --- Add individual locations if provided ---
   if (!is.null(indpopdata_sf) && nrow(indpopdata_sf) > 0) {
