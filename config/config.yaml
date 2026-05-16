@@ -427,18 +427,26 @@ projects:
       faststructure: true
       admixture: true
       gen_dist: false
+      pcoa: false
       neighbornet: true
       mapi: true
       pcaone: true
+      emupca: false
       vcf2pcacluster: false
       pcaone_emu: false
       pcaone_miss: false
       pixy: false
       relatedness: true
+      roh: false
+      amova: false
+      genome_scan: false
+      evaladmix: false
       iqtree: false
       iqtree_trimal: false
       iqtree_robust: false
       fineradstructure: false
+      construct: false
+      dapc: false
     parameters:
       <<: *global_params
       popmap: "data/Vcardui-popmap.txt"
