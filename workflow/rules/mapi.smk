@@ -74,5 +74,6 @@ rule mapi_plot:
         point_size=lambda wildcards: config["projects"][wildcards.project]["parameters"]["population_map"].get("point_size", 1),
         point_color=lambda wildcards: config["projects"][wildcards.project]["parameters"]["population_map"].get("point_color", "black"),
         point_alpha=lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapi"].get("point_alpha", 0.6),
+        tail_linewidth=lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapi"].get("tail_linewidth", 0.4),
     script:
         "../scripts/mapi_plot.R"

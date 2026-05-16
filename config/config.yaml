@@ -129,6 +129,7 @@ parameters: &global_params
     crs_projected: "EPSG:8857"  # projected CRS for distance calculations ("EPSG:8857" = Equal Earth, EPSG:3035 = ETRS89 / ETRS-LAEA Europe, EPSG:2180 = Poland CS2000)
     crs_geographic: 4326        # geographic CRS for lat/lon coordinates (4326 = WGS84)
     alpha: 0.05                 # significance level for upper/lower tail identification
+    tail_linewidth: 0.4         # line width for upper/lower MAPI tail outlines
 
   ## Structure parameters
   # More run parameters can be tweaked by modifying `data/mainparams` and `data/extraparams`

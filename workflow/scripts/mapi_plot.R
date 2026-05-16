@@ -41,6 +41,7 @@ basemap_border_lwd <- as.numeric(snakemake@params[['basemap_border_lwd']])
 point_size <- as.numeric(snakemake@params[['point_size']])
 point_color <- snakemake@params[['point_color']]
 point_alpha <- as.numeric(snakemake@params[['point_alpha']])
+tail_linewidth <- as.numeric(snakemake@params[['tail_linewidth']])
 
 cat("=== MAPI Plotting Script ===\n")
 cat("Input MAPI results:", mapi_gpkg, "\n")
@@ -137,7 +138,8 @@ plot_mapi <- function(
   basemap_border_lwd = 0.1,
   point_size = 0.8,
   point_color = "black",
-  point_alpha = 0.6
+  point_alpha = 0.6,
+  tail_linewidth = 0.4
 ) {
 
   # mapi_results, upper_tails, and lower_tails should be sf objects
@@ -166,6 +168,12 @@ plot_mapi <- function(
 
   # --- base plot ---
   p <- ggplot() +
+    # Land background uses configured land_colour and sits below MAPI cells.
+    geom_sf(
+      data = world_cropped,
+      fill = land_colour,
+      color = NA
+    ) +
     geom_sf(data = mapi_results,
             aes(fill = .data[[fill_var]]),
             color = NA) +
@@ -205,7 +213,7 @@ plot_mapi <- function(
           data = upper_merged,
           fill = NA,
           color = "black",
-          linewidth = 0.8
+          linewidth = tail_linewidth
         )
     }
   }
@@ -218,7 +226,7 @@ plot_mapi <- function(
           data = lower_merged,
           fill = NA,
           color = "grey35",
-          linewidth = 0.8
+          linewidth = tail_linewidth
         )
     }
   }
@@ -322,7 +330,8 @@ if (nrow(mapi_results) > 0) {
       basemap_border_lwd = basemap_border_lwd,
       point_size = point_size,
       point_color = point_color,
-      point_alpha = point_alpha
+      point_alpha = point_alpha,
+      tail_linewidth = tail_linewidth
     )
 
     ggsave(mapi_plot, plot = pl, width = width, height = height, dpi = dpi)
