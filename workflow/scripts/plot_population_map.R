@@ -37,6 +37,7 @@ sink(log_file, type = "message")
 # Snakemake inputs/outputs
 indpopdata_file <- snakemake@input[["indpopdata"]]
 output_plot <- snakemake@output[["plot"]]
+output_plot_rds <- snakemake@output[["plot_rds"]]
 
 # Check if indpopdata file exists and is not NULL
 if (is.null(indpopdata_file) || indpopdata_file == "NULL" || indpopdata_file == "" || !file.exists(indpopdata_file)) {
@@ -181,6 +182,7 @@ if (show_labels) {
 
 message("\n=== SAVING OUTPUT ===\n")
 message(sprintf("Output PDF: %s\n", output_plot))
+message(sprintf("Output RDS: %s\n", output_plot_rds))
 message(sprintf("Plot dimensions: %.1f x %.1f inches @ %d dpi\n", width, height, dpi))
 
 # Save plot
@@ -192,6 +194,7 @@ ggsave(
   dpi = dpi,
   device = "pdf"
 )
+saveRDS(p, file = output_plot_rds)
 
 message("\n=== COMPLETED SUCCESSFULLY ===\n")
 message(sprintf("Final map includes:\n"))

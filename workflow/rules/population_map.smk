@@ -81,7 +81,8 @@ rule plot_population_map:
     input:
         unpack(_population_map_inputs),
     output:
-        plot = "results/{project}/stats_samples/plots/{project}.population_map.pdf"
+        plot = "results/{project}/stats_samples/plots/{project}.population_map.pdf",
+        plot_rds = "results/{project}/stats_samples/plots/{project}.population_map.rds"
     params:
         # Map background parameters (shared)
         width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("width", 10),

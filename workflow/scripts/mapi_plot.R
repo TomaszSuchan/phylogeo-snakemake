@@ -20,6 +20,7 @@ indpopdata_file <- snakemake@input[['indpopdata']]
 
 # Output files
 mapi_plot <- snakemake@output[['mapi_plot']]
+mapi_plot_rds <- snakemake@output[['mapi_plot_rds']]
 
 # Parameters
 fill_var <- snakemake@params[['fill_var']]
@@ -47,6 +48,7 @@ cat("Input upper tails:", upper_tails_gpkg, "\n")
 cat("Input lower tails:", lower_tails_gpkg, "\n")
 cat("Input indpopdata:", indpopdata_file, "\n")
 cat("Output plot:", mapi_plot, "\n")
+cat("Output plot RDS:", mapi_plot_rds, "\n")
 cat("Fill variable:", fill_var, "\n")
 cat("CRS (plot):", crs_plot, "\n")
 cat("==============================\n\n")
@@ -318,6 +320,7 @@ if (nrow(mapi_results) > 0) {
     )
 
     ggsave(mapi_plot, plot = pl, width = width, height = height, dpi = dpi)
+    saveRDS(pl, file = mapi_plot_rds)
     cat("Plot saved to:", mapi_plot, "\n")
   }, error = function(e) {
     warning("MAPI plotting failed: ", e$message)
@@ -325,6 +328,7 @@ if (nrow(mapi_results) > 0) {
     pl_empty <- ggplot() +
       theme_void()
     ggsave(mapi_plot, plot = pl_empty, width = width, height = height, dpi = dpi)
+    saveRDS(pl_empty, file = mapi_plot_rds)
     cat("Empty plot created (plotting function failed)\n")
   })
 } else {
@@ -332,6 +336,7 @@ if (nrow(mapi_results) > 0) {
   pl_empty <- ggplot() +
     theme_void()
   ggsave(mapi_plot, plot = pl_empty, width = width, height = height, dpi = dpi)
+  saveRDS(pl_empty, file = mapi_plot_rds)
 }
 
 cat("\nPlotting complete!\n")

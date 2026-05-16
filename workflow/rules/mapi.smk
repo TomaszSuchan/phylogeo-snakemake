@@ -44,6 +44,7 @@ rule mapi_plot:
         indpopdata=rules.generate_popdata.output.indpopdata,
     output:
         mapi_plot="results/{project}/mapi/plots/{project}.mapi_euclidean.pdf",
+        mapi_plot_rds="results/{project}/mapi/plots/{project}.mapi_euclidean.rds",
     conda:
         "../envs/mapi.yaml"
     log:
