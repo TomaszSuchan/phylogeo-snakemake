@@ -231,7 +231,7 @@ For precision, the workflow uses the following internal genotype datasets:
 
 **Population assignment** is generated automatically from either a user-provided `popmap`, a richer `popdata` table with geographic coordinates and grouping variables, or a `popseparator` that parses population codes from sample names. The main inputs are `config["parameters"]["popmap"]`, `config["parameters"]["popdata"]`, and `config["parameters"]["popseparator"]`, and the main outputs are `results/<project>/indpopdata.txt`, `results/<project>/indpopdata_all.txt`, and `results/<project>/stats_samples/<project>.population_summary.txt`.
 
-**Population maps and summaries** use `indpopdata.txt` and the shared map settings to create descriptive sampling maps. If `popdata` is available, the pipeline can generate `results/<project>/stats_samples/<project>.population_map.pdf` together with tabular summaries of sample counts per population. The main map controls are `config["parameters"]["population_map"]`, `config["parameters"]["map_background"]`, and `config["parameters"]["map_boundary"]`.
+**Population maps and summaries** use `indpopdata.txt` and the shared map settings to create descriptive sampling maps. If `popdata` is available, the pipeline can generate `results/<project>/stats_samples/plots/<project>.population_map.pdf` together with tabular summaries of sample counts per population. The main map controls are `config["parameters"]["population_map"]`, `config["parameters"]["map_background"]`, and `config["parameters"]["map_boundary"]`.
 
 ### Computational resources
 

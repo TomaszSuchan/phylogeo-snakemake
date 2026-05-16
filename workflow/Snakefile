@@ -661,7 +661,7 @@ def get_all_targets():
         popdata = params.get("popdata")
         if popdata and popdata != "NULL" and popdata != "":
             targets.extend([
-                "results/" + project + "/stats_samples/" + project + ".population_map.pdf"
+                "results/" + project + "/stats_samples/plots/" + project + ".population_map.pdf"
             ])
 
         # fineRADstructure targets
