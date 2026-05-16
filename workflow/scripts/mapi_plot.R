@@ -98,6 +98,28 @@ parse_boundary_limits <- function(boundary_param, target_crs) {
   )
 }
 
+default_boundary_limits <- function(mapi_results_sf, target_crs, margin_deg = 1) {
+  mapi_wgs84 <- st_transform(mapi_results_sf, 4326)
+  bb <- st_bbox(mapi_wgs84)
+  bb_margin <- st_bbox(c(
+    xmin = unname(bb[["xmin"]]) - margin_deg,
+    xmax = unname(bb[["xmax"]]) + margin_deg,
+    ymin = unname(bb[["ymin"]]) - margin_deg,
+    ymax = unname(bb[["ymax"]]) + margin_deg
+  ), crs = st_crs(4326))
+
+  bbox_target <- if (as.integer(target_crs) == 4326L) {
+    bb_margin
+  } else {
+    st_bbox(st_transform(st_as_sfc(bb_margin), st_crs(target_crs)))
+  }
+
+  list(
+    x = c(unname(bbox_target[["xmin"]]), unname(bbox_target[["xmax"]])),
+    y = c(unname(bbox_target[["ymin"]]), unname(bbox_target[["ymax"]]))
+  )
+}
+
 merge_tail_cells <- function(tails_sf, tol_frac = 0.03) {
   if (is.null(tails_sf) || nrow(tails_sf) == 0) return(NULL)
 
@@ -190,9 +212,7 @@ plot_mapi <- function(
       xlim = if (!is.null(boundary_limits)) boundary_limits$x else NULL,
       ylim = if (!is.null(boundary_limits)) boundary_limits$y else NULL,
       expand = expand,
-      crs = st_crs(mapi_results),
-      datum = st_crs(4326),
-      label_graticule = "SW"
+      crs = st_crs(mapi_results)
     ) +
     theme_minimal() +
     theme(
@@ -278,6 +298,9 @@ lower_tails <- st_read(lower_tails_gpkg, layer = "euclidean_lower", quiet = TRUE
 cat("Loaded", nrow(lower_tails), "lower tail cells\n")
 
 boundary_limits <- parse_boundary_limits(boundary, crs_plot)
+if (is.null(boundary_limits)) {
+  boundary_limits <- default_boundary_limits(mapi_results, crs_plot, margin_deg = 1)
+}
 
 output_dir <- dirname(mapi_plot)
 if (!dir.exists(output_dir)) {
