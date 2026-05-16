@@ -142,8 +142,8 @@ plot_mapi <- function(
   point_color = "black",
   point_alpha = 0.6,
   tail_linewidth = 0.4,
-  upper_tail_color = "red",
-  lower_tail_color = "green"
+  upper_tail_color = "#B2182B",
+  lower_tail_color = "#1B7837"
 ) {
 
   # mapi_results, upper_tails, and lower_tails should be sf objects
