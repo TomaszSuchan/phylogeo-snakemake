@@ -197,14 +197,14 @@ plot_mapi <- function(
     theme_minimal() +
     theme(
       panel.background = element_rect(fill = sea_colour, color = NA),
-      panel.grid.major = element_line(color = "grey85", linewidth = 0.25),
-      panel.grid.minor = element_line(color = "grey92", linewidth = 0.15),
+      panel.grid = element_line(color = "white", linewidth = 0.1),
       axis.text = element_text(size = axis_text_size),
       axis.title = element_text(size = axis_title_size),
       legend.position = "right",
       legend.title = element_text(size = 10),
       legend.text = element_text(size = 8),
-      panel.border = element_rect(fill = NA, color = "black", linewidth = 0.3)
+      panel.border = element_rect(fill = NA, color = "black", linewidth = 0.3),
+      plot.margin = margin(0, 0, 0, 0)
     ) +
     labs(x = "Longitude", y = "Latitude", title = plot_title)
 
