@@ -138,8 +138,22 @@ colnames(qmatrix_with_data) <- gsub("V", "Cluster", colnames(qmatrix_with_data))
 message(sprintf("qmatrix_with_data dimensions: %d rows x %d columns\n",
             nrow(qmatrix_with_data), ncol(qmatrix_with_data)))
 message(sprintf("Columns: %s\n", paste(colnames(qmatrix_with_data), collapse = ", ")))
-message(sprintf("All qmatrix_with_data rows:\n"))
-print(qmatrix_with_data)
+message(sprintf("Preview of qmatrix_with_data (first 20 rows):\n"))
+print(head(qmatrix_with_data, 20))
+
+# Aggregate individual Q values to one row per Site for map plotting.
+# mapmixture map pies are site-level summaries and this avoids rendering
+# thousands of overlapping individual pies at identical coordinates.
+cluster_cols <- grep("^Cluster", colnames(qmatrix_with_data), value = TRUE)
+admixture_site_df <- qmatrix_with_data %>%
+  group_by(Site) %>%
+  summarise(across(all_of(cluster_cols), ~ mean(as.numeric(.x), na.rm = TRUE)), .groups = "drop") %>%
+  mutate(Ind = Site, .before = 2)
+
+message(sprintf("admixture_site_df dimensions: %d sites x %d columns\n",
+            nrow(admixture_site_df), ncol(admixture_site_df)))
+message("Preview of site-level admixture (all rows):\n")
+print(admixture_site_df)
 
 # Get unique individuals from qmatrix_with_data
 message("\n=== FILTERING INDPOPDATA ===\n")
@@ -232,11 +246,11 @@ message(sprintf("\nTotal sites: %d, Total individuals: %d\n",
 # Run mapmixture with all parameters
 message("\n=== RUNNING MAPMIXTURE ===\n")
 message(sprintf("Input to mapmixture:\n"))
-message(sprintf("  admixture_df: %d rows x %d columns\n", nrow(qmatrix_with_data), ncol(qmatrix_with_data)))
+message(sprintf("  admixture_df: %d rows x %d columns (site-level)\n", nrow(admixture_site_df), ncol(admixture_site_df)))
 message(sprintf("  coords_df: %d sites\n", nrow(coords_df)))
 message(sprintf("  Number of clusters: %d\n", n_clusters))
-message(sprintf("All rows of admixture_df being passed to mapmixture:\n"))
-print(qmatrix_with_data)
+message(sprintf("All rows of site-level admixture_df being passed to mapmixture:\n"))
+print(admixture_site_df)
 
 # Parse boundary with error handling
 boundary_parsed <- NULL
@@ -251,7 +265,7 @@ if (!(length(boundary) == 0 || is.null(boundary) || boundary == "NULL")) {
 basemap_resolved <- resolve_map_basemap(use_elevation_bg, snakemake@input, basemap)
 
 p <- mapmixture(
-  admixture_df = qmatrix_with_data,
+  admixture_df = admixture_site_df,
   coords_df = coords_df,
   cluster_cols = strcolors,
   boundary = boundary_parsed,
