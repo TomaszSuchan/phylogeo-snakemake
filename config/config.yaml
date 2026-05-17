@@ -57,27 +57,27 @@ parameters: &global_params
 
   ## Shared map background parameters (used by all mapping functions)
   # This section is read by mapmixture/population_map/pixy/dapc and other map rules.
-  map_boundary: NULL                # optional map boundary extent e.g. c(xmin=18.5, xmax=23.4, ymin=48.8, ymax=49.8)
+  map_boundary: null                # optional map boundary extent e.g. c(xmin=18.5, xmax=23.4, ymin=48.8, ymax=49.8)
 
   map_background:
     width: 10                       # plot width in inches
     height: 8                       # plot height in inches
     dpi: 300                        # dots per inch (resolution)
     crs: 4326                       # coordinate reference system (4326 = WGS84 lat/lon)
-    basemap: NULL                   # background style (e.g. NULL, ne1, gray_earth, elevation)
+    basemap: null                   # background style (e.g. null, ne1, gray_earth, elevation)
     land_colour: "#d9d9d9"          # color for land masses
     sea_colour: "#deebf7"           # color for water bodies
-    expand: FALSE                   # expand map to fill plotting area (TRUE/FALSE)
-    arrow: TRUE                     # show north arrow (TRUE/FALSE)
+    expand: false                   # expand map to fill plotting area (true/false)
+    arrow: true                     # show north arrow (true/false)
     arrow_size: 1                   # size of north arrow
     arrow_position: "tl"            # position of north arrow (tl/tr/bl/br)
-    scalebar: TRUE                  # show scale bar (TRUE/FALSE)
+    scalebar: true                  # show scale bar (true/false)
     scalebar_size: 1                # size of scale bar
     scalebar_position: "tl"         # position of scale bar (tl/tr/bl/br)
     plot_title: ""                  # title for the plot
     axis_title_size: 10             # font size for axis titles
     axis_text_size: 8               # font size for axis text
-    basemap_border: TRUE            # show border around basemap (TRUE/FALSE)
+    basemap_border: true            # show border around basemap (true/false)
     basemap_border_col: "black"     # color of basemap border
     basemap_border_lwd: 0.1         # line width of basemap border
     elevatr_z: null                 # optional elevation zoom level (null = auto)
@@ -85,23 +85,19 @@ parameters: &global_params
 
   ## Mapmixture plotting parameters
   # These parameters control STRUCTURE/ADMIXTURE pie plots and barplots.
+  # NOTE: YAML parsers generally accept uppercase/lowercase booleans and nulls;
+  # this example config uses lowercase true/false/null consistently.
   mapmixture:
     pie_size: 1                     # size of pie charts on map
     pie_border: 0.2                 # thickness of pie chart borders
     pie_border_col: "black"         # color of pie chart borders
     pie_opacity: 1                  # opacity of pie charts (0-1)
-    legend: FALSE                   # show legend (TRUE/FALSE)
-    # Structure barplot parameters (based on mapmixture defaults)
-    width: 10                       # barplot width in inches (legacy key)
-    height: 8                       # barplot height in inches (legacy key)
-    dpi: 300                        # barplot dpi (legacy key)
-    cluster_cols: NULL              # list of colors for clusters, e.g. ["#f1a340", "#998ec3"]
-    site_dividers: TRUE             # show dividers between sites
+    legend: false                   # show legend (true/false)
+    cluster_cols: null              # list of colors for clusters, e.g. ["#f1a340", "#998ec3"]
+    site_dividers: true             # show dividers between sites
     divider_width: 0.4              # width of site dividers
-    site_order: NULL                # custom site order as list, e.g. ["Site1", "Site2", "Site3"]
-    flip_axis: FALSE                # flip barplot axis
-    barplot_width: 10               # width for fastStructure/admixture barplots
-    barplot_height: 6               # height for fastStructure/admixture barplots
+    site_order: null                # custom site order as list, e.g. ["Site1", "Site2", "Site3"]
+    flip_axis: false                # flip barplot axis
     site_labels_angle: 90           # rotation angle for site labels in barplots
     # Structure color palette 
     structure_colors:
@@ -143,7 +139,7 @@ parameters: &global_params
   # by comparing genetic distances to geographic distances across a hexagonal grid
   mapi:
     n_permutations: 1000        # number of permutations for significance testing
-    grid_halfwidth: 100000      # grid cell halfwidth in meters (NULL for auto-estimation)
+    grid_halfwidth: 100000      # grid cell halfwidth in meters (null for auto-estimation)
     crs_projected: "EPSG:8857"  # projected CRS for distance calculations ("EPSG:8857" = Equal Earth, EPSG:3035 = ETRS89 / ETRS-LAEA Europe, EPSG:2180 = Poland CS2000)
     crs_geographic: 4326        # geographic CRS for lat/lon coordinates (4326 = WGS84)
     alpha: 0.05                 # significance level for upper/lower tail identification
