@@ -10,8 +10,7 @@ rule dapc_analysis:
         cluster_assignments = "results/{project}/dapc/{project}.dapc.K{k}.cluster_assignments.txt",
         membership_probs = "results/{project}/dapc/{project}.dapc.K{k}.membership_probs.txt",
         scatter_plot = "results/{project}/dapc/plots/{project}.dapc.K{k}.scatter.pdf",
-        scatter_plot_rds = "results/{project}/dapc/plots/{project}.dapc.K{k}.scatter.rds",
-        log_file = "results/{project}/dapc/{project}.dapc.K{k}.log.txt"
+        scatter_plot_rds = "results/{project}/dapc/plots/{project}.dapc.K{k}.scatter.rds"
     params:
         k = lambda wildcards: int(wildcards.k),
         n_pca = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("dapc", {}).get("n_pca", "retained"),
@@ -24,7 +23,7 @@ rule dapc_analysis:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["dapc"]["mem_mb"],
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["dapc"]["runtime"]
     log:
-        "logs/{project}/dapc.K{k}.log"
+        "logs/{project}/dapc.K{k}.log.txt"
     benchmark:
         "benchmarks/{project}/dapc.K{k}.txt"
     script:
@@ -34,7 +33,7 @@ rule dapc_analysis:
 rule dapc_bic_plot_from_log:
     input:
         log_files = lambda wildcards: expand(
-            "results/{project}/dapc/{project}.dapc.K{k}.log.txt",
+            "logs/{project}/dapc.K{k}.log.txt",
             project=wildcards.project,
             k=[k for k in config["projects"][wildcards.project]["parameters"]["k_values"] if int(k) >= 2]
         )

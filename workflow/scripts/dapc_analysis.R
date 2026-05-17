@@ -30,7 +30,8 @@ library(vcfR)
 #}
 
 # Set up logging
-log_file <- snakemake@output[["log_file"]]
+log_file <- snakemake@log[[1]]
+dir.create(dirname(log_file), recursive = TRUE, showWarnings = FALSE)
 sink(log_file, append = FALSE, split = TRUE)
 
 cat("=== DAPC Analysis (K =", snakemake@params[["k"]], ") ===\n")
