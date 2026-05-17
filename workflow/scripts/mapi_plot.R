@@ -98,26 +98,23 @@ parse_boundary_limits <- function(boundary_param, target_crs) {
   )
 }
 
-default_boundary_limits <- function(source_sf, target_crs, expand_frac = 0.10) {
-  # Match mapmixture::calc_default_bbox pattern:
-  # compute bbox in WGS84, expand proportionally, then transform to plot CRS.
-  source_wgs84 <- st_transform(source_sf, 4326)
-  bb <- st_bbox(source_wgs84)
+default_boundary_limits <- function(mapi_results_sf, target_crs, expand_frac = 0.10) {
+  mapi_wgs84 <- st_transform(mapi_results_sf, 4326)
+  bb <- st_bbox(mapi_wgs84)
+
   b <- c(
     xmin = unname(bb[["xmin"]]),
     xmax = unname(bb[["xmax"]]),
     ymin = unname(bb[["ymin"]]),
     ymax = unname(bb[["ymax"]])
   )
-
   if (!is.null(expand_frac) && is.finite(expand_frac) && expand_frac > 0) {
     b["xmin"] <- ifelse(b["xmin"] < 0, b["xmin"] + b["xmin"] * expand_frac, b["xmin"] - b["xmin"] * expand_frac)
     b["xmax"] <- ifelse(b["xmax"] < 0, b["xmax"] + abs(b["xmax"] * expand_frac), b["xmax"] + b["xmax"] * expand_frac)
     b["ymin"] <- ifelse(b["ymin"] < 0, b["ymin"] + b["ymin"] * expand_frac, b["ymin"] - b["ymin"] * expand_frac)
     b["ymax"] <- ifelse(b["ymax"] < 0, b["ymax"] + abs(b["ymax"] * expand_frac), b["ymax"] + b["ymax"] * expand_frac)
   }
-
-  bbox_wgs84 <- st_bbox(c(
+  bb_margin <- st_bbox(c(
     xmin = as.numeric(b["xmin"]),
     xmax = as.numeric(b["xmax"]),
     ymin = as.numeric(b["ymin"]),
@@ -125,9 +122,9 @@ default_boundary_limits <- function(source_sf, target_crs, expand_frac = 0.10) {
   ), crs = st_crs(4326))
 
   bbox_target <- if (as.integer(target_crs) == 4326L) {
-    bbox_wgs84
+    bb_margin
   } else {
-    st_bbox(st_transform(st_as_sfc(bbox_wgs84), st_crs(target_crs)))
+    st_bbox(st_transform(st_as_sfc(bb_margin), st_crs(target_crs)))
   }
 
   list(
@@ -313,6 +310,11 @@ cat("Loading lower tails...\n")
 lower_tails <- st_read(lower_tails_gpkg, layer = "euclidean_lower", quiet = TRUE)
 cat("Loaded", nrow(lower_tails), "lower tail cells\n")
 
+boundary_limits <- parse_boundary_limits(boundary, crs_plot)
+if (is.null(boundary_limits)) {
+  boundary_limits <- default_boundary_limits(mapi_results, crs_plot, expand_frac = 0.10)
+}
+
 output_dir <- dirname(mapi_plot)
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
@@ -338,17 +340,6 @@ if (!all(required_cols %in% colnames(indpopdata))) {
   # Create sf object with geographic coordinates (assuming WGS84)
   indpopdata_sf <- st_as_sf(indpopdata, coords = c("Lon", "Lat"), crs = 4326)
   cat("Created sf object with", nrow(indpopdata_sf), "individual locations\n")
-}
-
-boundary_limits <- parse_boundary_limits(boundary, crs_plot)
-if (is.null(boundary_limits)) {
-  # Prefer unique sampling-site coordinates for map framing.
-  boundary_source <- if (!is.null(indpopdata_sf) && nrow(indpopdata_sf) > 0) {
-    unique(indpopdata_sf["Site"])
-  } else {
-    mapi_results
-  }
-  boundary_limits <- default_boundary_limits(boundary_source, crs_plot, expand_frac = 0.10)
 }
 
 # ==============================================================================
