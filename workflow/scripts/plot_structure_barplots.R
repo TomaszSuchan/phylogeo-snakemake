@@ -39,7 +39,7 @@ divider_width <- as.numeric(snakemake@params[["divider_width"]])
 site_order <- snakemake@params[["site_order"]]
 flip_axis <- as.logical(snakemake@params[["flip_axis"]])
 site_labels_angle <- as.numeric(snakemake@params[["site_labels_angle"]])
-population_labels <- as.logical(snakemake@params[["population_labels"]])
+population_labels <- snakemake@params[["population_labels"]]
 
 # Fixed parameters optimized for 1.2 inch height
 site_ticks_size <- -0.05
@@ -76,13 +76,65 @@ if (nrow(qmatrix) != nrow(indpopdata)) {
                nrow(qmatrix), nrow(indpopdata)))
 }
 
+# Parse population_labels:
+# - NULL => hide labels
+# - character vector/list => columns from indpopdata used to build labels/grouping
+if (is.null(population_labels)) {
+  display_population_labels <- FALSE
+  population_label_columns_val <- "Site"
+} else if (length(population_labels) == 1 &&
+           (is.na(population_labels) || population_labels == "NULL" || population_labels == "")) {
+  display_population_labels <- FALSE
+  population_label_columns_val <- "Site"
+} else if (is.logical(population_labels) && length(population_labels) == 1) {
+  # Backward compatibility: TRUE => Site labels, FALSE => no labels.
+  display_population_labels <- isTRUE(population_labels)
+  population_label_columns_val <- "Site"
+} else if (is.vector(population_labels) || is.list(population_labels)) {
+  display_population_labels <- TRUE
+  population_label_columns_val <- unlist(population_labels)
+} else {
+  display_population_labels <- TRUE
+  population_label_columns_val <- tryCatch(
+    eval(parse(text = population_labels)),
+    error = function(e) "Site"
+  )
+}
+population_label_columns_val <- unique(as.character(population_label_columns_val))
+if (length(population_label_columns_val) == 0) {
+  population_label_columns_val <- "Site"
+}
+
+missing_label_columns <- setdiff(population_label_columns_val, colnames(indpopdata))
+if (length(missing_label_columns) > 0) {
+  stop(sprintf(
+    "ERROR: population_label_columns not found in indpopdata: %s",
+    paste(missing_label_columns, collapse = ", ")
+  ))
+}
+
+cat(sprintf(
+  "Using population label columns: %s (display labels: %s)\n",
+  paste(population_label_columns_val, collapse = ", "),
+  ifelse(display_population_labels, "TRUE", "FALSE")
+))
+
+population_label_df <- indpopdata[, population_label_columns_val, drop = FALSE] %>%
+  mutate(across(everything(), ~ {
+    x <- as.character(.x)
+    x[is.na(x) | x == ""] <- "NA"
+    x
+  }))
+
+population_label_values <- apply(population_label_df, 1, paste, collapse = " | ")
+
 # Combine Q matrix with individual-level data, rename colnames
-qmatrix_with_data <- cbind(indpopdata$Site, indpopdata$Ind, qmatrix)
+qmatrix_with_data <- cbind(population_label_values, indpopdata$Ind, qmatrix)
 colnames(qmatrix_with_data)[1] <- "Site"
 colnames(qmatrix_with_data)[2] <- "Ind"
 colnames(qmatrix_with_data) <- gsub("V", "Cluster", colnames(qmatrix_with_data))
 
-# For barplots we only need Ind/Site information from indpopdata.
+# For barplots we only need Ind and selected population label columns from indpopdata.
 
 # Get color palette from config - subset first n_clusters colors
 cat(sprintf("\n=== SETTING UP COLOR PALETTE ===\n"))
@@ -117,7 +169,7 @@ structure_barplot <- structure_plot(
   divider_width = divider_width,
   site_order = site_order_val,
   labels = "site",
-  display_site_labels = population_labels,
+  display_site_labels = display_population_labels,
   flip_axis = flip_axis,
   site_ticks_size = site_ticks_size,
   site_labels_y = site_labels_y,

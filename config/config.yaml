@@ -99,7 +99,7 @@ parameters: &global_params
     site_order: null                # custom site order as list, e.g. ["Site1", "Site2", "Site3"]
     flip_axis: false                # flip barplot axis
     site_labels_angle: 90           # rotation angle for site labels in barplots
-    population_labels: true         # show population/site labels in barplots (set false to hide)
+    population_labels: ["Site"]     # null hides labels; otherwise use one or more indpopdata columns, e.g. ["Site"] or ["Region", "Site"]
     # Structure color palette 
     structure_colors:
       - "#E41A1C"  # red
