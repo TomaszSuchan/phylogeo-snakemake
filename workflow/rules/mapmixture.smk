@@ -204,9 +204,9 @@ rule barplot_faststructure:
         barplot_rds = "results/{project}/faststructure/plots/{project}.faststructure.K{k}.barplot.rds"
     params:
         output_prefix = "results/{project}/faststructure/{project}.faststructure.K{k}",
-        width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("barplot_width", 10),
-        height = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("barplot_height", 6),
-        dpi = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("dpi", 300),
+        width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("width", 10),
+        height = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("height", 6),
+        dpi = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("dpi", 300),
         site_dividers = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("site_dividers", True),
         divider_width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("divider_width", 0.4),
         site_order = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("site_order", "NULL"),
@@ -235,9 +235,9 @@ rule barplot_admixture:
         barplot_rds = "results/{project}/admixture/plots/{project}.admixture.K{k}.barplot.rds"
     params:
         output_prefix = "results/{project}/admixture/{project}.admixture.K{k}",
-        width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("barplot_width", 10),
-        height = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("barplot_height", 6),
-        dpi = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("dpi", 300),
+        width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("width", 10),
+        height = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("height", 6),
+        dpi = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("dpi", 300),
         site_dividers = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("site_dividers", True),
         divider_width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("divider_width", 0.4),
         site_order = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("site_order", "NULL"),
