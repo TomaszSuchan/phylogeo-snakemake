@@ -39,6 +39,7 @@ divider_width <- as.numeric(snakemake@params[["divider_width"]])
 site_order <- snakemake@params[["site_order"]]
 flip_axis <- as.logical(snakemake@params[["flip_axis"]])
 site_labels_angle <- as.numeric(snakemake@params[["site_labels_angle"]])
+population_labels <- as.logical(snakemake@params[["population_labels"]])
 
 # Fixed parameters optimized for 1.2 inch height
 site_ticks_size <- -0.05
@@ -116,6 +117,7 @@ structure_barplot <- structure_plot(
   divider_width = divider_width,
   site_order = site_order_val,
   labels = "site",
+  display_site_labels = population_labels,
   flip_axis = flip_axis,
   site_ticks_size = site_ticks_size,
   site_labels_y = site_labels_y,
