@@ -1,9 +1,23 @@
 #!/usr/bin/env Rscript
 # Script to plot DAPC results on maps using mapmixture
 
-library(tidyverse)
-library(mapmixture)
-library(terra)
+# Redirect all output to log file before loading packages.
+log_file <- snakemake@log[[1]]
+dir.create(dirname(log_file), recursive = TRUE, showWarnings = FALSE)
+log_con <- file(log_file, open = "wt")
+sink(log_con, type = "output")
+sink(log_con, type = "message")
+on.exit({
+  while (sink.number(type = "message") > 0) sink(type = "message")
+  while (sink.number(type = "output") > 0) sink(type = "output")
+  close(log_con)
+}, add = TRUE)
+
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(mapmixture)
+  library(terra)
+})
 
 common_functions <- tryCatch({
   script_dir <- dirname(normalizePath(snakemake@script))
@@ -17,11 +31,6 @@ if (file.exists(common_functions)) {
 
 # Prevent creation of Rplots.pdf
 pdf(NULL)
-
-# Redirect all output to log file
-log_file <- file(snakemake@log[[1]], open = "wt")
-sink(log_file, type = "output")
-sink(log_file, type = "message")
 
 # Snakemake inputs/outputs
 dapc_results_rds <- snakemake@input[["dapc_results"]]
@@ -258,9 +267,4 @@ message(sprintf("Final map includes:\n"))
 message(sprintf("  - %d sites\n", nrow(coords_df)))
 message(sprintf("  - %d individuals\n", nrow(qmatrix_with_data)))
 message(sprintf("  - %d genetic clusters (K=%d)\n", n_clusters, k))
-
-# Close log file sinks
-sink(type = "message")
-sink(type = "output")
-close(log_file)
 

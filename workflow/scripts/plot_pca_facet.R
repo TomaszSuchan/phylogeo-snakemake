@@ -1,15 +1,29 @@
-# Load libraries
-library(RColorBrewer)
-library(ggplot2)
-library(scales)
-
-# Debug: working directory
-message("Working directory: ", getwd())
-
 # Debug: check if Snakemake object exists
 if (!exists("snakemake")) {
   stop("Snakemake object not found! This script should be run via Snakemake.")
 }
+
+# Redirect all script output/messages to the rule log.
+log_file <- snakemake@log[[1]]
+dir.create(dirname(log_file), recursive = TRUE, showWarnings = FALSE)
+log_con <- file(log_file, open = "wt")
+sink(log_con, type = "output")
+sink(log_con, type = "message")
+on.exit({
+  while (sink.number(type = "message") > 0) sink(type = "message")
+  while (sink.number(type = "output") > 0) sink(type = "output")
+  close(log_con)
+}, add = TRUE)
+
+# Load libraries
+suppressPackageStartupMessages({
+  library(RColorBrewer)
+  library(ggplot2)
+  library(scales)
+})
+
+# Debug: working directory
+message("Working directory: ", getwd())
 
 # Debug: print Snakemake inputs, outputs, and params
 message("Snakemake inputs:")

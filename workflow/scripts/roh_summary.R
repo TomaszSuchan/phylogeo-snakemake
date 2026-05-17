@@ -19,7 +19,14 @@ log_file <- snakemake@log[[1]]
 group_by <- snakemake@params[["group_by"]]
 
 # Redirect output to log
-sink(log_file, type = "output", split = TRUE)
+log_con <- file(log_file, open = "wt")
+sink(log_con, type = "output")
+sink(log_con, type = "message")
+on.exit({
+  while (sink.number(type = "message") > 0) sink(type = "message")
+  while (sink.number(type = "output") > 0) sink(type = "output")
+  close(log_con)
+}, add = TRUE)
 
 cat("=== ROH Summary Analysis ===\n")
 cat("ROH file:", roh_file, "\n")
@@ -640,6 +647,4 @@ cat("  Per-individual statistics written to:", output_per_ind, "\n")
 cat("\n")
 
 cat("=== Analysis Complete ===\n")
-
-sink()
 

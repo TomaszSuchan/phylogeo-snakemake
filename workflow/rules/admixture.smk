@@ -23,7 +23,7 @@ rule admixture:
     shell:
         """
         mkdir -p {params.output_dir}
-        admixture --cv -j{threads} {input.bed} {wildcards.k} 2>&1 | tee {log}
+        admixture --cv -j{threads} {input.bed} {wildcards.k} > {log} 2>&1
         mv {params.prefix}.{wildcards.k}.Q {params.output_dir}/
         mv {params.prefix}.{wildcards.k}.P {params.output_dir}/
         """

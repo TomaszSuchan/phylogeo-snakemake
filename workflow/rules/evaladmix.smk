@@ -115,7 +115,7 @@ rule evaladmix_admixture:
             -qname {input.qfile} \
             -o {params.output_prefix} \
             -P {threads} \
-            2>&1 | tee {log}
+            > {log} 2>&1
         """
 
 rule evaladmix_faststructure:
@@ -152,7 +152,7 @@ rule evaladmix_faststructure:
             -qname {input.qfile} \
             -o {params.output_prefix} \
             -P {threads} \
-            2>&1 | tee {log}
+            > {log} 2>&1
         """
 
 rule structure_extract_pfile:
@@ -224,7 +224,7 @@ rule evaladmix_structure:
             -qname results/{wildcards.project}/structure/evaladmix/{wildcards.project}.structure.K{wildcards.k}.Q.tmp \
             -o {params.output_prefix} \
             -P {threads} \
-            2>&1 | tee {log}
+            > {log} 2>&1
         rm -f results/{wildcards.project}/structure/evaladmix/{wildcards.project}.structure.K{wildcards.k}.Q.tmp
         
         # Check if output file was created (evalAdmix appends .txt to the -o prefix)
