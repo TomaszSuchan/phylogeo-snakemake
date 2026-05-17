@@ -2,11 +2,25 @@
 # MAPI Plotting Script
 # Modern ggplot2-compatible plotting for MAPI results
 
-library(sf)
-library(ggplot2)
-library(rnaturalearth)
-library(rnaturalearthdata)
-library(RColorBrewer)
+# Redirect all output/messages to the Snakemake log before loading packages.
+log_file <- snakemake@log[[1]]
+dir.create(dirname(log_file), recursive = TRUE, showWarnings = FALSE)
+log_con <- file(log_file, open = "wt")
+sink(log_con, type = "output")
+sink(log_con, type = "message")
+on.exit({
+  while (sink.number(type = "message") > 0) sink(type = "message")
+  while (sink.number(type = "output") > 0) sink(type = "output")
+  close(log_con)
+}, add = TRUE)
+
+suppressPackageStartupMessages({
+  library(sf)
+  library(ggplot2)
+  library(rnaturalearth)
+  library(rnaturalearthdata)
+  library(RColorBrewer)
+})
 
 # ==============================================================================
 # Read inputs from Snakemake
