@@ -13,26 +13,23 @@ options(device = function(file = NULL, ...) {
   }
 })
 
-# Load required libraries
-library(adegenet)  # Also loads ade4
-library(vcfR)
-
-# Explicitly prevent Rplots.pdf creation
-#pdf(NULL)
-## Also try to delete it if it exists
-#if (file.exists("Rplots.pdf")) {
-#  tryCatch({
-#    file.remove("Rplots.pdf")
-#    cat("Removed existing Rplots.pdf\n")
-#  }, error = function(e) {
-#    cat("Could not remove Rplots.pdf:", e$message, "\n")
-#  })
-#}
-
 # Set up logging
 log_file <- snakemake@log[[1]]
 dir.create(dirname(log_file), recursive = TRUE, showWarnings = FALSE)
-sink(log_file, append = FALSE, split = TRUE)
+log_con <- file(log_file, open = "wt")
+sink(log_con, type = "output")
+sink(log_con, type = "message")
+on.exit({
+  while (sink.number(type = "message") > 0) sink(type = "message")
+  while (sink.number(type = "output") > 0) sink(type = "output")
+  close(log_con)
+}, add = TRUE)
+
+# Load required libraries
+suppressPackageStartupMessages({
+  library(adegenet)  # Also loads ade4
+  library(vcfR)
+})
 
 cat("=== DAPC Analysis (K =", snakemake@params[["k"]], ") ===\n")
 cat("VCF file:", snakemake@input[["vcf"]], "\n")
@@ -233,7 +230,7 @@ cat("Creating scatter plot using native adegenet scatter()...\n")
 dir.create(dirname(snakemake@output[["scatter_plot"]]), recursive = TRUE, showWarnings = FALSE)
 pdf(snakemake@output[["scatter_plot"]], width = 8, height = 6)
 scatter(dapc_result)
-dev.off()
+invisible(dev.off())
 cat("Scatter plot saved to:", snakemake@output[["scatter_plot"]], "\n")
 
 # For RDS, we'll save the dapc_result object itself since we can't save base R plots easily
@@ -274,7 +271,6 @@ write.table(membership_probs, snakemake@output[["membership_probs"]],
 cat("Membership probabilities saved to:", snakemake@output[["membership_probs"]], "\n")
 
 cat("\n=== DAPC Analysis Complete (K =", k, ") ===\n")
-sink()
 
 # Final cleanup - remove Rplots.pdf if it was created
 if (file.exists("Rplots.pdf")) {
