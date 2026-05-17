@@ -706,6 +706,15 @@ def get_all_targets():
                        k=dapc_k_values),
                 "results/" + project + "/dapc/plots/" + project + ".dapc.criterion_plot.pdf"
             ])
+            # Only add map plots if popdata is specified
+            popdata = params.get("popdata")
+            if popdata and popdata != "NULL" and popdata != "":
+                targets.extend([
+                    expand("results/" + project + "/dapc/plots/" + project + ".dapc.K{k}.map.pdf",
+                           k=dapc_k_values),
+                    expand("results/" + project + "/dapc/plots/" + project + ".dapc.K{k}.map.rds",
+                           k=dapc_k_values)
+                ])
 
     return targets
 
