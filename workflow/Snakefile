@@ -194,6 +194,7 @@ include: "rules/mapmixture.smk"
 include: "rules/population_map.smk"
 include: "rules/genetic_distances.smk"
 include: "rules/neighbornet.smk"
+include: "rules/pcoa.smk"
 include: "rules/mapi.smk"
 include: "rules/fineradstructure.smk"
 include: "rules/dapc.smk"
@@ -644,6 +645,49 @@ def get_all_targets():
                     color_by=neighbornet_color_by,
                 )
             )
+
+        # PCoA targets
+        if analyses.get("pcoa", False):
+            pcoa_distances = ["euclidean", "kosman", "avgsquared"]
+            # Always add missing data calculation target (used by PCoA plot rules)
+            targets.append("results/" + project + "/stats_vcf/thinned/" + project + ".biallelic_snps.imiss")
+            targets.extend(
+                expand(
+                    "results/" + project + "/PCoA/" + project + ".PCoA_{distance}.eigvecs",
+                    distance=pcoa_distances,
+                )
+            )
+            targets.extend(
+                expand(
+                    "results/" + project + "/PCoA/" + project + ".PCoA_{distance}.eigvals",
+                    distance=pcoa_distances,
+                )
+            )
+            # Add plot targets for each distance, PC combination, and color grouping
+            for distance in pcoa_distances:
+                for pc1, pc2 in pca_combinations:
+                    for color_by in PCA_groupings:
+                        targets.extend([
+                            f"results/{project}/PCoA/plots/{project}.PCoA_{distance}-PC{pc1}_PC{pc2}-{color_by}.pdf",
+                            f"results/{project}/PCoA/plots/{project}.PCoA_{distance}-PC{pc1}_PC{pc2}-{color_by}.rds"
+                        ])
+                    targets.extend([
+                        f"results/{project}/PCoA/plots/{project}.PCoA_{distance}-PC{pc1}_PC{pc2}-labeled.pdf",
+                        f"results/{project}/PCoA/plots/{project}.PCoA_{distance}-PC{pc1}_PC{pc2}-labeled.rds",
+                        f"results/{project}/PCoA/plots/{project}.PCoA_{distance}-PC{pc1}_PC{pc2}-missing.pdf",
+                        f"results/{project}/PCoA/plots/{project}.PCoA_{distance}-PC{pc1}_PC{pc2}-missing.rds"
+                    ])
+                for color_by in PCA_groupings:
+                    targets.extend([
+                        f"results/{project}/PCoA/plots/{project}.PCoA_{distance}-facet-{color_by}.pdf",
+                        f"results/{project}/PCoA/plots/{project}.PCoA_{distance}-facet-{color_by}.rds"
+                    ])
+                targets.extend([
+                    f"results/{project}/PCoA/plots/{project}.PCoA_{distance}-facet-labeled.pdf",
+                    f"results/{project}/PCoA/plots/{project}.PCoA_{distance}-facet-labeled.rds",
+                    f"results/{project}/PCoA/plots/{project}.PCoA_{distance}-facet-missing.pdf",
+                    f"results/{project}/PCoA/plots/{project}.PCoA_{distance}-facet-missing.rds"
+                ])
 
         # MAPI targets
         if analyses.get("mapi", False):
