@@ -4,3 +4,4 @@ channels:
   - defaults
 dependencies:
  - pcaone=0.6.0
+ - mkl=2025.*
