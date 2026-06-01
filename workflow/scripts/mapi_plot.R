@@ -74,7 +74,7 @@ cat("==============================\n\n")
 # Modern MAPI plotting function (compatible with modern ggplot2)
 # ==============================================================================
 
-parse_boundary_limits <- function(boundary_param, target_crs) {
+parse_boundary_bbox_wgs84 <- function(boundary_param) {
   if (is.null(boundary_param) || length(boundary_param) == 0) return(NULL)
   if (is.character(boundary_param) && length(boundary_param) == 1 &&
       (!nzchar(boundary_param) || boundary_param == "NULL")) {
@@ -93,28 +93,35 @@ parse_boundary_limits <- function(boundary_param, target_crs) {
     return(NULL)
   }
 
-  bbox_wgs84 <- st_bbox(c(
+  st_bbox(c(
     xmin = as.numeric(b[["xmin"]]),
     xmax = as.numeric(b[["xmax"]]),
     ymin = as.numeric(b[["ymin"]]),
     ymax = as.numeric(b[["ymax"]])
   ), crs = st_crs(4326))
+}
 
+boundary_limits_from_wgs84 <- function(bbox_wgs84, target_crs) {
+  if (is.null(bbox_wgs84)) return(NULL)
   bbox_target <- if (as.integer(target_crs) == 4326L) {
     bbox_wgs84
   } else {
     st_bbox(st_transform(st_as_sfc(bbox_wgs84), st_crs(target_crs)))
   }
-
   list(
     x = c(unname(bbox_target[["xmin"]]), unname(bbox_target[["xmax"]])),
     y = c(unname(bbox_target[["ymin"]]), unname(bbox_target[["ymax"]]))
   )
 }
 
-default_boundary_limits <- function(mapi_results_sf, target_crs, expand_frac = 0.10) {
-  mapi_wgs84 <- st_transform(mapi_results_sf, 4326)
-  bb <- st_bbox(mapi_wgs84)
+default_boundary_bbox_wgs84 <- function(indpopdata_sf = NULL, mapi_results_sf = NULL, expand_frac = 0.10) {
+  if (!is.null(indpopdata_sf) && nrow(indpopdata_sf) > 0) {
+    points_wgs84 <- st_transform(indpopdata_sf, 4326)
+    bb <- st_bbox(points_wgs84)
+  } else {
+    mapi_wgs84 <- st_transform(mapi_results_sf, 4326)
+    bb <- st_bbox(mapi_wgs84)
+  }
 
   b <- c(
     xmin = unname(bb[["xmin"]]),
@@ -134,31 +141,31 @@ default_boundary_limits <- function(mapi_results_sf, target_crs, expand_frac = 0
     ymin = as.numeric(b["ymin"]),
     ymax = as.numeric(b["ymax"])
   ), crs = st_crs(4326))
-
-  bbox_target <- if (as.integer(target_crs) == 4326L) {
-    bb_margin
-  } else {
-    st_bbox(st_transform(st_as_sfc(bb_margin), st_crs(target_crs)))
-  }
-
-  list(
-    x = c(unname(bbox_target[["xmin"]]), unname(bbox_target[["xmax"]])),
-    y = c(unname(bbox_target[["ymin"]]), unname(bbox_target[["ymax"]]))
-  )
+  bb_margin
 }
 
-merge_tail_cells <- function(tails_sf, tol_frac = 0.03) {
+merge_tail_cells <- function(tails_sf, tol_frac = 0.03, buffer_crs = 8857) {
   if (is.null(tails_sf) || nrow(tails_sf) == 0) return(NULL)
 
+  original_crs <- st_crs(tails_sf)
   tails_sf <- suppressWarnings(st_make_valid(tails_sf))
   tails_sf <- st_collection_extract(tails_sf, "POLYGON", warn = FALSE)
   if (nrow(tails_sf) == 0) return(NULL)
 
-  med_area <- suppressWarnings(stats::median(as.numeric(st_area(tails_sf)), na.rm = TRUE))
+  # st_buffer on geographic (lon/lat) CRS can invalidate geometry and drop tails.
+  # Dissolve in a projected CRS, then transform back for plotting.
+  tails_buffer <- tails_sf
+  transformed_for_buffer <- FALSE
+  if (isTRUE(sf::st_is_longlat(tails_sf))) {
+    tails_buffer <- suppressWarnings(st_transform(tails_sf, buffer_crs))
+    transformed_for_buffer <- TRUE
+  }
+
+  med_area <- suppressWarnings(stats::median(as.numeric(st_area(tails_buffer)), na.rm = TRUE))
   tol <- sqrt(med_area) * tol_frac
   if (!is.finite(tol) || tol <= 0) tol <- 1
 
-  merged_geom <- tails_sf |>
+  merged_geom <- tails_buffer |>
     st_buffer(tol) |>
     st_union() |>
     st_buffer(-tol) |>
@@ -167,7 +174,14 @@ merge_tail_cells <- function(tails_sf, tol_frac = 0.03) {
   merged_geom <- st_collection_extract(merged_geom, "POLYGON", warn = FALSE)
   if (length(merged_geom) == 0) return(NULL)
 
-  st_as_sf(data.frame(id = seq_along(merged_geom)), geometry = merged_geom)
+  merged_sf <- st_as_sf(data.frame(id = seq_along(merged_geom)), geometry = merged_geom)
+  st_crs(merged_sf) <- st_crs(tails_buffer)
+
+  if (transformed_for_buffer) {
+    merged_sf <- suppressWarnings(st_transform(merged_sf, original_crs))
+  }
+
+  merged_sf
 }
 
 plot_mapi <- function(
@@ -177,7 +191,7 @@ plot_mapi <- function(
   indpopdata_sf = NULL,
   fill_var = "avg_value",
   crs_plot = 4326,
-  boundary_limits = NULL,
+  boundary_bbox_wgs84 = NULL,
   land_colour = "#d9d9d9",
   sea_colour = "#deebf7",
   expand = FALSE,
@@ -202,22 +216,19 @@ plot_mapi <- function(
   if (!is.null(lower_tails) && nrow(lower_tails) > 0) lower_tails <- st_transform(lower_tails, crs_plot)
 
   # --- world boundaries ---
-  world <- ne_countries(scale = "medium", returnclass = "sf")
+  world_wgs84 <- ne_countries(scale = "medium", returnclass = "sf")
+
+  # mapmixture-like order: compute/crop in WGS84 first, then project for plotting.
+  world_cropped_wgs84 <- if (!is.null(boundary_bbox_wgs84)) {
+    suppressWarnings(st_crop(world_wgs84, boundary_bbox_wgs84))
+  } else {
+    world_wgs84
+  }
+  if (nrow(world_cropped_wgs84) == 0) world_cropped_wgs84 <- world_wgs84
 
   # --- CRS harmonization ---
-  world <- st_transform(world, st_crs(mapi_results))
-
-  mapi_bbox <- st_bbox(mapi_results)
-  crop_bbox <- if (!is.null(boundary_limits)) {
-    st_bbox(c(
-      xmin = boundary_limits$x[1], xmax = boundary_limits$x[2],
-      ymin = boundary_limits$y[1], ymax = boundary_limits$y[2]
-    ), crs = st_crs(mapi_results))
-  } else {
-    mapi_bbox
-  }
-  world_cropped <- suppressWarnings(st_crop(world, crop_bbox))
-  if (nrow(world_cropped) == 0) world_cropped <- world
+  world_cropped <- st_transform(world_cropped_wgs84, st_crs(mapi_results))
+  boundary_limits <- boundary_limits_from_wgs84(boundary_bbox_wgs84, crs_plot)
 
   # --- base plot ---
   p <- ggplot() +
@@ -324,11 +335,6 @@ cat("Loading lower tails...\n")
 lower_tails <- st_read(lower_tails_gpkg, layer = "euclidean_lower", quiet = TRUE)
 cat("Loaded", nrow(lower_tails), "lower tail cells\n")
 
-boundary_limits <- parse_boundary_limits(boundary, crs_plot)
-if (is.null(boundary_limits)) {
-  boundary_limits <- default_boundary_limits(mapi_results, crs_plot, expand_frac = 0.10)
-}
-
 output_dir <- dirname(mapi_plot)
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
@@ -360,6 +366,15 @@ if (!all(required_cols %in% colnames(indpopdata))) {
 # Create plot
 # ==============================================================================
 
+boundary_bbox_wgs84 <- parse_boundary_bbox_wgs84(boundary)
+if (is.null(boundary_bbox_wgs84)) {
+  boundary_bbox_wgs84 <- default_boundary_bbox_wgs84(
+    indpopdata_sf = indpopdata_sf,
+    mapi_results_sf = mapi_results,
+    expand_frac = 0.10
+  )
+}
+
 cat("\nGenerating plot...\n")
 
 if (nrow(mapi_results) > 0) {
@@ -372,7 +387,7 @@ if (nrow(mapi_results) > 0) {
       indpopdata_sf = indpopdata_sf,
       fill_var = fill_var,
       crs_plot = crs_plot,
-      boundary_limits = boundary_limits,
+      boundary_bbox_wgs84 = boundary_bbox_wgs84,
       land_colour = land_colour,
       sea_colour = sea_colour,
       expand = expand,
