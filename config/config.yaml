@@ -221,6 +221,7 @@ parameters: &global_params
       - "#FFFFFF"  # white
       - "#000000"  # black
   relatedness_plot:
+    color_by: ["none"]          # columns in indpopdata used to color network nodes; "none" disables node coloring
     plot_all: false             # when true, include unrelated individuals as isolated nodes in network plots
     relatedness_colors: null   # optional custom palette for relatedness network plots
   
