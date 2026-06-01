@@ -22,9 +22,10 @@ indpopdata_file <- snakemake@input[["indpopdata"]]
 output_pdf <- snakemake@output[["pdf"]]
 output_rds <- snakemake@output[["rds"]]
 
-# Get color_by and relatedness_colors parameters
+# Get color_by, relatedness_colors, and plot_all parameters
 color_by_name <- NULL
 relatedness_colors <- NULL
+plot_all <- FALSE
 if ("color_by" %in% names(snakemake@params)) {
   color_by_name <- as.character(snakemake@params[["color_by"]])
 }
@@ -34,6 +35,10 @@ if ("relatedness_colors" %in% names(snakemake@params)) {
     relatedness_colors <- unlist(relatedness_colors)
   }
 }
+if ("plot_all" %in% names(snakemake@params)) {
+  plot_all <- isTRUE(as.logical(snakemake@params[["plot_all"]]))
+}
+message(sprintf("Plot all individuals: %s\n", plot_all))
 
 # KING kinship thresholds (standard values from your pipeline)
 clone_threshold <- 0.354      # KING > 0.354 for duplicates/twins
@@ -78,7 +83,62 @@ king_df <- king_df %>%
 
 message(sprintf("After filtering: %d related pairs\n", nrow(king_df)))
 
-if (nrow(king_df) == 0) {
+# Read indpopdata and merge with nodes if available
+indpopdata <- NULL
+ind_col <- NULL
+if (file.exists(indpopdata_file)) {
+  message("\n=== READING INDPOPDATA ===\n")
+  indpopdata <- read.table(indpopdata_file, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
+  message(sprintf("Loaded indpopdata with %d samples and %d columns\n", nrow(indpopdata), ncol(indpopdata)))
+  message("Columns:", paste(colnames(indpopdata), collapse = ", "), "\n")
+  
+  # Get the first column name (should be "Ind" or "Sample")
+  ind_col <- colnames(indpopdata)[1]
+}
+
+# Categorize relationships based on KING kinship
+categorize_relationship <- function(kinship) {
+  if (kinship > clone_threshold) {
+    return("clone")
+  } else if (kinship > first_degree_threshold) {
+    return("1st-degree")
+  } else if (kinship > second_degree_threshold) {
+    return("2nd-degree")
+  } else {
+    return("other")
+  }
+}
+
+if (nrow(king_df) > 0) {
+  king_df$category <- sapply(king_df$KINSHIP, categorize_relationship)
+  king_df$category <- factor(king_df$category, levels = names(color_scheme))
+} else {
+  king_df$category <- factor(character(0), levels = names(color_scheme))
+}
+
+message("\n=== RELATIONSHIP CATEGORIES ===\n")
+category_counts <- table(king_df$category)
+print(category_counts)
+
+# By default, plot only individuals connected by relatedness edges. When
+# plot_all is enabled, include all metadata samples as isolated nodes too.
+related_individuals <- unique(c(king_df$IID1, king_df$IID2))
+if (plot_all && !is.null(indpopdata) && !is.null(ind_col)) {
+  metadata_individuals <- unique(indpopdata[[ind_col]])
+  metadata_individuals <- metadata_individuals[!is.na(metadata_individuals) & metadata_individuals != ""]
+  all_individuals <- unique(c(metadata_individuals, related_individuals))
+} else {
+  if (plot_all) {
+    message("plot_all was requested, but indpopdata was unavailable. Plotting related individuals only.\n")
+  }
+  all_individuals <- related_individuals
+}
+
+n_nodes <- length(all_individuals)
+n_unrelated_nodes <- length(setdiff(all_individuals, related_individuals))
+message(sprintf("\nTotal plotted individuals: %d (%d unrelated/isolated)\n", n_nodes, n_unrelated_nodes))
+
+if (n_nodes == 0) {
   message("No related pairs found. Creating empty plot.\n")
   p <- ggplot() +
     annotate("text", x = 0.5, y = 0.5, label = "No related pairs found", size = 6) +
@@ -96,31 +156,6 @@ if (nrow(king_df) == 0) {
   quit(status = 0)
 }
 
-# Categorize relationships based on KING kinship
-categorize_relationship <- function(kinship) {
-  if (kinship > clone_threshold) {
-    return("clone")
-  } else if (kinship > first_degree_threshold) {
-    return("1st-degree")
-  } else if (kinship > second_degree_threshold) {
-    return("2nd-degree")
-  } else {
-    return("other")
-  }
-}
-
-king_df$category <- sapply(king_df$KINSHIP, categorize_relationship)
-king_df$category <- factor(king_df$category, levels = names(color_scheme))
-
-message("\n=== RELATIONSHIP CATEGORIES ===\n")
-category_counts <- table(king_df$category)
-print(category_counts)
-
-# Get all unique individuals
-all_individuals <- unique(c(king_df$IID1, king_df$IID2))
-n_nodes <- length(all_individuals)
-message(sprintf("\nTotal individuals: %d\n", n_nodes))
-
 # Create edge data frame
 edges_df <- data.frame(
   from = king_df$IID1,
@@ -136,19 +171,9 @@ nodes_df <- data.frame(
   stringsAsFactors = FALSE
 )
 
-# Read indpopdata and merge with nodes if available
-indpopdata <- NULL
-if (file.exists(indpopdata_file)) {
-  message("\n=== READING INDPOPDATA ===\n")
-  indpopdata <- read.table(indpopdata_file, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
-  message(sprintf("Loaded indpopdata with %d samples and %d columns\n", nrow(indpopdata), ncol(indpopdata)))
-  message("Columns:", paste(colnames(indpopdata), collapse = ", "), "\n")
-  
-  # Get the first column name (should be "Ind" or "Sample")
-  ind_col <- colnames(indpopdata)[1]
-  
+if (!is.null(indpopdata) && !is.null(ind_col)) {
   # Merge with nodes
-  nodes_df <- merge(nodes_df, indpopdata, by.x = "name", by.y = ind_col, all.x = TRUE)
+  nodes_df <- merge(nodes_df, indpopdata, by.x = "name", by.y = ind_col, all.x = TRUE, sort = FALSE)
   message(sprintf("Merged indpopdata with nodes: %d nodes\n", nrow(nodes_df)))
 }
 

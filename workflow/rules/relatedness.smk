@@ -132,7 +132,8 @@ rule plot_genome_network:
         "logs/{project}/plot_genome_network-{color_by}.log"
     params:
         color_by = lambda wildcards: wildcards.color_by,
-        relatedness_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_plot", {}).get("relatedness_colors", None)
+        relatedness_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_plot", {}).get("relatedness_colors", None),
+        plot_all = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_plot", {}).get("plot_all", False)
     conda:
         "../envs/r-plot.yaml"
     threads: 1
@@ -154,7 +155,8 @@ rule plot_king_network:
         "logs/{project}/plot_king_network-{color_by}.log"
     params:
         color_by = lambda wildcards: wildcards.color_by,
-        relatedness_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_plot", {}).get("relatedness_colors", None)
+        relatedness_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_plot", {}).get("relatedness_colors", None),
+        plot_all = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_plot", {}).get("plot_all", False)
     conda:
         "../envs/r-plot.yaml"
     threads: 1
