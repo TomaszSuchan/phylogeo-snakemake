@@ -187,9 +187,10 @@ else:
 if analyses.get("pixy", False):
     filt_parts.append(
         f"An **all-sites dataset** including both variable and invariant positions "
-        f"was reconstructed from the ipyrad ˬloci file using a custom Python "
-        f"script, required for unbiased estimation of nucleotide diversity and "
-        f"divergence with pixy (Korunes & Samuk 2021)."
+        f"was produced separately from the ipyrad .loci output using a custom "
+        f"Python script, without MAF or MAC filtering, as required for unbiased "
+        f"estimation of nucleotide diversity and divergence with pixy "
+        f"(Korunes & Samuk 2021)."
     )
 
 sections.append(("Data filtering and dataset construction",
