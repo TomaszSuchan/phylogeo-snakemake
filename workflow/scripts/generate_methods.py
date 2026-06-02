@@ -108,9 +108,9 @@ n_samples  = vcf_stats.get("samples",       "[N_SAMPLES]")
 
 thinning_strat = p.get("thinning_strategy", "thinning")
 DATASET = {
-    "thinning":   ("unlinked SNP dataset",       "biallelic_snps_thinned.vcf.gz"),
-    "ld_pruning": ("LD-pruned SNP dataset",       "biallelic_snps_ld_pruned.vcf.gz"),
-    "none":       ("all-biallelic SNP dataset",   "biallelic_snps_all.vcf.gz"),
+    "thinning":   ("unlinked biallelic SNP dataset",       "biallelic_snps_thinned.vcf.gz"),
+    "ld_pruning": ("LD-pruned biallelic SNP dataset",      "biallelic_snps_ld_pruned.vcf.gz"),
+    "none":       ("all-biallelic SNP dataset",            "biallelic_snps_all.vcf.gz"),
 }
 dataset_label, dataset_file = DATASET.get(thinning_strat, DATASET["thinning"])
 
@@ -166,7 +166,7 @@ if thinning_strat == "thinning":
     filt_parts.append(
         f"Because SNPs within the same RAD locus share identical flanking sequence "
         f"and are therefore physically linked, one SNP was retained per RAD locus "
-        f"by selecting {thin_desc}. This produced the **unlinked SNP dataset** "
+        f"by selecting {thin_desc}. This produced the **unlinked biallelic SNP dataset** "
         f"({n_snps} SNPs across {n_loci} RAD loci; {n_samples} individuals), "
         f"used for all analyses that assume linkage equilibrium."
     )
@@ -175,7 +175,7 @@ elif thinning_strat == "ld_pruning":
         f"SNPs were pruned for linkage disequilibrium (LD) using PLINK version "
         f"{v(versions,'plink')} (Chang et al. 2015) with a sliding window of "
         f"{ld_win} SNPs, step size {ld_step} SNPs, and an r² threshold of "
-        f"{ld_r2}. This produced the **LD-pruned SNP dataset** ({n_snps} SNPs, "
+        f"{ld_r2}. This produced the **LD-pruned biallelic SNP dataset** ({n_snps} SNPs, "
         f"{n_samples} individuals)."
     )
 else:

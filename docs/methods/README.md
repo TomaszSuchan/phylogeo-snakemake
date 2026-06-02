@@ -23,20 +23,20 @@ This file is produced by the `generate_methods` Snakemake rule
 
 | Human-readable name | File |
 |---|---|
-| Unlinked SNP dataset | `biallelic_snps_thinned.vcf.gz` |
-| LD-pruned SNP dataset | `biallelic_snps_ld_pruned.vcf.gz` |
+| Unlinked biallelic SNP dataset | `biallelic_snps_thinned.vcf.gz` |
+| LD-pruned biallelic SNP dataset | `biallelic_snps_ld_pruned.vcf.gz` |
 | All-biallelic SNP dataset | `biallelic_snps_all.vcf.gz` |
 | All-sites dataset | `allsites.vcf.gz` |
 
 ## Remaining placeholders
 
-Only values that are not available until the pipeline has run are left as `[PLACEHOLDER]`:
+All values are filled in automatically. The only fall-through placeholders that can appear
+if a value is genuinely unavailable at rule execution time are:
 
-| Placeholder | Value to fill in |
+| Placeholder | Condition |
 |---|---|
-| `[N_SNPS]` | SNP count from VCF statistics output |
-| `[VERSION]` | Installed software version |
-| `[BEST_K]` | Optimal K from model-selection output |
+| `[N_SNPS]` | VCF stats file missing or unparseable |
+| `[VERSION]` | Package not pinned to an exact version in any `workflow/envs/*.yaml` |
 
 ## Re-running
 
