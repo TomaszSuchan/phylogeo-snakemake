@@ -267,7 +267,7 @@ if analyses.get("faststructure", False):
     tol   = p.get("faststructure", {}).get("tol",   "10e-6")
     prior = p.get("faststructure", {}).get("prior", "simple")
     struct_parts.append(
-        f"Ancestry proportions were also estimated with fastStructure version "
+        f"Ancestry proportions were estimated with fastStructure version "
         f"{v(versions,'faststructure')} (Raj et al. 2014) on the {dataset_label} "
         f"({n_snps} SNPs, {n_samples} individuals). fastStructure fits the same "
         f"admixture model as STRUCTURE but replaces MCMC sampling with a much "
@@ -282,8 +282,8 @@ if analyses.get("faststructure", False):
 
 if analyses.get("admixture", False):
     struct_parts.append(
-        f"As a third, complementary approach, ancestry proportions were estimated "
-        f"by maximum likelihood with ADMIXTURE version {v(versions,'admixture')} "
+        f"Ancestry proportions were estimated by maximum likelihood with ADMIXTURE "
+        f"version {v(versions,'admixture')} "
         f"(Alexander et al. 2009) on the {dataset_label} ({n_snps} SNPs, "
         f"{n_samples} individuals). ADMIXTURE uses the same admixture likelihood as "
         f"STRUCTURE but maximises it numerically rather than sampling from the "
@@ -301,20 +301,19 @@ if analyses.get("dapc", False):
     n_da  = dp.get("n_da",        10)
     crit  = dp.get("criterion",   "diffNgroup")
     k_max_dapc = dp.get("max_n_clust", 10)
+    n_rep      = dp.get("n_rep",       30)
     struct_parts.append(
-        f"Genetic structure was further summarised with Discriminant Analysis of "
-        f"Principal Components (DAPC; Jombart et al. 2010), implemented in the R "
-        f"package adegenet, on the {dataset_label} ({n_snps} SNPs, {n_samples} "
-        f"individuals). Unlike the model-based methods above, DAPC is a "
-        f"multivariate approach that makes no assumptions about Hardy-Weinberg or "
-        f"linkage equilibrium: it first transforms the genotypes with a principal "
-        f"component analysis to remove correlations among alleles, then applies a "
-        f"discriminant analysis that maximises among-group variation while "
-        f"minimising within-group variation. The number of genetic groups was first "
-        f"inferred by running successive K-means clustering for K = 1 to "
-        f"{k_max_dapc} (30 replicates) and comparing models with the Bayesian "
-        f"Information Criterion under the '{crit}' criterion. The discriminant "
-        f"analysis then retained {n_pca} principal components and {n_da} "
+        f"Discriminant Analysis of Principal Components (DAPC; Jombart et al. 2010), "
+        f"implemented in the R package adegenet, was performed on the {dataset_label} "
+        f"({n_snps} SNPs, {n_samples} individuals). DAPC is a multivariate approach "
+        f"that makes no assumptions about Hardy-Weinberg or linkage equilibrium: it "
+        f"first transforms the genotypes with a principal component analysis to remove "
+        f"correlations among alleles, then applies a discriminant analysis that "
+        f"maximises among-group variation while minimising within-group variation. "
+        f"The number of genetic groups was inferred by running K-means clustering for "
+        f"K = 1 to {k_max_dapc} ({n_rep} replicates each) and comparing models with "
+        f"the Bayesian Information Criterion under the '{crit}' criterion. The "
+        f"discriminant analysis retained {n_pca} principal components and {n_da} "
         f"discriminant functions; the number of retained components was kept well "
         f"below the number of individuals to avoid over-fitting."
     )
