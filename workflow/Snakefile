@@ -198,6 +198,7 @@ include: "rules/pcoa.smk"
 include: "rules/mapi.smk"
 include: "rules/fineradstructure.smk"
 include: "rules/dapc.smk"
+include: "rules/methods.smk"
 
 def get_all_targets():
     """
@@ -207,13 +208,16 @@ def get_all_targets():
     Supports multiple projects, each with their own analyses.
     """
     targets = []
-    
+
     # Iterate through each project
     for project in config["projects"].keys():
         project_config = config["projects"][project]
         analyses = project_config.get("analyses", {})
         params = project_config.get("parameters", {})
-        
+
+        # Methods document — always generated
+        targets.append(f"results/{project}/methods.md")
+
         # Get project-specific parameters
         k_values = params.get("k_values", [1, 2, 3])
         n_reps = params.get("structure", {}).get("replicates", 1)
