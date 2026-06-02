@@ -464,13 +464,26 @@ if analyses.get("gen_dist", False):
 if analyses.get("neighbornet", False):
     nn_color  = p.get("neighbornet", {}).get("color_by", ["Site"])
     color_str = ", ".join(nn_color) if isinstance(nn_color, list) else nn_color
+    # If the genetic-distance section above already defined the p-distance, refer
+    # back to it; otherwise describe its computation here so this paragraph is
+    # self-contained.
+    if analyses.get("gen_dist", False):
+        pdist_clause = "the p-distance matrix described above"
+    else:
+        pdist_clause = (
+            f"a pairwise p-distance matrix, computed from the {dataset_label} "
+            f"({n_snps} SNPs, {n_samples} individuals) with a custom Python script "
+            f"reading PLINK binary genotype files via the bed-reader library as the "
+            f"proportion of allelic differences between two individuals averaged "
+            f"over all loci genotyped in both"
+        )
     dist_parts.append(
         f"To visualise relationships among individuals while allowing for "
         f"conflicting or reticulate signal (which a strictly bifurcating tree "
         f"cannot represent), a NeighborNet split network (Bryant & Moulton 2004) "
-        f"was constructed from the p-distance matrix with the phangorn package "
-        f"(Schliep 2011) in R and drawn with the tanggle package, with tips "
-        f"coloured by {color_str}."
+        f"was constructed with the phangorn package (Schliep 2011) in R and drawn "
+        f"with the tanggle package, with tips coloured by {color_str}. The network "
+        f"was built from {pdist_clause}."
     )
 
 if dist_parts:
