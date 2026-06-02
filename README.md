@@ -183,7 +183,7 @@ For precision, the workflow uses the following internal genotype datasets:
 
 ### Ordination and genetic distances
 
-**PCAone** performs principal component analysis on the PLINK export of the final analysis VCF and is intended as the main fast PCA implementation for large SNP matrices. It produces eigenvector/eigenvalue files and a consistent set of single-panel and faceted plots. The main parameters are `config["parameters"]["PCAone"]["SVD_method"]` and `config["parameters"]["PCAone"]["PCnum"]`, while plotting is controlled by `config["parameters"]["pca_plot"]` (`pc_max`, `color_by`, `include_missing`, `pca_colors`).
+**PCAone** performs principal component analysis on the PLINK export of the final analysis VCF and is intended as the main fast PCA implementation for large SNP matrices. It produces eigenvector/eigenvalue files and a consistent set of single-panel and faceted plots. The main parameters are `config["parameters"]["PCAone"]["SVD_method"]` and `config["parameters"]["PCAone"]["PCnum"]`, while plotting is controlled by `config["parameters"]["pca_plot"]` (`pc_max`, `color_by`, `pca_colors`).
 
 **PCAone with EMU** uses the EMU mode within PCAone to model missing genotypes during PCA. It uses the same inputs and output structure as standard PCAone, but is preferable when missingness is substantial and should be handled during ordination rather than by prior filtering. It uses the same `config["parameters"]["PCAone"]` and `config["parameters"]["pca_plot"]` settings as PCAone.
 
