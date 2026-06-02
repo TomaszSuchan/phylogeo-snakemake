@@ -91,6 +91,11 @@ def v(versions, key, fallback="[VERSION]"):
     return versions.get(key.lower(), fallback)
 
 
+def k_str(k_list):
+    """Return a comma-joined string of sorted K values, e.g. '1, 2, 3, 4, 5'."""
+    return ", ".join(str(k) for k in sorted(int(k) for k in k_list))
+
+
 # ── gather inputs ─────────────────────────────────────────────────────────────
 
 analyses = snakemake.params.analyses        # {tool: bool}
@@ -232,8 +237,8 @@ sections.append(("Data filtering and dataset construction",
 
 # 2. Population structure ──────────────────────────────────────────────────────
 
-k_vals     = p.get("k_values", list(range(1, 10)))
-k_min, k_max = min(k_vals), max(k_vals)
+k_vals  = p.get("k_values", list(range(1, 10)))
+k_tested = k_str(k_vals)   # e.g. "1, 2, 3, 4, 5, 6, 7, 8, 9"
 struct_parts = []
 
 if analyses.get("structure", False):
@@ -251,7 +256,7 @@ if analyses.get("structure", False):
         f"each individual to derive ancestry from more than one cluster "
         f"(NOADMIX = 0), with correlated allele frequencies among clusters "
         f"(FREQSCORR = 1) and the admixture parameter alpha inferred from the data "
-        f"(INFERALPHA = 1). For each value of K from {k_min} to {k_max}, "
+        f"(INFERALPHA = 1). For each value of K = {k_tested}, "
         f"{reps} independent replicate runs were performed, each comprising a "
         f"burn-in of {int(burnin):,} Markov chain Monte Carlo (MCMC) iterations "
         f"discarded to allow convergence, followed by {int(numreps):,} iterations "
@@ -273,8 +278,8 @@ if analyses.get("faststructure", False):
         f"admixture model as STRUCTURE but replaces MCMC sampling with a much "
         f"faster variational Bayesian approximation, making it practical for large "
         f"SNP datasets. The '{prior}' prior on allele frequencies was used, with "
-        f"runs iterated to a convergence tolerance of {tol}. The model was fit once "
-        f"for each K from {k_min} to {k_max}, and the range of K supporting the "
+        f"runs iterated to a convergence tolerance of {tol}. The model was fit for "
+        f"each value of K = {k_tested}, and the range of K supporting the "
         f"data was determined with the chooseK.py utility distributed with "
         f"fastStructure, which reports the K maximising the marginal likelihood of "
         f"the data and the smallest K that captures the structure in the sample."
@@ -288,7 +293,7 @@ if analyses.get("admixture", False):
         f"{n_samples} individuals). ADMIXTURE uses the same admixture likelihood as "
         f"STRUCTURE but maximises it numerically rather than sampling from the "
         f"posterior, yielding point estimates of ancestry very rapidly. The model "
-        f"was fit for each K from {k_min} to {k_max}. For every K, ADMIXTURE's "
+        f"was fit for each value of K = {k_tested}. For every K, ADMIXTURE's "
         f"built-in five-fold cross-validation procedure was used: the genotype "
         f"matrix is divided into five parts, each in turn masked and predicted from "
         f"the remainder, and the K minimising the resulting cross-validation error "
@@ -300,9 +305,8 @@ if analyses.get("dapc", False):
     n_pca = dp.get("n_pca",     50)
     n_da  = dp.get("n_da",      10)
     # K range mirrors k_values filtered to >= 2 (adegenet requires at least 2 clusters)
-    dapc_ks  = [int(k) for k in k_vals if int(k) >= 2]
-    k_min_da = min(dapc_ks)
-    k_max_da = max(dapc_ks)
+    dapc_ks   = [int(k) for k in k_vals if int(k) >= 2]
+    k_tested_da = k_str(dapc_ks)
     struct_parts.append(
         f"Discriminant Analysis of Principal Components (DAPC; Jombart et al. 2010), "
         f"implemented in the R package adegenet, was performed on the {dataset_label} "
@@ -311,7 +315,7 @@ if analyses.get("dapc", False):
         f"first transforms the genotypes with a principal component analysis to remove "
         f"correlations among alleles, then applies a discriminant analysis that "
         f"maximises among-group variation while minimising within-group variation. "
-        f"The analysis was run separately for each K from {k_min_da} to {k_max_da}, "
+        f"The analysis was run separately for each value of K = {k_tested_da}, "
         f"each time retaining {n_pca} principal components and {n_da} discriminant "
         f"functions. The Bayesian Information Criterion (BIC) computed for each K was "
         f"compared across runs to identify the best-supported number of clusters; "
@@ -330,8 +334,8 @@ if analyses.get("construct", False):
         f"({n_snps} SNPs, {n_samples} individuals). conStruct extends the admixture "
         f"model by allowing allele frequencies within each genetic layer to decay "
         f"continuously with geographic distance, so that smooth spatial gradients "
-        f"are not mistaken for distinct clusters. Models with K = {k_min} to "
-        f"{k_max} spatial layers were fit, each using {n_chains} MCMC chain(s) of "
+        f"are not mistaken for distinct clusters. Models with K = {k_tested} "
+        f"spatial layers were fit, each using {n_chains} MCMC chain(s) of "
         f"{n_iter:,} iterations, and compared by their ability to predict the "
         f"observed covariance in allele frequencies among samples."
     )
