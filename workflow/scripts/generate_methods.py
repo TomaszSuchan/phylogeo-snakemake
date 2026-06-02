@@ -297,11 +297,12 @@ if analyses.get("admixture", False):
 
 if analyses.get("dapc", False):
     dp    = p.get("dapc", {})
-    n_pca = dp.get("n_pca",       50)
-    n_da  = dp.get("n_da",        10)
-    crit  = dp.get("criterion",   "diffNgroup")
-    k_max_dapc = dp.get("max_n_clust", 10)
-    n_rep      = dp.get("n_rep",       30)
+    n_pca = dp.get("n_pca",     50)
+    n_da  = dp.get("n_da",      10)
+    # K range mirrors k_values filtered to >= 2 (adegenet requires at least 2 clusters)
+    dapc_ks  = [int(k) for k in k_vals if int(k) >= 2]
+    k_min_da = min(dapc_ks)
+    k_max_da = max(dapc_ks)
     struct_parts.append(
         f"Discriminant Analysis of Principal Components (DAPC; Jombart et al. 2010), "
         f"implemented in the R package adegenet, was performed on the {dataset_label} "
@@ -310,12 +311,12 @@ if analyses.get("dapc", False):
         f"first transforms the genotypes with a principal component analysis to remove "
         f"correlations among alleles, then applies a discriminant analysis that "
         f"maximises among-group variation while minimising within-group variation. "
-        f"The number of genetic groups was inferred by running K-means clustering for "
-        f"K = 1 to {k_max_dapc} ({n_rep} replicates each) and comparing models with "
-        f"the Bayesian Information Criterion under the '{crit}' criterion. The "
-        f"discriminant analysis retained {n_pca} principal components and {n_da} "
-        f"discriminant functions; the number of retained components was kept well "
-        f"below the number of individuals to avoid over-fitting."
+        f"The analysis was run separately for each K from {k_min_da} to {k_max_da}, "
+        f"each time retaining {n_pca} principal components and {n_da} discriminant "
+        f"functions. The Bayesian Information Criterion (BIC) computed for each K was "
+        f"compared across runs to identify the best-supported number of clusters; "
+        f"the number of retained PCA components was kept well below the number of "
+        f"individuals to avoid over-fitting."
     )
 
 if analyses.get("construct", False):

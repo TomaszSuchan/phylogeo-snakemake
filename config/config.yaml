@@ -174,12 +174,11 @@ parameters: &global_params
   
   ## DAPC parameters
   # DAPC (Discriminant Analysis of Principal Components) - unsupervised population clustering
+  # K range is driven by the top-level k_values list (K >= 2; K=1 is skipped as DAPC requires at least 2 clusters)
   dapc:
-    max_n_clust: 10      # maximum number of clusters to test
     n_pca: 50            # number of PCA axes to retain (can be informed by PCAone outputs)
     n_da: 10             # number of discriminant axes to retain
-    find_clust: true     # whether to find optimal number of clusters (true) or use max_n_clust (false)
-    n_rep: 30            # number of cross-validation replicates for finding optimal clusters
+    n_rep: 30            # number of cross-validation replicates (reserved for future use)
     criterion: "diffNgroup"  # criterion for cluster selection: "diffNgroup", "min", "goesup", "smoothNgoesup", or "goodfit"
   
   ## PCAone parameters
