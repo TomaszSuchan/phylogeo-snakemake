@@ -37,6 +37,7 @@ dpi <- as.numeric(snakemake@params[["dpi"]])
 site_dividers <- as.logical(snakemake@params[["site_dividers"]])
 divider_width <- as.numeric(snakemake@params[["divider_width"]])
 site_order <- snakemake@params[["site_order"]]
+population_sort_by <- snakemake@params[["population_sort_by"]]
 flip_axis <- as.logical(snakemake@params[["flip_axis"]])
 site_labels_angle <- as.numeric(snakemake@params[["site_labels_angle"]])
 population_labels <- snakemake@params[["population_labels"]]
@@ -158,6 +159,39 @@ if (is.null(site_order)) {
     eval(parse(text = site_order)),
     error = function(e) NULL
   )
+}
+
+# Parse population_sort_by: indpopdata column used to order populations when site_order is unset
+if (is.null(population_sort_by)) {
+  population_sort_by_val <- NULL
+} else if (length(population_sort_by) == 1 &&
+           (is.na(population_sort_by) || population_sort_by == "NULL" || population_sort_by == "")) {
+  population_sort_by_val <- NULL
+} else {
+  population_sort_by_val <- as.character(unlist(population_sort_by))[1]
+}
+
+if (is.null(site_order_val) && !is.null(population_sort_by_val)) {
+  if (!(population_sort_by_val %in% colnames(indpopdata))) {
+    stop(sprintf(
+      "ERROR: population_sort_by column not found in indpopdata: %s",
+      population_sort_by_val
+    ))
+  }
+
+  sort_df <- tibble(
+    Site = population_label_values,
+    sort_value = indpopdata[[population_sort_by_val]]
+  ) %>%
+    distinct(Site, .keep_all = TRUE) %>%
+    arrange(sort_value, Site)
+
+  site_order_val <- sort_df$Site
+  cat(sprintf(
+    "Sorting populations by column '%s': %s\n",
+    population_sort_by_val,
+    paste(site_order_val, collapse = ", ")
+  ))
 }
 
 # Create traditional structure barplot
