@@ -615,10 +615,17 @@ if rel_parts:
 if analyses.get("mapi", False):
     mp        = p.get("mapi", {})
     n_perm    = mp.get("n_permutations", 1000)
-    halfwidth = mp.get("grid_halfwidth", 100000)
+    halfwidth = mp.get("grid_halfwidth")
     alpha     = mp.get("alpha",           0.05)
     crs_proj  = mp.get("crs_projected",   "EPSG:8857")
     mapi_ver  = v(versions, "r-mapi")
+    if halfwidth is None:
+        grid_desc = (
+            "a hexagonal grid with cell half-width auto-estimated from sample "
+            "coordinates (MAPI_GridAuto)"
+        )
+    else:
+        grid_desc = f"a hexagonal grid of cell half-width {halfwidth:,} m"
     sections.append((
         "Spatial genetic structure",
         f"Geographic patterns in genetic differentiation were mapped with MAPI "
@@ -630,11 +637,10 @@ if analyses.get("mapi", False):
         f"continuous surface highlighting areas of unusually high differentiation "
         f"(barriers to gene flow) or unusually low differentiation (corridors). "
         f"The Euclidean genetic distance matrix ({n_samples} individuals) was used "
-        f"as input, with sample coordinates projected to {crs_proj} and a hexagonal "
-        f"grid of cell half-width {halfwidth:,} m. The significance of the upper and "
-        f"lower tails of the cell-value distribution was assessed by {n_perm:,} "
-        f"permutations of the genetic distances among samples (significance level "
-        f"alpha = {alpha})."
+        f"as input, with sample coordinates projected to {crs_proj} and {grid_desc}. "
+        f"The significance of the upper and lower tails of the cell-value "
+        f"distribution was assessed by {n_perm:,} permutations of the genetic "
+        f"distances among samples (significance level alpha = {alpha})."
     ))
 
 
