@@ -196,7 +196,7 @@ parameters: &global_params
   PCAone:
     miss: [0.1, 0.2, 0.2, 0.3, 0.4, 0.5] # list of maximum missing data thresholds (F_MISSING<mincov)
     SVD_method: 3 # SVD method to use [0-3]
-    EMU_SVD_method: 3 # SVD method for PCAone EMU mode [0-3]
+    EMU_SVD_method: 0 # SVD method for PCAone EMU mode [0-2]. Do not use optin 3!
     PCnum: 10     # number of principal components to compute
   EMU:
     eig: 2        # first principal component to output (EMU --eig)
