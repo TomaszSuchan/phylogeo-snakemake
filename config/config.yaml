@@ -97,6 +97,7 @@ parameters: &global_params
     site_dividers: true             # show dividers between sites
     divider_width: 0.4              # width of site dividers
     site_order: null                # custom site order as list, e.g. ["Site1", "Site2", "Site3"]
+    population_sort_by: null        # indpopdata column to sort populations by; null = alphabetical
     flip_axis: false                # flip barplot axis
     site_labels_angle: 90           # rotation angle for site labels in barplots
     population_labels: ["Site"]     # null hides labels; otherwise use one or more indpopdata columns, e.g. ["Site"] or ["Region", "Site"]
