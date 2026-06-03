@@ -199,6 +199,12 @@ include: "rules/pcoa.smk"
 include: "rules/mapi.smk"
 include: "rules/fineradstructure.smk"
 include: "rules/dapc.smk"
+include: "rules/construct.smk"
+include: "rules/evaladmix.smk"
+include: "rules/genome_scan.smk"
+include: "rules/amova.smk"
+include: "rules/roh.smk"
+include: "rules/iqtree_trimal.smk"
 include: "rules/methods.smk"
 
 def get_all_targets():
@@ -614,6 +620,171 @@ def get_all_targets():
                 "results/" + project + "/iqtree_robust/plots/" + project + ".tree_plot.rooted.rds",
                 "results/" + project + "/iqtree_robust/" + project + ".iqtree_robust.unrooted.treefile",
                 "results/" + project + "/iqtree_robust/" + project + ".iqtree_robust.rooted.treefile"
+            ])
+
+        # IQ-TREE after trimAl targets
+        if analyses.get("iqtree_trimal", False):
+            targets.extend([
+                "results/" + project + "/filtered_data/" + project + ".trimmed.phy",
+                "results/" + project + "/iqtree_trimal/" + project + ".iqtree.treefile",
+                "results/" + project + "/iqtree_trimal/" + project + ".iqtree.iqtree",
+                "results/" + project + "/iqtree_trimal/" + project + ".iqtree.log",
+                "results/" + project + "/iqtree_trimal/plots/" + project + ".tree_plot.unrooted.pdf",
+                "results/" + project + "/iqtree_trimal/plots/" + project + ".tree_plot.unrooted.rds",
+                "results/" + project + "/iqtree_trimal/plots/" + project + ".tree_plot.rooted.pdf",
+                "results/" + project + "/iqtree_trimal/plots/" + project + ".tree_plot.rooted.rds",
+                "results/" + project + "/iqtree_trimal/" + project + ".iqtree.unrooted.treefile",
+                "results/" + project + "/iqtree_trimal/" + project + ".iqtree.rooted.treefile",
+            ])
+
+        # evalAdmix targets (requires matching ancestry inference)
+        if analyses.get("evaladmix", False):
+            if analyses.get("admixture", False):
+                targets.extend(
+                    expand(
+                        "results/" + project + "/admixture/evaladmix/" + project + ".admixture.K{k}.corres",
+                        k=k_values,
+                    )
+                )
+                targets.extend(
+                    expand(
+                        "results/"
+                        + project
+                        + "/admixture/evaladmix/plots/"
+                        + project
+                        + ".admixture.K{k}.evaladmix.pdf",
+                        k=k_values,
+                    )
+                )
+                targets.extend(
+                    expand(
+                        "results/"
+                        + project
+                        + "/admixture/evaladmix/plots/"
+                        + project
+                        + ".admixture.K{k}.evaladmix.rds",
+                        k=k_values,
+                    )
+                )
+            if analyses.get("faststructure", False):
+                targets.extend(
+                    expand(
+                        "results/"
+                        + project
+                        + "/faststructure/evaladmix/"
+                        + project
+                        + ".faststructure.K{k}.corres",
+                        k=k_values,
+                    )
+                )
+                targets.extend(
+                    expand(
+                        "results/"
+                        + project
+                        + "/faststructure/evaladmix/plots/"
+                        + project
+                        + ".faststructure.K{k}.evaladmix.pdf",
+                        k=k_values,
+                    )
+                )
+                targets.extend(
+                    expand(
+                        "results/"
+                        + project
+                        + "/faststructure/evaladmix/plots/"
+                        + project
+                        + ".faststructure.K{k}.evaladmix.rds",
+                        k=k_values,
+                    )
+                )
+            if analyses.get("structure", False):
+                targets.extend(
+                    expand(
+                        "results/"
+                        + project
+                        + "/structure/evaladmix/"
+                        + project
+                        + ".structure.K{k}.corres",
+                        k=k_values,
+                    )
+                )
+                targets.extend(
+                    expand(
+                        "results/"
+                        + project
+                        + "/structure/evaladmix/plots/"
+                        + project
+                        + ".structure.K{k}.evaladmix.pdf",
+                        k=k_values,
+                    )
+                )
+                targets.extend(
+                    expand(
+                        "results/"
+                        + project
+                        + "/structure/evaladmix/plots/"
+                        + project
+                        + ".structure.K{k}.evaladmix.rds",
+                        k=k_values,
+                    )
+                )
+
+        # Genome scan targets (requires pop1 and pop2 in config)
+        if analyses.get("genome_scan", False):
+            gs_cfg = params.get("genome_scan", {})
+            if gs_cfg.get("pop1") and gs_cfg.get("pop2"):
+                targets.extend([
+                    "results/" + project + "/genome_scan/" + project + ".genome_scan_fst.txt",
+                    "results/" + project + "/genome_scan/" + project + ".genome_scan_pi.txt",
+                    "results/" + project + "/genome_scan/" + project + ".genome_scan_dxy.txt",
+                    "results/"
+                    + project
+                    + "/genome_scan/plots/"
+                    + project
+                    + ".genome_scan_genome_plot.pdf",
+                    "results/"
+                    + project
+                    + "/genome_scan/plots/"
+                    + project
+                    + ".genome_scan_genome_plot.rds",
+                    "results/"
+                    + project
+                    + "/genome_scan/plots/"
+                    + project
+                    + ".genome_scan.imiss_histogram.pdf",
+                    "results/"
+                    + project
+                    + "/genome_scan/plots/"
+                    + project
+                    + ".genome_scan.lmiss_histogram.pdf",
+                ])
+
+        # AMOVA targets (requires non-empty strata)
+        if analyses.get("amova", False):
+            amova_strata = params.get("amova", {}).get("strata", [])
+            if amova_strata:
+                targets.extend([
+                    "results/" + project + "/amova/" + project + ".amova_results.txt",
+                    "results/"
+                    + project
+                    + "/amova/plots/"
+                    + project
+                    + ".amova_variance_components.pdf",
+                    "results/"
+                    + project
+                    + "/amova/plots/"
+                    + project
+                    + ".amova_variance_components.rds",
+                ])
+
+        # ROH targets
+        if analyses.get("roh", False):
+            targets.extend([
+                "results/" + project + "/roh/" + project + ".bcftools_roh.txt",
+                "results/" + project + "/roh/" + project + ".roh_summary.txt",
+                "results/" + project + "/roh/" + project + ".roh_per_ind.txt",
+                "results/" + project + "/roh/" + project + ".roh_stats_comparisons.txt",
+                "results/" + project + "/roh/plots/froh_histogram.pdf",
             ])
 
         # Genetic distance targets

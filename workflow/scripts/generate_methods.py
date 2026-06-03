@@ -300,6 +300,25 @@ if analyses.get("admixture", False):
         f"is taken as the best-supported number of clusters."
     )
 
+if analyses.get("evaladmix", False):
+    eval_methods = []
+    if analyses.get("admixture", False):
+        eval_methods.append("ADMIXTURE")
+    if analyses.get("faststructure", False):
+        eval_methods.append("fastStructure")
+    if analyses.get("structure", False):
+        eval_methods.append("STRUCTURE")
+    if eval_methods:
+        methods_str = ", ".join(eval_methods)
+        struct_parts.append(
+            f"The adequacy of the inferred ancestry models was assessed with "
+            f"evalAdmix (Gompert et al. 2014) for {methods_str}. evalAdmix "
+            f"compares the residual correlation structure of genotypes not "
+            f"explained by the fitted Q and P matrices against that expected "
+            f"under the model, helping to identify misspecified K values or "
+            f"populations with correlated ancestry not captured by the model."
+        )
+
 if analyses.get("dapc", False):
     dp    = p.get("dapc", {})
     n_pca = dp.get("n_pca",     50)
@@ -419,6 +438,24 @@ if analyses.get("pixy", False):
         f"non-overlapping windows of {win:,} bp, and population-level point "
         f"estimates with 95% confidence intervals were obtained by bootstrapping "
         f"across windows ({nboot:,} replicates)."
+    )
+
+if analyses.get("genome_scan", False):
+    gs     = p.get("genome_scan", {})
+    pop1   = gs.get("pop1",  "")
+    pop2   = gs.get("pop2",  "")
+    w_fst  = gs.get("window_size_fst",  100)
+    w_pi   = gs.get("window_size_pi",  1_000_000)
+    w_dxy  = gs.get("window_size_dxy", 1_000_000)
+    div_parts.append(
+        f"Genome-wide scans of differentiation between {pop1} and {pop2} were "
+        f"performed with pixy version {v(versions,'pixy')} on an invariant-site "
+        f"VCF reconstructed from the original ipyrad loci file, retaining only "
+        f"individuals assigned to the two focal groups. Sliding-window "
+        f"estimates of F_ST (window size {w_fst:,} bp), nucleotide diversity "
+        f"pi (window size {w_pi:,} bp), and absolute divergence Dxy "
+        f"(window size {w_dxy:,} bp) were plotted along the genome to "
+        f"localise regions of elevated differentiation or diversity."
     )
 
 if analyses.get("amova", False):
@@ -687,6 +724,13 @@ if analyses.get("admixture", False):
         "Alexander, D.H., Novembre, J. & Lange, K. (2009). Fast model-based "
         "estimation of ancestry in unrelated individuals. *Genome Research*, 19, "
         "1655–1664."
+    )
+
+if analyses.get("evaladmix", False):
+    refs["evaladmix"] = (
+        "Gompert, Z., Buerkle, C.A. & Parchman, T.L. (2014). Genomic evidence "
+        "for speciation and gene flow between Timema cristinae stick insects. "
+        "*Molecular Ecology*, 23, 1483–1499."
     )
 
 if analyses.get("dapc", False):

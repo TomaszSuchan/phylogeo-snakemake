@@ -34,7 +34,7 @@ rule trimal:
         trimal -in {input.phy} -out {output.trimmed_phy} -gt {params.gap_threshold}
         """
 
-rule iqtree:
+rule iqtree_trimal:
     input:
         phy=rules.trimal.output.trimmed_phy
     output:
@@ -62,7 +62,7 @@ rule iqtree:
                {params.outgroup} -T {threads} -pre {params.prefix}
         """
 
-rule iqtree_robust:
+rule iqtree_trimal_robust:
     input:
         phy=rules.trimal.output.trimmed_phy
     output:
@@ -91,9 +91,9 @@ rule iqtree_robust:
                {params.outgroup} -T {threads} -pre {params.prefix} --robust-phy {params.robust_phy}
         """
 
-rule plot_tree:
+rule plot_tree_trimal:
     input:
-        treefile=rules.iqtree.output.treefile
+        treefile=rules.iqtree_trimal.output.treefile
     output:
         unrooted_pdf="results/{project}/iqtree_trimal/plots/{project}.tree_plot.unrooted.pdf",
         unrooted_rds="results/{project}/iqtree_trimal/plots/{project}.tree_plot.unrooted.rds",
@@ -116,9 +116,9 @@ rule plot_tree:
         "../scripts/plot_tree.R"
 
 
-rule plot_tree_robust:
+rule plot_tree_trimal_robust:
     input:
-        treefile=rules.iqtree_robust.output.treefile
+        treefile=rules.iqtree_trimal_robust.output.treefile
     output:
         unrooted_pdf="results/{project}/iqtree_trimal_robust/plots/{project}.tree_plot.unrooted.pdf",
         unrooted_rds="results/{project}/iqtree_trimal_robust/plots/{project}.tree_plot.unrooted.rds",
