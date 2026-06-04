@@ -18,12 +18,25 @@ main_log_conn <- file(log_file_path, open = "wt")
 sink(main_log_conn, type = "output")
 sink(main_log_conn, type = "message")
 
-# Install conStruct if not available (from CRAN)
-if (!require("conStruct", quietly = TRUE)) {
+# Install conStruct if not available. The Snakemake conda environment provides
+# the compiled Stan/Rcpp dependencies; conStruct itself is CRAN-only.
+if (!requireNamespace("conStruct", quietly = TRUE)) {
     cat("conStruct package not found. Installing from CRAN...\n")
-    install.packages("conStruct", repos = "https://cloud.r-project.org", quiet = TRUE)
-    library(conStruct)
+    install.packages(
+        "conStruct",
+        repos = c("https://gbradburd.r-universe.dev", "https://cloud.r-project.org"),
+        quiet = FALSE
+    )
 }
+
+if (!requireNamespace("conStruct", quietly = TRUE)) {
+    stop(
+        "conStruct could not be installed or loaded. Check the log above for ",
+        "R/Stan compilation errors from install.packages('conStruct')."
+    )
+}
+
+library(conStruct)
 
 library(vcfR)
 library(adegenet)

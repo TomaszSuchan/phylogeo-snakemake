@@ -27,7 +27,7 @@ rule construct_analysis:
         coords = lambda wildcards: config["projects"][wildcards.project]["parameters"]["construct"].get("coords", None),
         save_files = lambda wildcards: config["projects"][wildcards.project]["parameters"]["construct"].get("save.files", True)
     conda:
-        "../envs/adegenet.yaml"
+        "../envs/construct.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["construct"].get("threads", 1)
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["construct"].get("mem_mb", 16000),

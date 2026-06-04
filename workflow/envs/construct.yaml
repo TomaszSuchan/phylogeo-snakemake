@@ -1,0 +1,22 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - r-base
+  - r-adegenet
+  - r-vcfr
+  - r-geosphere
+  - r-rstan
+  - r-rstantools
+  - r-stanheaders
+  - r-rcppparallel
+  - r-rcppeigen
+  - r-bh
+  - r-gtools
+  - r-foreach
+  - r-doparallel
+  - r-remotes
+  - make
+  - cxx-compiler
+  # conStruct itself is CRAN-only and is installed by construct_analysis.R
+  # after the compiled Stan/Rcpp dependencies above are present.
