@@ -39,7 +39,7 @@ rule treemix_prepare_input:
     benchmark:
         "benchmarks/{project}/treemix_prepare_input.txt"
     conda:
-        "../envs/treemix.yaml"
+        "../envs/python.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],

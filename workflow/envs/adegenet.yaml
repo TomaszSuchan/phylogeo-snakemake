@@ -4,6 +4,7 @@ channels:
 dependencies:
   - r-base
   - r-adegenet
+  - r-adespatial
   - r-vcfr
   - r-poppr
   - r-geosphere
