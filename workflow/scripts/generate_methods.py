@@ -6,6 +6,7 @@ Sources used (all filled in automatically):
   - snakemake.params.parameters – every config parameter
   - data/mainparams             – STRUCTURE BURNIN / NUMREPS
   - vcf_stats.txt               – variant count, RAD-loci count, sample count
+  - depth_summary.txt           – sequencing depth summaries
   - workflow/envs/*.yaml        – software versions
 
 The text is intentionally explicit and explains what each method does, so
@@ -46,6 +47,40 @@ def parse_vcf_stats(path):
                                    ("samples",        "Number of samples:")]:
                     if line.startswith(label):
                         result[key] = line.split(":", 1)[1].strip()
+    except FileNotFoundError:
+        pass
+    return result
+
+
+def parse_depth_summary(path):
+    """Return selected values from depth_summary.txt."""
+    result = {}
+    section = None
+    key_map = {
+        "Number of individuals": "individuals",
+        "Number of sites": "sites",
+        "Called genotypes with depth": "called_genotypes",
+        "Overall mean depth across called genotypes": "overall_mean_depth",
+    }
+    try:
+        with open(path) as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                if line == "Per-individual mean depth":
+                    section = "individual"
+                    continue
+                if line == "Per-site mean depth":
+                    section = "site"
+                    continue
+                if ":" not in line:
+                    continue
+                label, value = [part.strip() for part in line.split(":", 1)]
+                if label in key_map:
+                    result[key_map[label]] = value
+                elif section and label in {"Mean", "Median", "SD", "Minimum", "Maximum"}:
+                    result[f"{section}_{label.lower()}_depth"] = value
     except FileNotFoundError:
         pass
     return result
@@ -105,11 +140,15 @@ envs_dir = snakemake.params.envs_dir
 
 mainparams = parse_mainparams(snakemake.input.mainparams)
 vcf_stats  = parse_vcf_stats(snakemake.input.vcf_stats)
+depth_stats = parse_depth_summary(snakemake.input.depth_summary)
 versions   = parse_versions(envs_dir)
 
 n_snps     = vcf_stats.get("variants",      "[N_SNPS]")
 n_loci     = vcf_stats.get("rad_fragments", "[N_RAD_LOCI]")
 n_samples  = vcf_stats.get("samples",       "[N_SAMPLES]")
+overall_depth = depth_stats.get("overall_mean_depth", "[MEAN_DEPTH]")
+ind_median_depth = depth_stats.get("individual_median_depth", "[IND_MEDIAN_DEPTH]")
+site_median_depth = depth_stats.get("site_median_depth", "[SITE_MEDIAN_DEPTH]")
 
 # ── dataset label from thinning strategy ─────────────────────────────────────
 
@@ -230,6 +269,17 @@ if analyses.get("pixy", False):
         f"invariant and rare sites that pixy (Korunes & Samuk 2021) requires for "
         f"unbiased estimation."
     )
+
+filt_parts.append(
+    f"Sequencing depth was summarised from the final analysis VCF with vcftools "
+    f"version {v(versions,'vcftools')} (Danecek et al. 2011), using --depth to "
+    f"estimate mean read depth per individual and --site-mean-depth to estimate "
+    f"mean read depth per SNP. In the final {dataset_label}, the mean depth across "
+    f"called genotypes was {overall_depth}, with a median individual mean depth of "
+    f"{ind_median_depth} and a median site mean depth of {site_median_depth}. "
+    f"These complementary summaries distinguish low-coverage samples from "
+    f"poorly covered loci."
+)
 
 sections.append(("Data filtering and dataset construction",
                  "\n\n".join(filt_parts)))

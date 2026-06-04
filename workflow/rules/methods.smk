@@ -3,7 +3,8 @@ Rule to generate a manuscript-ready methods.md for each project.
 
 Reads the project config (analyses enabled/disabled, all parameters),
 data/mainparams (STRUCTURE BURNIN/NUMREPS), the thinned-VCF stats file
-(SNP and RAD-loci counts), and workflow/envs/*.yaml (software versions).
+(SNP and RAD-loci counts), the thinned-VCF depth summary, and
+workflow/envs/*.yaml (software versions).
 
 Only sections for enabled analyses are emitted. All parameter values and
 software versions are filled in automatically. Best-K values are not
@@ -17,6 +18,7 @@ rule generate_methods:
         mainparams      = "data/mainparams",
         samples_to_keep = "results/{project}/filtered_data/{project}.samples_to_keep.txt",
         vcf_stats       = "results/{project}/stats_vcf/thinned/{project}.biallelic_snps.vcf_stats.txt",
+        depth_summary   = "results/{project}/stats_vcf/thinned/{project}.biallelic_snps.depth_summary.txt",
     output:
         methods = "results/{project}/methods.md"
     params:
