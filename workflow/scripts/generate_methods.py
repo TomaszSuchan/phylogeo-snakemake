@@ -413,14 +413,15 @@ if analyses.get("treemix", False):
         migration_edges = [migration_edges]
     migration_str = ", ".join(str(int(m)) for m in migration_edges)
     struct_parts.append(
-        f"Historical relationships among populations were inferred with TreeMix "
-        f"version {v(versions,'treemix')} (Pickrell & Pritchard 2012) from the "
-        f"{dataset_label} ({n_snps} SNPs, {n_samples} individuals). Individuals "
+        f"Historical relationships among populations were inferred with "
+        f"OrientAGraph version {v(versions,'orientagraph')} (Molloy et al. 2021), "
+        f"which augments the TreeMix framework (Pickrell & Pritchard 2012), from "
+        f"the {dataset_label} ({n_snps} SNPs, {n_samples} individuals). Individuals "
         f"were grouped into populations using the '{pop_col}' column of "
-        f"indpopdata, and each SNP was converted to TreeMix input as reference "
-        f"and alternate allele counts per population. This follows the standard "
-        f"VCF-to-TreeMix transformation in which biallelic SNP genotypes are "
-        f"summarised as population-level allele counts before graph fitting. "
+        f"indpopdata, and each SNP was converted to TreeMix-compatible input as "
+        f"reference and alternate allele counts per population. This follows the "
+        f"standard VCF-to-TreeMix transformation in which biallelic SNP genotypes "
+        f"are summarised as population-level allele counts before graph fitting. "
         f"Graphs were fit with migration-edge counts m = {migration_str}, using "
         f"a block size of {tm.get('k', tm.get('block_size', 1000))} SNPs to account for linkage "
         f"when estimating the covariance matrix."
@@ -828,6 +829,12 @@ if analyses.get("construct", False):
     )
 
 if analyses.get("treemix", False):
+    refs["orientagraph"] = (
+        "Molloy, E.K., Durvasula, A. & Sankararaman, S. (2021). Advancing "
+        "admixture graph estimation via maximum likelihood network orientation. "
+        "*Bioinformatics*, 37(Supplement_1), i142–i150. "
+        "https://doi.org/10.1093/bioinformatics/btab267"
+    )
     refs["treemix"] = (
         "Pickrell, J.K. & Pritchard, J.K. (2012). Inference of population splits "
         "and mixtures from genome-wide allele frequency data. *PLOS Genetics*, "

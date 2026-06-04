@@ -98,7 +98,7 @@ parameters: &global_params
   # iqtree_trimal: trimAl alignment trimming followed by IQ-TREE inference.
   # iqtree_robust: Robust IQ-TREE output selection based on support threshold.
   # fineradstructure: RADpainter/fineRADstructure coancestry and clustering.
-  # treemix: Historical population graph with migration edges from allele counts.
+  # treemix: OrientAGraph historical population graph with migration edges from allele counts.
 
   ## Shared K values for clustering methods
   # Common K values to test for population structure (STRUCTURE, fastStructure,
@@ -393,7 +393,7 @@ parameters: &global_params
   ## AMOVA parameters
   # AMOVA variance partitioning across metadata strata.
   amova:
-    strata: []           # e.g. ["Region", "Site"]
+    strata: ["Region", "Site"]           # e.g. ["Region", "Site"]
     nperm: 999           # number of permutations
 
   ## ROH parameters
@@ -404,7 +404,7 @@ parameters: &global_params
   ## Genome scan parameters
   # Sliding-window FST, pi, and dXY between two metadata groups.
   genome_scan:
-    population_column: "Group"   # indpopdata column used to define comparison groups
+    population_column: "Region"   # indpopdata column used to define comparison groups
     pop1: ""                     # first population value from population_column
     pop2: ""                     # second population value from population_column
     window_size_fst: 100         # window size for FST
@@ -414,7 +414,7 @@ parameters: &global_params
   ## NeighborNet parameters
   # Split network from p-distance genetic distances.
   neighbornet:
-    color_by: ["Site"]   # columns in indpopdata used to color tips
+    color_by: ["Region"]   # columns in indpopdata used to color tips
     width: 12            # plot width in inches
     height: 12           # plot height in inches
     dpi: 300             # plot dpi
@@ -433,15 +433,16 @@ parameters: &global_params
       max_indv: 10000           # max individuals for plotting
       max_pop: 10000            # max populations for plotting
 
-  ## TreeMix parameters
+  ## OrientAGraph parameters
   # Historical population graph inference from population allele counts.
+  # OrientAGraph uses TreeMix-compatible allele-count input and output files.
   # The input converter follows the vcf2treemix.sh convention of writing ref,alt allele
   # counts per population, but groups samples from a chosen indpopdata column.
   treemix:
-    population_column: "Site"       # indpopdata column defining TreeMix populations
-    migration_edges: [0, 1, 2, 3]   # values passed to treemix -m
-    k: 1000                         # SNP block size passed to treemix -k
-    root: null                      # optional TreeMix root population label (after sanitizing)
+    population_column: "Region"       # indpopdata column defining OrientAGraph populations
+    migration_edges: [0, 1, 2, 3]   # values passed to orientagraph -m
+    k: 1000                         # SNP block size passed to orientagraph -k
+    root: null                      # optional root population label (after sanitizing)
     global: false                   # pass -global for global rearrangements
     bootstrap: false                # pass -bootstrap
     seed: 12345                     # optional random seed; set null to omit
@@ -589,7 +590,7 @@ projects:
       structure: false        # Bayesian ancestry clustering with STRUCTURE across k_values.
       faststructure: false    # Fast variational ancestry clustering using PLINK input.
       admixture: false        # Maximum-likelihood ancestry clustering with CV error per K.
-      tess3: false            # Spatially regularized ancestry estimation with tess3r.
+      tess3: true            # Spatially regularized ancestry estimation with tess3r.
       gen_dist: false         # Pairwise Euclidean and p-distance matrices from SNP genotypes.
       pcoa: false             # Principal coordinates analysis from the Euclidean distance matrix.
       neighbornet: false      # Split network from p-distance genetic distances.
@@ -609,8 +610,8 @@ projects:
       iqtree_trimal: false    # trimAl alignment trimming followed by IQ-TREE inference.
       iqtree_robust: false    # Robust IQ-TREE output selection based on support threshold.
       fineradstructure: false # RADpainter/fineRADstructure coancestry and clustering.
-      treemix: false          # Historical population graph with migration edges.
-      construct: false        # Spatial population structure model with conStruct.
+      treemix: true          # OrientAGraph historical population graph with migration edges.
+      construct: true        # Spatial population structure model with conStruct.
       dapc: false             # Discriminant analysis of principal components clustering.
       spca: true              # Spatial PCA combining genetic variance and spatial autocorrelation.
     parameters:
@@ -665,7 +666,7 @@ projects:
   #     iqtree_trimal: false    # trimAl alignment trimming followed by IQ-TREE inference.
   #     iqtree_robust: false    # Robust IQ-TREE output selection based on support threshold.
   #     fineradstructure: false # RADpainter/fineRADstructure coancestry and clustering.
-  #     treemix: false          # Historical population graph with migration edges.
+  #     treemix: false          # OrientAGraph historical population graph with migration edges.
   #
   #   parameters:
   #     <<: *global_params

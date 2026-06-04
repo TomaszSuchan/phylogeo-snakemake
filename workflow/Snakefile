@@ -245,7 +245,7 @@ include: "rules/genome_scan.smk"
 include: "rules/amova.smk"
 include: "rules/roh.smk"
 include: "rules/iqtree_trimal.smk"
-include: "rules/treemix.smk"
+include: "rules/orientagraph.smk"
 include: "rules/methods.smk"
 
 def get_all_targets():

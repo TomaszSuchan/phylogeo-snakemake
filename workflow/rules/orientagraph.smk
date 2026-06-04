@@ -1,4 +1,4 @@
-# TreeMix historical population graph inference
+# OrientAGraph historical population graph inference
 
 
 def _treemix_params(wildcards):
@@ -19,7 +19,7 @@ def _treemix_migration_edges(wildcards):
 
 rule treemix_prepare_input:
     """
-    Convert the final analysis VCF to TreeMix allele-count input.
+    Convert the final analysis VCF to TreeMix-compatible allele-count input.
     Population groups are taken from a configured indpopdata column.
     """
     input:
@@ -50,7 +50,7 @@ rule treemix_prepare_input:
 
 rule treemix:
     """
-    Fit a TreeMix graph with a configured number of migration edges.
+    Fit an OrientAGraph graph with a configured number of migration edges.
     """
     input:
         frq=rules.treemix_prepare_input.output.frq
@@ -84,14 +84,14 @@ rule treemix:
     benchmark:
         "benchmarks/{project}/treemix.m{m}.txt"
     conda:
-        "../envs/treemix.yaml"
+        "../envs/orientagraph.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["treemix"]["threads"]
     resources:
         mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["treemix"]["mem_mb"],
         runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["treemix"]["runtime"]
     shell:
         """
-        treemix \
+        orientagraph \
             -i {input.frq} \
             -o {params.prefix} \
             -m {wildcards.m} \
@@ -106,7 +106,7 @@ rule treemix:
 
 rule treemix_migration_summary:
     """
-    Collect TreeMix likelihood files across migration-edge counts.
+    Collect OrientAGraph likelihood files across migration-edge counts.
     """
     input:
         lambda wildcards: expand(
