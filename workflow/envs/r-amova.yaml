@@ -3,7 +3,7 @@ channels:
   - bioconda
 dependencies:
   - r-base
-  - r-adegenet
+  - r-adegenet=2.1.1
   - r-poppr
   - r-ggplot2>=4.0
   - r-vcfr

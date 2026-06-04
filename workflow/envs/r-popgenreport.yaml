@@ -6,4 +6,4 @@ dependencies:
   - r-base
   - r-popgenreport
   - r-vcfr
-  - r-adegenet
+  - r-adegenet=2.1.1

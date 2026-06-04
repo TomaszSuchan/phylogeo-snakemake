@@ -5,7 +5,7 @@ channels:
 dependencies:
   - r-base
   - r-vcfr
-  - r-adegenet
+  - r-adegenet=2.1.1
   - r-ggplot2
   - r-geosphere
   - r-sf
