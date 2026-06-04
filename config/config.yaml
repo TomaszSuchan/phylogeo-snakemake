@@ -24,35 +24,83 @@ parameters: &global_params
   
   ## Preprocessing parameters
   #
-  # Variant-level filtering prior to thinning
-  vcf_filtering:
-    f_missing: 1.0            # max missing-data threshold; 1.0 disables missingness filtering
-    maf: 0.0                  # minimum minor allele frequency filter
-  thinning_strategy: "thinning"  # thinning|ld_pruning|none
-  ld_pruning:
-    r2: 0.5                   # LD r^2 threshold
-    window_size: 50           # LD window size
-    step_size: 5              # LD step size
+  # Pipeline order:
+  # 1. Sort, bgzip, and index the raw ipyrad VCF.
+  # 2. Optionally subset samples with projects.<project>.samples.
+  # 3. Optionally remove close relatives with KING.
+  # 4. Filter variants by missingness.
+  # 5. Keep biallelic SNPs with MAC > 1 and optional MAF filtering.
+  # 6. Choose the downstream SNP set: one SNP per RAD locus, LD pruning, or all biallelic SNPs.
+  #
+  # Step 2 is project-specific:
+  #   samples: "ind001,ind002,ind003"  # optional comma-separated VCF sample IDs
+  #
+  # Step 3: relatedness filtering happens before variant missingness filtering so
+  # missingness and allele-frequency filters are calculated after related samples are removed.
   relatedness_filtering:
     enabled: false            # enable KING-based relatedness filtering in preprocessing
     king_threshold: 0.0884    # 2nd-degree relatives threshold
     mac_threshold: 1          # minimum MAC used for KING calculation
     group_by: ["Region"]      # grouping columns for removed-individual plots
-  
-  # Many analyses require unlinkesd SNPs (one SNP per RAD fragment).
-  # The VCF file will is first filtered for bilallelic SNPs with MAC>1
-  # and then thinned to one SNP per RAD fragment using the parameters below.
-  #
-  # VCF thinning parameters (defaults shown):
+
+  # Steps 4-5: variant-level filtering before thinning/LD pruning.
+  # f_missing is the maximum allowed fraction of missing genotypes per variant.
+  #   1.0 = keep variants regardless of missingness; 0.5 = require data in >=50% of samples.
+  # maf is applied after missingness filtering while selecting biallelic SNPs with MAC > 1.
+  vcf_filtering:
+    f_missing: 1.0            # max missing-data threshold; 1.0 disables missingness filtering
+    maf: 0.0                  # minimum minor allele frequency filter
+
+  # Step 6: choose the final SNP set used by most downstream analyses.
+  # thinning = one SNP per RAD fragment; ld_pruning = PLINK LD-pruned set; none = all biallelic SNPs.
+  thinning_strategy: "thinning"  # thinning|ld_pruning|none
+
+  # Settings used only when thinning_strategy: "thinning".
+  # Many analyses require unlinked SNPs; this keeps one SNP per RAD fragment.
   vcf_thinning:
     min_coverage: 0          # minimum number of samples with data
     method: "max_coverage"   # selection method: random, max_coverage, or weighted
     ties: "random"           # handle ties in max_coverage: first or random
     ns_tag: "NS"             # INFO field tag for number of samples with data
     id_pattern: "loc(\\d+)_" # regex pattern to extract RAD fragment ID
+
+  # Settings used only when thinning_strategy: "ld_pruning".
+  # Window and step sizes are PLINK-style LD-pruning window parameters.
+  ld_pruning:
+    r2: 0.5                   # LD r^2 threshold
+    window_size: 50           # LD window size
+    step_size: 5              # LD step size
   
-  ## Population Structure Analysis
-  # Common K values to test for population structure (Structure, fastStructure and admixture):
+  ## Analysis method overview
+  # structure: Bayesian ancestry clustering with STRUCTURE across k_values.
+  # faststructure: Fast variational ancestry clustering using PLINK input.
+  # admixture: Maximum-likelihood ancestry clustering with CV error per K.
+  # evaladmix: Residual-correlation diagnostics for ancestry model fit.
+  # construct: Spatial population structure model with conStruct.
+  # dapc: Discriminant analysis of principal components clustering.
+  # spca: Spatial PCA combining genetic variance and spatial autocorrelation.
+  # pcaone: Fast PCA from the final PLINK SNP dataset.
+  # emupca: Standalone EMU PCA for low-coverage or uncertain genotypes.
+  # pcaone_emu: PCAone EMU mode for PCA with missing genotype modelling.
+  # pcaone_miss: PCAone sensitivity runs across missing-data thresholds.
+  # vcf2pcacluster: PCA/clustering with VCF2PCACluster internal SNP filters.
+  # gen_dist: Pairwise Euclidean and p-distance matrices from SNP genotypes.
+  # pcoa: Principal coordinates analysis from the Euclidean distance matrix.
+  # neighbornet: Split network from p-distance genetic distances.
+  # pixy: Nucleotide diversity, FST, and dXY from variant/invariant sites.
+  # relatedness: Pairwise kinship/IBD estimates and relatedness network plots.
+  # roh: Runs of homozygosity calls and group summaries.
+  # amova: AMOVA variance partitioning across metadata strata.
+  # mapi: Spatial MAPI maps of unusually high/low genetic distances.
+  # genome_scan: Sliding-window FST, pi, and dXY between two metadata groups.
+  # iqtree: Maximum-likelihood phylogeny from the ipyrad PHYLIP alignment.
+  # iqtree_trimal: trimAl alignment trimming followed by IQ-TREE inference.
+  # iqtree_robust: Robust IQ-TREE output selection based on support threshold.
+  # fineradstructure: RADpainter/fineRADstructure coancestry and clustering.
+
+  ## Shared K values for clustering methods
+  # Common K values to test for population structure (STRUCTURE, fastStructure,
+  # ADMIXTURE, conStruct, and DAPC where applicable):
   k_values: [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
   ## Shared map background parameters (used by all mapping functions)
@@ -137,8 +185,7 @@ parameters: &global_params
     segment.size: 0.2            # line width of leader lines
 
   ## MAPI parameters
-  # MAPI (Mapping Averaged Pairwise Information) identifies spatial patterns of genetic diversity
-  # by comparing genetic distances to geographic distances across a hexagonal grid
+  # Spatial MAPI maps highlight areas where genetic distances are unusually high or low.
   mapi:
     n_permutations: 1000        # number of permutations for significance testing
     grid_halfwidth: 100000      # grid cell halfwidth in meters (null for auto-estimation)
@@ -152,18 +199,20 @@ parameters: &global_params
     lower_tail_color: "#1B7837" # color for lower tails (low resistance; muted green)
 
   ## Structure parameters
+  # Bayesian ancestry clustering with STRUCTURE across k_values.
   # More run parameters can be tweaked by modifying `data/mainparams` and `data/extraparams`
   # Numbers of individuals and loci are automatically inferred from .ustr file so this does not need to be changed.
   structure:
     replicates: 10       # number of replicates for structure
   
   ## FastStructure parameters (defaults shown)
+  # Fast variational ancestry clustering using PLINK input.
   faststructure:
     tol: "10e-6"        # convergence criterion
     prior: "simple"     # prior choice: simple or logistic
   
   ## conStruct parameters
-  # conStruct (spatial population structure analysis incorporating geography)
+  # Spatial population structure model where covariance can decay with geography.
   construct:
     n_chains: 1        # number of MCMC chains to run
     n_iterations: 10000  # number of MCMC iterations per chain
@@ -174,7 +223,7 @@ parameters: &global_params
     crs: 4326          # coordinate reference system for plotting (4326 = WGS84)
   
   ## DAPC parameters
-  # DAPC (Discriminant Analysis of Principal Components) - unsupervised population clustering
+  # Discriminant analysis of principal components for genotype-based clustering.
   # K range is driven by the top-level k_values list (K >= 2; K=1 is skipped as DAPC requires at least 2 clusters)
   dapc:
     n_pca: 50            # number of PCA axes to retain (can be informed by PCAone outputs)
@@ -235,9 +284,18 @@ parameters: &global_params
     # Squared-loading cutoff for loadingplot allele labels; null = adegenet default (e.g. label top contributors).
     # Numeric example: 0.95 labels alleles above the 95th percentile of squared loadings on that axis.
     loading_threshold: null
+  spca_map:
+    # Repo-style maps of retained sPCA scores on the same basemap used by STRUCTURE/ADMIXTURE maps.
+    # Each retained global/local axis gets a separate map; points are individual samples colored by score.
+    point_size: 2.5
+    point_alpha: 0.9
+    # Diverging palette for negative/zero/positive scores.
+    low_colour: "#2166AC"
+    mid_colour: "white"
+    high_colour: "#B2182B"
   
   ## PCAone parameters
-  #
+  # Fast PCA from the final PLINK SNP dataset.
   # SVD method SVD method to be applied.
   # Options are
   # 0: the Implicitly Restarted Arnoldi Method (IRAM);
@@ -252,6 +310,7 @@ parameters: &global_params
     SVD_method: 3 # SVD method to use [0-3]
     EMU_SVD_method: 0 # SVD method for PCAone EMU mode [0-2]. Do not use optin 3!
     PCnum: 10     # number of principal components to compute
+  # Standalone EMU PCA for low-coverage or uncertain genotypes.
   EMU:
     eig: 2        # first principal component to output (EMU --eig)
     eig_out: 10   # number of principal components to output (EMU --eig-out)
@@ -272,13 +331,14 @@ parameters: &global_params
       - "#999999"  # gray
       - "#FFFFFF"  # white
       - "#000000"  # black
+  # Pairwise kinship/IBD network plot settings for the relatedness analysis.
   relatedness_plot:
     color_by: ["none"]          # columns in indpopdata used to color network nodes; "none" disables node coloring
     plot_all: false             # when true, include unrelated individuals as isolated nodes in network plots
     relatedness_colors: null   # optional custom palette for relatedness network plots
   
   ## VCF2PCACluster parameters
-  #
+  # PCA/clustering with VCF2PCACluster internal SNP filters.
   vcf2pcacluster:
     cluster_method: "Kmean"  # clustering method: EM/Kmean/DBSCAN/None
     PCnum: 10     # number of principal components to use
@@ -294,6 +354,7 @@ parameters: &global_params
                      # 3:IBSKinshipImpute 4:IBSKinship 5:p_dis
   
   ## Pixy parameters
+  # Nucleotide diversity, FST, and dXY from variant and invariant sites.
   pixy:
     stats: ["pi"] # statistics to compute, options: pi, fst, dxy
     window_size: 10000  # size of the sliding window in bp
@@ -313,15 +374,18 @@ parameters: &global_params
     map_outline: true    # add point outlines (true/false, default: true)
 
   ## AMOVA parameters
+  # AMOVA variance partitioning across metadata strata.
   amova:
     strata: []           # e.g. ["Region", "Site"]
     nperm: 999           # number of permutations
 
   ## ROH parameters
+  # Runs of homozygosity calls and group summaries.
   roh:
     group_by: ["Site"]   # columns in indpopdata to summarize/compare ROH
 
   ## Genome scan parameters
+  # Sliding-window FST, pi, and dXY between two metadata groups.
   genome_scan:
     population_column: "Group"   # indpopdata column used to define comparison groups
     pop1: ""                     # first population value from population_column
@@ -331,7 +395,7 @@ parameters: &global_params
     window_size_dxy: 1000000     # window size for dxy
 
   ## NeighborNet parameters
-  # NeighborNet split network from p-distance genetic distances.
+  # Split network from p-distance genetic distances.
   neighbornet:
     color_by: ["Site"]   # columns in indpopdata used to color tips
     width: 12            # plot width in inches
@@ -340,6 +404,7 @@ parameters: &global_params
     neigbournet_colors: null  # optional manual palette
 
   ## fineRADstructure parameters
+  # RADpainter/fineRADstructure coancestry and clustering.
   fineradstructure:
     cluster:
       mcmc_iterations: 1000000  # -x: number of MCMC iterations for clustering
@@ -352,10 +417,12 @@ parameters: &global_params
       max_pop: 10000            # max populations for plotting
 
   ## Trimal parameters for alignment trimming before phylogenetic inference
+  # trimAl removes gappy alignment sites before optional IQ-TREE inference.
   trimal:
     gt: 0.95        # gap threshold for trimming alignments (0-1 where 0=no gaps, 1=no trimming)
 
   ## IQ-TREE parameters
+  # Maximum-likelihood phylogeny from the ipyrad PHYLIP alignment.
   iqtree:
     model: "MFP"      # substitution model, MFP for ModelFinder Plus
     bootstraps: 1000  # number of ultrafast bootstrap replicates
@@ -476,34 +543,156 @@ parameters: &global_params
 projects:
   test:
     ipyrad_prefix: "test_data/test"
+    # Optional comma-separated sample subset. Leave unset/empty to use all samples in the input VCF.
+    # samples: "sample_001,sample_002,sample_003"
     ## Analysis selection - set to true/false to enable/disable
     analyses:
-      structure: false
-      faststructure: false
-      admixture: false
-      gen_dist: false
-      pcoa: false
-      neighbornet: false
-      mapi: false
-      pcaone: false
-      emupca: false
-      vcf2pcacluster: false
-      pcaone_emu: false
-      pcaone_miss: false
-      pixy: false
-      relatedness: false
-      roh: false
-      amova: false
-      genome_scan: false
-      evaladmix: false
-      iqtree: false
-      iqtree_trimal: false
-      iqtree_robust: false
-      fineradstructure: false
-      construct: false
-      dapc: false
-      spca: true
+      structure: false        # Bayesian ancestry clustering with STRUCTURE across k_values.
+      faststructure: false    # Fast variational ancestry clustering using PLINK input.
+      admixture: false        # Maximum-likelihood ancestry clustering with CV error per K.
+      gen_dist: false         # Pairwise Euclidean and p-distance matrices from SNP genotypes.
+      pcoa: false             # Principal coordinates analysis from the Euclidean distance matrix.
+      neighbornet: false      # Split network from p-distance genetic distances.
+      mapi: false             # Spatial MAPI maps of unusually high/low genetic distances.
+      pcaone: false           # Fast PCA from the final PLINK SNP dataset.
+      emupca: false           # Standalone EMU PCA for low-coverage or uncertain genotypes.
+      vcf2pcacluster: false   # PCA/clustering with VCF2PCACluster internal SNP filters.
+      pcaone_emu: false       # PCAone EMU mode for PCA with missing genotype modelling.
+      pcaone_miss: false      # PCAone sensitivity runs across missing-data thresholds.
+      pixy: false             # Nucleotide diversity, FST, and dXY from variant/invariant sites.
+      relatedness: false      # Pairwise kinship/IBD estimates and relatedness network plots.
+      roh: false              # Runs of homozygosity calls and group summaries.
+      amova: false            # AMOVA variance partitioning across metadata strata.
+      genome_scan: false      # Sliding-window FST, pi, and dXY between two metadata groups.
+      evaladmix: false        # Residual-correlation diagnostics for ancestry model fit.
+      iqtree: false           # Maximum-likelihood phylogeny from the ipyrad PHYLIP alignment.
+      iqtree_trimal: false    # trimAl alignment trimming followed by IQ-TREE inference.
+      iqtree_robust: false    # Robust IQ-TREE output selection based on support threshold.
+      fineradstructure: false # RADpainter/fineRADstructure coancestry and clustering.
+      construct: false        # Spatial population structure model with conStruct.
+      dapc: false             # Discriminant analysis of principal components clustering.
+      spca: true              # Spatial PCA combining genetic variance and spatial autocorrelation.
     parameters:
       <<: *global_params
       popmap: "data/Vcardui-popmap.txt"
       popdata: "data/Vcardui-popdata.txt"
+
+  # -------------------------------------------------------------------------
+  # Example study template
+  # -------------------------------------------------------------------------
+  # Copy this block, uncomment it, rename `my_study`, and edit paths/parameters.
+  # Keep only the overrides that differ from `parameters` above.
+  #
+  # my_study:
+  #   # Prefix of ipyrad outputs. The workflow expects files such as:
+  #   #   data/my_study/my_study.vcf or data/my_study/my_study.vcf.gz
+  #   #   data/my_study/my_study.loci  # required by pixy/genome_scan
+  #   ipyrad_prefix: "data/my_study/my_study"
+  #
+  #   # Optional: restrict the whole project to these sample IDs before filtering.
+  #   samples: "ind001,ind002,ind003"
+  #
+  #   analyses:
+  #     # Population structure / ancestry. `evaladmix` needs at least one ancestry method.
+  #     structure: false        # Bayesian ancestry clustering with STRUCTURE across k_values.
+  #     faststructure: true     # Fast variational ancestry clustering using PLINK input.
+  #     admixture: true         # Maximum-likelihood ancestry clustering with CV error per K.
+  #     evaladmix: true         # Residual-correlation diagnostics for ancestry model fit.
+  #     construct: false        # Spatial population structure model with conStruct.
+  #     dapc: true              # Discriminant analysis of principal components clustering.
+  #     spca: false             # Spatial PCA combining genetic variance and spatial autocorrelation.
+  #
+  #     # Ordination and distance-based summaries.
+  #     pcaone: true            # Fast PCA from the final PLINK SNP dataset.
+  #     emupca: false           # Standalone EMU PCA for low-coverage or uncertain genotypes.
+  #     pcaone_emu: false       # PCAone EMU mode for PCA with missing genotype modelling.
+  #     pcaone_miss: false      # PCAone sensitivity runs across missing-data thresholds.
+  #     vcf2pcacluster: false   # PCA/clustering with VCF2PCACluster internal SNP filters.
+  #     gen_dist: true          # Pairwise Euclidean and p-distance matrices from SNP genotypes.
+  #     pcoa: true              # Principal coordinates analysis from the Euclidean distance matrix.
+  #     neighbornet: true       # Split network from p-distance genetic distances.
+  #
+  #     # Diversity, relatedness, spatial, and phylogenetic analyses.
+  #     pixy: true              # Nucleotide diversity, FST, and dXY from variant/invariant sites.
+  #     relatedness: true       # Pairwise kinship/IBD estimates and relatedness network plots.
+  #     roh: false              # Runs of homozygosity calls and group summaries.
+  #     amova: true             # AMOVA variance partitioning across metadata strata.
+  #     mapi: false             # Spatial MAPI maps of unusually high/low genetic distances.
+  #     genome_scan: false      # Sliding-window FST, pi, and dXY between two metadata groups.
+  #     iqtree: false           # Maximum-likelihood phylogeny from the ipyrad PHYLIP alignment.
+  #     iqtree_trimal: false    # trimAl alignment trimming followed by IQ-TREE inference.
+  #     iqtree_robust: false    # Robust IQ-TREE output selection based on support threshold.
+  #     fineradstructure: false # RADpainter/fineRADstructure coancestry and clustering.
+  #
+  #   parameters:
+  #     <<: *global_params
+  #     popmap: "data/my_study/popmap.txt"
+  #     popdata: "data/my_study/popdata.txt"
+  #
+  #     # Metadata columns below must exist in indpopdata/popdata, with exact spelling/case.
+  #     # Common choices: Site, Region, Region2, ElevationBand, Habitat.
+  #     k_values: [1, 2, 3, 4, 5, 6]
+  #
+  #     # Preprocessing overrides, shown in the same order as the pipeline.
+  #     # 1. `samples` above optionally subsets individuals before all filters.
+  #     # 2. Relatedness filtering optionally removes close relatives before variant filters.
+  #     relatedness_filtering:
+  #       enabled: false
+  #       king_threshold: 0.0884
+  #       mac_threshold: 1
+  #       group_by: ["Region"]
+  #
+  #     # 3. Variant missingness, then biallelic SNP + MAF filtering.
+  #     vcf_filtering:
+  #       f_missing: 0.5
+  #       maf: 0.01
+  #
+  #     # 4. Choose final SNP set. Use `thinning` for one SNP per RAD locus,
+  #     # `ld_pruning` for LD-filtered SNPs, or `none` to keep all biallelic SNPs.
+  #     thinning_strategy: "thinning"
+  #     vcf_thinning:
+  #       min_coverage: 10
+  #       method: "max_coverage"
+  #       ties: "random"
+  #       ns_tag: "NS"
+  #       id_pattern: "loc(\\d+)_"
+  #     ld_pruning:
+  #       r2: 0.2
+  #       window_size: 50
+  #       step_size: 5
+  #
+  #     pca_plot:
+  #       pc_max: 4
+  #       color_by: ["Region", "Site"]
+  #     mapmixture:
+  #       population_labels: ["Region", "Site"]
+  #       population_sort_by: "Region"
+  #       site_order: null
+  #     pixy:
+  #       stats: ["pi", "fst", "dxy"]
+  #       window_size: 10000
+  #       bootstrap_replicates: 1000
+  #       group_by: ["Site", "Region"]
+  #       arrange_by: ["Region"]
+  #     amova:
+  #       strata: ["Region", "Site"]
+  #       nperm: 999
+  #     genome_scan:
+  #       population_column: "Region"
+  #       pop1: "north"
+  #       pop2: "south"
+  #       window_size_fst: 100
+  #       window_size_pi: 1000000
+  #       window_size_dxy: 1000000
+  #
+  #     # Override resources only where your cluster/job limits differ.
+  #     resources:
+  #       <<: *global_resources
+  #       pcaone:
+  #         threads: 16
+  #         mem_mb: 32000
+  #         runtime: 120
+  #       pixy:
+  #         threads: 24
+  #         mem_mb: 32000
+  #         runtime: 720
