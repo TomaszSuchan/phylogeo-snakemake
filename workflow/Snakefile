@@ -1027,6 +1027,7 @@ def get_all_targets():
         # TreeMix targets
         if analyses.get("treemix", False):
             treemix_migrations = _treemix_migration_edges_from_params(params)
+            treemix_bootstrap_enabled = _treemix_bootstrap_enabled_from_params(params)
             targets.extend([
                 "results/" + project + "/treemix/" + project + ".treemix.frq.gz",
                 "results/" + project + "/treemix/" + project + ".treemix.clust",
@@ -1034,6 +1035,11 @@ def get_all_targets():
                 "results/" + project + "/treemix/" + project + ".treemix.positions.tsv",
                 "results/" + project + "/treemix/" + project + ".treemix.input_summary.tsv",
                 "results/" + project + "/treemix/" + project + ".treemix.migration_summary.tsv",
+                "results/" + project + "/treemix/" + project + ".treemix.optm_evanno.tsv",
+                "results/" + project + "/treemix/plots/" + project + ".treemix.likelihoods.pdf",
+                "results/" + project + "/treemix/plots/" + project + ".treemix.likelihoods.rds",
+                "results/" + project + "/treemix/plots/" + project + ".treemix.optm_evanno.pdf",
+                "results/" + project + "/treemix/plots/" + project + ".treemix.optm_evanno.rds",
             ])
             targets.extend(
                 expand(
@@ -1047,6 +1053,27 @@ def get_all_targets():
                     m=treemix_migrations,
                 )
             )
+            targets.extend(
+                expand(
+                    "results/" + project + "/treemix/plots/" + project + ".treemix.m{m}.{plot_type}.pdf",
+                    m=treemix_migrations,
+                    plot_type=["graph", "residuals"],
+                )
+            )
+            targets.extend(
+                expand(
+                    "results/" + project + "/treemix/plots/" + project + ".treemix.m{m}.{plot_type}.rds",
+                    m=treemix_migrations,
+                    plot_type=["graph", "residuals"],
+                )
+            )
+            if treemix_bootstrap_enabled:
+                targets.extend([
+                    "results/" + project + "/treemix/" + project + ".treemix.bootstrap_summary.tsv",
+                    "results/" + project + "/treemix/" + project + ".treemix.bootstrap_migration_edges.tsv",
+                    "results/" + project + "/treemix/plots/" + project + ".treemix.bootstrap_likelihoods.pdf",
+                    "results/" + project + "/treemix/plots/" + project + ".treemix.bootstrap_likelihoods.rds",
+                ])
 
         # conStruct targets
         if analyses.get("construct", False):

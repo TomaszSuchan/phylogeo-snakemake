@@ -462,6 +462,34 @@ if analyses.get("treemix", False):
     if isinstance(migration_edges, int):
         migration_edges = [migration_edges]
     migration_str = ", ".join(str(int(m)) for m in migration_edges)
+    optm_cfg = tm.get("optm", {})
+    optm_method = optm_cfg.get("method", "Evanno")
+    optm_reps = optm_cfg.get("replicates", 1)
+    root_value = tm.get("root", None)
+    root_clause = (
+        f"The starting tree was rooted with '{root_value}' before graph search. "
+        if root_value not in [None, "", "null", "NULL"]
+        else "No explicit root was configured, so graph searches were run without the recommended outgroup root. "
+    )
+    mlno_value = tm.get("mlno", True)
+    allmigs_value = tm.get("allmigs", False)
+    bootstrap_cfg = tm.get("bootstrap", {})
+    if isinstance(bootstrap_cfg, bool):
+        bootstrap_cfg = {"enabled": bootstrap_cfg, "migration_edges": [], "replicates": 100}
+    bootstrap_enabled = bool(bootstrap_cfg.get("enabled", False))
+    bootstrap_edges = bootstrap_cfg.get("migration_edges", [])
+    if isinstance(bootstrap_edges, int):
+        bootstrap_edges = [bootstrap_edges]
+    bootstrap_edges_str = ", ".join(str(edge) for edge in bootstrap_edges) if bootstrap_edges else "none"
+    bootstrap_reps = int(bootstrap_cfg.get("replicates", 100))
+
+    def _orientagraph_flag_text(flag, value):
+        if value in [None, False, "", "null", "NULL"]:
+            return f"{flag} was not used"
+        if value is True:
+            return flag
+        return f"{flag} {value}"
+
     struct_parts.append(
         f"Historical relationships among populations were inferred with "
         f"OrientAGraph version {v(versions,'orientagraph')} (Molloy et al. 2021), "
@@ -472,7 +500,22 @@ if analyses.get("treemix", False):
         f"populations at each SNP to produce TreeMix-compatible input. "
         f"Graphs were fit with migration-edge counts m = {migration_str}, using "
         f"a block size of {tm.get('k', tm.get('block_size', 1000))} SNPs to account for linkage "
-        f"when estimating the covariance matrix."
+        f"when estimating the covariance matrix. {root_clause}"
+        f"Maximum likelihood network orientation (MLNO) was configured as "
+        f"`{_orientagraph_flag_text('-mlno', mlno_value)}`, and exhaustive "
+        f"migration-edge search was configured as "
+        f"`{_orientagraph_flag_text('-allmigs', allmigs_value)}`. For each migration-edge count, "
+        f"bootstrap resampling was "
+        f"{f'enabled for selected migration-edge counts m = {bootstrap_edges_str} with {bootstrap_reps} independent replicate(s) per m' if bootstrap_enabled else 'not enabled for the default maximum-likelihood graph fit'}. "
+        f"The inferred graph and observed-minus-model covariance residuals were "
+        f"plotted. Migration-edge support was summarized with OptM version "
+        f"{v(versions,'r-optm')} using the {optm_method} method across "
+        f"{optm_reps} independent run(s) per migration-edge count. OptM estimates "
+        f"the most useful value of m from the second-order rate of change in "
+        f"log-likelihood (delta-m), which prioritizes migration edges that improve "
+        f"model fit rather than proving the true number of historical migration "
+        f"events. Final log likelihoods were also compared across migration-edge "
+        f"counts."
     )
 
 if struct_parts:
@@ -887,6 +930,11 @@ if analyses.get("treemix", False):
         "Pickrell, J.K. & Pritchard, J.K. (2012). Inference of population splits "
         "and mixtures from genome-wide allele frequency data. *PLOS Genetics*, "
         "8, e1002967."
+    )
+    refs["optm"] = (
+        "Fitak, R.R. (2021). OptM: estimating the optimal number of migration edges "
+        "on population trees using Treemix. *Biology Methods and Protocols*, "
+        "6(1), bpab017. https://doi.org/10.1093/biomethods/bpab017"
     )
 
 if analyses.get("pcaone", False) or analyses.get("pcaone_emu", False) \

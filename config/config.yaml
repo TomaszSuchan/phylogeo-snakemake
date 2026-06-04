@@ -280,6 +280,11 @@ parameters: &global_params
     # Distances for types 5–7 use the same units as Lon/Lat in popdata (degrees for WGS84;
     # prefer projected metre coordinates before using absolute distance thresholds).
     type: 1
+    # If multiple individuals share exact coordinates, adegenet graph types 1-4 fail.
+    # This applies tiny, reproducible noise only to duplicated coordinates before graph construction.
+    jitter_duplicate_coords: true
+    jitter_sd: 1e-06
+    jitter_seed: 12345
     # type 5 only: minimum and maximum neighbour distances (tutorial example: d1=0, d2=2).
     d1: null
     d2: null
@@ -440,13 +445,30 @@ parameters: &global_params
   # counts per population, but groups samples from a chosen indpopdata column.
   treemix:
     population_column: "Region"       # indpopdata column defining OrientAGraph populations
-    migration_edges: [0, 1, 2, 3]   # values passed to orientagraph -m
+    migration_edges: [0, 1, 2, 3, 4, 5]   # values passed to orientagraph -m; Evanno OptM needs m > 3
     k: 1000                         # SNP block size passed to orientagraph -k
-    root: null                      # optional root population label (after sanitizing)
+    # Strongly recommended for OrientAGraph/TreeMix: set to a TreeMix population label
+    # from treemix.populations.tsv, e.g. "A" or "Outgroup". Leave null only for exploratory unrooted runs.
+    root: null                      # passed to -root; comma-delimited labels are allowed by OrientAGraph
+    mlno: true                      # pass -mlno by default; false/null omits it. OrientAGraph 1.2+ source builds also accept values like "1,2", "0", or "all"
+    allmigs: false                  # pass -allmigs only when true; exhaustive/original-paper mode can be slow. OrientAGraph 1.2+ source builds also accept values like "1,2" or "all"
     global: false                   # pass -global for global rearrangements
-    bootstrap: false                # pass -bootstrap
+    bootstrap:
+      enabled: false                # opt-in final support check; default graph/OptM fits are not bootstrapped
+      migration_edges: []           # selected final m values to bootstrap, e.g. [3]
+      replicates: 100               # independent -bootstrap runs per selected m for final support summaries
     seed: 12345                     # optional random seed; set null to omit
     min_called_populations: 2       # skip SNPs called in fewer populations
+    optm:
+      method: "Evanno"              # OptM method for choosing migration edges: Evanno, linear, or SiZer
+      replicates: 5                 # independent OrientAGraph runs per m for OptM; use 10+ for final analyses
+    plot:
+      width: 10                     # graph/residual plot width in inches
+      height: 7                     # graph/residual plot height in inches
+      likelihood_width: 7           # likelihood plot width in inches
+      likelihood_height: 5          # likelihood plot height in inches
+      dpi: 300                      # plot resolution
+      migration_arrow_length: 0.15  # arrow head size for migration edges (TreeMix default 0.05)
 
   ## Trimal parameters for alignment trimming before phylogenetic inference
   # trimAl removes gappy alignment sites before optional IQ-TREE inference.
@@ -590,7 +612,7 @@ projects:
       structure: false        # Bayesian ancestry clustering with STRUCTURE across k_values.
       faststructure: false    # Fast variational ancestry clustering using PLINK input.
       admixture: false        # Maximum-likelihood ancestry clustering with CV error per K.
-      tess3: true            # Spatially regularized ancestry estimation with tess3r.
+      tess3: false            # Spatially regularized ancestry estimation with tess3r.
       gen_dist: false         # Pairwise Euclidean and p-distance matrices from SNP genotypes.
       pcoa: false             # Principal coordinates analysis from the Euclidean distance matrix.
       neighbornet: false      # Split network from p-distance genetic distances.
@@ -611,9 +633,9 @@ projects:
       iqtree_robust: false    # Robust IQ-TREE output selection based on support threshold.
       fineradstructure: false # RADpainter/fineRADstructure coancestry and clustering.
       treemix: true          # OrientAGraph historical population graph with migration edges.
-      construct: true        # Spatial population structure model with conStruct.
+      construct: false        # Spatial population structure model with conStruct.
       dapc: false             # Discriminant analysis of principal components clustering.
-      spca: true              # Spatial PCA combining genetic variance and spatial autocorrelation.
+      spca: false              # Spatial PCA combining genetic variance and spatial autocorrelation.
     parameters:
       <<: *global_params
       popmap: "data/popmap.txt"

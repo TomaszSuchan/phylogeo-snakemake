@@ -9,3 +9,5 @@ dependencies:
   - r-ape
   - r-phangorn
   - r-xml
+  - r-optm=0.1.9
+  - r-rcolorbrewer
