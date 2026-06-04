@@ -342,6 +342,23 @@ if analyses.get("dapc", False):
         f"individuals to avoid over-fitting."
     )
 
+if analyses.get("spca", False):
+    sp = p.get("spca", {})
+    nfposi = sp.get("nfposi", 2)
+    nfnega = sp.get("nfnega", 2)
+    struct_parts.append(
+        f"Spatial principal component analysis (sPCA; Jombart et al. 2008), "
+        f"implemented in the R package adegenet, was performed on the {dataset_label} "
+        f"({n_snps} SNPs, {n_samples} individuals) using sample coordinates from "
+        f"the population metadata. sPCA constructs Moran's eigenvector maps from "
+        f"geographic positions and finds axes that explain genetic variation while "
+        f"separating global structure (positive spatial autocorrelation, broad clines) "
+        f"from local structure (negative autocorrelation, fine-scale patches). "
+        f"The analysis retained {nfposi} global and {nfnega} local axes. "
+        f"Global and local spatial structure was assessed with Monte Carlo tests "
+        f"(global.rtest and local.rtest; {sp.get('nperm', 999)} permutations)."
+    )
+
 if analyses.get("construct", False):
     cp       = p.get("construct", {})
     n_iter   = cp.get("n_iterations", 10000)
@@ -738,6 +755,13 @@ if analyses.get("dapc", False):
         "Jombart, T., Devillard, S. & Balloux, F. (2010). Discriminant analysis of "
         "principal components: a new method for the analysis of genetically structured "
         "populations. *BMC Genetics*, 11, 94."
+    )
+
+if analyses.get("spca", False):
+    refs["spca"] = (
+        "Jombart, T., Devillard, S., Dufour, A.B. & Pontier, D. (2008). Revealing "
+        "cryptic spatial patterns in genetic variability by a new multivariate method. "
+        "*BMC Genetics*, 9, 461."
     )
 
 if analyses.get("construct", False):

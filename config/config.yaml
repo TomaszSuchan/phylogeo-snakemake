@@ -181,6 +181,60 @@ parameters: &global_params
     n_da: 10             # number of discriminant axes to retain
     n_rep: 30            # number of cross-validation replicates (reserved for future use)
     criterion: "diffNgroup"  # criterion for cluster selection: "diffNgroup", "min", "goesup", "smoothNgoesup", or "goodfit"
+
+  ## sPCA parameters
+  # Spatial PCA (sPCA; adegenet 2.1.x, Jombart et al. 2008). Requires analyses.spca: true and
+  # popdata with Ind, Lat, Lon (written to indpopdata.txt). Ordinates samples using Moran's
+  # eigenvector maps so axes reflect both genetic variance and spatial autocorrelation.
+  # Positive eigenvalues = global structure (smooth clines); negative = local (fine patches).
+  # Use the eigenvalue barplot and screeplot outputs to tune nfposi / nfnega before re-running.
+  # Tutorial: https://adegenet.r-forge.r-project.org/files/tutorial-spca.pdf
+  spca:
+    # Optional PCA reduction on the genotype matrix before sPCA (reduces runtime on large SNP sets).
+    # null = use all loci; integer = number of PCA axes passed to spca() when supported.
+    n_pca: null
+    # Number of global sPCA axes to retain (positive eigenvalues; broad spatial patterns).
+    nfposi: 2
+    # Number of local sPCA axes to retain (negative eigenvalues; short-range differentiation).
+    nfnega: 2
+    # Neighbour graph from indpopdata Lon/Lat (adegenet::chooseCN, forwarded to spca()).
+    # type 1 = Delaunay triangulation: flexible default, often a good first pass; no extra keys.
+    # type 2 = Gabriel graph: stricter local graph; edges are kept only when no sample lies in
+    #          the circle defined by a pair of points; no extra keys.
+    # type 3 = Relative neighbour graph: even sparser local graph; keeps edges only when two
+    #          samples are closer to each other than to any third sample; no extra keys.
+    # type 4 = Minimum spanning tree: sparsest connected graph; useful to force connectivity but
+    #          can overemphasize chain-like links; no extra keys.
+    # type 5 = Distance band: links samples whose pairwise distance is in [d1, d2]; set d1 and d2.
+    #          d2 can also be "dmin" (smallest threshold giving every sample a neighbour) or
+    #          "dmax" (threshold connecting all samples), following adegenet::chooseCN.
+    # type 6 = K nearest neighbours: each sample is linked to its k nearest samples; set k.
+    # type 7 = Inverse-distance weights: all samples are neighbours, weighted by inverse distance;
+    #          set a (distance exponent) and dmin (minimum distance to avoid infinite weights).
+    # Distances for types 5–7 use the same units as Lon/Lat in popdata (degrees for WGS84;
+    # prefer projected metre coordinates before using absolute distance thresholds).
+    type: 1
+    # type 5 only: minimum and maximum neighbour distances (tutorial example: d1=0, d2=2).
+    d1: null
+    d2: null
+    # type 6 only: each sample linked to its k nearest neighbours (e.g. k: 10).
+    k: null
+    # type 7 only: inverse-distance weights (see ?chooseCN); rarely needed.
+    a: null
+    dmin: null
+    # Permutations for Monte Carlo tests of global vs local spatial structure (global.rtest,
+    # local.rtest). Use 999+ for publication; minimum simulated p-value is 1 / (nperm + 1).
+    nperm: 999
+    # How many highest MEM R^2 values are summed to form each test statistic (usually 1).
+    rtest_k: 1
+  spca_plot:
+    # indpopdata column used to colour ggplot scatter plots of global/local scores; "none" = grey points.
+    color_by: "Region"
+    # Highest axis index used when drawing ggplot scatters (PC1 vs PC2 only; does not add more PDFs).
+    pc_max: 4
+    # Squared-loading cutoff for loadingplot allele labels; null = adegenet default (e.g. label top contributors).
+    # Numeric example: 0.95 labels alleles above the 95th percentile of squared loadings on that axis.
+    loading_threshold: null
   
   ## PCAone parameters
   #
@@ -387,6 +441,10 @@ parameters: &global_params
       threads: 4
       mem_mb: 16000
       runtime: 120   # DAPC analysis (cross-validation can add time)
+    spca:
+      threads: 4
+      mem_mb: 16000
+      runtime: 120
     amova:
       threads: 1
       mem_mb: 16000
@@ -416,24 +474,24 @@ parameters: &global_params
 ### Projects configuration ###
 ##############################
 projects:
-  Vcardui_medium-497_filtered:
-    ipyrad_prefix: "/net/pr2/projects/plgrid/plggpam/Vcardui-global/medium-497_filtered"
+  test:
+    ipyrad_prefix: "test_data/test"
     ## Analysis selection - set to true/false to enable/disable
     analyses:
-      structure: true
-      faststructure: true
-      admixture: true
+      structure: false
+      faststructure: false
+      admixture: false
       gen_dist: false
       pcoa: false
-      neighbornet: true
-      mapi: true
-      pcaone: true
+      neighbornet: false
+      mapi: false
+      pcaone: false
       emupca: false
       vcf2pcacluster: false
       pcaone_emu: false
       pcaone_miss: false
       pixy: false
-      relatedness: true
+      relatedness: false
       roh: false
       amova: false
       genome_scan: false
@@ -444,6 +502,7 @@ projects:
       fineradstructure: false
       construct: false
       dapc: false
+      spca: true
     parameters:
       <<: *global_params
       popmap: "data/Vcardui-popmap.txt"

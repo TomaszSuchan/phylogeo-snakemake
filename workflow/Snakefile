@@ -1,3 +1,11 @@
+def _spca_n_axes_from_params(params):
+    """Number of retained sPCA axes (global + local) for plot targets."""
+    sp = params.get("spca", {})
+    nfposi = int(sp.get("nfposi", 2))
+    nfnega = int(sp.get("nfnega", 2))
+    return nfposi + nfnega
+
+
 def get_pca_combinations(pc_max):
     """
     Generate all unique combinations of PC axes up to pc_max.
@@ -200,6 +208,7 @@ include: "rules/mapi.smk"
 include: "rules/fineradstructure.smk"
 include: "rules/dapc.smk"
 include: "rules/construct.smk"
+include: "rules/spca.smk"
 include: "rules/evaladmix.smk"
 include: "rules/genome_scan.smk"
 include: "rules/amova.smk"
@@ -911,6 +920,43 @@ def get_all_targets():
                     expand("results/" + project + "/construct/plots/" + project + ".construct.K{k}.barplot.pdf",
                            k=k_values)
                 ])
+
+        # sPCA targets
+        if analyses.get("spca", False):
+            popdata = params.get("popdata")
+            if popdata and popdata != "NULL" and popdata != "":
+                n_spca_axes = _spca_n_axes_from_params(params)
+                targets.extend([
+                    "results/" + project + "/spca/" + project + ".spca.results.rds",
+                    "results/" + project + "/spca/" + project + ".spca.scores.global.txt",
+                    "results/" + project + "/spca/" + project + ".spca.scores.local.txt",
+                    "results/" + project + "/spca/" + project + ".spca.eigenvalues.txt",
+                    "results/" + project + "/spca/" + project + ".spca.summary.txt",
+                    "results/" + project + "/spca/" + project + ".spca.global.rtest.txt",
+                    "results/" + project + "/spca/" + project + ".spca.local.rtest.txt",
+                    "results/" + project + "/spca/plots/" + project + ".spca.eig.barplot.pdf",
+                    "results/" + project + "/spca/plots/" + project + ".spca.screeplot.pdf",
+                    "results/" + project + "/spca/plots/" + project + ".spca.composite.pdf",
+                    "results/" + project + "/spca/plots/" + project + ".spca.map.pdf",
+                    "results/" + project + "/spca/plots/" + project + ".spca.colorplot.global.pdf",
+                    "results/" + project + "/spca/plots/" + project + ".spca.colorplot.local.pdf",
+                    "results/" + project + "/spca/plots/" + project + ".spca.global.rtest.pdf",
+                    "results/" + project + "/spca/plots/" + project + ".spca.local.rtest.pdf",
+                    "results/" + project + "/spca/plots/" + project + ".spca.scatter.global.pdf",
+                    "results/" + project + "/spca/plots/" + project + ".spca.scatter.local.pdf",
+                ])
+                targets.extend(
+                    expand(
+                        "results/" + project + "/spca/plots/" + project + ".spca.axis{axis}.pdf",
+                        axis=list(range(1, n_spca_axes + 1)),
+                    )
+                )
+                targets.extend(
+                    expand(
+                        "results/" + project + "/spca/plots/" + project + ".spca.loading.axis{axis}.pdf",
+                        axis=list(range(1, n_spca_axes + 1)),
+                    )
+                )
 
         # DAPC targets
         if analyses.get("dapc", False):
