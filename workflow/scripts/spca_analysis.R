@@ -42,9 +42,62 @@ parse_optional_num <- function(x) {
   as.numeric(chr)
 }
 
+parse_optional_bool <- function(x, default = FALSE) {
+  if (is.null(x) || length(x) == 0) return(default)
+  if (is.list(x) && length(x) == 1) x <- x[[1]]
+  if (is.logical(x)) return(isTRUE(x))
+  chr <- toupper(as.character(x))
+  if (is.na(chr) || chr == "" || chr %in% c("NULL", "NONE", "NA")) return(default)
+  chr %in% c("TRUE", "T", "1", "YES", "Y")
+}
+
 add_choosecn_param <- function(args, name, value) {
   if (!is.null(value)) args[[name]] <- value
   args
+}
+
+has_duplicate_xy <- function(xy, tol = .Machine$double.eps^0.5) {
+  coords <- as.data.frame(xy)
+  colnames(coords) <- c("Lon", "Lat")
+  any(duplicated(coords) | duplicated(coords, fromLast = TRUE))
+}
+
+spread_duplicate_xy <- function(xy, radius, seed = NULL) {
+  if (is.null(radius) || radius <= 0) {
+    stop("jitter_sd must be > 0 when spreading duplicate coordinates.")
+  }
+  xy_out <- xy
+  coords <- as.data.frame(xy_out)
+  colnames(coords) <- c("Lon", "Lat")
+  coord_key <- paste(coords$Lon, coords$Lat, sep = "|")
+  groups <- split(seq_len(nrow(xy_out)), coord_key)
+  if (!is.null(seed)) set.seed(seed)
+
+  n_adjusted <- 0L
+  for (idx in groups) {
+    if (length(idx) == 1L) next
+    center <- colMeans(xy_out[idx, , drop = FALSE])
+    angles <- if (length(idx) == 2L) {
+      c(0, pi)
+    } else {
+      seq(0, 2 * pi, length.out = length(idx) + 1L)[seq_len(length(idx))]
+    }
+    offsets <- cbind(
+      radius * cos(angles),
+      radius * sin(angles)
+    )
+    xy_out[idx, ] <- center + offsets
+    n_adjusted <- n_adjusted + length(idx)
+  }
+
+  if (has_duplicate_xy(xy_out)) {
+    stop(
+      "Duplicate coordinates remain after spreading; increase parameters.spca.jitter_sd ",
+      "or use graph type 5, 6, or 7."
+    )
+  }
+
+  list(xy = xy_out, n_adjusted = n_adjusted)
 }
 
 spca_eigenvalues <- function(spca_obj) {
@@ -70,6 +123,9 @@ cn_d2 <- parse_optional_num(snakemake@params[["d2"]])
 cn_k <- parse_optional_int(snakemake@params[["k"]])
 cn_a <- parse_optional_num(snakemake@params[["a"]])
 cn_dmin <- parse_optional_num(snakemake@params[["dmin"]])
+jitter_duplicate_coords <- parse_optional_bool(snakemake@params[["jitter_duplicate_coords"]])
+jitter_sd <- parse_optional_num(snakemake@params[["jitter_sd"]])
+jitter_seed <- parse_optional_int(snakemake@params[["jitter_seed"]])
 n_pca <- parse_optional_int(snakemake@params[["n_pca"]])
 nperm <- as.integer(snakemake@params[["nperm"]])
 rtest_k <- as.integer(snakemake@params[["rtest_k"]])
@@ -79,6 +135,7 @@ cat("  nfposi:", nfposi, "\n")
 cat("  nfnega:", nfnega, "\n")
 cat("  type (connection network):", cn_type, "\n")
 cat("  d1:", cn_d1, " d2:", cn_d2, " k:", cn_k, " a:", cn_a, " dmin:", cn_dmin, "\n")
+cat("  jitter_duplicate_coords:", jitter_duplicate_coords, " jitter_sd:", jitter_sd, " jitter_seed:", jitter_seed, "\n")
 cat("  n_pca:", if (is.null(n_pca)) "all loci (no PCA reduction)" else n_pca, "\n")
 cat("  nperm (Monte Carlo tests):", nperm, "\n")
 cat("  rtest_k:", rtest_k, "\n\n")
@@ -130,6 +187,27 @@ gen <- gen[common, ]
 indpopdata <- indpopdata[match(common, indpopdata$Ind), , drop = FALSE]
 xy <- as.matrix(indpopdata[, c("Lon", "Lat")])
 rownames(xy) <- indpopdata$Ind
+
+dup_rows <- duplicated(as.data.frame(xy)) | duplicated(as.data.frame(xy), fromLast = TRUE)
+if (any(dup_rows) && cn_type %in% 1:4) {
+  if (!isTRUE(jitter_duplicate_coords)) {
+    stop(
+      "Duplicate Lat/Lon coordinates detected and spca type ", cn_type,
+      " cannot use duplicate points. Set parameters.spca.jitter_duplicate_coords: true ",
+      "or choose graph type 5, 6, or 7."
+    )
+  }
+  if (is.null(jitter_sd) || jitter_sd <= 0) {
+    stop("parameters.spca.jitter_sd must be > 0 when jitter_duplicate_coords is true.")
+  }
+  spread <- spread_duplicate_xy(xy, radius = jitter_sd, seed = jitter_seed)
+  xy <- spread$xy
+  cat(
+    "Spread", spread$n_adjusted,
+    "samples with duplicate Lon/Lat on a circle of radius", jitter_sd,
+    "coordinate units.\n"
+  )
+}
 
 cat("Matched samples:", length(common), "\n\n")
 

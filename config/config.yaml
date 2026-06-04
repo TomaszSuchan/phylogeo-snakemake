@@ -281,9 +281,9 @@ parameters: &global_params
     # prefer projected metre coordinates before using absolute distance thresholds).
     type: 1
     # If multiple individuals share exact coordinates, adegenet graph types 1-4 fail.
-    # This applies tiny, reproducible noise only to duplicated coordinates before graph construction.
+    # Spread duplicated points on a small circle before graph construction (radius in Lon/Lat units).
     jitter_duplicate_coords: true
-    jitter_sd: 1e-06
+    jitter_sd: 0.01
     jitter_seed: 12345
     # type 5 only: minimum and maximum neighbour distances (tutorial example: d1=0, d2=2).
     d1: null
@@ -612,7 +612,7 @@ projects:
       structure: false        # Bayesian ancestry clustering with STRUCTURE across k_values.
       faststructure: false    # Fast variational ancestry clustering using PLINK input.
       admixture: false        # Maximum-likelihood ancestry clustering with CV error per K.
-      tess3: false            # Spatially regularized ancestry estimation with tess3r.
+      tess3: true            # Spatially regularized ancestry estimation with tess3r.
       gen_dist: false         # Pairwise Euclidean and p-distance matrices from SNP genotypes.
       pcoa: false             # Principal coordinates analysis from the Euclidean distance matrix.
       neighbornet: false      # Split network from p-distance genetic distances.
@@ -632,10 +632,10 @@ projects:
       iqtree_trimal: false    # trimAl alignment trimming followed by IQ-TREE inference.
       iqtree_robust: false    # Robust IQ-TREE output selection based on support threshold.
       fineradstructure: false # RADpainter/fineRADstructure coancestry and clustering.
-      treemix: true          # OrientAGraph historical population graph with migration edges.
-      construct: false        # Spatial population structure model with conStruct.
+      treemix: false          # OrientAGraph historical population graph with migration edges.
+      construct: true        # Spatial population structure model with conStruct.
       dapc: false             # Discriminant analysis of principal components clustering.
-      spca: false              # Spatial PCA combining genetic variance and spatial autocorrelation.
+      spca: true              # Spatial PCA combining genetic variance and spatial autocorrelation.
     parameters:
       <<: *global_params
       popmap: "data/popmap.txt"

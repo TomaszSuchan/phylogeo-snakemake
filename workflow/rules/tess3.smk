@@ -8,7 +8,7 @@ def _tess3_params(wildcards):
 rule install_tess3:
     """
     Install tess3r once into the Snakemake conda environment.
-    tess3r is CRAN-only for this workflow, so it is installed after conda
+    tess3r is installed from its upstream GitHub repository after conda
     creates the base R/vcfR plotting environment.
     """
     output:
@@ -17,7 +17,7 @@ rule install_tess3:
         "../envs/tess3.yaml"
     shell:
         """
-        Rscript --vanilla -e 'lib <- .libPaths()[1]; unlink(list.files(lib, pattern="^00LOCK-", full.names=TRUE), recursive=TRUE, force=TRUE); needed <- "tess3r"; missing <- needed[!vapply(needed, requireNamespace, logical(1), quietly=TRUE)]; if (length(missing) > 0) install.packages(missing, repos="https://cloud.r-project.org"); missing <- needed[!vapply(needed, requireNamespace, logical(1), quietly=TRUE)]; if (length(missing) > 0) stop("Failed to install required R packages: ", paste(missing, collapse=", "))'
+        Rscript --vanilla -e 'lib <- .libPaths()[1]; unlink(list.files(lib, pattern="^00LOCK-", full.names=TRUE), recursive=TRUE, force=TRUE); if (!requireNamespace("tess3r", quietly=TRUE, lib.loc=lib)) remotes::install_github("bcm-uga/TESS3_encho_sen", upgrade="never", dependencies=TRUE, lib=lib); if (!requireNamespace("tess3r", quietly=TRUE, lib.loc=lib)) stop("Failed to install required R package: tess3r")'
         """
 
 

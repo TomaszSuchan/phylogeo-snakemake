@@ -9,3 +9,4 @@ dependencies:
   - r-maps
   - r-fields
   - r-rcolorbrewer
+  - r-remotes

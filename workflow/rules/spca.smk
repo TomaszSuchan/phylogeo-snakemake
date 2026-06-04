@@ -43,6 +43,9 @@ rule spca_analysis:
         k = lambda wildcards: _spca_params(wildcards).get("k", None),
         a = lambda wildcards: _spca_params(wildcards).get("a", None),
         dmin = lambda wildcards: _spca_params(wildcards).get("dmin", None),
+        jitter_duplicate_coords = lambda wildcards: _spca_params(wildcards).get("jitter_duplicate_coords", False),
+        jitter_sd = lambda wildcards: _spca_params(wildcards).get("jitter_sd", 0.01),
+        jitter_seed = lambda wildcards: _spca_params(wildcards).get("jitter_seed", 12345),
         nperm = lambda wildcards: _spca_params(wildcards).get("nperm", 999),
         rtest_k = lambda wildcards: _spca_params(wildcards).get("rtest_k", 1)
     conda:
