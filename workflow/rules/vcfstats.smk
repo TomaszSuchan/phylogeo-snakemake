@@ -70,8 +70,10 @@ rule calculate_depth_vcf_original:
         """
         vcftools --gzvcf {input.vcf} \
                  --depth \
+                 --out {params.out_prefix} > {log} 2>&1
+        vcftools --gzvcf {input.vcf} \
                  --site-mean-depth \
-                 --out {params.out_prefix} &> {log}
+                 --out {params.out_prefix} >> {log} 2>&1
         """
 
 rule summarize_depth_vcf_original:
@@ -112,8 +114,10 @@ rule calculate_depth_vcf_filtered:
         """
         vcftools --gzvcf {input.vcf} \
                  --depth \
+                 --out {params.out_prefix} > {log} 2>&1
+        vcftools --gzvcf {input.vcf} \
                  --site-mean-depth \
-                 --out {params.out_prefix} &> {log}
+                 --out {params.out_prefix} >> {log} 2>&1
         """
 
 rule summarize_depth_vcf_filtered:
@@ -154,8 +158,10 @@ rule calculate_depth_vcf_thinned:
         """
         vcftools --gzvcf {input.vcf} \
                  --depth \
+                 --out {params.out_prefix} > {log} 2>&1
+        vcftools --gzvcf {input.vcf} \
                  --site-mean-depth \
-                 --out {params.out_prefix} &> {log}
+                 --out {params.out_prefix} >> {log} 2>&1
         """
 
 rule summarize_depth_vcf_thinned:
