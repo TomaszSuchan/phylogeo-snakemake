@@ -41,7 +41,7 @@ rule dapc_bic_plot_from_log:
         plot = "results/{project}/dapc/plots/{project}.dapc.criterion_plot.pdf",
         plot_rds = "results/{project}/dapc/plots/{project}.dapc.criterion_plot.rds"
     conda:
-        "../envs/adegenet.yaml"
+        "../envs/r-plot.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],

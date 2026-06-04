@@ -11,6 +11,8 @@ dependencies:
   - r-ggspatial
   - r-rcolorbrewer
   - r-rnaturalearth
+  - r-rnaturalearthdata
+  - r-scales
   - r-sf
   - r-terra
   - r-tidyverse
