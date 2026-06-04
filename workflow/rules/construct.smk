@@ -1,6 +1,22 @@
 # Rule for conStruct spatial population structure analysis
 # conStruct performs spatial population structure analysis incorporating geography
 
+rule install_construct:
+    """
+    Install CRAN/r-universe conStruct packages once per workflow run.
+    conStruct is not available in the conda channels used here, so the conda
+    environment provides compiled dependencies and this rule adds conStruct.
+    """
+    output:
+        touch(".snakemake/construct_installed")
+    conda:
+        "../envs/construct.yaml"
+    shell:
+        """
+        Rscript --vanilla -e 'lib <- .libPaths()[1]; unlink(list.files(lib, pattern="^00LOCK-", full.names=TRUE), recursive=TRUE, force=TRUE); repos <- c("https://gbradburd.r-universe.dev", "https://cloud.r-project.org"); needed <- c("caroline", "conStruct"); missing <- needed[!vapply(needed, requireNamespace, logical(1), quietly=TRUE)]; if (length(missing) > 0) install.packages(missing, repos=repos); missing <- needed[!vapply(needed, requireNamespace, logical(1), quietly=TRUE)]; if (length(missing) > 0) stop("Failed to install required R packages: ", paste(missing, collapse=", "))'
+        """
+
+
 rule construct_analysis:
     """
     Run conStruct analysis for spatial population structure.
@@ -9,7 +25,8 @@ rule construct_analysis:
     """
     input:
         vcf = lambda wildcards: get_filtered_vcf_output(wildcards),
-        indpopdata = rules.generate_popdata.output.indpopdata
+        indpopdata = rules.generate_popdata.output.indpopdata,
+        install = rules.install_construct.output
     output:
         results_rds = "results/{project}/construct/{project}.construct.K{k}.results.rds",
         layer_proportions = "results/{project}/construct/{project}.construct.K{k}.layer_proportions.txt",

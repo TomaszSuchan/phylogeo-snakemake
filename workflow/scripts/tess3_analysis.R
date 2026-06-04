@@ -17,8 +17,10 @@ suppressPackageStartupMessages({
 })
 
 if (!requireNamespace("tess3r", quietly = TRUE)) {
-  cat("tess3r package not found. Installing from CRAN into the active R library...\n")
-  install.packages("tess3r", repos = "https://cloud.r-project.org")
+  stop(
+    "tess3r is not installed in this rule environment. The install_tess3 ",
+    "Snakemake rule should install it before analysis."
+  )
 }
 suppressPackageStartupMessages({
   library(tess3r)

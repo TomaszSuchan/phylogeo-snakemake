@@ -18,5 +18,5 @@ dependencies:
   - r-remotes
   - make
   - cxx-compiler
-  # conStruct itself is CRAN-only and is installed by construct_analysis.R
+  # conStruct itself is CRAN-only and is installed by the install_construct rule
   # after the compiled Stan/Rcpp dependencies above are present.

@@ -5,13 +5,30 @@ def _tess3_params(wildcards):
     return config["projects"][wildcards.project]["parameters"].get("tess3", {})
 
 
+rule install_tess3:
+    """
+    Install tess3r once into the Snakemake conda environment.
+    tess3r is CRAN-only for this workflow, so it is installed after conda
+    creates the base R/vcfR plotting environment.
+    """
+    output:
+        touch(".snakemake/tess3_installed")
+    conda:
+        "../envs/tess3.yaml"
+    shell:
+        """
+        Rscript --vanilla -e 'lib <- .libPaths()[1]; unlink(list.files(lib, pattern="^00LOCK-", full.names=TRUE), recursive=TRUE, force=TRUE); needed <- "tess3r"; missing <- needed[!vapply(needed, requireNamespace, logical(1), quietly=TRUE)]; if (length(missing) > 0) install.packages(missing, repos="https://cloud.r-project.org"); missing <- needed[!vapply(needed, requireNamespace, logical(1), quietly=TRUE)]; if (length(missing) > 0) stop("Failed to install required R packages: ", paste(missing, collapse=", "))'
+        """
+
+
 rule tess3_analysis:
     """
     Run tess3r spatially regularized ancestry estimation for a given K.
     """
     input:
         vcf = lambda wildcards: get_filtered_vcf_output(wildcards),
-        indpopdata = rules.generate_popdata.output.indpopdata
+        indpopdata = rules.generate_popdata.output.indpopdata,
+        install = rules.install_tess3.output
     output:
         qmatrix = "results/{project}/tess3/{project}.tess3.K{k}.Qmatrix.txt",
         results_rds = "results/{project}/tess3/{project}.tess3.K{k}.results.rds",
