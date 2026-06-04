@@ -93,6 +93,16 @@ def _admixture_map_inputs(wildcards):
     return inputs
 
 
+def _tess3_map_inputs(wildcards):
+    inputs = {
+        "qmatrix": f"results/{wildcards.project}/tess3/{wildcards.project}.tess3.K{wildcards.k}.Qmatrix.txt",
+        "indpopdata": f"results/{wildcards.project}/indpopdata.txt",
+        "install": ".snakemake/mapmixture_installed",
+    }
+    inputs.update(_map_background_inputs(wildcards))
+    return inputs
+
+
 def _dapc_map_inputs(wildcards):
     inputs = {
         "dapc_results": f"results/{wildcards.project}/dapc/{wildcards.project}.dapc.K{wildcards.k}.results.rds",
@@ -228,6 +238,7 @@ include: "rules/mapi.smk"
 include: "rules/fineradstructure.smk"
 include: "rules/dapc.smk"
 include: "rules/construct.smk"
+include: "rules/tess3.smk"
 include: "rules/spca.smk"
 include: "rules/evaladmix.smk"
 include: "rules/genome_scan.smk"
@@ -342,6 +353,29 @@ def get_all_targets():
                 expand("results/" + project + "/structure/plots/" + project + ".structure.K{k}.barplot.rds",
                        k=k_values)
             ])
+
+        # tess3r targets
+        if analyses.get("tess3", False):
+            popdata = params.get("popdata")
+            if popdata and popdata != "NULL" and popdata != "":
+                targets.extend([
+                    expand("results/" + project + "/tess3/" + project + ".tess3.K{k}.Qmatrix.txt",
+                           k=k_values),
+                    expand("results/" + project + "/tess3/" + project + ".tess3.K{k}.results.rds",
+                           k=k_values),
+                    expand("results/" + project + "/tess3/" + project + ".tess3.K{k}.cross_entropy.txt",
+                           k=k_values),
+                    expand("results/" + project + "/tess3/plots/" + project + ".tess3.K{k}.max_cluster.png",
+                           k=k_values),
+                    expand("results/" + project + "/tess3/plots/" + project + ".tess3.K{k}.map.pdf",
+                           k=k_values),
+                    expand("results/" + project + "/tess3/plots/" + project + ".tess3.K{k}.map.rds",
+                           k=k_values),
+                    expand("results/" + project + "/tess3/plots/" + project + ".tess3.K{k}.barplot.pdf",
+                           k=k_values),
+                    expand("results/" + project + "/tess3/plots/" + project + ".tess3.K{k}.barplot.rds",
+                           k=k_values)
+                ])
 
         # PCAone targets (standard)
         if analyses.get("pcaone", False):
@@ -946,6 +980,8 @@ def get_all_targets():
             popdata = params.get("popdata")
             if popdata and popdata != "NULL" and popdata != "":
                 n_spca_axes = _spca_n_axes_from_params(params)
+                n_spca_global_axes = _spca_nfposi_from_params(params)
+                n_spca_local_axes = _spca_nfnega_from_params(params)
                 targets.extend([
                     "results/" + project + "/spca/" + project + ".spca.results.rds",
                     "results/" + project + "/spca/" + project + ".spca.scores.global.txt",
@@ -975,6 +1011,20 @@ def get_all_targets():
                     expand(
                         "results/" + project + "/spca/plots/" + project + ".spca.loading.axis{axis}.pdf",
                         axis=list(range(1, n_spca_axes + 1)),
+                    )
+                )
+                targets.extend(
+                    expand(
+                        "results/" + project + "/spca/plots/" + project + ".spca.{score_type}_axis{axis}.map.pdf",
+                        score_type=["global"],
+                        axis=list(range(1, n_spca_global_axes + 1)),
+                    )
+                )
+                targets.extend(
+                    expand(
+                        "results/" + project + "/spca/plots/" + project + ".spca.{score_type}_axis{axis}.map.pdf",
+                        score_type=["local"],
+                        axis=list(range(1, n_spca_local_axes + 1)),
                     )
                 )
 

@@ -1,0 +1,11 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - r-base
+  - r-vcfr
+  - r-ggplot2
+  - r-maps
+  - r-fields
+  - r-rcolorbrewer

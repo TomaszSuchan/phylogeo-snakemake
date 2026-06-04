@@ -300,6 +300,27 @@ if analyses.get("admixture", False):
         f"is taken as the best-supported number of clusters."
     )
 
+if analyses.get("tess3", False):
+    tp = p.get("tess3", {})
+    reps = tp.get("replicates", 5)
+    max_iter = tp.get("max_iteration", 1000)
+    tol = tp.get("tolerance", 1e-05)
+    struct_parts.append(
+        f"Spatial ancestry coefficients were estimated with tess3r "
+        f"(Caye et al. 2016) on the {dataset_label} ({n_snps} SNPs, "
+        f"{n_samples} individuals), using sample coordinates from the population "
+        f"metadata. tess3r fits a geographically constrained non-negative matrix "
+        f"factorisation in which ancestry coefficients are regularised toward "
+        f"smooth spatial variation. This makes it useful for rapidly visualising "
+        f"spatial ancestry gradients and for comparing spatially smoothed ancestry "
+        f"solutions with non-spatial clustering results, while recognising that "
+        f"the method smooths Q values rather than explicitly modelling relatedness "
+        f"decay under isolation by distance. The model was fit for each value of "
+        f"K = {k_tested}, using {reps} replicate start(s), a maximum of "
+        f"{int(max_iter):,} iterations, and a convergence tolerance of {tol}. "
+        f"Cross-entropy scores and ancestry maps were inspected across K values."
+    )
+
 if analyses.get("evaladmix", False):
     eval_methods = []
     if analyses.get("admixture", False):
@@ -367,13 +388,21 @@ if analyses.get("construct", False):
         f"To distinguish discrete population structure from structure arising "
         f"simply through isolation by distance, spatially explicit clustering was "
         f"performed with conStruct (Bradburd et al. 2018) on the {dataset_label} "
-        f"({n_snps} SNPs, {n_samples} individuals). conStruct extends the admixture "
-        f"model by allowing allele frequencies within each genetic layer to decay "
-        f"continuously with geographic distance, so that smooth spatial gradients "
-        f"are not mistaken for distinct clusters. Models with K = {k_tested} "
-        f"spatial layers were fit, each using {n_chains} MCMC chain(s) of "
-        f"{n_iter:,} iterations, and compared by their ability to predict the "
-        f"observed covariance in allele frequencies among samples."
+        f"({n_snps} SNPs, {n_samples} individuals). This analysis was included "
+        f"because standard ancestry-clustering methods can partition continuous "
+        f"isolation-by-distance gradients into apparently discrete clusters, often "
+        f"assigning individuals near opposite ends of a sampled range to different "
+        f"ancestry components and central individuals to apparent admixture. "
+        f"Unlike methods that only impose spatial smoothness on ancestry coefficients, "
+        f"conStruct models the decay of relatedness with geographic distance within "
+        f"each layer and asks how much discrete structure remains after this "
+        f"continuous spatial covariance has been accounted for. Models with "
+        f"K = {k_tested} spatial layers were fit, each using {n_chains} MCMC "
+        f"chain(s) of {n_iter:,} iterations. Spatial and non-spatial model fits, "
+        f"cross-validation scores, and the contribution of each layer to the "
+        f"explained covariance were compared to identify layer counts that improved "
+        f"prediction without over-interpreting clinal variation as discrete "
+        f"population structure."
     )
 
 if struct_parts:
@@ -741,6 +770,13 @@ if analyses.get("admixture", False):
         "Alexander, D.H., Novembre, J. & Lange, K. (2009). Fast model-based "
         "estimation of ancestry in unrelated individuals. *Genome Research*, 19, "
         "1655–1664."
+    )
+
+if analyses.get("tess3", False):
+    refs["tess3"] = (
+        "Caye, K., Deist, T.M., Martins, H., Michel, O. & François, O. (2016). "
+        "TESS3: fast inference of spatial population structure and genome scans "
+        "for selection. *Molecular Ecology Resources*, 16, 540–548."
     )
 
 if analyses.get("evaladmix", False):

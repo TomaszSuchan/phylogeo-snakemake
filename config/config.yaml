@@ -76,6 +76,7 @@ parameters: &global_params
   # faststructure: Fast variational ancestry clustering using PLINK input.
   # admixture: Maximum-likelihood ancestry clustering with CV error per K.
   # evaladmix: Residual-correlation diagnostics for ancestry model fit.
+  # tess3: Spatially regularized ancestry estimation with tess3r.
   # construct: Spatial population structure model with conStruct.
   # dapc: Discriminant analysis of principal components clustering.
   # spca: Spatial PCA combining genetic variance and spatial autocorrelation.
@@ -100,7 +101,7 @@ parameters: &global_params
 
   ## Shared K values for clustering methods
   # Common K values to test for population structure (STRUCTURE, fastStructure,
-  # ADMIXTURE, conStruct, and DAPC where applicable):
+  # ADMIXTURE, tess3r, conStruct, and DAPC where applicable):
   k_values: [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
   ## Shared map background parameters (used by all mapping functions)
@@ -210,6 +211,21 @@ parameters: &global_params
   faststructure:
     tol: "10e-6"        # convergence criterion
     prior: "simple"     # prior choice: simple or logistic
+
+  ## tess3r parameters
+  # Spatial ancestry estimation using geographically constrained matrix factorization.
+  # tess3r is fast enough for large SNP sets and is useful for smooth ancestry maps;
+  # use conStruct when the goal is explicitly to separate discrete structure from IBD.
+  tess3:
+    # Fitting algorithm passed to tess3r::tess3().
+    # "projected.ls" = alternating projected least squares; recommended default and usually fastest.
+    # "qp" = alternating quadratic programming; can be useful as a sensitivity check but is often slower.
+    method: "projected.ls"
+    replicates: 5           # independent starts per K
+    max_iteration: 1000     # maximum ALS/projected least-squares iterations
+    tolerance: 1e-05        # convergence tolerance
+    n_colors: 16            # colors for tess3r native max-cluster PNG
+    ploidy: 2               # genotype ploidy
   
   ## conStruct parameters
   # Spatial population structure model where covariance can decay with geography.
@@ -460,6 +476,10 @@ parameters: &global_params
       threads: 4
       mem_mb: 16000
       runtime: 10
+    tess3:
+      threads: 4
+      mem_mb: 16000
+      runtime: 120
     pcaone:
       threads: 12
       mem_mb: 8000
@@ -550,6 +570,7 @@ projects:
       structure: false        # Bayesian ancestry clustering with STRUCTURE across k_values.
       faststructure: false    # Fast variational ancestry clustering using PLINK input.
       admixture: false        # Maximum-likelihood ancestry clustering with CV error per K.
+      tess3: false            # Spatially regularized ancestry estimation with tess3r.
       gen_dist: false         # Pairwise Euclidean and p-distance matrices from SNP genotypes.
       pcoa: false             # Principal coordinates analysis from the Euclidean distance matrix.
       neighbornet: false      # Split network from p-distance genetic distances.
@@ -598,6 +619,7 @@ projects:
   #     faststructure: true     # Fast variational ancestry clustering using PLINK input.
   #     admixture: true         # Maximum-likelihood ancestry clustering with CV error per K.
   #     evaladmix: true         # Residual-correlation diagnostics for ancestry model fit.
+  #     tess3: false            # Spatially regularized ancestry estimation with tess3r.
   #     construct: false        # Spatial population structure model with conStruct.
   #     dapc: true              # Discriminant analysis of principal components clustering.
   #     spca: false             # Spatial PCA combining genetic variance and spatial autocorrelation.
