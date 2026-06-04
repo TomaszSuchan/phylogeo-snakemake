@@ -176,13 +176,18 @@ The pipeline applies filtering steps in the following order:
 7. Export to various formats (PLINK, Structure)
 8. (For PCAone) Generate additional VCFs filtered by multiple missing data thresholds
 
-### VCF statistics and missingness
+### VCF statistics, missingness, and sequencing depth
 
 - **Inputs**: raw, filtered and thinned VCFs from the preprocessing pipeline
 - **Outputs** (per project, under `results/<project>/stats_vcf/`):
-  - `original/`: missingness tables (`*.imiss`, `*.lmiss`), summary stats, and histograms for the original (subset) VCF
+  - `original/`: missingness tables (`*.imiss`, `*.lmiss`), sequencing-depth tables, summary stats, and histograms for the original (subset) VCF
   - `filtered/`: the same set of files for the post-filtering, pre-thinning VCF
   - `thinned/`: the same set of files for the thinned / LD-pruned VCF
+- **Sequencing depth outputs**:
+  - `*.idepth`: per-individual mean depth from `vcftools --depth`, useful for identifying low-coverage samples
+  - `*.ldepth.mean`: per-site mean depth from `vcftools --site-mean-depth`, useful for identifying poorly covered or unusually high-depth loci
+  - `*.depth_summary.txt`: combined report with overall mean depth across called genotypes, per-individual and per-site mean-depth summaries, and counts below common depth thresholds (`<3`, `<5`, `<10`) or above high depth (`>100`)
+- **Reporting guidance**: use the overall mean depth across called genotypes as the headline sequencing-depth value in methods, and inspect per-individual and per-site summaries separately because low-depth samples and low-depth loci have different biological and QC implications.
 
 ### Analysis modules and tools descriptions
 
