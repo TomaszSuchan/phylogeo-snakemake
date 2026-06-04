@@ -6,6 +6,16 @@ def _spca_n_axes_from_params(params):
     return nfposi + nfnega
 
 
+def _spca_nfposi_from_params(params):
+    """Number of retained positive/global sPCA axes."""
+    return int(params.get("spca", {}).get("nfposi", 2))
+
+
+def _spca_nfnega_from_params(params):
+    """Number of retained negative/local sPCA axes."""
+    return int(params.get("spca", {}).get("nfnega", 2))
+
+
 def get_pca_combinations(pc_max):
     """
     Generate all unique combinations of PC axes up to pc_max.
@@ -95,6 +105,16 @@ def _dapc_map_inputs(wildcards):
 
 def _population_map_inputs(wildcards):
     inputs = {
+        "indpopdata": f"results/{wildcards.project}/indpopdata.txt",
+        "install": ".snakemake/mapmixture_installed",
+    }
+    inputs.update(_map_background_inputs(wildcards))
+    return inputs
+
+
+def _spca_map_inputs(wildcards):
+    inputs = {
+        "results_rds": f"results/{wildcards.project}/spca/{wildcards.project}.spca.results.rds",
         "indpopdata": f"results/{wildcards.project}/indpopdata.txt",
         "install": ".snakemake/mapmixture_installed",
     }
