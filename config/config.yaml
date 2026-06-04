@@ -615,8 +615,8 @@ projects:
       spca: true              # Spatial PCA combining genetic variance and spatial autocorrelation.
     parameters:
       <<: *global_params
-      popmap: "data/Vcardui-popmap.txt"
-      popdata: "data/Vcardui-popdata.txt"
+      popmap: "data/popmap.txt"
+      popdata: "data/popdata.txt"
 
   # -------------------------------------------------------------------------
   # Example study template
