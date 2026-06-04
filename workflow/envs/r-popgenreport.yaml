@@ -1,9 +1,0 @@
-channels:
-  - conda-forge
-  - bioconda
-  - defaults
-dependencies:
-  - r-base
-  - r-popgenreport
-  - r-vcfr
-  - r-adegenet=2.1.1

@@ -21,7 +21,7 @@ rule amova:
         strata=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("amova", {}).get("strata", []),
         nperm=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("amova", {}).get("nperm", 999)
     conda:
-        "../envs/r-amova.yaml"
+        "../envs/adegenet.yaml"
     log:
         "logs/{project}/amova.log"
     benchmark:

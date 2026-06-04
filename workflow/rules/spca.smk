@@ -46,7 +46,7 @@ rule spca_analysis:
         nperm = lambda wildcards: _spca_params(wildcards).get("nperm", 999),
         rtest_k = lambda wildcards: _spca_params(wildcards).get("rtest_k", 1)
     conda:
-        "../envs/spca.yaml"
+        "../envs/adegenet.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["spca"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["spca"]["mem_mb"],
@@ -90,13 +90,70 @@ rule spca_plot:
         plot_axis = 0,
         plot_loading = 0
     conda:
-        "../envs/spca.yaml"
+        "../envs/adegenet.yaml"
     threads: 1
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"].get("mem_mb", 8000),
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"].get("runtime", 30)
     script:
         "../scripts/spca_plot.R"
+
+
+rule spca_score_map:
+    """
+    Repo-style map of retained sPCA scores on the shared mapmixture basemap.
+    Global axes map positive-eigenvalue axes; local axes map negative-eigenvalue axes.
+    """
+    input:
+        unpack(_spca_map_inputs),
+    output:
+        plot = "results/{project}/spca/plots/{project}.spca.{score_type}_axis{axis}.map.pdf",
+        plot_rds = "results/{project}/spca/plots/{project}.spca.{score_type}_axis{axis}.map.rds"
+    wildcard_constraints:
+        score_type = "global|local",
+        axis = r"[1-9]\d*"
+    log:
+        "logs/{project}/spca_score_map.{score_type}_axis{axis}.log"
+    benchmark:
+        "benchmarks/{project}/spca_score_map.{score_type}_axis{axis}.txt"
+    params:
+        width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("width", 10),
+        height = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("height", 8),
+        dpi = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("dpi", 300),
+        boundary = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("map_boundary", "NULL"),
+        crs = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("crs", 4326),
+        basemap = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap", "NULL"),
+        land_colour = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("land_colour", "#d9d9d9"),
+        sea_colour = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("sea_colour", "#deebf7"),
+        expand = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("expand", False),
+        arrow = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("arrow", True),
+        arrow_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("arrow_size", 1),
+        arrow_position = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("arrow_position", "tl"),
+        scalebar = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("scalebar", True),
+        scalebar_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("scalebar_size", 1),
+        scalebar_position = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("scalebar_position", "tl"),
+        plot_title = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("plot_title", ""),
+        axis_title_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("axis_title_size", 10),
+        axis_text_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("axis_text_size", 8),
+        basemap_border = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border", True),
+        basemap_border_col = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border_col", "black"),
+        basemap_border_lwd = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border_lwd", 0.1),
+        use_elevation_bg = lambda wildcards: _use_elevation_bg(wildcards),
+        score_type = lambda wildcards: wildcards.score_type,
+        axis = lambda wildcards: int(wildcards.axis),
+        point_size = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("spca_map", {}).get("point_size", 2.5),
+        point_alpha = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("spca_map", {}).get("point_alpha", 0.9),
+        low_colour = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("spca_map", {}).get("low_colour", "#2166AC"),
+        mid_colour = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("spca_map", {}).get("mid_colour", "white"),
+        high_colour = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("spca_map", {}).get("high_colour", "#B2182B")
+    conda:
+        "../envs/mapmixture.yaml"
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"].get("mem_mb", 8000),
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"].get("runtime", 30)
+    script:
+        "../scripts/spca_score_map.R"
 
 
 rule spca_axis_plot:
@@ -119,7 +176,7 @@ rule spca_axis_plot:
         pc_max = 2,
         loading_threshold = None
     conda:
-        "../envs/spca.yaml"
+        "../envs/adegenet.yaml"
     threads: 1
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"].get("mem_mb", 4000),
@@ -148,7 +205,7 @@ rule spca_loading_plot:
         pc_max = 2,
         loading_threshold = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("spca_plot", {}).get("loading_threshold", None)
     conda:
-        "../envs/spca.yaml"
+        "../envs/adegenet.yaml"
     threads: 1
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"].get("mem_mb", 4000),

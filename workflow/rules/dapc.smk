@@ -17,7 +17,7 @@ rule dapc_analysis:
         n_da = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("dapc", {}).get("n_da", "all"),
         criterion = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("dapc", {}).get("criterion", "diffNgroup")
     conda:
-        "../envs/dapc.yaml"
+        "../envs/adegenet.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["dapc"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["dapc"]["mem_mb"],
@@ -41,7 +41,7 @@ rule dapc_bic_plot_from_log:
         plot = "results/{project}/dapc/plots/{project}.dapc.criterion_plot.pdf",
         plot_rds = "results/{project}/dapc/plots/{project}.dapc.criterion_plot.rds"
     conda:
-        "../envs/dapc.yaml"
+        "../envs/adegenet.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],

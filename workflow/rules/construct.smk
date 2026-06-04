@@ -27,7 +27,7 @@ rule construct_analysis:
         coords = lambda wildcards: config["projects"][wildcards.project]["parameters"]["construct"].get("coords", None),
         save_files = lambda wildcards: config["projects"][wildcards.project]["parameters"]["construct"].get("save.files", True)
     conda:
-        "../envs/construct.yaml"
+        "../envs/adegenet.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["construct"].get("threads", 1)
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["construct"].get("mem_mb", 16000),
@@ -59,7 +59,7 @@ rule construct_plot:
         land_colour = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("land_colour", "#d9d9d9"),
         sea_colour = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("sea_colour", "#deebf7")
     conda:
-        "../envs/construct.yaml"
+        "../envs/adegenet.yaml"
     threads: 1
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"].get("mem_mb", 8000),
