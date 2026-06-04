@@ -61,7 +61,7 @@ Column names are matched exactly, including spelling and case. If `popdata` cont
 
 ### Choosing Analyses
 
-Per-project analysis flags include `structure`, `faststructure`, `admixture`, `evaladmix`, `tess3`, `construct`, `dapc`, `spca`, `pcaone`, `pcaone_emu`, `pcaone_miss`, `emupca`, `vcf2pcacluster`, `gen_dist`, `pcoa`, `neighbornet`, `mapi`, `pixy`, `genome_scan`, `relatedness`, `roh`, `amova`, `iqtree`, `iqtree_trimal`, `iqtree_robust`, and `fineradstructure`. Set a flag to `true` to request that module's final outputs.
+Per-project analysis flags include `structure`, `faststructure`, `admixture`, `evaladmix`, `tess3`, `construct`, `treemix`, `dapc`, `spca`, `pcaone`, `pcaone_emu`, `pcaone_miss`, `emupca`, `vcf2pcacluster`, `gen_dist`, `pcoa`, `neighbornet`, `mapi`, `pixy`, `genome_scan`, `relatedness`, `roh`, `amova`, `iqtree`, `iqtree_trimal`, `iqtree_robust`, and `fineradstructure`. Set a flag to `true` to request that module's final outputs.
 
 Some flags need companion settings:
 
@@ -71,6 +71,7 @@ Some flags need companion settings:
 - `pixy` and `genome_scan` need the original ipyrad `.loci` file because they reconstruct invariant sites.
 - `genome_scan` needs `parameters.genome_scan.population_column`, `pop1`, and `pop2`.
 - `amova` needs a non-empty `parameters.amova.strata` list.
+- `treemix` groups samples by `parameters.treemix.population_column`, which must be a column in `indpopdata.txt` such as `Site` or a metadata column from `popdata`.
 
 ### Choosing Resources
 
@@ -219,6 +220,8 @@ conStruct is computationally much heavier than tess3r-style spatial NMF because 
 **DAPC** (Discriminant Analysis of Principal Components) provides multivariate clustering and assignment based on the final analysis VCF. `k_values` defines the cluster counts tested, with `K=1` skipped because DAPC requires at least two groups. `dapc.n_pca` is the number of PCA axes retained before discrimination: too few can miss structure, while too many can overfit noise. `dapc.n_da` is the number of discriminant axes retained, usually bounded by K minus one. `dapc.criterion` controls automatic cluster selection; `"diffNgroup"` is a practical default when criterion curves are not obvious.
 
 **sPCA** (Spatial PCA, adegenet 2.1.x) ordinates individuals using axes that combine genetic variance with spatial autocorrelation (Moran's eigenvector maps). It requires spatial metadata in `indpopdata.txt` and follows the [adegenet sPCA tutorial](https://adegenet.r-forge.r-project.org/files/tutorial-spca.pdf) for global/local tests, score plots, and loading plots. `spca.n_pca` optionally reduces the genotype matrix before sPCA (`null` uses all loci). `nfposi` and `nfnega` set retained global and local axes: positive/global axes describe broad clines, while negative/local axes describe fine-scale patches; tune them from the eigenvalue plots. `spca.type` chooses the neighbour graph: type `1` Delaunay is a flexible default, type `6` K-nearest neighbours needs `k`, and type `5` distance bands need `d1`/`d2`. `nperm` controls spatial tests; with `999`, the smallest possible p-value is about `0.001`. `spca_plot.color_by`, `pc_max`, and `loading_threshold` control score/loadings plots, while `spca_map` controls point size, opacity, and score colours on repo-style maps.
+
+**TreeMix** infers a population graph with optional migration edges from population allele counts. It uses the final analysis VCF and `indpopdata.txt`; `treemix.population_column` selects the metadata column used to group individuals into TreeMix populations. The converter writes the standard TreeMix `ref,alt` allele-count matrix per population, along with a `.clust` file, retained SNP positions, and a population label mapping. `migration_edges` lists the `-m` values to run, `k` controls TreeMix's SNP block size (`-k`), and `root`, `global`, `bootstrap`, and `seed` are passed through to TreeMix when set.
 
 ### Ordination and genetic distances
 

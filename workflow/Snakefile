@@ -245,6 +245,7 @@ include: "rules/genome_scan.smk"
 include: "rules/amova.smk"
 include: "rules/roh.smk"
 include: "rules/iqtree_trimal.smk"
+include: "rules/treemix.smk"
 include: "rules/methods.smk"
 
 def get_all_targets():
@@ -958,6 +959,30 @@ def get_all_targets():
                 "results/" + project + "/fineradstructure/" + project + "_chunks.mcmc.xml",
                 "results/" + project + "/fineradstructure/" + project + "_chunks.mcmcTree.xml"
             ])
+
+        # TreeMix targets
+        if analyses.get("treemix", False):
+            treemix_migrations = _treemix_migration_edges_from_params(params)
+            targets.extend([
+                "results/" + project + "/treemix/" + project + ".treemix.frq.gz",
+                "results/" + project + "/treemix/" + project + ".treemix.clust",
+                "results/" + project + "/treemix/" + project + ".treemix.populations.tsv",
+                "results/" + project + "/treemix/" + project + ".treemix.positions.tsv",
+                "results/" + project + "/treemix/" + project + ".treemix.input_summary.tsv",
+                "results/" + project + "/treemix/" + project + ".treemix.migration_summary.tsv",
+            ])
+            targets.extend(
+                expand(
+                    "results/" + project + "/treemix/" + project + ".treemix.m{m}.llik",
+                    m=treemix_migrations,
+                )
+            )
+            targets.extend(
+                expand(
+                    "results/" + project + "/treemix/" + project + ".treemix.m{m}.treeout.gz",
+                    m=treemix_migrations,
+                )
+            )
 
         # conStruct targets
         if analyses.get("construct", False):

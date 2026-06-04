@@ -98,6 +98,7 @@ parameters: &global_params
   # iqtree_trimal: trimAl alignment trimming followed by IQ-TREE inference.
   # iqtree_robust: Robust IQ-TREE output selection based on support threshold.
   # fineradstructure: RADpainter/fineRADstructure coancestry and clustering.
+  # treemix: Historical population graph with migration edges from allele counts.
 
   ## Shared K values for clustering methods
   # Common K values to test for population structure (STRUCTURE, fastStructure,
@@ -432,6 +433,20 @@ parameters: &global_params
       max_indv: 10000           # max individuals for plotting
       max_pop: 10000            # max populations for plotting
 
+  ## TreeMix parameters
+  # Historical population graph inference from population allele counts.
+  # The input converter follows the vcf2treemix.sh convention of writing ref,alt allele
+  # counts per population, but groups samples from a chosen indpopdata column.
+  treemix:
+    population_column: "Site"       # indpopdata column defining TreeMix populations
+    migration_edges: [0, 1, 2, 3]   # values passed to treemix -m
+    k: 1000                         # SNP block size passed to treemix -k
+    root: null                      # optional TreeMix root population label (after sanitizing)
+    global: false                   # pass -global for global rearrangements
+    bootstrap: false                # pass -bootstrap
+    seed: 12345                     # optional random seed; set null to omit
+    min_called_populations: 2       # skip SNPs called in fewer populations
+
   ## Trimal parameters for alignment trimming before phylogenetic inference
   # trimAl removes gappy alignment sites before optional IQ-TREE inference.
   trimal:
@@ -544,6 +559,10 @@ parameters: &global_params
       threads: 4
       mem_mb: 16000
       runtime: 1440
+    treemix:
+      threads: 4
+      mem_mb: 16000
+      runtime: 240
     roh:
       threads: 4
       mem_mb: 8000
@@ -590,6 +609,7 @@ projects:
       iqtree_trimal: false    # trimAl alignment trimming followed by IQ-TREE inference.
       iqtree_robust: false    # Robust IQ-TREE output selection based on support threshold.
       fineradstructure: false # RADpainter/fineRADstructure coancestry and clustering.
+      treemix: false          # Historical population graph with migration edges.
       construct: false        # Spatial population structure model with conStruct.
       dapc: false             # Discriminant analysis of principal components clustering.
       spca: true              # Spatial PCA combining genetic variance and spatial autocorrelation.
@@ -645,6 +665,7 @@ projects:
   #     iqtree_trimal: false    # trimAl alignment trimming followed by IQ-TREE inference.
   #     iqtree_robust: false    # Robust IQ-TREE output selection based on support threshold.
   #     fineradstructure: false # RADpainter/fineRADstructure coancestry and clustering.
+  #     treemix: false          # Historical population graph with migration edges.
   #
   #   parameters:
   #     <<: *global_params

@@ -405,6 +405,27 @@ if analyses.get("construct", False):
         f"population structure."
     )
 
+if analyses.get("treemix", False):
+    tm = p.get("treemix", {})
+    pop_col = tm.get("population_column", "Site")
+    migration_edges = tm.get("migration_edges", [0])
+    if isinstance(migration_edges, int):
+        migration_edges = [migration_edges]
+    migration_str = ", ".join(str(int(m)) for m in migration_edges)
+    struct_parts.append(
+        f"Historical relationships among populations were inferred with TreeMix "
+        f"version {v(versions,'treemix')} (Pickrell & Pritchard 2012) from the "
+        f"{dataset_label} ({n_snps} SNPs, {n_samples} individuals). Individuals "
+        f"were grouped into populations using the '{pop_col}' column of "
+        f"indpopdata, and each SNP was converted to TreeMix input as reference "
+        f"and alternate allele counts per population. This follows the standard "
+        f"VCF-to-TreeMix transformation in which biallelic SNP genotypes are "
+        f"summarised as population-level allele counts before graph fitting. "
+        f"Graphs were fit with migration-edge counts m = {migration_str}, using "
+        f"a block size of {tm.get('k', tm.get('block_size', 1000))} SNPs to account for linkage "
+        f"when estimating the covariance matrix."
+    )
+
 if struct_parts:
     sections.append(("Population structure and ancestry",
                      "\n\n".join(struct_parts)))
@@ -804,6 +825,13 @@ if analyses.get("construct", False):
     refs["construct"] = (
         "Bradburd, G.S., Coop, G.M. & Ralph, P.L. (2018). Inferring continuous and "
         "discrete population genetic structure across space. *Genetics*, 210, 33–52."
+    )
+
+if analyses.get("treemix", False):
+    refs["treemix"] = (
+        "Pickrell, J.K. & Pritchard, J.K. (2012). Inference of population splits "
+        "and mixtures from genome-wide allele frequency data. *PLOS Genetics*, "
+        "8, e1002967."
     )
 
 if analyses.get("pcaone", False) or analyses.get("pcaone_emu", False) \
