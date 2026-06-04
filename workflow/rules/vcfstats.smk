@@ -93,6 +93,42 @@ rule summarize_depth_vcf_original:
     script:
         "../scripts/summarize_depth_stats.py"
 
+rule plot_idepth_histogram_original:
+    input:
+        idepth = rules.calculate_depth_vcf_original.output.individual_depth
+    output:
+        pdf = "results/{project}/stats_vcf/original/plots/{project}.subset.idepth_histogram.pdf",
+        rds = "results/{project}/stats_vcf/original/plots/{project}.subset.idepth_histogram.rds",
+        summary = "results/{project}/stats_vcf/original/{project}.subset.idepth_summary.txt"
+    log:
+        "logs/{project}/plot_idepth_histogram_original.log"
+    conda:
+        "../envs/r-plot.yaml"
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    script:
+        "../scripts/plot_depth_histogram.R"
+
+rule plot_ldepth_histogram_original:
+    input:
+        ldepth = rules.calculate_depth_vcf_original.output.site_depth
+    output:
+        pdf = "results/{project}/stats_vcf/original/plots/{project}.subset.ldepth_histogram.pdf",
+        rds = "results/{project}/stats_vcf/original/plots/{project}.subset.ldepth_histogram.rds",
+        summary = "results/{project}/stats_vcf/original/{project}.subset.ldepth_summary.txt"
+    log:
+        "logs/{project}/plot_ldepth_histogram_original.log"
+    conda:
+        "../envs/r-plot.yaml"
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    script:
+        "../scripts/plot_depth_histogram.R"
+
 # Sequencing depth statistics from filtered VCF (before thinning)
 rule calculate_depth_vcf_filtered:
     input:
@@ -137,6 +173,42 @@ rule summarize_depth_vcf_filtered:
     script:
         "../scripts/summarize_depth_stats.py"
 
+rule plot_idepth_histogram_filtered:
+    input:
+        idepth = rules.calculate_depth_vcf_filtered.output.individual_depth
+    output:
+        pdf = "results/{project}/stats_vcf/filtered/plots/{project}.filtered.idepth_histogram.pdf",
+        rds = "results/{project}/stats_vcf/filtered/plots/{project}.filtered.idepth_histogram.rds",
+        summary = "results/{project}/stats_vcf/filtered/{project}.filtered.idepth_summary.txt"
+    log:
+        "logs/{project}/plot_idepth_histogram_filtered.log"
+    conda:
+        "../envs/r-plot.yaml"
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    script:
+        "../scripts/plot_depth_histogram.R"
+
+rule plot_ldepth_histogram_filtered:
+    input:
+        ldepth = rules.calculate_depth_vcf_filtered.output.site_depth
+    output:
+        pdf = "results/{project}/stats_vcf/filtered/plots/{project}.filtered.ldepth_histogram.pdf",
+        rds = "results/{project}/stats_vcf/filtered/plots/{project}.filtered.ldepth_histogram.rds",
+        summary = "results/{project}/stats_vcf/filtered/{project}.filtered.ldepth_summary.txt"
+    log:
+        "logs/{project}/plot_ldepth_histogram_filtered.log"
+    conda:
+        "../envs/r-plot.yaml"
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    script:
+        "../scripts/plot_depth_histogram.R"
+
 # Sequencing depth statistics from thinned VCF (after thinning)
 rule calculate_depth_vcf_thinned:
     input:
@@ -180,6 +252,42 @@ rule summarize_depth_vcf_thinned:
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
     script:
         "../scripts/summarize_depth_stats.py"
+
+rule plot_idepth_histogram_thinned:
+    input:
+        idepth = rules.calculate_depth_vcf_thinned.output.individual_depth
+    output:
+        pdf = "results/{project}/stats_vcf/thinned/plots/{project}.biallelic_snps.idepth_histogram.pdf",
+        rds = "results/{project}/stats_vcf/thinned/plots/{project}.biallelic_snps.idepth_histogram.rds",
+        summary = "results/{project}/stats_vcf/thinned/{project}.biallelic_snps.idepth_summary.txt"
+    log:
+        "logs/{project}/plot_idepth_histogram_thinned.log"
+    conda:
+        "../envs/r-plot.yaml"
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    script:
+        "../scripts/plot_depth_histogram.R"
+
+rule plot_ldepth_histogram_thinned:
+    input:
+        ldepth = rules.calculate_depth_vcf_thinned.output.site_depth
+    output:
+        pdf = "results/{project}/stats_vcf/thinned/plots/{project}.biallelic_snps.ldepth_histogram.pdf",
+        rds = "results/{project}/stats_vcf/thinned/plots/{project}.biallelic_snps.ldepth_histogram.rds",
+        summary = "results/{project}/stats_vcf/thinned/{project}.biallelic_snps.ldepth_summary.txt"
+    log:
+        "logs/{project}/plot_ldepth_histogram_thinned.log"
+    conda:
+        "../envs/r-plot.yaml"
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    script:
+        "../scripts/plot_depth_histogram.R"
 
 # VCF statistics from original VCF (after user sample subset, before relatedness filtering)
 rule chromosome_stats_vcf_original:
