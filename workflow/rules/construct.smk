@@ -45,10 +45,10 @@ rule construct_analysis:
         save_files = lambda wildcards: config["projects"][wildcards.project]["parameters"]["construct"].get("save.files", True)
     conda:
         "../envs/construct.yaml"
-    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["construct"].get("threads", 1)
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["construct"]["threads"]
     resources:
-        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["construct"].get("mem_mb", 16000),
-        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["construct"].get("runtime", 1440)
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["construct"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["construct"]["runtime"]
     script:
         "../scripts/construct_analysis.R"
 
@@ -77,8 +77,8 @@ rule construct_choose_k:
         "../envs/construct.yaml"
     threads: 1
     resources:
-        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["construct"].get("mem_mb", 16000),
-        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["construct"].get("runtime", 60)
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["construct"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["construct"]["runtime"]
     script:
         "../scripts/construct_choose_k.R"
 
@@ -127,8 +127,8 @@ rule construct_qmatrix:
         "../envs/mapmixture.yaml"
     threads: 1
     resources:
-        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"].get("mem_mb", 8000),
-        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"].get("runtime", 5)
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
     script:
         "../scripts/construct_qmatrix.R"
 
