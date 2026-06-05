@@ -248,6 +248,12 @@ def _pixy_pi_map_inputs(wildcards):
     return inputs
 
 
+def _has_popdata(params):
+    """True when a project has a valid popdata file configured."""
+    popdata = params.get("popdata")
+    return bool(popdata) and popdata not in ("NULL", "")
+
+
 # OrientAGraph/TreeMix helper functions — defined here so get_all_targets() can
 # call them without a forward dependency on the orientagraph.smk include.
 
@@ -405,8 +411,7 @@ def get_all_targets():
                 f"results/{project}/faststructure/{project}.faststructure.chooseK_results.txt"
             ])
             # Only add map plots if popdata is specified
-            popdata = params.get("popdata")
-            if popdata and popdata != "NULL" and popdata != "":
+            if _has_popdata(params):
                 targets.extend([
                     expand(f"results/{project}/faststructure/plots/{project}.faststructure.K{{k}}.map.pdf",
                            k=k_values),
@@ -434,8 +439,7 @@ def get_all_targets():
                 f"results/{project}/admixture/plots/{project}.admixture.cv_plot.rds",
             ])
             # Only add map plots if popdata is specified
-            popdata = params.get("popdata")
-            if popdata and popdata != "NULL" and popdata != "":
+            if _has_popdata(params):
                 targets.extend([
                     expand(f"results/{project}/admixture/plots/{project}.admixture.K{{k}}.map.pdf",
                            k=k_values),
@@ -463,8 +467,7 @@ def get_all_targets():
                 f"results/{project}/structure/plots/{project}.evanno_plot.rds"
             ])
             # Only add map plots if popdata is specified
-            popdata = params.get("popdata")
-            if popdata and popdata != "NULL" and popdata != "":
+            if _has_popdata(params):
                 targets.extend([
                     expand(f"results/{project}/structure/plots/{project}.structure.K{{k}}.map.pdf",
                            k=k_values),
@@ -481,8 +484,7 @@ def get_all_targets():
 
         # tess3r targets
         if analyses.get("tess3", False):
-            popdata = params.get("popdata")
-            if popdata and popdata != "NULL" and popdata != "":
+            if _has_popdata(params):
                 targets.extend([
                     f"results/{project}/tess3/{project}.tess3.chooseK_results.txt",
                     f"results/{project}/tess3/{project}.tess3.cv_summary.txt",
@@ -695,8 +697,7 @@ def get_all_targets():
                     )
                 # π map uses Site-level summary only (merge to geographic Site coordinates)
                 if "Site" in pixy_groupings:
-                    popdata = params.get("popdata")
-                    if popdata and popdata != "NULL" and popdata != "":
+                    if _has_popdata(params):
                         targets.extend(
                             [
                                 f"results/{project}/pixy/plots/{project}.pixy_pi_map.pdf",
@@ -1066,8 +1067,7 @@ def get_all_targets():
         # MAPI targets
         if analyses.get("mapi", False):
             # Only run if popdata is specified (required for geographic coordinates)
-            popdata = params.get("popdata")
-            if popdata and popdata != "NULL" and popdata != "":
+            if _has_popdata(params):
                 targets.extend([
                     f"results/{project}/gen_dist/{project}.euclidean_distance.tsv",
                     f"results/{project}/mapi/{project}.mapi_results.gpkg",
@@ -1078,8 +1078,7 @@ def get_all_targets():
                 ])
         
         # Population map targets (always run if popdata is available)
-        popdata = params.get("popdata")
-        if popdata and popdata != "NULL" and popdata != "":
+        if _has_popdata(params):
             targets.extend([
                 f"results/{project}/stats_samples/plots/{project}.population_map.pdf",
                 f"results/{project}/stats_samples/plots/{project}.population_map.rds"
@@ -1148,8 +1147,7 @@ def get_all_targets():
         # conStruct targets
         if analyses.get("construct", False):
             # Only run if popdata is specified (required for geographic coordinates)
-            popdata = params.get("popdata")
-            if popdata and popdata != "NULL" and popdata != "":
+            if _has_popdata(params):
                 targets.extend([
                     expand(f"results/{project}/construct/{project}.construct.K{{k}}.results.rds",
                            k=k_values),
@@ -1174,8 +1172,7 @@ def get_all_targets():
 
         # sPCA targets
         if analyses.get("spca", False):
-            popdata = params.get("popdata")
-            if popdata and popdata != "NULL" and popdata != "":
+            if _has_popdata(params):
                 n_spca_axes = _spca_n_axes_from_params(params)
                 n_spca_global_axes = _spca_nfposi_from_params(params)
                 n_spca_local_axes = _spca_nfnega_from_params(params)
@@ -1240,8 +1237,7 @@ def get_all_targets():
                 f"results/{project}/dapc/plots/{project}.dapc.criterion_plot.pdf"
             ])
             # Only add map plots if popdata is specified
-            popdata = params.get("popdata")
-            if popdata and popdata != "NULL" and popdata != "":
+            if _has_popdata(params):
                 targets.extend([
                     expand(f"results/{project}/dapc/plots/{project}.dapc.K{{k}}.map.pdf",
                            k=dapc_k_values),
