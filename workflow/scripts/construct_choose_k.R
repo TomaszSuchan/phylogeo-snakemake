@@ -54,6 +54,15 @@ extract_lpd <- function(results) {
   vapply(chains, function(chain) as.numeric(results[[chain]]$MAP$lpd), numeric(1))
 }
 
+load_construct_robj <- function(path) {
+  env <- new.env()
+  loaded <- load(path, envir = env)
+  if (length(loaded) != 1) {
+    stop("Expected one object in ", path, ", found: ", paste(loaded, collapse = ", "))
+  }
+  env[[loaded[1]]]
+}
+
 load_data_block <- function(obj, results_path, k) {
   if (!is.null(obj$data.block)) {
     return(obj$data.block)
@@ -62,12 +71,15 @@ load_data_block <- function(obj, results_path, k) {
   output_dir <- dirname(results_path)
   base_name <- sub("\\.results\\.rds$", "", basename(results_path))
   candidates <- c(
+    file.path(output_dir, paste0(base_name, ".results.K", k, "_data.block.Robj")),
+    file.path(output_dir, paste0(base_name, ".K", k, "_data.block.Robj")),
     file.path(output_dir, paste0(base_name, ".K", k, "_sp_data.block.Robj")),
+    file.path(output_dir, paste0(base_name, "_data.block.Robj")),
     file.path(output_dir, paste0(base_name, "_sp_data.block.Robj"))
   )
   for (candidate in candidates) {
     if (file.exists(candidate)) {
-      return(readRDS(candidate))
+      return(load_construct_robj(candidate))
     }
   }
   NULL

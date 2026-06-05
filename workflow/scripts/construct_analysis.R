@@ -257,39 +257,39 @@ cat("conStruct analysis complete\n")
 
 cat("Extracting layer proportions...\n")
 
-# Extract layer proportions (admixture proportions) from results
-# conStruct results contain layer proportions in the "layer.proportions" component
-if ("layer.proportions" %in% names(construct_results)) {
-  layer_props <- construct_results$layer.proportions
-} else if ("results" %in% names(construct_results) && "layer.proportions" %in% names(construct_results$results)) {
-  layer_props <- construct_results$results$layer.proportions
-} else {
-  # Try to extract from the structure of results
-  # conStruct may store results differently depending on version
-  layer_props <- construct_results[[1]]$layer.proportions
+get_chain_names <- function(results) {
+  chains <- grep("^chain_", names(results), value = TRUE)
+  if (length(chains) > 0) {
+    return(chains)
+  }
+  idx <- vapply(results, function(x) is.list(x) && !is.null(x$MAP), logical(1))
+  names(results)[idx]
 }
 
-# If layer_props is a list (multiple chains), take the first one or average
-if (is.list(layer_props) && !is.data.frame(layer_props) && !is.matrix(layer_props)) {
-  layer_props <- layer_props[[1]]
+chains <- get_chain_names(construct_results)
+if (length(chains) == 0) {
+  stop(
+    "No conStruct chain results found; available names: ",
+    paste(names(construct_results), collapse = ", ")
+  )
 }
 
-# Ensure it's a matrix or data frame
-if (!is.matrix(layer_props) && !is.data.frame(layer_props)) {
-  cat("WARNING: Could not extract layer proportions in expected format\n")
-  cat("Available names in results:", paste(names(construct_results), collapse=", "), "\n")
-  layer_props <- matrix(NA, nrow = n_inds, ncol = k)
-  rownames(layer_props) <- ind_names
-  colnames(layer_props) <- paste0("Layer", 1:k)
-} else {
-  # Add row names if missing
-  if (is.null(rownames(layer_props))) {
-    rownames(layer_props) <- ind_names[1:nrow(layer_props)]
-  }
-  # Add column names if missing
-  if (is.null(colnames(layer_props))) {
-    colnames(layer_props) <- paste0("Layer", 1:ncol(layer_props))
-  }
+layer_props <- construct_results[[chains[1]]]$MAP$admix.proportions
+if (is.null(layer_props) || (!is.matrix(layer_props) && !is.data.frame(layer_props))) {
+  stop(
+    "Could not extract MAP admixture proportions from chain ",
+    chains[1],
+    "; MAP names: ",
+    paste(names(construct_results[[chains[1]]]$MAP), collapse = ", ")
+  )
+}
+
+layer_props <- as.matrix(layer_props)
+if (is.null(rownames(layer_props))) {
+  rownames(layer_props) <- ind_names[seq_len(nrow(layer_props))]
+}
+if (is.null(colnames(layer_props))) {
+  colnames(layer_props) <- paste0("Layer", seq_len(ncol(layer_props)))
 }
 
 # Write layer proportions to file
@@ -309,10 +309,23 @@ cat("Layer proportions saved to:", layer_proportions, "\n")
 # ==============================================================================
 
 cat("Saving results to RDS file...\n")
-data_block_file <- paste0(output_prefix, "_sp_data.block.Robj")
-data_block <- if (file.exists(data_block_file)) {
+data_block_candidates <- c(
+  paste0(output_prefix, "_data.block.Robj"),
+  paste0(output_prefix, "_sp_data.block.Robj")
+)
+data_block_file <- data_block_candidates[file.exists(data_block_candidates)][1]
+load_construct_robj <- function(path) {
+  env <- new.env()
+  loaded <- load(path, envir = env)
+  if (length(loaded) != 1) {
+    stop("Expected one object in ", path, ", found: ", paste(loaded, collapse = ", "))
+  }
+  env[[loaded[1]]]
+}
+
+data_block <- if (!is.na(data_block_file)) {
   cat("Loading saved data.block from:", data_block_file, "\n")
-  readRDS(data_block_file)
+  load_construct_robj(data_block_file)
 } else {
   cat("WARNING: data.block file not found; choose-K summaries may require re-running with save.files = TRUE\n")
   NULL
