@@ -42,7 +42,11 @@ window <- c(
 )
 
 palette <- if (use_custom_palette) {
-  CreatePalette(structure_colors, 9)
+  colors <- structure_colors[seq_len(min(k, length(structure_colors)))]
+  if (length(colors) < k) {
+    colors <- rep(colors, length.out = k)
+  }
+  CreatePalette(colors, 9)
 } else {
   CreatePalette()
 }
@@ -60,7 +64,7 @@ tryCatch({
     col.palette = palette,
     xlab = "Longitude",
     ylab = "Latitude",
-    main = paste0("tess3r ancestry coefficients (K=", k, ")"),
+    main = "",
     cex = 0.4
   )
   plot_tess3Q_fn <- getS3method("plot", "tess3Q")

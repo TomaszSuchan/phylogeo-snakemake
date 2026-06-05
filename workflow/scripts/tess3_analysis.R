@@ -183,7 +183,7 @@ tryCatch({
     col.palette = CreatePalette(),
     xlab = "Longitude",
     ylab = "Latitude",
-    main = paste0("tess3r max-cluster map (K=", k, ")"),
+    main = "",
     cex = 0.4
   )
   if ("interpol" %in% names(formals(plot_tess3Q_fn))) {

@@ -1,5 +1,8 @@
 #!/usr/bin/env Rscript
 # tess3r ggtess3Q ancestry surface on the shared mapmixture basemap.
+#
+# ggtess3Q returns a geom_tile layer in WGS84 lon/lat. The mapmixture basemap is
+# built first; tess tiles and scale_fill_identity() are appended on top (not below).
 
 pdf(NULL)
 
@@ -39,6 +42,38 @@ if (file.exists(common_functions)) {
   source("workflow/scripts/common_map_functions.R")
 }
 
+append_ggplot_layers <- function(base_plt, overlay_plt) {
+  if (is.null(overlay_plt$layers) || length(overlay_plt$layers) == 0) {
+    return(base_plt)
+  }
+  base_plt$layers <- c(base_plt$layers, overlay_plt$layers)
+  if (!is.null(overlay_plt$scales) && length(overlay_plt$scales$scales) > 0) {
+    base_plt$scales$scales <- c(base_plt$scales$scales, overlay_plt$scales$scales)
+  }
+  base_plt
+}
+
+tess3_cluster_palette <- function(structure_colors, n_clusters, palette_length = 9) {
+  if (length(structure_colors) == 0) {
+    return(CreatePalette())
+  }
+  colors <- structure_colors[seq_len(min(n_clusters, length(structure_colors)))]
+  if (length(colors) < n_clusters) {
+    colors <- rep(colors, length.out = n_clusters)
+  }
+  CreatePalette(colors, palette_length)
+}
+
+tess3_map_polygon <- function() {
+  if (!requireNamespace("rnaturalearth", quietly = TRUE)) {
+    return(NULL)
+  }
+  tryCatch(
+    rnaturalearth::ne_countries(scale = "medium", returnclass = "sp"),
+    error = function(e) NULL
+  )
+}
+
 results_rds <- snakemake@input[["results_rds"]]
 indpopdata_file <- snakemake@input[["indpopdata"]]
 output_pdf <- snakemake@output[["pdf"]]
@@ -52,6 +87,13 @@ point_size <- as.numeric(snakemake@params[["point_size"]])
 use_elevation_bg <- isTRUE(snakemake@params[["use_elevation_bg"]])
 basemap <- snakemake@params[["basemap"]]
 crs <- as.numeric(snakemake@params[["crs"]])
+
+if (crs != 4326) {
+  stop(
+    "plot_tess3_ggmap requires map_background.crs = 4326 because ggtess3Q ",
+    "interpolates in geographic longitude/latitude."
+  )
+}
 
 plot_title <- snakemake@params[["plot_title"]]
 if (is.null(plot_title)) {
@@ -85,14 +127,7 @@ results <- readRDS(results_rds)
 tess3_obj <- results$tess3
 coords <- results$coordinates
 qmat <- qmatrix(tess3_obj, K = k)
-
-if (crs != 4326) {
-  cat(
-    "NOTE: ggtess3Q interpolates in geographic coordinates; sample points are ",
-    "reprojected to match map_background.crs=", crs, ".\n",
-    sep = ""
-  )
-}
+n_clusters <- ncol(as.matrix(qmat))
 
 indpopdata <- read.table(
   indpopdata_file,
@@ -124,44 +159,29 @@ if (!(length(boundary) == 0 || is.null(boundary) || boundary == "NULL")) {
   }
 }
 
-map_polygon <- NULL
-if (requireNamespace("rnaturalearth", quietly = TRUE)) {
-  map_polygon <- tryCatch(
-    rnaturalearth::ne_countries(scale = "medium", returnclass = "sp"),
-    error = function(e) NULL
-  )
-}
-
-palette <- if (length(structure_colors) > 0) {
-  CreatePalette(structure_colors, 9)
-} else {
-  CreatePalette()
-}
+map_polygon <- tess3_map_polygon()
+palette <- tess3_cluster_palette(structure_colors, n_clusters)
 
 cat("Building mapmixture basemap...\n")
 base_plt <- create_basemap(coords_df, map_params)
 
-cat("Adding tess3r ggtess3Q ancestry surface...\n")
-gg_args <- list(
+cat("Adding tess3r ggtess3Q ancestry surface (cropped to land)...\n")
+tess_plt <- ggtess3Q(
   Q = qmat,
   coord = coords,
   resolution = map_resolution,
   window = window,
-  background = FALSE,
+  background = TRUE,
   map.polygon = map_polygon,
   interpolation.model = FieldsKrigModel(interpolation_knots),
   col.palette = palette
 )
-tess_plt <- do.call(ggtess3Q, gg_args)
 
-combined_plt <- base_plt
-if (!is.null(tess_plt$layers) && length(tess_plt$layers) > 0) {
-  combined_plt$layers <- c(tess_plt$layers, combined_plt$layers)
-}
+# Basemap first, tess tiles on top; include scale_fill_identity() from ggtess3Q.
+combined_plt <- append_ggplot_layers(base_plt, tess_plt)
 
 coord_df <- as.data.frame(coords)
 colnames(coord_df) <- c("Lon", "Lat")
-coord_df <- transform_coordinates(coord_df, crs)
 
 combined_plt <- combined_plt +
   ggplot2::geom_point(
