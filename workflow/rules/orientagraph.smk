@@ -1,16 +1,11 @@
 # OrientAGraph historical population graph inference
+# _treemix_migration_edges_from_params, _treemix_bootstrap_config_from_params, and
+# _treemix_bootstrap_enabled_from_params are defined in the Snakefile so that
+# get_all_targets() can call them without a forward dependency on this include.
 
 
 def _treemix_params(wildcards):
     return config["projects"][wildcards.project]["parameters"].get("treemix", {})
-
-
-def _treemix_migration_edges_from_params(params):
-    tm = params.get("treemix", {})
-    edges = tm.get("migration_edges", [0])
-    if isinstance(edges, int):
-        edges = [edges]
-    return [int(edge) for edge in edges]
 
 
 def _treemix_migration_edges(wildcards):
@@ -25,18 +20,6 @@ def _treemix_optm_replicates_from_params(params):
 
 def _treemix_optm_replicates(wildcards):
     return _treemix_optm_replicates_from_params(config["projects"][wildcards.project]["parameters"])
-
-
-def _treemix_bootstrap_config_from_params(params):
-    tm = params.get("treemix", {})
-    bootstrap = tm.get("bootstrap", {})
-    if isinstance(bootstrap, bool):
-        return {"enabled": bootstrap, "migration_edges": [], "replicates": 100}
-    return bootstrap or {}
-
-
-def _treemix_bootstrap_enabled_from_params(params):
-    return bool(_treemix_bootstrap_config_from_params(params).get("enabled", False))
 
 
 def _treemix_bootstrap_migration_edges_from_params(params):
