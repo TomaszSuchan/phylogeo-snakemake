@@ -398,84 +398,84 @@ def get_all_targets():
         # FastStructure targets
         if analyses.get("faststructure", False):
             targets.extend([
-                expand("results/" + project + "/faststructure/" + project + ".faststructure.{k}.meanQ",
+                expand(f"results/{project}/faststructure/{project}.faststructure.{{k}}.meanQ",
                        k=k_values),
-                expand("results/" + project + "/faststructure/" + project + ".faststructure.{k}.meanP",
+                expand(f"results/{project}/faststructure/{project}.faststructure.{{k}}.meanP",
                        k=k_values),
-                "results/" + project + "/faststructure/" + project + ".faststructure.chooseK_results.txt"
+                f"results/{project}/faststructure/{project}.faststructure.chooseK_results.txt"
             ])
             # Only add map plots if popdata is specified
             popdata = params.get("popdata")
             if popdata and popdata != "NULL" and popdata != "":
                 targets.extend([
-                    expand("results/" + project + "/faststructure/plots/" + project + ".faststructure.K{k}.map.pdf",
+                    expand(f"results/{project}/faststructure/plots/{project}.faststructure.K{{k}}.map.pdf",
                            k=k_values),
-                    expand("results/" + project + "/faststructure/plots/" + project + ".faststructure.K{k}.map.rds",
+                    expand(f"results/{project}/faststructure/plots/{project}.faststructure.K{{k}}.map.rds",
                            k=k_values)
                 ])
             # Always add barplots
             targets.extend([
-                expand("results/" + project + "/faststructure/plots/" + project + ".faststructure.K{k}.barplot.pdf",
+                expand(f"results/{project}/faststructure/plots/{project}.faststructure.K{{k}}.barplot.pdf",
                        k=k_values),
-                expand("results/" + project + "/faststructure/plots/" + project + ".faststructure.K{k}.barplot.rds",
+                expand(f"results/{project}/faststructure/plots/{project}.faststructure.K{{k}}.barplot.rds",
                        k=k_values)
             ])
 
         # ADMIXTURE targets
         if analyses.get("admixture", False):
             targets.extend([
-                expand("results/" + project + "/admixture/" + project + ".biallelic_snps_thinned.{k}.Q",
+                expand(f"results/{project}/admixture/{project}.biallelic_snps_thinned.{{k}}.Q",
                        k=k_values),
-                expand("results/" + project + "/admixture/" + project + ".biallelic_snps_thinned.{k}.P",
+                expand(f"results/{project}/admixture/{project}.biallelic_snps_thinned.{{k}}.P",
                        k=k_values),
-                "results/" + project + "/admixture/" + project + ".admixture.chooseK_results.txt",
-                "results/" + project + "/admixture/" + project + ".admixture.cv_summary.txt",
-                "results/" + project + "/admixture/plots/" + project + ".admixture.cv_plot.pdf",
-                "results/" + project + "/admixture/plots/" + project + ".admixture.cv_plot.rds",
+                f"results/{project}/admixture/{project}.admixture.chooseK_results.txt",
+                f"results/{project}/admixture/{project}.admixture.cv_summary.txt",
+                f"results/{project}/admixture/plots/{project}.admixture.cv_plot.pdf",
+                f"results/{project}/admixture/plots/{project}.admixture.cv_plot.rds",
             ])
             # Only add map plots if popdata is specified
             popdata = params.get("popdata")
             if popdata and popdata != "NULL" and popdata != "":
                 targets.extend([
-                    expand("results/" + project + "/admixture/plots/" + project + ".admixture.K{k}.map.pdf",
+                    expand(f"results/{project}/admixture/plots/{project}.admixture.K{{k}}.map.pdf",
                            k=k_values),
-                    expand("results/" + project + "/admixture/plots/" + project + ".admixture.K{k}.map.rds",
+                    expand(f"results/{project}/admixture/plots/{project}.admixture.K{{k}}.map.rds",
                            k=k_values)
                 ])
             # Always add barplots
             targets.extend([
-                expand("results/" + project + "/admixture/plots/" + project + ".admixture.K{k}.barplot.pdf",
+                expand(f"results/{project}/admixture/plots/{project}.admixture.K{{k}}.barplot.pdf",
                        k=k_values),
-                expand("results/" + project + "/admixture/plots/" + project + ".admixture.K{k}.barplot.rds",
+                expand(f"results/{project}/admixture/plots/{project}.admixture.K{{k}}.barplot.rds",
                        k=k_values)
             ])
 
         # STRUCTURE targets
         if analyses.get("structure", False):
             targets.extend([
-                expand("results/" + project + "/structure/" + project + ".structure.K{k}.R{r}_f",
+                expand(f"results/{project}/structure/{project}.structure.K{{k}}.R{{r}}_f",
                        k=k_values,
                        r=range(1, n_reps + 1)),
-                "results/" + project + "/structure/" + project + ".K_aligned.pdf",
-                expand("results/" + project + "/structure/" + project + ".structure.K{k}.Qmatrix.txt",
+                f"results/{project}/structure/{project}.K_aligned.pdf",
+                expand(f"results/{project}/structure/{project}.structure.K{{k}}.Qmatrix.txt",
                        k=k_values),
-                "results/" + project + "/structure/plots/" + project + ".evanno_plot.pdf",
-                "results/" + project + "/structure/plots/" + project + ".evanno_plot.rds"
+                f"results/{project}/structure/plots/{project}.evanno_plot.pdf",
+                f"results/{project}/structure/plots/{project}.evanno_plot.rds"
             ])
             # Only add map plots if popdata is specified
             popdata = params.get("popdata")
             if popdata and popdata != "NULL" and popdata != "":
                 targets.extend([
-                    expand("results/" + project + "/structure/plots/" + project + ".structure.K{k}.map.pdf",
+                    expand(f"results/{project}/structure/plots/{project}.structure.K{{k}}.map.pdf",
                            k=k_values),
-                    expand("results/" + project + "/structure/plots/" + project + ".structure.K{k}.map.rds",
+                    expand(f"results/{project}/structure/plots/{project}.structure.K{{k}}.map.rds",
                            k=k_values)
                 ])
             # Always add barplots
             targets.extend([
-                expand("results/" + project + "/structure/plots/" + project + ".structure.K{k}.barplot.pdf",
+                expand(f"results/{project}/structure/plots/{project}.structure.K{{k}}.barplot.pdf",
                        k=k_values),
-                expand("results/" + project + "/structure/plots/" + project + ".structure.K{k}.barplot.rds",
+                expand(f"results/{project}/structure/plots/{project}.structure.K{{k}}.barplot.rds",
                        k=k_values)
             ])
 
@@ -484,42 +484,42 @@ def get_all_targets():
             popdata = params.get("popdata")
             if popdata and popdata != "NULL" and popdata != "":
                 targets.extend([
-                    "results/" + project + "/tess3/" + project + ".tess3.chooseK_results.txt",
-                    "results/" + project + "/tess3/" + project + ".tess3.cv_summary.txt",
-                    "results/" + project + "/tess3/plots/" + project + ".tess3.cv_plot.pdf",
-                    "results/" + project + "/tess3/plots/" + project + ".tess3.cv_plot.rds",
-                    expand("results/" + project + "/tess3/" + project + ".tess3.K{k}.Qmatrix.txt",
+                    f"results/{project}/tess3/{project}.tess3.chooseK_results.txt",
+                    f"results/{project}/tess3/{project}.tess3.cv_summary.txt",
+                    f"results/{project}/tess3/plots/{project}.tess3.cv_plot.pdf",
+                    f"results/{project}/tess3/plots/{project}.tess3.cv_plot.rds",
+                    expand(f"results/{project}/tess3/{project}.tess3.K{{k}}.Qmatrix.txt",
                            k=k_values),
-                    expand("results/" + project + "/tess3/" + project + ".tess3.K{k}.results.rds",
+                    expand(f"results/{project}/tess3/{project}.tess3.K{{k}}.results.rds",
                            k=k_values),
-                    expand("results/" + project + "/tess3/" + project + ".tess3.K{k}.cross_entropy.txt",
+                    expand(f"results/{project}/tess3/{project}.tess3.K{{k}}.cross_entropy.txt",
                            k=k_values),
-                    expand("results/" + project + "/tess3/plots/" + project + ".tess3.K{k}.max_cluster.png",
+                    expand(f"results/{project}/tess3/plots/{project}.tess3.K{{k}}.max_cluster.png",
                            k=k_values),
-                    expand("results/" + project + "/tess3/plots/" + project + ".tess3.K{k}.interpolation.pdf",
+                    expand(f"results/{project}/tess3/plots/{project}.tess3.K{{k}}.interpolation.pdf",
                            k=k_values),
-                    expand("results/" + project + "/tess3/plots/" + project + ".tess3.K{k}.ggmap.pdf",
+                    expand(f"results/{project}/tess3/plots/{project}.tess3.K{{k}}.ggmap.pdf",
                            k=k_values),
-                    expand("results/" + project + "/tess3/plots/" + project + ".tess3.K{k}.ggmap.rds",
+                    expand(f"results/{project}/tess3/plots/{project}.tess3.K{{k}}.ggmap.rds",
                            k=k_values),
-                    expand("results/" + project + "/tess3/plots/" + project + ".tess3.K{k}.map.pdf",
+                    expand(f"results/{project}/tess3/plots/{project}.tess3.K{{k}}.map.pdf",
                            k=k_values),
-                    expand("results/" + project + "/tess3/plots/" + project + ".tess3.K{k}.map.rds",
+                    expand(f"results/{project}/tess3/plots/{project}.tess3.K{{k}}.map.rds",
                            k=k_values),
-                    expand("results/" + project + "/tess3/plots/" + project + ".tess3.K{k}.barplot.pdf",
+                    expand(f"results/{project}/tess3/plots/{project}.tess3.K{{k}}.barplot.pdf",
                            k=k_values),
-                    expand("results/" + project + "/tess3/plots/" + project + ".tess3.K{k}.barplot.rds",
+                    expand(f"results/{project}/tess3/plots/{project}.tess3.K{{k}}.barplot.rds",
                            k=k_values)
                 ])
 
         # PCAone targets (standard)
         if analyses.get("pcaone", False):
             targets.extend([
-                "results/" + project + "/pcaone/" + project + ".PCA.eigvecs",
-                "results/" + project + "/pcaone/" + project + ".PCA.eigvals"
+                f"results/{project}/pcaone/{project}.PCA.eigvecs",
+                f"results/{project}/pcaone/{project}.PCA.eigvals"
             ])
             # Always add missing data calculation target
-            targets.append("results/" + project + "/stats_vcf/thinned/" + project + ".biallelic_snps.imiss")
+            targets.append(f"results/{project}/stats_vcf/thinned/{project}.biallelic_snps.imiss")
             # Add plot targets for each PC combination and color grouping
             for pc1, pc2 in pca_combinations:
                 for color_by in PCA_groupings:
@@ -551,11 +551,11 @@ def get_all_targets():
         # PCAone targets (EMU)
         if analyses.get("pcaone_emu", False):
             targets.extend([
-                "results/" + project + "/pcaone_EMU/" + project + ".PCA_EMU.eigvecs",
-                "results/" + project + "/pcaone_EMU/" + project + ".PCA_EMU.eigvals"
+                f"results/{project}/pcaone_EMU/{project}.PCA_EMU.eigvecs",
+                f"results/{project}/pcaone_EMU/{project}.PCA_EMU.eigvals"
             ])
             # Always add missing data calculation target (reuses same .imiss as pcaone)
-            targets.append("results/" + project + "/stats_vcf/thinned/" + project + ".biallelic_snps.imiss")
+            targets.append(f"results/{project}/stats_vcf/thinned/{project}.biallelic_snps.imiss")
             # Add plot targets for each PC combination and color grouping
             for pc1, pc2 in pca_combinations:
                 for color_by in PCA_groupings:
@@ -576,14 +576,14 @@ def get_all_targets():
         if analyses.get("pcaone_miss", False):
             miss_values = params.get("PCAone", {}).get("miss", [0.5])
             targets.extend([
-                expand("results/" + project + "/pcaone_miss{miss}/" + project + ".PCA_miss{miss}.eigvecs",
+                expand(f"results/{project}/pcaone_miss{{miss}}/{project}.PCA_miss{{miss}}.eigvecs",
                        miss=miss_values),
-                expand("results/" + project + "/pcaone_miss{miss}/" + project + ".PCA_miss{miss}.eigvals",
+                expand(f"results/{project}/pcaone_miss{{miss}}/{project}.PCA_miss{{miss}}.eigvals",
                        miss=miss_values)
             ])
             # Always add missing data calculation targets for each threshold
             targets.extend([
-                expand("results/" + project + "/stats_vcf/thinned/" + project + ".biallelic_snps_thinned_miss{miss}.imiss",
+                expand(f"results/{project}/stats_vcf/thinned/{project}.biallelic_snps_thinned_miss{{miss}}.imiss",
                        miss=miss_values)
             ])
             # Add plot targets for each miss value, PC combination, and color grouping
@@ -611,14 +611,14 @@ def get_all_targets():
 
             targets.extend(
                 expand(
-                    "results/" + project + "/vcf2pcacluster_miss{miss}_MAF{MAF}/" + project + ".vcf2pcacluster_miss{miss}_MAF{MAF}.eigenvec",
+                    f"results/{project}/vcf2pcacluster_miss{miss}_MAF{MAF}/{project}.vcf2pcacluster_miss{miss}_MAF{MAF}.eigenvec",
                     miss=miss_values,
                     MAF=maf_values
                 )
             )
             targets.extend(
                 expand(
-                    "results/" + project + "/vcf2pcacluster_miss{miss}_MAF{MAF}/" + project + ".vcf2pcacluster_miss{miss}_MAF{MAF}.eigenval",
+                    f"results/{project}/vcf2pcacluster_miss{miss}_MAF{MAF}/{project}.vcf2pcacluster_miss{miss}_MAF{MAF}.eigenval",
                     miss=miss_values,
                     MAF=maf_values
                 )
@@ -632,19 +632,19 @@ def get_all_targets():
             if "pi" in pixy_stats:
                 targets.extend(
                     expand(
-                        "results/" + project + "/pixy/" + project + ".{grouping}.pixy_pi-summary.txt",
+                        f"results/{project}/pixy/{project}.{grouping}.pixy_pi-summary.txt",
                         grouping=pixy_groupings,
                     )
                 )
                 targets.extend(
                     expand(
-                        "results/" + project + "/pixy/plots/" + project + ".{grouping}.pixy_pi_plain.pdf",
+                        f"results/{project}/pixy/plots/{project}.{grouping}.pixy_pi_plain.pdf",
                         grouping=pixy_groupings,
                     )
                 )
                 targets.extend(
                     expand(
-                        "results/" + project + "/pixy/plots/" + project + ".{grouping}.pixy_pi_plain.rds",
+                        f"results/{project}/pixy/plots/{project}.{grouping}.pixy_pi_plain.rds",
                         grouping=pixy_groupings,
                     )
                 )
@@ -706,7 +706,7 @@ def get_all_targets():
             if "fst" in pixy_stats:
                 targets.extend(
                     expand(
-                        "results/" + project + "/pixy/" + project + ".{grouping}.pixy_fst-summary.txt",
+                        f"results/{project}/pixy/{project}.{grouping}.pixy_fst-summary.txt",
                         grouping=pixy_groupings,
                     )
                 )
@@ -733,7 +733,7 @@ def get_all_targets():
             if "dxy" in pixy_stats:
                 targets.extend(
                     expand(
-                        "results/" + project + "/pixy/" + project + ".{grouping}.pixy_dxy-summary.txt",
+                        f"results/{project}/pixy/{project}.{grouping}.pixy_dxy-summary.txt",
                         grouping=pixy_groupings,
                     )
                 )
@@ -762,32 +762,32 @@ def get_all_targets():
         if analyses.get("relatedness", False):
             relatedness_color_by = _relatedness_color_by_columns(params)
             targets.extend([
-                "results/" + project + "/relatedness/" + project + ".relatedness",
-                "results/" + project + "/relatedness/" + project + ".relatedness2",
-                "results/" + project + "/relatedness/" + project + ".genome",
-                "results/" + project + "/relatedness/" + project + ".king"
+                f"results/{project}/relatedness/{project}.relatedness",
+                f"results/{project}/relatedness/{project}.relatedness2",
+                f"results/{project}/relatedness/{project}.genome",
+                f"results/{project}/relatedness/{project}.king"
             ])
             targets.extend(
                 expand(
-                    "results/" + project + "/relatedness/plots/" + project + ".genome_network-{color_by}.pdf",
+                    f"results/{project}/relatedness/plots/{project}.genome_network-{color_by}.pdf",
                     color_by=relatedness_color_by,
                 )
             )
             targets.extend(
                 expand(
-                    "results/" + project + "/relatedness/plots/" + project + ".genome_network-{color_by}.rds",
+                    f"results/{project}/relatedness/plots/{project}.genome_network-{color_by}.rds",
                     color_by=relatedness_color_by,
                 )
             )
             targets.extend(
                 expand(
-                    "results/" + project + "/relatedness/plots/" + project + ".king_network-{color_by}.pdf",
+                    f"results/{project}/relatedness/plots/{project}.king_network-{color_by}.pdf",
                     color_by=relatedness_color_by,
                 )
             )
             targets.extend(
                 expand(
-                    "results/" + project + "/relatedness/plots/" + project + ".king_network-{color_by}.rds",
+                    f"results/{project}/relatedness/plots/{project}.king_network-{color_by}.rds",
                     color_by=relatedness_color_by,
                 )
             )
@@ -795,44 +795,44 @@ def get_all_targets():
         # IQtree targets
         if analyses.get("iqtree", False):
             targets.extend([
-                "results/" + project + "/iqtree/" + project + ".iqtree.treefile",
-                "results/" + project + "/iqtree/" + project + ".iqtree.iqtree",
-                "results/" + project + "/iqtree/" + project + ".iqtree.log",
-                "results/" + project + "/iqtree/plots/" + project + ".tree_plot.unrooted.pdf",
-                "results/" + project + "/iqtree/plots/" + project + ".tree_plot.unrooted.rds",
-                "results/" + project + "/iqtree/plots/" + project + ".tree_plot.rooted.pdf",
-                "results/" + project + "/iqtree/plots/" + project + ".tree_plot.rooted.rds",
-                "results/" + project + "/iqtree/" + project + ".iqtree.unrooted.treefile",
-                "results/" + project + "/iqtree/" + project + ".iqtree.rooted.treefile"
+                f"results/{project}/iqtree/{project}.iqtree.treefile",
+                f"results/{project}/iqtree/{project}.iqtree.iqtree",
+                f"results/{project}/iqtree/{project}.iqtree.log",
+                f"results/{project}/iqtree/plots/{project}.tree_plot.unrooted.pdf",
+                f"results/{project}/iqtree/plots/{project}.tree_plot.unrooted.rds",
+                f"results/{project}/iqtree/plots/{project}.tree_plot.rooted.pdf",
+                f"results/{project}/iqtree/plots/{project}.tree_plot.rooted.rds",
+                f"results/{project}/iqtree/{project}.iqtree.unrooted.treefile",
+                f"results/{project}/iqtree/{project}.iqtree.rooted.treefile"
             ])
 
         # IQtree robust targets
         if analyses.get("iqtree_robust", False):
             targets.extend([
-                "results/" + project + "/iqtree_robust/" + project + ".iqtree_robust.treefile",
-                "results/" + project + "/iqtree_robust/" + project + ".iqtree_robust.iqtree",
-                "results/" + project + "/iqtree_robust/" + project + ".iqtree_robust.log",
-                "results/" + project + "/iqtree_robust/plots/" + project + ".tree_plot.unrooted.pdf",
-                "results/" + project + "/iqtree_robust/plots/" + project + ".tree_plot.unrooted.rds",
-                "results/" + project + "/iqtree_robust/plots/" + project + ".tree_plot.rooted.pdf",
-                "results/" + project + "/iqtree_robust/plots/" + project + ".tree_plot.rooted.rds",
-                "results/" + project + "/iqtree_robust/" + project + ".iqtree_robust.unrooted.treefile",
-                "results/" + project + "/iqtree_robust/" + project + ".iqtree_robust.rooted.treefile"
+                f"results/{project}/iqtree_robust/{project}.iqtree_robust.treefile",
+                f"results/{project}/iqtree_robust/{project}.iqtree_robust.iqtree",
+                f"results/{project}/iqtree_robust/{project}.iqtree_robust.log",
+                f"results/{project}/iqtree_robust/plots/{project}.tree_plot.unrooted.pdf",
+                f"results/{project}/iqtree_robust/plots/{project}.tree_plot.unrooted.rds",
+                f"results/{project}/iqtree_robust/plots/{project}.tree_plot.rooted.pdf",
+                f"results/{project}/iqtree_robust/plots/{project}.tree_plot.rooted.rds",
+                f"results/{project}/iqtree_robust/{project}.iqtree_robust.unrooted.treefile",
+                f"results/{project}/iqtree_robust/{project}.iqtree_robust.rooted.treefile"
             ])
 
         # IQ-TREE after trimAl targets
         if analyses.get("iqtree_trimal", False):
             targets.extend([
-                "results/" + project + "/filtered_data/" + project + ".trimmed.phy",
-                "results/" + project + "/iqtree_trimal/" + project + ".iqtree.treefile",
-                "results/" + project + "/iqtree_trimal/" + project + ".iqtree.iqtree",
-                "results/" + project + "/iqtree_trimal/" + project + ".iqtree.log",
-                "results/" + project + "/iqtree_trimal/plots/" + project + ".tree_plot.unrooted.pdf",
-                "results/" + project + "/iqtree_trimal/plots/" + project + ".tree_plot.unrooted.rds",
-                "results/" + project + "/iqtree_trimal/plots/" + project + ".tree_plot.rooted.pdf",
-                "results/" + project + "/iqtree_trimal/plots/" + project + ".tree_plot.rooted.rds",
-                "results/" + project + "/iqtree_trimal/" + project + ".iqtree.unrooted.treefile",
-                "results/" + project + "/iqtree_trimal/" + project + ".iqtree.rooted.treefile",
+                f"results/{project}/filtered_data/{project}.trimmed.phy",
+                f"results/{project}/iqtree_trimal/{project}.iqtree.treefile",
+                f"results/{project}/iqtree_trimal/{project}.iqtree.iqtree",
+                f"results/{project}/iqtree_trimal/{project}.iqtree.log",
+                f"results/{project}/iqtree_trimal/plots/{project}.tree_plot.unrooted.pdf",
+                f"results/{project}/iqtree_trimal/plots/{project}.tree_plot.unrooted.rds",
+                f"results/{project}/iqtree_trimal/plots/{project}.tree_plot.rooted.pdf",
+                f"results/{project}/iqtree_trimal/plots/{project}.tree_plot.rooted.rds",
+                f"results/{project}/iqtree_trimal/{project}.iqtree.unrooted.treefile",
+                f"results/{project}/iqtree_trimal/{project}.iqtree.rooted.treefile",
             ])
 
         # evalAdmix targets (requires matching ancestry inference)
@@ -840,7 +840,7 @@ def get_all_targets():
             if analyses.get("admixture", False):
                 targets.extend(
                     expand(
-                        "results/" + project + "/admixture/evaladmix/" + project + ".admixture.K{k}.corres",
+                        f"results/{project}/admixture/evaladmix/{project}.admixture.K{k}.corres",
                         k=k_values,
                     )
                 )
@@ -932,9 +932,9 @@ def get_all_targets():
             gs_cfg = params.get("genome_scan", {})
             if gs_cfg.get("pop1") and gs_cfg.get("pop2"):
                 targets.extend([
-                    "results/" + project + "/genome_scan/" + project + ".genome_scan_fst.txt",
-                    "results/" + project + "/genome_scan/" + project + ".genome_scan_pi.txt",
-                    "results/" + project + "/genome_scan/" + project + ".genome_scan_dxy.txt",
+                    f"results/{project}/genome_scan/{project}.genome_scan_fst.txt",
+                    f"results/{project}/genome_scan/{project}.genome_scan_pi.txt",
+                    f"results/{project}/genome_scan/{project}.genome_scan_dxy.txt",
                     "results/"
                     + project
                     + "/genome_scan/plots/"
@@ -962,7 +962,7 @@ def get_all_targets():
             amova_strata = params.get("amova", {}).get("strata", [])
             if amova_strata:
                 targets.extend([
-                    "results/" + project + "/amova/" + project + ".amova_results.txt",
+                    f"results/{project}/amova/{project}.amova_results.txt",
                     "results/"
                     + project
                     + "/amova/plots/"
@@ -978,44 +978,44 @@ def get_all_targets():
         # ROH targets
         if analyses.get("roh", False):
             targets.extend([
-                "results/" + project + "/roh/" + project + ".bcftools_roh.txt",
-                "results/" + project + "/roh/" + project + ".roh_summary.txt",
-                "results/" + project + "/roh/" + project + ".roh_per_ind.txt",
-                "results/" + project + "/roh/" + project + ".roh_stats_comparisons.txt",
-                "results/" + project + "/roh/plots/froh_histogram.pdf",
+                f"results/{project}/roh/{project}.bcftools_roh.txt",
+                f"results/{project}/roh/{project}.roh_summary.txt",
+                f"results/{project}/roh/{project}.roh_per_ind.txt",
+                f"results/{project}/roh/{project}.roh_stats_comparisons.txt",
+                f"results/{project}/roh/plots/froh_histogram.pdf",
             ])
 
         # Genetic distance targets
         if analyses.get("gen_dist", False):
             targets.extend([
-                "results/" + project + "/gen_dist/" + project + ".kosman_distance.tsv",
-                "results/" + project + "/gen_dist/" + project + ".euclidean_distance.tsv",
-                "results/" + project + "/gen_dist/" + project + ".p_distance.tsv",
-                "results/" + project + "/gen_dist/" + project + ".avgsquared_distance.tsv"
+                f"results/{project}/gen_dist/{project}.kosman_distance.tsv",
+                f"results/{project}/gen_dist/{project}.euclidean_distance.tsv",
+                f"results/{project}/gen_dist/{project}.p_distance.tsv",
+                f"results/{project}/gen_dist/{project}.avgsquared_distance.tsv"
             ])
 
         # NeighborNet targets
         if analyses.get("neighbornet", False):
             neighbornet_color_by = _neighbornet_color_by_columns(params)
             targets.extend([
-                "results/" + project + "/gen_dist/" + project + ".p_distance.tsv",
-                "results/" + project + "/neighbornet/" + project + ".pdistance.neighbornet.rds",
+                f"results/{project}/gen_dist/{project}.p_distance.tsv",
+                f"results/{project}/neighbornet/{project}.pdistance.neighbornet.rds",
             ])
             targets.extend(
                 expand(
-                    "results/" + project + "/neighbornet/plots/" + project + ".pdistance.neighbornet-{color_by}.with_tip_labels.pdf",
+                    f"results/{project}/neighbornet/plots/{project}.pdistance.neighbornet-{color_by}.with_tip_labels.pdf",
                     color_by=neighbornet_color_by,
                 )
             )
             targets.extend(
                 expand(
-                    "results/" + project + "/neighbornet/plots/" + project + ".pdistance.neighbornet-{color_by}.no_tip_labels.pdf",
+                    f"results/{project}/neighbornet/plots/{project}.pdistance.neighbornet-{color_by}.no_tip_labels.pdf",
                     color_by=neighbornet_color_by,
                 )
             )
             targets.extend(
                 expand(
-                    "results/" + project + "/neighbornet/plots/" + project + ".pdistance.neighbornet-{color_by}.rds",
+                    f"results/{project}/neighbornet/plots/{project}.pdistance.neighbornet-{color_by}.rds",
                     color_by=neighbornet_color_by,
                 )
             )
@@ -1024,16 +1024,16 @@ def get_all_targets():
         if analyses.get("pcoa", False):
             pcoa_distances = ["euclidean", "kosman", "avgsquared"]
             # Always add missing data calculation target (used by PCoA plot rules)
-            targets.append("results/" + project + "/stats_vcf/thinned/" + project + ".biallelic_snps.imiss")
+            targets.append(f"results/{project}/stats_vcf/thinned/{project}.biallelic_snps.imiss")
             targets.extend(
                 expand(
-                    "results/" + project + "/PCoA/" + project + ".PCoA_{distance}.eigvecs",
+                    f"results/{project}/PCoA/{project}.PCoA_{distance}.eigvecs",
                     distance=pcoa_distances,
                 )
             )
             targets.extend(
                 expand(
-                    "results/" + project + "/PCoA/" + project + ".PCoA_{distance}.eigvals",
+                    f"results/{project}/PCoA/{project}.PCoA_{distance}.eigvals",
                     distance=pcoa_distances,
                 )
             )
@@ -1069,29 +1069,29 @@ def get_all_targets():
             popdata = params.get("popdata")
             if popdata and popdata != "NULL" and popdata != "":
                 targets.extend([
-                    "results/" + project + "/gen_dist/" + project + ".euclidean_distance.tsv",
-                    "results/" + project + "/mapi/" + project + ".mapi_results.gpkg",
-                    "results/" + project + "/mapi/plots/" + project + ".mapi_euclidean.pdf",
-                    "results/" + project + "/mapi/plots/" + project + ".mapi_euclidean.rds",
-                    "results/" + project + "/mapi/" + project + ".mapi_upper_tails.gpkg",
-                    "results/" + project + "/mapi/" + project + ".mapi_lower_tails.gpkg"
+                    f"results/{project}/gen_dist/{project}.euclidean_distance.tsv",
+                    f"results/{project}/mapi/{project}.mapi_results.gpkg",
+                    f"results/{project}/mapi/plots/{project}.mapi_euclidean.pdf",
+                    f"results/{project}/mapi/plots/{project}.mapi_euclidean.rds",
+                    f"results/{project}/mapi/{project}.mapi_upper_tails.gpkg",
+                    f"results/{project}/mapi/{project}.mapi_lower_tails.gpkg"
                 ])
         
         # Population map targets (always run if popdata is available)
         popdata = params.get("popdata")
         if popdata and popdata != "NULL" and popdata != "":
             targets.extend([
-                "results/" + project + "/stats_samples/plots/" + project + ".population_map.pdf",
-                "results/" + project + "/stats_samples/plots/" + project + ".population_map.rds"
+                f"results/{project}/stats_samples/plots/{project}.population_map.pdf",
+                f"results/{project}/stats_samples/plots/{project}.population_map.rds"
             ])
 
         # fineRADstructure targets
         if analyses.get("fineradstructure", False):
             targets.extend([
-                "results/" + project + "/fineradstructure/" + project + ".input",
-                "results/" + project + "/fineradstructure/" + project + "_chunks.out",
-                "results/" + project + "/fineradstructure/" + project + "_chunks.mcmc.xml",
-                "results/" + project + "/fineradstructure/" + project + "_chunks.mcmcTree.xml"
+                f"results/{project}/fineradstructure/{project}.input",
+                f"results/{project}/fineradstructure/{project}_chunks.out",
+                f"results/{project}/fineradstructure/{project}_chunks.mcmc.xml",
+                f"results/{project}/fineradstructure/{project}_chunks.mcmcTree.xml"
             ])
 
         # TreeMix targets
@@ -1099,50 +1099,50 @@ def get_all_targets():
             treemix_migrations = _treemix_migration_edges_from_params(params)
             treemix_bootstrap_enabled = _treemix_bootstrap_enabled_from_params(params)
             targets.extend([
-                "results/" + project + "/treemix/" + project + ".treemix.frq.gz",
-                "results/" + project + "/treemix/" + project + ".treemix.clust",
-                "results/" + project + "/treemix/" + project + ".treemix.populations.tsv",
-                "results/" + project + "/treemix/" + project + ".treemix.positions.tsv",
-                "results/" + project + "/treemix/" + project + ".treemix.input_summary.tsv",
-                "results/" + project + "/treemix/" + project + ".treemix.migration_summary.tsv",
-                "results/" + project + "/treemix/" + project + ".treemix.optm_evanno.tsv",
-                "results/" + project + "/treemix/plots/" + project + ".treemix.likelihoods.pdf",
-                "results/" + project + "/treemix/plots/" + project + ".treemix.likelihoods.rds",
-                "results/" + project + "/treemix/plots/" + project + ".treemix.optm_evanno.pdf",
-                "results/" + project + "/treemix/plots/" + project + ".treemix.optm_evanno.rds",
+                f"results/{project}/treemix/{project}.treemix.frq.gz",
+                f"results/{project}/treemix/{project}.treemix.clust",
+                f"results/{project}/treemix/{project}.treemix.populations.tsv",
+                f"results/{project}/treemix/{project}.treemix.positions.tsv",
+                f"results/{project}/treemix/{project}.treemix.input_summary.tsv",
+                f"results/{project}/treemix/{project}.treemix.migration_summary.tsv",
+                f"results/{project}/treemix/{project}.treemix.optm_evanno.tsv",
+                f"results/{project}/treemix/plots/{project}.treemix.likelihoods.pdf",
+                f"results/{project}/treemix/plots/{project}.treemix.likelihoods.rds",
+                f"results/{project}/treemix/plots/{project}.treemix.optm_evanno.pdf",
+                f"results/{project}/treemix/plots/{project}.treemix.optm_evanno.rds",
             ])
             targets.extend(
                 expand(
-                    "results/" + project + "/treemix/" + project + ".treemix.m{m}.llik",
+                    f"results/{project}/treemix/{project}.treemix.m{m}.llik",
                     m=treemix_migrations,
                 )
             )
             targets.extend(
                 expand(
-                    "results/" + project + "/treemix/" + project + ".treemix.m{m}.treeout.gz",
+                    f"results/{project}/treemix/{project}.treemix.m{m}.treeout.gz",
                     m=treemix_migrations,
                 )
             )
             targets.extend(
                 expand(
-                    "results/" + project + "/treemix/plots/" + project + ".treemix.m{m}.{plot_type}.pdf",
+                    f"results/{project}/treemix/plots/{project}.treemix.m{m}.{plot_type}.pdf",
                     m=treemix_migrations,
                     plot_type=["graph", "residuals"],
                 )
             )
             targets.extend(
                 expand(
-                    "results/" + project + "/treemix/plots/" + project + ".treemix.m{m}.{plot_type}.rds",
+                    f"results/{project}/treemix/plots/{project}.treemix.m{m}.{plot_type}.rds",
                     m=treemix_migrations,
                     plot_type=["graph", "residuals"],
                 )
             )
             if treemix_bootstrap_enabled:
                 targets.extend([
-                    "results/" + project + "/treemix/" + project + ".treemix.bootstrap_summary.tsv",
-                    "results/" + project + "/treemix/" + project + ".treemix.bootstrap_migration_edges.tsv",
-                    "results/" + project + "/treemix/plots/" + project + ".treemix.bootstrap_likelihoods.pdf",
-                    "results/" + project + "/treemix/plots/" + project + ".treemix.bootstrap_likelihoods.rds",
+                    f"results/{project}/treemix/{project}.treemix.bootstrap_summary.tsv",
+                    f"results/{project}/treemix/{project}.treemix.bootstrap_migration_edges.tsv",
+                    f"results/{project}/treemix/plots/{project}.treemix.bootstrap_likelihoods.pdf",
+                    f"results/{project}/treemix/plots/{project}.treemix.bootstrap_likelihoods.rds",
                 ])
 
         # conStruct targets
@@ -1151,25 +1151,25 @@ def get_all_targets():
             popdata = params.get("popdata")
             if popdata and popdata != "NULL" and popdata != "":
                 targets.extend([
-                    expand("results/" + project + "/construct/" + project + ".construct.K{k}.results.rds",
+                    expand(f"results/{project}/construct/{project}.construct.K{{k}}.results.rds",
                            k=k_values),
-                    expand("results/" + project + "/construct/" + project + ".construct.K{k}.layer_proportions.txt",
+                    expand(f"results/{project}/construct/{project}.construct.K{{k}}.layer_proportions.txt",
                            k=k_values),
-                    expand("results/" + project + "/construct/plots/" + project + ".construct.K{k}.map.pdf",
+                    expand(f"results/{project}/construct/plots/{project}.construct.K{{k}}.map.pdf",
                            k=k_values),
-                    expand("results/" + project + "/construct/plots/" + project + ".construct.K{k}.map.rds",
+                    expand(f"results/{project}/construct/plots/{project}.construct.K{{k}}.map.rds",
                            k=k_values),
-                    expand("results/" + project + "/construct/plots/" + project + ".construct.K{k}.barplot.pdf",
+                    expand(f"results/{project}/construct/plots/{project}.construct.K{{k}}.barplot.pdf",
                            k=k_values),
-                    expand("results/" + project + "/construct/plots/" + project + ".construct.K{k}.barplot.rds",
+                    expand(f"results/{project}/construct/plots/{project}.construct.K{{k}}.barplot.rds",
                            k=k_values),
-                    "results/" + project + "/construct/" + project + ".construct.chooseK_results.txt",
-                    "results/" + project + "/construct/" + project + ".construct.lpd_summary.txt",
-                    "results/" + project + "/construct/" + project + ".construct.layer_contribution_summary.txt",
-                    "results/" + project + "/construct/plots/" + project + ".construct.lpd_plot.pdf",
-                    "results/" + project + "/construct/plots/" + project + ".construct.lpd_plot.rds",
-                    "results/" + project + "/construct/plots/" + project + ".construct.layer_contribution_plot.pdf",
-                    "results/" + project + "/construct/plots/" + project + ".construct.layer_contribution_plot.rds",
+                    f"results/{project}/construct/{project}.construct.chooseK_results.txt",
+                    f"results/{project}/construct/{project}.construct.lpd_summary.txt",
+                    f"results/{project}/construct/{project}.construct.layer_contribution_summary.txt",
+                    f"results/{project}/construct/plots/{project}.construct.lpd_plot.pdf",
+                    f"results/{project}/construct/plots/{project}.construct.lpd_plot.rds",
+                    f"results/{project}/construct/plots/{project}.construct.layer_contribution_plot.pdf",
+                    f"results/{project}/construct/plots/{project}.construct.layer_contribution_plot.rds",
                 ])
 
         # sPCA targets
@@ -1180,46 +1180,46 @@ def get_all_targets():
                 n_spca_global_axes = _spca_nfposi_from_params(params)
                 n_spca_local_axes = _spca_nfnega_from_params(params)
                 targets.extend([
-                    "results/" + project + "/spca/" + project + ".spca.results.rds",
-                    "results/" + project + "/spca/" + project + ".spca.scores.global.txt",
-                    "results/" + project + "/spca/" + project + ".spca.scores.local.txt",
-                    "results/" + project + "/spca/" + project + ".spca.eigenvalues.txt",
-                    "results/" + project + "/spca/" + project + ".spca.summary.txt",
-                    "results/" + project + "/spca/" + project + ".spca.global.rtest.txt",
-                    "results/" + project + "/spca/" + project + ".spca.local.rtest.txt",
-                    "results/" + project + "/spca/plots/" + project + ".spca.eig.barplot.pdf",
-                    "results/" + project + "/spca/plots/" + project + ".spca.screeplot.pdf",
-                    "results/" + project + "/spca/plots/" + project + ".spca.composite.pdf",
-                    "results/" + project + "/spca/plots/" + project + ".spca.map.pdf",
-                    "results/" + project + "/spca/plots/" + project + ".spca.colorplot.global.pdf",
-                    "results/" + project + "/spca/plots/" + project + ".spca.colorplot.local.pdf",
-                    "results/" + project + "/spca/plots/" + project + ".spca.global.rtest.pdf",
-                    "results/" + project + "/spca/plots/" + project + ".spca.local.rtest.pdf",
-                    "results/" + project + "/spca/plots/" + project + ".spca.scatter.global.pdf",
-                    "results/" + project + "/spca/plots/" + project + ".spca.scatter.local.pdf",
+                    f"results/{project}/spca/{project}.spca.results.rds",
+                    f"results/{project}/spca/{project}.spca.scores.global.txt",
+                    f"results/{project}/spca/{project}.spca.scores.local.txt",
+                    f"results/{project}/spca/{project}.spca.eigenvalues.txt",
+                    f"results/{project}/spca/{project}.spca.summary.txt",
+                    f"results/{project}/spca/{project}.spca.global.rtest.txt",
+                    f"results/{project}/spca/{project}.spca.local.rtest.txt",
+                    f"results/{project}/spca/plots/{project}.spca.eig.barplot.pdf",
+                    f"results/{project}/spca/plots/{project}.spca.screeplot.pdf",
+                    f"results/{project}/spca/plots/{project}.spca.composite.pdf",
+                    f"results/{project}/spca/plots/{project}.spca.map.pdf",
+                    f"results/{project}/spca/plots/{project}.spca.colorplot.global.pdf",
+                    f"results/{project}/spca/plots/{project}.spca.colorplot.local.pdf",
+                    f"results/{project}/spca/plots/{project}.spca.global.rtest.pdf",
+                    f"results/{project}/spca/plots/{project}.spca.local.rtest.pdf",
+                    f"results/{project}/spca/plots/{project}.spca.scatter.global.pdf",
+                    f"results/{project}/spca/plots/{project}.spca.scatter.local.pdf",
                 ])
                 targets.extend(
                     expand(
-                        "results/" + project + "/spca/plots/" + project + ".spca.axis{axis}.pdf",
+                        f"results/{project}/spca/plots/{project}.spca.axis{axis}.pdf",
                         axis=list(range(1, n_spca_axes + 1)),
                     )
                 )
                 targets.extend(
                     expand(
-                        "results/" + project + "/spca/plots/" + project + ".spca.loading.axis{axis}.pdf",
+                        f"results/{project}/spca/plots/{project}.spca.loading.axis{axis}.pdf",
                         axis=list(range(1, n_spca_axes + 1)),
                     )
                 )
                 targets.extend(
                     expand(
-                        "results/" + project + "/spca/plots/" + project + ".spca.{score_type}_axis{axis}.map.pdf",
+                        f"results/{project}/spca/plots/{project}.spca.{score_type}_axis{axis}.map.pdf",
                         score_type=["global"],
                         axis=list(range(1, n_spca_global_axes + 1)),
                     )
                 )
                 targets.extend(
                     expand(
-                        "results/" + project + "/spca/plots/" + project + ".spca.{score_type}_axis{axis}.map.pdf",
+                        f"results/{project}/spca/plots/{project}.spca.{score_type}_axis{axis}.map.pdf",
                         score_type=["local"],
                         axis=list(range(1, n_spca_local_axes + 1)),
                     )
@@ -1229,23 +1229,23 @@ def get_all_targets():
         if analyses.get("dapc", False):
             dapc_k_values = [k for k in k_values if int(k) >= 2]
             targets.extend([
-                expand("results/" + project + "/dapc/" + project + ".dapc.K{k}.results.rds",
+                expand(f"results/{project}/dapc/{project}.dapc.K{{k}}.results.rds",
                        k=dapc_k_values),
-                expand("results/" + project + "/dapc/" + project + ".dapc.K{k}.cluster_assignments.txt",
+                expand(f"results/{project}/dapc/{project}.dapc.K{{k}}.cluster_assignments.txt",
                        k=dapc_k_values),
-                expand("results/" + project + "/dapc/" + project + ".dapc.K{k}.membership_probs.txt",
+                expand(f"results/{project}/dapc/{project}.dapc.K{{k}}.membership_probs.txt",
                        k=dapc_k_values),
-                expand("results/" + project + "/dapc/plots/" + project + ".dapc.K{k}.scatter.pdf",
+                expand(f"results/{project}/dapc/plots/{project}.dapc.K{{k}}.scatter.pdf",
                        k=dapc_k_values),
-                "results/" + project + "/dapc/plots/" + project + ".dapc.criterion_plot.pdf"
+                f"results/{project}/dapc/plots/{project}.dapc.criterion_plot.pdf"
             ])
             # Only add map plots if popdata is specified
             popdata = params.get("popdata")
             if popdata and popdata != "NULL" and popdata != "":
                 targets.extend([
-                    expand("results/" + project + "/dapc/plots/" + project + ".dapc.K{k}.map.pdf",
+                    expand(f"results/{project}/dapc/plots/{project}.dapc.K{{k}}.map.pdf",
                            k=dapc_k_values),
-                    expand("results/" + project + "/dapc/plots/" + project + ".dapc.K{k}.map.rds",
+                    expand(f"results/{project}/dapc/plots/{project}.dapc.K{{k}}.map.rds",
                            k=dapc_k_values)
                 ])
 
