@@ -12,10 +12,6 @@ on.exit({
   close(log_con)
 }, add = TRUE)
 
-suppressPackageStartupMessages({
-  library(vcfR)
-})
-
 if (!requireNamespace("tess3r", quietly = TRUE)) {
   stop(
     "tess3r is not installed in this rule environment. The install_tess3 ",
@@ -26,7 +22,7 @@ suppressPackageStartupMessages({
   library(tess3r)
 })
 
-vcf_file <- snakemake@input[["vcf"]]
+geno_rds <- snakemake@input[["geno_rds"]]
 indpopdata_file <- snakemake@input[["indpopdata"]]
 qmatrix_file <- snakemake@output[["qmatrix"]]
 results_rds <- snakemake@output[["results_rds"]]
@@ -38,15 +34,16 @@ method <- as.character(snakemake@params[["method"]])
 replicates <- as.integer(snakemake@params[["replicates"]])
 max_iteration <- as.integer(snakemake@params[["max_iteration"]])
 tolerance <- as.numeric(snakemake@params[["tolerance"]])
-n_colors <- as.integer(snakemake@params[["n_colors"]])
 ploidy <- as.integer(snakemake@params[["ploidy"]])
+map_method <- as.character(snakemake@params[["map_method"]])
+map_resolution <- as.integer(unlist(snakemake@params[["map_resolution"]]))
+interpolation_knots <- as.integer(snakemake@params[["interpolation_knots"]])
 threads <- as.integer(snakemake@threads)
 
 cat("=== tess3r Analysis ===\n")
-cat("VCF:", vcf_file, "\n")
-cat("indpopdata:", indpopdata_file, "\n")
 cat("K:", k, "\n")
 cat("method:", method, "\n")
+cat("ploidy:", ploidy, "\n")
 cat("replicates:", replicates, "\n")
 cat("max_iteration:", max_iteration, "\n")
 cat("tolerance:", tolerance, "\n")
@@ -54,6 +51,10 @@ cat("threads:", threads, "\n\n")
 
 dir.create(dirname(qmatrix_file), recursive = TRUE, showWarnings = FALSE)
 dir.create(dirname(max_cluster_png), recursive = TRUE, showWarnings = FALSE)
+
+geno_data <- readRDS(geno_rds)
+geno <- geno_data$geno
+sample_names <- geno_data$samples
 
 indpopdata <- read.table(
   indpopdata_file,
@@ -72,44 +73,21 @@ if (any(is.na(indpopdata$Lat) | is.na(indpopdata$Lon))) {
   stop("Missing Lat/Lon values in indpopdata; tess3r requires coordinates for every sample.")
 }
 
-cat("Reading VCF...\n")
-vcf <- read.vcfR(vcf_file, verbose = FALSE)
-sample_names <- colnames(vcf@gt)[-1]
-cat("VCF samples:", length(sample_names), "\n")
-cat("VCF variants:", nrow(vcf@fix), "\n")
-
-if (!all(sample_names %in% indpopdata$Ind)) {
-  missing_inds <- sample_names[!sample_names %in% indpopdata$Ind]
-  stop(
-    "Samples in VCF are missing from indpopdata: ",
-    paste(head(missing_inds, 20), collapse = ", "),
-    if (length(missing_inds) > 20) " ..."
-  )
-}
-
 indpopdata_ordered <- indpopdata[match(sample_names, indpopdata$Ind), , drop = FALSE]
 coords <- as.matrix(indpopdata_ordered[, c("Lon", "Lat")])
 storage.mode(coords) <- "numeric"
 rownames(coords) <- sample_names
 
-gt <- extract.gt(vcf, element = "GT", as.numeric = FALSE)
-cat("Converting genotypes to alternate-allele dosages...\n")
-geno_dosage <- apply(gt, c(1, 2), function(x) {
-  if (is.na(x) || x %in% c(".", "./.", ".|.")) {
-    return(9)
-  }
-  alleles <- unlist(strsplit(x, "[/|]"))
-  if (length(alleles) == 0 || any(alleles == ".")) {
-    return(9)
-  }
-  sum(as.integer(alleles) > 0)
-})
-geno <- t(geno_dosage)
-storage.mode(geno) <- "numeric"
-rownames(geno) <- sample_names
-colnames(geno) <- rownames(gt)
-
 cat("Genotype matrix:", nrow(geno), "individuals x", ncol(geno), "loci\n")
+cat(
+  "Missing genotypes:", sum(is.na(geno)),
+  " (", round(100 * mean(is.na(geno)), 2), "%)\n",
+  sep = ""
+)
+cat(
+  "Dosage range:", min(geno, na.rm = TRUE), "to",
+  max(geno, na.rm = TRUE), "\n"
+)
 cat("Coordinate matrix:", nrow(coords), "individuals x", ncol(coords), "columns\n")
 
 cat("Running tess3r...\n")
@@ -125,10 +103,11 @@ tess3_obj <- tess3(
   openMP.core.num = threads
 )
 
-qmat <- qmatrix(tess3_obj, K = k)
-qmat <- as.matrix(qmat)
+qmat_obj <- qmatrix(tess3_obj, K = k)
+qmat <- as.matrix(qmat_obj)
 if (nrow(qmat) != length(sample_names) && ncol(qmat) == length(sample_names)) {
   qmat <- t(qmat)
+  qmat_obj <- t(qmat_obj)
 }
 if (nrow(qmat) != length(sample_names)) {
   stop("tess3r Q matrix has ", nrow(qmat), " rows, but expected ", length(sample_names))
@@ -136,7 +115,6 @@ if (nrow(qmat) != length(sample_names)) {
 colnames(qmat) <- paste0("Cluster", seq_len(ncol(qmat)))
 rownames(qmat) <- sample_names
 
-# Shared map/barplot scripts read headerless Q matrices in filtered VCF sample order.
 write.table(
   qmat,
   file = qmatrix_file,
@@ -176,7 +154,10 @@ saveRDS(
       max_iteration = max_iteration,
       tolerance = tolerance,
       ploidy = ploidy,
-      threads = threads
+      threads = threads,
+      map_method = map_method,
+      map_resolution = map_resolution,
+      interpolation_knots = interpolation_knots
     )
   ),
   file = results_rds
@@ -184,21 +165,41 @@ saveRDS(
 cat("RDS written to:", results_rds, "\n")
 
 cat("Drawing tess3r native max-cluster map...\n")
+window <- c(
+  min(coords[, 1], na.rm = TRUE),
+  max(coords[, 1], na.rm = TRUE),
+  min(coords[, 2], na.rm = TRUE),
+  max(coords[, 2], na.rm = TRUE)
+)
 tryCatch({
   png(max_cluster_png, width = 1800, height = 1400, res = 200)
-  plot(
-    tess3_obj,
-    K = k,
-    method = "map.max",
-    resolution = c(300, 300),
-    window = c(min(coords[, 1]), max(coords[, 1]), min(coords[, 2]), max(coords[, 2])),
-    col.palette = CreatePalette(n_colors)
+  plot_tess3Q_fn <- getS3method("plot", "tess3Q")
+  plot_args <- list(
+    x = qmat_obj,
+    coord = coords,
+    method = map_method,
+    resolution = map_resolution,
+    window = window,
+    col.palette = CreatePalette(),
+    xlab = "Longitude",
+    ylab = "Latitude",
+    main = paste0("tess3r max-cluster map (K=", k, ")"),
+    cex = 0.4
   )
+  if ("interpol" %in% names(formals(plot_tess3Q_fn))) {
+    plot_args$interpol <- FieldsKrigModel(interpolation_knots)
+  } else {
+    plot_args$interpolation.model <- FieldsKrigModel(interpolation_knots)
+  }
+  do.call(plot_tess3Q_fn, plot_args)
   dev.off()
 }, error = function(e) {
   cat("WARNING: tess3r native plot failed:", conditionMessage(e), "\n")
   if (dev.cur() != 1) dev.off()
-  file.create(max_cluster_png)
+  png(max_cluster_png, width = 1800, height = 1400, res = 200)
+  plot.new()
+  text(0.5, 0.5, paste("Max-cluster plot failed:", conditionMessage(e)))
+  dev.off()
 })
 
 cat("=== tess3r Analysis Complete ===\n")

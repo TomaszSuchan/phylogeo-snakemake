@@ -10,3 +10,10 @@ dependencies:
   - r-fields
   - r-rcolorbrewer
   - r-remotes
+  - r-tidyverse
+  - r-sf
+  - r-terra
+  - r-ggspatial
+  - r-ggrepel
+  - r-rnaturalearth
+  - r-rnaturalearthdata

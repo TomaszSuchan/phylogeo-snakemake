@@ -108,6 +108,26 @@ def _tess3_map_inputs(wildcards):
     return inputs
 
 
+def _tess3_ggmap_inputs(wildcards):
+    inputs = {
+        "results_rds": f"results/{wildcards.project}/tess3/{wildcards.project}.tess3.K{wildcards.k}.results.rds",
+        "indpopdata": f"results/{wildcards.project}/indpopdata.txt",
+        "install": ".snakemake/tess3_installed",
+    }
+    inputs.update(_map_background_inputs(wildcards))
+    return inputs
+
+
+def _construct_map_inputs(wildcards):
+    inputs = {
+        "qmatrix": f"results/{wildcards.project}/construct/{wildcards.project}.construct.K{wildcards.k}.Qmatrix.txt",
+        "indpopdata": f"results/{wildcards.project}/indpopdata.txt",
+        "install": ".snakemake/mapmixture_installed",
+    }
+    inputs.update(_map_background_inputs(wildcards))
+    return inputs
+
+
 def _dapc_map_inputs(wildcards):
     inputs = {
         "dapc_results": f"results/{wildcards.project}/dapc/{wildcards.project}.dapc.K{wildcards.k}.results.rds",
@@ -376,7 +396,10 @@ def get_all_targets():
                        k=k_values),
                 expand("results/" + project + "/admixture/" + project + ".biallelic_snps_thinned.{k}.P",
                        k=k_values),
-                "results/" + project + "/admixture/" + project + ".admixture.chooseK_results.txt"
+                "results/" + project + "/admixture/" + project + ".admixture.chooseK_results.txt",
+                "results/" + project + "/admixture/" + project + ".admixture.cv_summary.txt",
+                "results/" + project + "/admixture/plots/" + project + ".admixture.cv_plot.pdf",
+                "results/" + project + "/admixture/plots/" + project + ".admixture.cv_plot.rds",
             ])
             # Only add map plots if popdata is specified
             popdata = params.get("popdata")
@@ -429,6 +452,10 @@ def get_all_targets():
             popdata = params.get("popdata")
             if popdata and popdata != "NULL" and popdata != "":
                 targets.extend([
+                    "results/" + project + "/tess3/" + project + ".tess3.chooseK_results.txt",
+                    "results/" + project + "/tess3/" + project + ".tess3.cv_summary.txt",
+                    "results/" + project + "/tess3/plots/" + project + ".tess3.cv_plot.pdf",
+                    "results/" + project + "/tess3/plots/" + project + ".tess3.cv_plot.rds",
                     expand("results/" + project + "/tess3/" + project + ".tess3.K{k}.Qmatrix.txt",
                            k=k_values),
                     expand("results/" + project + "/tess3/" + project + ".tess3.K{k}.results.rds",
@@ -436,6 +463,12 @@ def get_all_targets():
                     expand("results/" + project + "/tess3/" + project + ".tess3.K{k}.cross_entropy.txt",
                            k=k_values),
                     expand("results/" + project + "/tess3/plots/" + project + ".tess3.K{k}.max_cluster.png",
+                           k=k_values),
+                    expand("results/" + project + "/tess3/plots/" + project + ".tess3.K{k}.interpolation.pdf",
+                           k=k_values),
+                    expand("results/" + project + "/tess3/plots/" + project + ".tess3.K{k}.ggmap.pdf",
+                           k=k_values),
+                    expand("results/" + project + "/tess3/plots/" + project + ".tess3.K{k}.ggmap.rds",
                            k=k_values),
                     expand("results/" + project + "/tess3/plots/" + project + ".tess3.K{k}.map.pdf",
                            k=k_values),
@@ -1092,8 +1125,19 @@ def get_all_targets():
                            k=k_values),
                     expand("results/" + project + "/construct/plots/" + project + ".construct.K{k}.map.pdf",
                            k=k_values),
+                    expand("results/" + project + "/construct/plots/" + project + ".construct.K{k}.map.rds",
+                           k=k_values),
                     expand("results/" + project + "/construct/plots/" + project + ".construct.K{k}.barplot.pdf",
-                           k=k_values)
+                           k=k_values),
+                    expand("results/" + project + "/construct/plots/" + project + ".construct.K{k}.barplot.rds",
+                           k=k_values),
+                    "results/" + project + "/construct/" + project + ".construct.chooseK_results.txt",
+                    "results/" + project + "/construct/" + project + ".construct.lpd_summary.txt",
+                    "results/" + project + "/construct/" + project + ".construct.layer_contribution_summary.txt",
+                    "results/" + project + "/construct/plots/" + project + ".construct.lpd_plot.pdf",
+                    "results/" + project + "/construct/plots/" + project + ".construct.lpd_plot.rds",
+                    "results/" + project + "/construct/plots/" + project + ".construct.layer_contribution_plot.pdf",
+                    "results/" + project + "/construct/plots/" + project + ".construct.layer_contribution_plot.rds",
                 ])
 
         # sPCA targets

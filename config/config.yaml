@@ -220,20 +220,25 @@ parameters: &global_params
     tol: "10e-6"        # convergence criterion
     prior: "simple"     # prior choice: simple or logistic
 
-  ## tess3r parameters
+  ## tess3r parameters (package defaults shown)
   # Spatial ancestry estimation using geographically constrained matrix factorization.
   # tess3r is fast enough for large SNP sets and is useful for smooth ancestry maps;
   # use conStruct when the goal is explicitly to separate discrete structure from IBD.
+  # Genotypes are converted from VCF GT fields to alternate-allele dosages (0..ploidy;
+  # same matrix layout as tess3r/lfmm; see tess3r vignette).
   tess3:
-    # Fitting algorithm passed to tess3r::tess3().
-    # "projected.ls" = alternating projected least squares; recommended default and usually fastest.
-    # "qp" = alternating quadratic programming; can be useful as a sensitivity check but is often slower.
-    method: "projected.ls"
-    replicates: 5           # independent starts per K
-    max_iteration: 1000     # maximum ALS/projected least-squares iterations
-    tolerance: 1e-05        # convergence tolerance
-    n_colors: 16            # colors for tess3r native max-cluster PNG
-    ploidy: 2               # genotype ploidy
+    ploidy: 2                 # tess3() ploidy: allele dosage range 0..ploidy (required; no package default; use 1 for haploids or inbred diploids coded as haploid)
+    method: "projected.ls"    # tess3() method: "projected.ls" (fast default) or "qp" (slower quadratic-programming sensitivity check)
+    replicates: 1             # tess3() rep: independent algorithm starts per K
+    max_iteration: 200        # tess3() max.iteration: maximum ALS/projected least-squares iterations
+    tolerance: 1.0e-5         # tess3() tolerance: convergence tolerance
+    mask: 0                   # tess3() mask: proportion of genotypes masked for cross-validation (0 = disabled; set >0 with crossvalid:true for masked CV)
+    crossvalid: false         # plot.tess3 crossvalid: summarise masked-genotype CV in choose-K plot (requires mask > 0)
+    crossentropy: false       # plot.tess3 crossentropy: use cross-entropy instead of RMSE in choose-K plot
+    map_method: "map.max"     # plot.tess3Q method: "map.max" (union of component surfaces) or "map.all" (all components)
+    map_resolution: [300, 300]  # plot.tess3Q/ggtess3Q resolution c(rx, ry): interpolation grid dimensions
+    interpolation_knots: 10   # FieldsKrigModel() knots for tess3r interpolated maps (plot.tess3Q default)
+    ggmap_point_size: 0.8     # sample-point size on ggtess3Q + mapmixture basemap maps (workflow default; not a tess3r package argument)
   
   ## conStruct parameters
   # Spatial population structure model where covariance can decay with geography.
@@ -640,9 +645,9 @@ projects:
       iqtree_robust: false    # Robust IQ-TREE output selection based on support threshold.
       fineradstructure: false # RADpainter/fineRADstructure coancestry and clustering.
       treemix: false          # OrientAGraph historical population graph with migration edges.
-      construct: true        # Spatial population structure model with conStruct.
+      construct: false        # Spatial population structure model with conStruct.
       dapc: false             # Discriminant analysis of principal components clustering.
-      spca: true              # Spatial PCA combining genetic variance and spatial autocorrelation.
+      spca: false              # Spatial PCA combining genetic variance and spatial autocorrelation.
     parameters:
       <<: *global_params
       popmap: "data/popmap.txt"

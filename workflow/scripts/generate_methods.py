@@ -277,8 +277,6 @@ filt_parts.append(
     f"mean read depth per SNP. In the final {dataset_label}, the mean depth across "
     f"called genotypes was {overall_depth}, with a median individual mean depth of "
     f"{ind_median_depth} and a median site mean depth of {site_median_depth}. "
-    f"These complementary summaries distinguish low-coverage samples from "
-    f"poorly covered loci."
 )
 
 sections.append(("Data filtering and dataset construction",
@@ -352,23 +350,43 @@ if analyses.get("admixture", False):
 
 if analyses.get("tess3", False):
     tp = p.get("tess3", {})
-    reps = tp.get("replicates", 5)
-    max_iter = tp.get("max_iteration", 1000)
+    reps = tp.get("replicates", 1)
+    max_iter = tp.get("max_iteration", 200)
     tol = tp.get("tolerance", 1e-05)
+    ploidy = tp.get("ploidy", 2)
+    method = tp.get("method", "projected.ls")
+    mask = tp.get("mask", 0)
+    crossvalid = tp.get("crossvalid", False)
+    crossentropy = tp.get("crossentropy", False)
+    score_desc = "training RMSE across replicate runs"
+    if crossvalid and mask and float(mask) > 0:
+        score_desc = (
+            "masked cross-validation RMSE"
+            if not crossentropy
+            else "masked cross-validation cross-entropy"
+        )
+    elif crossentropy:
+        score_desc = "cross-entropy across replicate runs"
     struct_parts.append(
         f"Spatial ancestry coefficients were estimated with tess3r "
         f"(Caye et al. 2016) on the {dataset_label} ({n_snps} SNPs, "
         f"{n_samples} individuals), using sample coordinates from the population "
-        f"metadata. tess3r fits a geographically constrained non-negative matrix "
-        f"factorisation in which ancestry coefficients are regularised toward "
-        f"smooth spatial variation. This makes it useful for rapidly visualising "
-        f"spatial ancestry gradients and for comparing spatially smoothed ancestry "
-        f"solutions with non-spatial clustering results, while recognising that "
-        f"the method smooths Q values rather than explicitly modelling relatedness "
-        f"decay under isolation by distance. The model was fit for each value of "
-        f"K = {k_tested}, using {reps} replicate start(s), a maximum of "
+        f"metadata. Genotypes were converted from VCF GT fields to alternate-allele "
+        f"dosage matrices before analysis. tess3r fits a geographically "
+        f"constrained non-negative matrix factorisation in which ancestry coefficients "
+        f"are regularised toward smooth spatial variation. This makes it useful for "
+        f"rapidly visualising spatial ancestry gradients and for comparing spatially "
+        f"smoothed ancestry solutions with non-spatial clustering results, while "
+        f"recognising that the method smooths Q values rather than explicitly "
+        f"modelling relatedness decay under isolation by distance. The model was fit "
+        f"for each value of K = {k_tested}, with ploidy = {ploidy}, method "
+        f"\"{method}\", {reps} replicate start(s), a maximum of "
         f"{int(max_iter):,} iterations, and a convergence tolerance of {tol}. "
-        f"Cross-entropy scores and ancestry maps were inspected across K values."
+        f"The number of ancestral populations was evaluated from {score_desc} "
+        f"across K (tess3r choose-K plot). For each K, ancestry was visualised "
+        f"with mapmixture pie maps, tess3r interpolated surfaces, and ggplot maps "
+        f"combining ggtess3Q with the shared mapmixture basemap; cross-entropy "
+        f"summaries and barplots were also inspected."
     )
 
 if analyses.get("evaladmix", False):
