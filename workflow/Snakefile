@@ -16,6 +16,11 @@ def _spca_nfnega_from_params(params):
     return int(params.get("spca", {}).get("nfnega", 2))
 
 
+def _choose_k_plot_param(wildcards, key, default):
+    """Width, height, or dpi for Evanno-style choose-K score plots."""
+    return config["projects"][wildcards.project]["parameters"].get("choose_k_plot", {}).get(key, default)
+
+
 def get_pca_combinations(pc_max):
     """
     Generate all unique combinations of PC axes up to pc_max.

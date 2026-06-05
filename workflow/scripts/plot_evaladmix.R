@@ -69,7 +69,7 @@ plotCorRes(
   cor_mat = r,
   pop = pop,
   ord = ord,
-  title = sprintf("Admixture evaluation as correlation of residuals\n%s, K=%s", method_name, k_value),
+  title = "",
   max_z = 0.25,
   min_z = -0.25,
   cex.main = 1.5,

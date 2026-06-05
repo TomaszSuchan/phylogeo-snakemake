@@ -3,6 +3,15 @@ library(ggplot2)
 library(ggtext)
 library(tidyr)
 
+# Evanno reference plot for choose-K styling; shared helpers in plot_choose_k_utils.R
+# keep theme and output size aligned with tess3r/ADMIXTURE/conStruct/DAPC score plots.
+script_dir <- tryCatch(
+  dirname(normalizePath(snakemake@script)),
+  error = function(e) "workflow/scripts"
+)
+source(file.path(script_dir, "plot_choose_k_utils.R"))
+plot_dims <- read_choose_k_plot_dims(snakemake@params)
+
 # Snakemake inputs/outputs
 runs <- unlist(snakemake@input)
 output_pdf <- snakemake@output$pdf
@@ -45,17 +54,16 @@ evanno_plot <- ggplot(data=evanno_long, aes(x=k, y=Value, ymin=Min, ymax=Max)) +
                scale_x_continuous(breaks=evanno$k) +
                facet_wrap(~Parameter , scales = "free", labeller = as_labeller(facet_labels)) +
                xlab("K") +
-               theme_bw() +
-               theme(strip.text = ggtext::element_markdown(),
-                     axis.title.x = element_text(face = "italic"))
+               choose_k_plot_theme() +
+               theme(strip.text = ggtext::element_markdown())
 
 # Save as PDF
-ggsave(
+choose_k_ggsave(
   filename = output_pdf,
   plot = evanno_plot,
-  width = 10,
-  height = 5,
-  dpi = 300
+  width = plot_dims$width,
+  height = plot_dims$height,
+  dpi = plot_dims$dpi
 )
 
 # Save as RDS

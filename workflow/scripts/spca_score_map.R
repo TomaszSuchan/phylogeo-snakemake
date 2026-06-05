@@ -121,8 +121,8 @@ basemap <- snakemake@params[["basemap"]]
 use_elevation_bg <- isTRUE(snakemake@params[["use_elevation_bg"]])
 
 plot_title <- snakemake@params[["plot_title"]]
-if (is.null(plot_title) || plot_title == "") {
-  plot_title <- paste("sPCA", score_label)
+if (is.null(plot_title)) {
+  plot_title <- ""
 }
 
 map_params <- list(

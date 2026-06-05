@@ -37,9 +37,37 @@ rule admixture_chooseK:
             k=config["projects"][wildcards.project]["parameters"]["k_values"]
         )
     output:
-        "results/{project}/admixture/{project}.admixture.chooseK_results.txt"
-    shell:
-        """
-        echo "Choose the lowest cross-validation (CV) error:" > {output}
-        grep -h 'CV' {input} >> {output} || true
-        """
+        choose_k_results = "results/{project}/admixture/{project}.admixture.chooseK_results.txt",
+        cv_summary = "results/{project}/admixture/{project}.admixture.cv_summary.txt"
+    log:
+        "logs/{project}/admixture_choose_k.log"
+    benchmark:
+        "benchmarks/{project}/admixture_choose_k.txt"
+    script:
+        "../scripts/admixture_choose_k.py"
+
+
+rule plot_admixture_cv:
+    """
+    Plot ADMIXTURE cross-validation error across K (evanno-style ggplot aesthetics).
+    """
+    input:
+        cv_summary = rules.admixture_chooseK.output.cv_summary
+    output:
+        pdf = "results/{project}/admixture/plots/{project}.admixture.cv_plot.pdf",
+        rds = "results/{project}/admixture/plots/{project}.admixture.cv_plot.rds"
+    log:
+        "logs/{project}/plot_admixture_cv.log"
+    params:
+        ylab = "Cross-validation error",
+        width = lambda wildcards: _choose_k_plot_param(wildcards, "width", 10),
+        height = lambda wildcards: _choose_k_plot_param(wildcards, "height", 5),
+        dpi = lambda wildcards: _choose_k_plot_param(wildcards, "dpi", 300)
+    conda:
+        "../envs/mapmixture.yaml"
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    script:
+        "../scripts/plot_choose_k_score.R"

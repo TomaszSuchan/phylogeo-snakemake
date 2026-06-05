@@ -122,6 +122,10 @@ rule plot_evanno:
         rds = "results/{project}/structure/plots/{project}.evanno_plot.rds"
     log:
         "logs/{project}/plot_evanno.log"
+    params:
+        width = lambda wildcards: _choose_k_plot_param(wildcards, "width", 10),
+        height = lambda wildcards: _choose_k_plot_param(wildcards, "height", 5),
+        dpi = lambda wildcards: _choose_k_plot_param(wildcards, "dpi", 300)
     conda:
         "../envs/r-pophelper.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]

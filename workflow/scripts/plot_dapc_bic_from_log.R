@@ -1,5 +1,6 @@
 # Script to plot BIC values from per-K DAPC log files
-# Parses "BIC value:" entries from each dapc.K*.log.txt file
+# Parses "BIC value:" entries from each dapc.K*.log.txt file.
+# Uses plot_choose_k_utils.R so DAPC criterion plots match Evanno choose-K styling.
 
 # Prevent creation of Rplots.pdf - set before loading libraries
 Sys.setenv(R_INSTALL_PKG = "")
@@ -12,6 +13,13 @@ options(device = function(file = NULL, ...) {
 })
 
 library(ggplot2)
+
+script_dir <- tryCatch(
+  dirname(normalizePath(snakemake@script)),
+  error = function(e) "workflow/scripts"
+)
+source(file.path(script_dir, "plot_choose_k_utils.R"))
+plot_dims <- read_choose_k_plot_dims(snakemake@params)
 
 # Explicitly prevent Rplots.pdf creation
 pdf(NULL)
@@ -97,28 +105,22 @@ print(bic_data[, c("K", "BIC")])
 optimal_k <- bic_data$K[which.min(bic_data$BIC)]
 cat("\nOptimal K:", optimal_k, "(Minimum BIC)\n")
 
-# Create plot with same aesthetics as criterion plot
-p <- ggplot(bic_data, aes(x = K, y = BIC)) +
-  geom_point() +
-  geom_line() +
-  labs(
-    x = "K",
-    y = "BIC",
-    title = "",
-    subtitle = ""
-  ) +
-  scale_x_continuous(breaks = bic_data$K) +
-  theme_bw() +
-  theme(
-    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
-    plot.subtitle = element_text(hjust = 0.5, size = 12),
-    panel.grid.minor = element_blank(),
-    axis.title.x = element_text(face = "italic")
-  )
+p <- plot_choose_k_line(
+  data = bic_data,
+  x = "K",
+  y = "BIC",
+  ylab = "BIC"
+)
 
 # Save plot
 dir.create(dirname(output_plot), recursive = TRUE, showWarnings = FALSE)
-ggsave(output_plot, p, width = 4, height = 3, dpi = 300)
+choose_k_ggsave(
+  filename = output_plot,
+  plot = p,
+  width = plot_dims$width,
+  height = plot_dims$height,
+  dpi = plot_dims$dpi
+)
 cat("Plot saved to:", output_plot, "\n")
 
 # Save RDS

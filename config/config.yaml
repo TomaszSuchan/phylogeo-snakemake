@@ -103,7 +103,14 @@ parameters: &global_params
   ## Shared K values for clustering methods
   # Common K values to test for population structure (STRUCTURE, fastStructure,
   # ADMIXTURE, tess3r, conStruct, and DAPC where applicable):
-  k_values: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+  k_values: [1, 2, 3]
+
+  ## Shared choose-K plot parameters (Evanno-style model-comparison figures)
+  # Used by STRUCTURE Evanno, ADMIXTURE CV, tess3r CV, conStruct choose-K, and DAPC BIC plots.
+  choose_k_plot:
+    width: 10                       # plot width in inches
+    height: 5                       # plot height in inches
+    dpi: 300                        # dots per inch (resolution)
 
   ## Shared map background parameters (used by all mapping functions)
   # This section is read by mapmixture/population_map/pixy/dapc and other map rules.

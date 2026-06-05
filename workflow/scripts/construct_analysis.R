@@ -309,7 +309,21 @@ cat("Layer proportions saved to:", layer_proportions, "\n")
 # ==============================================================================
 
 cat("Saving results to RDS file...\n")
-saveRDS(construct_results, file = results_rds)
+data_block_file <- paste0(output_prefix, "_sp_data.block.Robj")
+data_block <- if (file.exists(data_block_file)) {
+  cat("Loading saved data.block from:", data_block_file, "\n")
+  readRDS(data_block_file)
+} else {
+  cat("WARNING: data.block file not found; choose-K summaries may require re-running with save.files = TRUE\n")
+  NULL
+}
+saveRDS(
+  list(
+    conStruct.results = construct_results,
+    data.block = data_block
+  ),
+  file = results_rds
+)
 cat("Results saved to:", results_rds, "\n")
 
 # ==============================================================================
