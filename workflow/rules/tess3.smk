@@ -282,7 +282,7 @@ rule barplot_tess3:
     input:
         qmatrix = rules.tess3_analysis.output.qmatrix,
         indpopdata = rules.generate_popdata.output.indpopdata,
-        install = ".snakemake/mapmixture_installed"
+        install = rules.install_mapmixture.output
     output:
         barplot = "results/{project}/tess3/plots/{project}.tess3.K{k}.barplot.pdf",
         barplot_rds = "results/{project}/tess3/plots/{project}.tess3.K{k}.barplot.rds"
