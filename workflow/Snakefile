@@ -1,3 +1,12 @@
+# Canonical Set1 palette — the Python-level fallback for structure_colors.
+# Must match the list in config.yaml mapmixture.structure_colors so that
+# explicit config and the rule default always agree.
+_DEFAULT_STRUCTURE_COLORS = [
+    "#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00",
+    "#FFFF33", "#A65628", "#F781BF", "#999999", "#FFFFFF", "#000000",
+]
+
+
 def _spca_n_axes_from_params(params):
     """Number of retained sPCA axes (global + local) for plot targets."""
     sp = params.get("spca", {})

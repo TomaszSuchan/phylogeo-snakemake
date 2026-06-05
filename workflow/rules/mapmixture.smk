@@ -50,7 +50,7 @@ rule mapmixture_structure:
         pie_border_col = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("pie_border_col", "black"),
         pie_opacity = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("pie_opacity", 1),
         legend = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("legend", False),
-        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", ["#66CCEE", "#EE6677", "#228833", "#CCBB44", "#AA3377", "#4477AA", "#BBBBBB", "#EE9988", "#88CCEE", "#CC6677"])
+        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", _DEFAULT_STRUCTURE_COLORS)
     log:
         "logs/{project}/mapmixture_structure.K{k}.log"
     conda:
@@ -100,7 +100,7 @@ rule mapmixture_faststructure:
         pie_border_col = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("pie_border_col", "black"),
         pie_opacity = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("pie_opacity", 1),
         legend = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("legend", False),
-        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", ["#66CCEE", "#EE6677", "#228833", "#CCBB44", "#AA3377", "#4477AA", "#BBBBBB", "#EE9988", "#88CCEE", "#CC6677"])
+        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", _DEFAULT_STRUCTURE_COLORS)
     log:
         "logs/{project}/mapmixture_faststructure.K{k}.log"
     conda:
@@ -150,7 +150,7 @@ rule mapmixture_admixture:
         pie_border_col = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("pie_border_col", "black"),
         pie_opacity = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("pie_opacity", 1),
         legend = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("legend", False),
-        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", ["#66CCEE", "#EE6677", "#228833", "#CCBB44", "#AA3377", "#4477AA", "#BBBBBB", "#EE9988", "#88CCEE", "#CC6677"])
+        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", _DEFAULT_STRUCTURE_COLORS)
     log:
         "logs/{project}/mapmixture_admixture.K{k}.log"
     conda:
@@ -183,7 +183,7 @@ rule barplot_structure:
         flip_axis = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("flip_axis", False),
         site_labels_angle = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("site_labels_angle", 90),
         population_labels = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("population_labels", ["Site"]),
-        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", ["#66CCEE", "#EE6677", "#228833", "#CCBB44", "#AA3377", "#4477AA", "#BBBBBB", "#EE9988", "#88CCEE", "#CC6677"])
+        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", _DEFAULT_STRUCTURE_COLORS)
     log:
         "logs/{project}/structure_barplot.K{k}.log"
     conda:
@@ -216,7 +216,7 @@ rule barplot_faststructure:
         flip_axis = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("flip_axis", False),
         site_labels_angle = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("site_labels_angle", 90),
         population_labels = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("population_labels", ["Site"]),
-        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", ["#66CCEE", "#EE6677", "#228833", "#CCBB44", "#AA3377", "#4477AA", "#BBBBBB", "#EE9988", "#88CCEE", "#CC6677"])
+        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", _DEFAULT_STRUCTURE_COLORS)
     log:
         "logs/{project}/faststructure_barplot.K{k}.log"
     conda:
@@ -249,7 +249,7 @@ rule barplot_admixture:
         flip_axis = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("flip_axis", False),
         site_labels_angle = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("site_labels_angle", 90),
         population_labels = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("population_labels", ["Site"]),
-        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", ["#66CCEE", "#EE6677", "#228833", "#CCBB44", "#AA3377", "#4477AA", "#BBBBBB", "#EE9988", "#88CCEE", "#CC6677"])
+        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", _DEFAULT_STRUCTURE_COLORS)
     log:
         "logs/{project}/admixture_barplot.K{k}.log"
     conda:

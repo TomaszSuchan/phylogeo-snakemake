@@ -162,7 +162,7 @@ rule plot_tess3_ggmap:
         k = lambda wildcards: int(wildcards.k),
         map_resolution = lambda wildcards: _tess3_params(wildcards).get("map_resolution", [300, 300]),
         interpolation_knots = lambda wildcards: _tess3_params(wildcards).get("interpolation_knots", 10),
-        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", ["#66CCEE", "#EE6677", "#228833", "#CCBB44", "#AA3377", "#4477AA", "#BBBBBB", "#EE9988", "#88CCEE", "#CC6677"]),
+        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", _DEFAULT_STRUCTURE_COLORS),
         point_size = lambda wildcards: _tess3_params(wildcards).get("ggmap_point_size", 0.8),
         width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("width", 10),
         height = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("height", 8),
@@ -211,7 +211,7 @@ rule plot_tess3_interpolation:
         map_method = lambda wildcards: _tess3_params(wildcards).get("map_method", "map.max"),
         map_resolution = lambda wildcards: _tess3_params(wildcards).get("map_resolution", [300, 300]),
         interpolation_knots = lambda wildcards: _tess3_params(wildcards).get("interpolation_knots", 10),
-        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", ["#66CCEE", "#EE6677", "#228833", "#CCBB44", "#AA3377", "#4477AA", "#BBBBBB", "#EE9988", "#88CCEE", "#CC6677"])
+        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", _DEFAULT_STRUCTURE_COLORS)
     conda:
         "../envs/tess3.yaml"
     threads: 1
@@ -260,7 +260,7 @@ rule mapmixture_tess3:
         pie_border_col = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("pie_border_col", "black"),
         pie_opacity = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("pie_opacity", 1),
         legend = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("legend", False),
-        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", ["#66CCEE", "#EE6677", "#228833", "#CCBB44", "#AA3377", "#4477AA", "#BBBBBB", "#EE9988", "#88CCEE", "#CC6677"])
+        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", _DEFAULT_STRUCTURE_COLORS)
     log:
         "logs/{project}/mapmixture_tess3.K{k}.log"
     benchmark:
@@ -298,7 +298,7 @@ rule barplot_tess3:
         flip_axis = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("flip_axis", False),
         site_labels_angle = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("site_labels_angle", 90),
         population_labels = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("population_labels", ["Site"]),
-        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", ["#66CCEE", "#EE6677", "#228833", "#CCBB44", "#AA3377", "#4477AA", "#BBBBBB", "#EE9988", "#88CCEE", "#CC6677"])
+        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", _DEFAULT_STRUCTURE_COLORS)
     log:
         "logs/{project}/tess3_barplot.K{k}.log"
     benchmark:
