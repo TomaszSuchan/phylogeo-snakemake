@@ -21,36 +21,7 @@ rule mapmixture_structure:
         plot_rds = "results/{project}/structure/plots/{project}.structure.K{k}.map.rds"
     params:
         output_prefix = "results/{project}/structure/{project}.structure.K{k}",
-        # Map background parameters (shared)
-        width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("width", 10),
-        height = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("height", 8),
-        dpi = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("dpi", 300),
-        boundary = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("map_boundary", "NULL"),
-        crs = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("crs", 4326),
-        basemap = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap", "NULL"),
-        land_colour = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("land_colour", "#d9d9d9"),
-        sea_colour = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("sea_colour", "#deebf7"),
-        expand = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("expand", False),
-        arrow = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("arrow", True),
-        arrow_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("arrow_size", 1),
-        arrow_position = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("arrow_position", "tl"),
-        scalebar = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("scalebar", True),
-        scalebar_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("scalebar_size", 1),
-        scalebar_position = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("scalebar_position", "tl"),
-        plot_title = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("plot_title", ""),
-        axis_title_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("axis_title_size", 10),
-        axis_text_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("axis_text_size", 8),
-        basemap_border = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border", True),
-        basemap_border_col = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border_col", "black"),
-        basemap_border_lwd = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border_lwd", 0.1),
-        use_elevation_bg=lambda wildcards: _use_elevation_bg(wildcards),
-        # Mapmixture-specific parameters
-        pie_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("pie_size", 1),
-        pie_border = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("pie_border", 0.2),
-        pie_border_col = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("pie_border_col", "black"),
-        pie_opacity = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("pie_opacity", 1),
-        legend = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("legend", False),
-        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", _DEFAULT_STRUCTURE_COLORS)
+        unpack(lambda wildcards: _mapmixture_map_params(wildcards))
     log:
         "logs/{project}/mapmixture_structure.K{k}.log"
     conda:
@@ -71,36 +42,7 @@ rule mapmixture_faststructure:
         plot_rds = "results/{project}/faststructure/plots/{project}.faststructure.K{k}.map.rds"
     params:
         output_prefix = "results/{project}/faststructure/{project}.faststructure.K{k}",
-        # Map background parameters (shared)
-        width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("width", 10),
-        height = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("height", 8),
-        dpi = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("dpi", 300),
-        boundary = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("map_boundary", "NULL"),
-        crs = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("crs", 4326),
-        basemap = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap", "NULL"),
-        land_colour = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("land_colour", "#d9d9d9"),
-        sea_colour = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("sea_colour", "#deebf7"),
-        expand = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("expand", False),
-        arrow = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("arrow", True),
-        arrow_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("arrow_size", 1),
-        arrow_position = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("arrow_position", "tl"),
-        scalebar = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("scalebar", True),
-        scalebar_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("scalebar_size", 1),
-        scalebar_position = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("scalebar_position", "tl"),
-        plot_title = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("plot_title", ""),
-        axis_title_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("axis_title_size", 10),
-        axis_text_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("axis_text_size", 8),
-        basemap_border = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border", True),
-        basemap_border_col = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border_col", "black"),
-        basemap_border_lwd = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border_lwd", 0.1),
-        use_elevation_bg=lambda wildcards: _use_elevation_bg(wildcards),
-        # Mapmixture-specific parameters
-        pie_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("pie_size", 1),
-        pie_border = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("pie_border", 0.2),
-        pie_border_col = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("pie_border_col", "black"),
-        pie_opacity = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("pie_opacity", 1),
-        legend = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("legend", False),
-        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", _DEFAULT_STRUCTURE_COLORS)
+        unpack(lambda wildcards: _mapmixture_map_params(wildcards))
     log:
         "logs/{project}/mapmixture_faststructure.K{k}.log"
     conda:
@@ -121,36 +63,7 @@ rule mapmixture_admixture:
         plot_rds = "results/{project}/admixture/plots/{project}.admixture.K{k}.map.rds"
     params:
         output_prefix = "results/{project}/admixture/{project}.admixture.K{k}",
-        # Map background parameters (shared)
-        width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("width", 10),
-        height = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("height", 8),
-        dpi = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("dpi", 300),
-        boundary = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("map_boundary", "NULL"),
-        crs = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("crs", 4326),
-        basemap = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap", "NULL"),
-        land_colour = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("land_colour", "#d9d9d9"),
-        sea_colour = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("sea_colour", "#deebf7"),
-        expand = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("expand", False),
-        arrow = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("arrow", True),
-        arrow_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("arrow_size", 1),
-        arrow_position = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("arrow_position", "tl"),
-        scalebar = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("scalebar", True),
-        scalebar_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("scalebar_size", 1),
-        scalebar_position = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("scalebar_position", "tl"),
-        plot_title = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("plot_title", ""),
-        axis_title_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("axis_title_size", 10),
-        axis_text_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("axis_text_size", 8),
-        basemap_border = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border", True),
-        basemap_border_col = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border_col", "black"),
-        basemap_border_lwd = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("basemap_border_lwd", 0.1),
-        use_elevation_bg=lambda wildcards: _use_elevation_bg(wildcards),
-        # Mapmixture-specific parameters
-        pie_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("pie_size", 1),
-        pie_border = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("pie_border", 0.2),
-        pie_border_col = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("pie_border_col", "black"),
-        pie_opacity = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("pie_opacity", 1),
-        legend = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("legend", False),
-        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", _DEFAULT_STRUCTURE_COLORS)
+        unpack(lambda wildcards: _mapmixture_map_params(wildcards))
     log:
         "logs/{project}/mapmixture_admixture.K{k}.log"
     conda:
@@ -173,17 +86,7 @@ rule barplot_structure:
         barplot_rds = "results/{project}/structure/plots/{project}.structure.K{k}.barplot.rds"
     params:
         output_prefix = "results/{project}/structure/{project}.structure.K{k}",
-        width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("width", 10),
-        height = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("height", 6),
-        dpi = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("dpi", 300),
-        site_dividers = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("site_dividers", True),
-        divider_width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("divider_width", 0.4),
-        site_order = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("site_order", "NULL"),
-        population_sort_by = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("population_sort_by", "NULL"),
-        flip_axis = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("flip_axis", False),
-        site_labels_angle = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("site_labels_angle", 90),
-        population_labels = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("population_labels", ["Site"]),
-        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", _DEFAULT_STRUCTURE_COLORS)
+        unpack(lambda wildcards: _barplot_params(wildcards))
     log:
         "logs/{project}/structure_barplot.K{k}.log"
     conda:
@@ -206,17 +109,7 @@ rule barplot_faststructure:
         barplot_rds = "results/{project}/faststructure/plots/{project}.faststructure.K{k}.barplot.rds"
     params:
         output_prefix = "results/{project}/faststructure/{project}.faststructure.K{k}",
-        width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("width", 10),
-        height = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("height", 6),
-        dpi = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("dpi", 300),
-        site_dividers = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("site_dividers", True),
-        divider_width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("divider_width", 0.4),
-        site_order = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("site_order", "NULL"),
-        population_sort_by = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("population_sort_by", "NULL"),
-        flip_axis = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("flip_axis", False),
-        site_labels_angle = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("site_labels_angle", 90),
-        population_labels = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("population_labels", ["Site"]),
-        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", _DEFAULT_STRUCTURE_COLORS)
+        unpack(lambda wildcards: _barplot_params(wildcards))
     log:
         "logs/{project}/faststructure_barplot.K{k}.log"
     conda:
@@ -239,17 +132,7 @@ rule barplot_admixture:
         barplot_rds = "results/{project}/admixture/plots/{project}.admixture.K{k}.barplot.rds"
     params:
         output_prefix = "results/{project}/admixture/{project}.admixture.K{k}",
-        width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("width", 10),
-        height = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("height", 6),
-        dpi = lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("dpi", 300),
-        site_dividers = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("site_dividers", True),
-        divider_width = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("divider_width", 0.4),
-        site_order = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("site_order", "NULL"),
-        population_sort_by = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("population_sort_by", "NULL"),
-        flip_axis = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("flip_axis", False),
-        site_labels_angle = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("site_labels_angle", 90),
-        population_labels = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("population_labels", ["Site"]),
-        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", _DEFAULT_STRUCTURE_COLORS)
+        unpack(lambda wildcards: _barplot_params(wildcards))
     log:
         "logs/{project}/admixture_barplot.K{k}.log"
     conda:

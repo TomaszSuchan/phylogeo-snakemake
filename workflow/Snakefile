@@ -254,6 +254,77 @@ def _has_popdata(params):
     return bool(popdata) and popdata not in ("NULL", "")
 
 
+def _map_bg_params(wildcards):
+    """Shared map_background params dict for all map-producing rules.
+
+    Includes `use_elevation_bg` since it is always needed alongside the other
+    map params and is derived from the same config section.
+    """
+    bg = config["projects"][wildcards.project]["parameters"]["map_background"]
+    params = config["projects"][wildcards.project]["parameters"]
+    return {
+        "width": bg.get("width", 10),
+        "height": bg.get("height", 8),
+        "dpi": bg.get("dpi", 300),
+        "boundary": params.get("map_boundary", "NULL"),
+        "crs": bg.get("crs", 4326),
+        "basemap": bg.get("basemap", "NULL"),
+        "land_colour": bg.get("land_colour", "#d9d9d9"),
+        "sea_colour": bg.get("sea_colour", "#deebf7"),
+        "expand": bg.get("expand", False),
+        "arrow": bg.get("arrow", True),
+        "arrow_size": bg.get("arrow_size", 1),
+        "arrow_position": bg.get("arrow_position", "tl"),
+        "scalebar": bg.get("scalebar", True),
+        "scalebar_size": bg.get("scalebar_size", 1),
+        "scalebar_position": bg.get("scalebar_position", "tl"),
+        "plot_title": bg.get("plot_title", ""),
+        "axis_title_size": bg.get("axis_title_size", 10),
+        "axis_text_size": bg.get("axis_text_size", 8),
+        "basemap_border": bg.get("basemap_border", True),
+        "basemap_border_col": bg.get("basemap_border_col", "black"),
+        "basemap_border_lwd": bg.get("basemap_border_lwd", 0.1),
+        "use_elevation_bg": _use_elevation_bg(wildcards),
+    }
+
+
+def _mapmixture_pie_params(wildcards):
+    """mapmixture pie chart + structure_colors params for ancestry map rules."""
+    mm = config["projects"][wildcards.project]["parameters"]["mapmixture"]
+    return {
+        "pie_size": mm.get("pie_size", 1),
+        "pie_border": mm.get("pie_border", 0.2),
+        "pie_border_col": mm.get("pie_border_col", "black"),
+        "pie_opacity": mm.get("pie_opacity", 1),
+        "legend": mm.get("legend", False),
+        "structure_colors": mm.get("structure_colors", _DEFAULT_STRUCTURE_COLORS),
+    }
+
+
+def _mapmixture_map_params(wildcards):
+    """Combined map_background + mapmixture pie params for ancestry map rules."""
+    return {**_map_bg_params(wildcards), **_mapmixture_pie_params(wildcards)}
+
+
+def _barplot_params(wildcards):
+    """Shared params for all ancestry barplot rules (map_background size + mapmixture barplot keys)."""
+    bg = config["projects"][wildcards.project]["parameters"]["map_background"]
+    mm = config["projects"][wildcards.project]["parameters"]["mapmixture"]
+    return {
+        "width": bg.get("width", 10),
+        "height": bg.get("height", 6),
+        "dpi": bg.get("dpi", 300),
+        "site_dividers": mm.get("site_dividers", True),
+        "divider_width": mm.get("divider_width", 0.4),
+        "site_order": mm.get("site_order", "NULL"),
+        "population_sort_by": mm.get("population_sort_by", "NULL"),
+        "flip_axis": mm.get("flip_axis", False),
+        "site_labels_angle": mm.get("site_labels_angle", 90),
+        "population_labels": mm.get("population_labels", ["Site"]),
+        "structure_colors": mm.get("structure_colors", _DEFAULT_STRUCTURE_COLORS),
+    }
+
+
 # OrientAGraph/TreeMix helper functions — defined here so get_all_targets() can
 # call them without a forward dependency on the orientagraph.smk include.
 
