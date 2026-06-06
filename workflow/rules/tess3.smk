@@ -139,7 +139,7 @@ rule tess3_analysis:
         tolerance = lambda wildcards: _tess3_params(wildcards).get("tolerance", 1e-05),
         ploidy = lambda wildcards: _tess3_params(wildcards).get("ploidy", 2),
         map_method = lambda wildcards: _tess3_params(wildcards).get("map_method", "map.max"),
-        map_resolution = lambda wildcards: _tess3_params(wildcards).get("map_resolution", [300, 300]),
+        map_resolution = lambda wildcards: _tess3_map_resolution(wildcards),
         interpolation_knots = lambda wildcards: _tess3_params(wildcards).get("interpolation_knots", 10)
     conda:
         "../envs/tess3.yaml"
@@ -187,7 +187,7 @@ rule plot_tess3_interpolation:
     params:
         k = lambda wildcards: int(wildcards.k),
         map_method = lambda wildcards: _tess3_params(wildcards).get("map_method", "map.max"),
-        map_resolution = lambda wildcards: _tess3_params(wildcards).get("map_resolution", [300, 300]),
+        map_resolution = lambda wildcards: _tess3_map_resolution(wildcards),
         interpolation_knots = lambda wildcards: _tess3_params(wildcards).get("interpolation_knots", 10),
         structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", _DEFAULT_STRUCTURE_COLORS)
     conda:

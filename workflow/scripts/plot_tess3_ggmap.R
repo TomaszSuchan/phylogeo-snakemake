@@ -64,6 +64,16 @@ append_ggplot_layers <- function(base_plt, overlay_plt) {
   base_plt
 }
 
+set_ggplot_layer_alpha <- function(plt, alpha) {
+  if (is.null(plt$layers) || length(plt$layers) == 0) {
+    return(plt)
+  }
+  for (i in seq_along(plt$layers)) {
+    plt$layers[[i]]$aes_params$alpha <- alpha
+  }
+  plt
+}
+
 tess3_cluster_palette <- function(structure_colors, n_clusters, palette_length = 9) {
   if (length(structure_colors) == 0) {
     return(CreatePalette())
@@ -95,6 +105,7 @@ map_resolution <- as.integer(unlist(params[["map_resolution"]]))
 interpolation_knots <- as.integer(params[["interpolation_knots"]])
 structure_colors <- unlist(params[["structure_colors"]])
 point_size <- as.numeric(params[["point_size"]])
+tile_alpha <- as.numeric(params[["tile_alpha"]])
 use_elevation_bg <- isTRUE(params[["use_elevation_bg"]])
 basemap <- params[["basemap"]]
 config_crs <- as.numeric(params[["crs"]])
@@ -177,7 +188,11 @@ palette <- tess3_cluster_palette(structure_colors, n_clusters)
 cat("Building mapmixture basemap...\n")
 base_plt <- create_basemap(coords_df, map_params)
 
-cat("Adding tess3r ggtess3Q ancestry surface (cropped to land)...\n")
+cat(
+  "Adding tess3r ggtess3Q ancestry surface (cropped to land), resolution c(",
+  paste(map_resolution, collapse = ", "),
+  ") from map_background width/height/dpi...\n"
+)
 tess_plt <- ggtess3Q(
   Q = qmat,
   coord = coords,
@@ -188,6 +203,9 @@ tess_plt <- ggtess3Q(
   interpolation.model = FieldsKrigModel(interpolation_knots),
   col.palette = palette
 )
+if (!is.na(tile_alpha) && tile_alpha < 1) {
+  tess_plt <- set_ggplot_layer_alpha(tess_plt, tile_alpha)
+}
 
 # Separate fill scales: DEM uses continuous fill; ggtess3Q uses scale_fill_identity().
 combined_plt <- base_plt + ggnewscale::new_scale_fill()
@@ -201,8 +219,7 @@ combined_plt <- combined_plt +
     data = coord_df,
     ggplot2::aes(x = Lon, y = Lat),
     size = point_size,
-    colour = "black",
-    alpha = 0.7
+    colour = "black"
   )
 
 dir.create(dirname(output_pdf), recursive = TRUE, showWarnings = FALSE)

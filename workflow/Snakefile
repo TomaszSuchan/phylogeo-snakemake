@@ -404,15 +404,30 @@ def _spca_map_rule_params(wildcards):
     }
 
 
+def _tess3_map_resolution(wildcards):
+    """plot.tess3Q/ggtess3Q interpolation grid c(rx, ry) from map_background size."""
+    bg = config["projects"][wildcards.project]["parameters"]["map_background"]
+    width = float(bg.get("width", 10))
+    height = float(bg.get("height", 8))
+    dpi = float(bg.get("dpi", 300))
+    # 30 cells per inch of plot extent (dpi/10); matches legacy [300, 300] at 10×10 in, 300 dpi
+    scale = dpi / 10.0
+    return [
+        max(50, int(round(width * scale))),
+        max(50, int(round(height * scale))),
+    ]
+
+
 def _tess3_ggmap_params(wildcards):
     """Params for plot_tess3_ggmap (map_background + tess3 ggmap knobs)."""
     mm = config["projects"][wildcards.project]["parameters"]["mapmixture"]
     return {
         **_map_bg_params(wildcards),
         "k": int(wildcards.k),
-        "map_resolution": _tess3_params(wildcards).get("map_resolution", [300, 300]),
+        "map_resolution": _tess3_map_resolution(wildcards),
         "interpolation_knots": _tess3_params(wildcards).get("interpolation_knots", 10),
         "point_size": _tess3_params(wildcards).get("ggmap_point_size", 0.8),
+        "tile_alpha": _tess3_params(wildcards).get("ggmap_tile_alpha", 1.0),
         "structure_colors": mm.get("structure_colors", _DEFAULT_STRUCTURE_COLORS),
     }
 
