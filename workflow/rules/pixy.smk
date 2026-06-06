@@ -362,11 +362,7 @@ rule plot_pixy_pi_map:
         pdf = "results/{project}/pixy/plots/{project}.pixy_pi_map.pdf",
         rds = "results/{project}/pixy/plots/{project}.pixy_pi_map.rds"
     params:
-        stat_type = "pi",
-        unpack(lambda wildcards: _map_bg_params(wildcards))
-        # Pixy-specific parameters
-        point_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("point_size", 3),
-        map_outline = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("map_outline", True)
+        lambda wildcards: _pixy_pi_map_params(wildcards)
     log:
         "logs/{project}/plot_pixy_pi_map.log"
     benchmark:

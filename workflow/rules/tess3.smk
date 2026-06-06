@@ -159,12 +159,7 @@ rule plot_tess3_ggmap:
     log:
         "logs/{project}/plot_tess3_ggmap.K{k}.log"
     params:
-        k = lambda wildcards: int(wildcards.k),
-        map_resolution = lambda wildcards: _tess3_params(wildcards).get("map_resolution", [300, 300]),
-        interpolation_knots = lambda wildcards: _tess3_params(wildcards).get("interpolation_knots", 10),
-        point_size = lambda wildcards: _tess3_params(wildcards).get("ggmap_point_size", 0.8),
-        unpack(lambda wildcards: _map_bg_params(wildcards)),
-        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", _DEFAULT_STRUCTURE_COLORS)
+        lambda wildcards: _tess3_ggmap_params(wildcards)
     conda:
         "../envs/tess3.yaml"
     threads: 1
@@ -211,8 +206,7 @@ rule mapmixture_tess3:
         plot = "results/{project}/tess3/plots/{project}.tess3.K{k}.map.pdf",
         plot_rds = "results/{project}/tess3/plots/{project}.tess3.K{k}.map.rds"
     params:
-        output_prefix = "results/{project}/tess3/{project}.tess3.K{k}",
-        unpack(lambda wildcards: _mapmixture_map_params(wildcards))
+        lambda wildcards: _mapmixture_map_rule_params(wildcards, "tess3", "tess3")
     log:
         "logs/{project}/mapmixture_tess3.K{k}.log"
     benchmark:
@@ -239,8 +233,7 @@ rule barplot_tess3:
         barplot = "results/{project}/tess3/plots/{project}.tess3.K{k}.barplot.pdf",
         barplot_rds = "results/{project}/tess3/plots/{project}.tess3.K{k}.barplot.rds"
     params:
-        output_prefix = "results/{project}/tess3/{project}.tess3.K{k}",
-        unpack(lambda wildcards: _barplot_params(wildcards))
+        lambda wildcards: _barplot_rule_params(wildcards, "tess3", "tess3")
     log:
         "logs/{project}/tess3_barplot.K{k}.log"
     benchmark:

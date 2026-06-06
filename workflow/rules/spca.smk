@@ -120,14 +120,7 @@ rule spca_score_map:
     benchmark:
         "benchmarks/{project}/spca_score_map.{score_type}_axis{axis}.txt"
     params:
-        unpack(lambda wildcards: _map_bg_params(wildcards)),
-        score_type = lambda wildcards: wildcards.score_type,
-        axis = lambda wildcards: int(wildcards.axis),
-        point_size = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("spca_map", {}).get("point_size", 2.5),
-        point_alpha = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("spca_map", {}).get("point_alpha", 0.9),
-        low_colour = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("spca_map", {}).get("low_colour", "#2166AC"),
-        mid_colour = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("spca_map", {}).get("mid_colour", "white"),
-        high_colour = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("spca_map", {}).get("high_colour", "#B2182B")
+        lambda wildcards: _spca_map_rule_params(wildcards)
     conda:
         "../envs/mapmixture.yaml"
     threads: 1

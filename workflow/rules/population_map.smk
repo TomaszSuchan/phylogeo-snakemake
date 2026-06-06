@@ -84,23 +84,7 @@ rule plot_population_map:
         plot = "results/{project}/stats_samples/plots/{project}.population_map.pdf",
         plot_rds = "results/{project}/stats_samples/plots/{project}.population_map.rds"
     params:
-        unpack(lambda wildcards: _map_bg_params(wildcards))
-        # Label-specific parameters
-        point_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["population_map"].get("point_size", 3),
-        point_color = lambda wildcards: config["projects"][wildcards.project]["parameters"]["population_map"].get("point_color", "black"),
-        point_shape = lambda wildcards: config["projects"][wildcards.project]["parameters"]["population_map"].get("point_shape", 19),
-        label_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["population_map"].get("label_size", 3),
-        label_color = lambda wildcards: config["projects"][wildcards.project]["parameters"]["population_map"].get("label_color", "black"),
-        label_fontface = lambda wildcards: config["projects"][wildcards.project]["parameters"]["population_map"].get("label_fontface", "plain"),
-        show_points = lambda wildcards: config["projects"][wildcards.project]["parameters"]["population_map"].get("show_points", True),
-        show_labels = lambda wildcards: config["projects"][wildcards.project]["parameters"]["population_map"].get("show_labels", True),
-        # ggrepel parameters
-        force = lambda wildcards: config["projects"][wildcards.project]["parameters"]["population_map"].get("force", 10),
-        force_pull = lambda wildcards: config["projects"][wildcards.project]["parameters"]["population_map"].get("force_pull", 1),
-        max_overlaps = lambda wildcards: str(config["projects"][wildcards.project]["parameters"]["population_map"].get("max.overlaps", float("inf"))),
-        min_segment_length = lambda wildcards: config["projects"][wildcards.project]["parameters"]["population_map"].get("min.segment.length", 0.5),
-        segment_color = lambda wildcards: config["projects"][wildcards.project]["parameters"]["population_map"].get("segment.color", "grey50"),
-        segment_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["population_map"].get("segment.size", 0.5)
+        lambda wildcards: _population_map_params(wildcards)
     log:
         "logs/{project}/plot_population_map.log"
     benchmark:

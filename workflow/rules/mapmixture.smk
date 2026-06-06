@@ -20,8 +20,7 @@ rule mapmixture_structure:
         plot = "results/{project}/structure/plots/{project}.structure.K{k}.map.pdf",
         plot_rds = "results/{project}/structure/plots/{project}.structure.K{k}.map.rds"
     params:
-        output_prefix = "results/{project}/structure/{project}.structure.K{k}",
-        unpack(lambda wildcards: _mapmixture_map_params(wildcards))
+        lambda wildcards: _mapmixture_map_rule_params(wildcards, "structure", "structure")
     log:
         "logs/{project}/mapmixture_structure.K{k}.log"
     conda:
@@ -41,8 +40,7 @@ rule mapmixture_faststructure:
         plot = "results/{project}/faststructure/plots/{project}.faststructure.K{k}.map.pdf",
         plot_rds = "results/{project}/faststructure/plots/{project}.faststructure.K{k}.map.rds"
     params:
-        output_prefix = "results/{project}/faststructure/{project}.faststructure.K{k}",
-        unpack(lambda wildcards: _mapmixture_map_params(wildcards))
+        lambda wildcards: _mapmixture_map_rule_params(wildcards, "faststructure", "faststructure")
     log:
         "logs/{project}/mapmixture_faststructure.K{k}.log"
     conda:
@@ -62,8 +60,7 @@ rule mapmixture_admixture:
         plot = "results/{project}/admixture/plots/{project}.admixture.K{k}.map.pdf",
         plot_rds = "results/{project}/admixture/plots/{project}.admixture.K{k}.map.rds"
     params:
-        output_prefix = "results/{project}/admixture/{project}.admixture.K{k}",
-        unpack(lambda wildcards: _mapmixture_map_params(wildcards))
+        lambda wildcards: _mapmixture_map_rule_params(wildcards, "admixture", "admixture")
     log:
         "logs/{project}/mapmixture_admixture.K{k}.log"
     conda:
@@ -85,8 +82,7 @@ rule barplot_structure:
         barplot = "results/{project}/structure/plots/{project}.structure.K{k}.barplot.pdf",
         barplot_rds = "results/{project}/structure/plots/{project}.structure.K{k}.barplot.rds"
     params:
-        output_prefix = "results/{project}/structure/{project}.structure.K{k}",
-        unpack(lambda wildcards: _barplot_params(wildcards))
+        lambda wildcards: _barplot_rule_params(wildcards, "structure", "structure")
     log:
         "logs/{project}/structure_barplot.K{k}.log"
     conda:
@@ -108,8 +104,7 @@ rule barplot_faststructure:
         barplot = "results/{project}/faststructure/plots/{project}.faststructure.K{k}.barplot.pdf",
         barplot_rds = "results/{project}/faststructure/plots/{project}.faststructure.K{k}.barplot.rds"
     params:
-        output_prefix = "results/{project}/faststructure/{project}.faststructure.K{k}",
-        unpack(lambda wildcards: _barplot_params(wildcards))
+        lambda wildcards: _barplot_rule_params(wildcards, "faststructure", "faststructure")
     log:
         "logs/{project}/faststructure_barplot.K{k}.log"
     conda:
@@ -131,8 +126,7 @@ rule barplot_admixture:
         barplot = "results/{project}/admixture/plots/{project}.admixture.K{k}.barplot.pdf",
         barplot_rds = "results/{project}/admixture/plots/{project}.admixture.K{k}.barplot.rds"
     params:
-        output_prefix = "results/{project}/admixture/{project}.admixture.K{k}",
-        unpack(lambda wildcards: _barplot_params(wildcards))
+        lambda wildcards: _barplot_rule_params(wildcards, "admixture", "admixture")
     log:
         "logs/{project}/admixture_barplot.K{k}.log"
     conda:

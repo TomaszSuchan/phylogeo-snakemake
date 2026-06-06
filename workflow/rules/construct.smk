@@ -140,8 +140,7 @@ rule mapmixture_construct:
         plot = "results/{project}/construct/plots/{project}.construct.K{k}.map.pdf",
         plot_rds = "results/{project}/construct/plots/{project}.construct.K{k}.map.rds"
     params:
-        output_prefix = "results/{project}/construct/{project}.construct.K{k}",
-        unpack(lambda wildcards: _mapmixture_map_params(wildcards))
+        lambda wildcards: _mapmixture_map_rule_params(wildcards, "construct", "construct")
     log:
         "logs/{project}/mapmixture_construct.K{k}.log"
     benchmark:
@@ -168,8 +167,7 @@ rule barplot_construct:
         barplot = "results/{project}/construct/plots/{project}.construct.K{k}.barplot.pdf",
         barplot_rds = "results/{project}/construct/plots/{project}.construct.K{k}.barplot.rds"
     params:
-        output_prefix = "results/{project}/construct/{project}.construct.K{k}",
-        unpack(lambda wildcards: _barplot_params(wildcards))
+        lambda wildcards: _barplot_rule_params(wildcards, "construct", "construct")
     log:
         "logs/{project}/construct_barplot.K{k}.log"
     benchmark:

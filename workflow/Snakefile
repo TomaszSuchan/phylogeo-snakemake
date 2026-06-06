@@ -325,6 +325,89 @@ def _barplot_params(wildcards):
     }
 
 
+def _mapmixture_map_rule_params(wildcards, analysis_subdir, filename_stem):
+    """Mapmixture map rule params including output_prefix."""
+    return {
+        **_mapmixture_map_params(wildcards),
+        "output_prefix": (
+            f"results/{wildcards.project}/{analysis_subdir}/"
+            f"{wildcards.project}.{filename_stem}.K{wildcards.k}"
+        ),
+    }
+
+
+def _barplot_rule_params(wildcards, analysis_subdir, filename_stem):
+    """Shared ancestry barplot rule params including output_prefix."""
+    return {
+        **_barplot_params(wildcards),
+        "output_prefix": (
+            f"results/{wildcards.project}/{analysis_subdir}/"
+            f"{wildcards.project}.{filename_stem}.K{wildcards.k}"
+        ),
+    }
+
+
+def _pixy_pi_map_params(wildcards):
+    """Params for plot_pixy_pi_map (map_background + pixy map knobs)."""
+    pixy = config["projects"][wildcards.project]["parameters"]["pixy"]
+    return {
+        **_map_bg_params(wildcards),
+        "stat_type": "pi",
+        "point_size": pixy.get("point_size", 3),
+        "map_outline": pixy.get("map_outline", True),
+    }
+
+
+def _population_map_params(wildcards):
+    """Params for plot_population_map (map_background + label/ggrepel knobs)."""
+    pm = config["projects"][wildcards.project]["parameters"]["population_map"]
+    return {
+        **_map_bg_params(wildcards),
+        "point_size": pm.get("point_size", 3),
+        "point_color": pm.get("point_color", "black"),
+        "point_shape": pm.get("point_shape", 19),
+        "label_size": pm.get("label_size", 3),
+        "label_color": pm.get("label_color", "black"),
+        "label_fontface": pm.get("label_fontface", "plain"),
+        "show_points": pm.get("show_points", True),
+        "show_labels": pm.get("show_labels", True),
+        "force": pm.get("force", 10),
+        "force_pull": pm.get("force_pull", 1),
+        "max_overlaps": str(pm.get("max.overlaps", float("inf"))),
+        "min_segment_length": pm.get("min.segment.length", 0.5),
+        "segment_color": pm.get("segment.color", "grey50"),
+        "segment_size": pm.get("segment.size", 0.5),
+    }
+
+
+def _spca_map_rule_params(wildcards):
+    """Params for spca_score_map (map_background + sPCA map knobs)."""
+    spca_map = config["projects"][wildcards.project]["parameters"].get("spca_map", {})
+    return {
+        **_map_bg_params(wildcards),
+        "score_type": wildcards.score_type,
+        "axis": int(wildcards.axis),
+        "point_size": spca_map.get("point_size", 2.5),
+        "point_alpha": spca_map.get("point_alpha", 0.9),
+        "low_colour": spca_map.get("low_colour", "#2166AC"),
+        "mid_colour": spca_map.get("mid_colour", "white"),
+        "high_colour": spca_map.get("high_colour", "#B2182B"),
+    }
+
+
+def _tess3_ggmap_params(wildcards):
+    """Params for plot_tess3_ggmap (map_background + tess3 ggmap knobs)."""
+    mm = config["projects"][wildcards.project]["parameters"]["mapmixture"]
+    return {
+        **_map_bg_params(wildcards),
+        "k": int(wildcards.k),
+        "map_resolution": _tess3_params(wildcards).get("map_resolution", [300, 300]),
+        "interpolation_knots": _tess3_params(wildcards).get("interpolation_knots", 10),
+        "point_size": _tess3_params(wildcards).get("ggmap_point_size", 0.8),
+        "structure_colors": mm.get("structure_colors", _DEFAULT_STRUCTURE_COLORS),
+    }
+
+
 # OrientAGraph/TreeMix helper functions — defined here so get_all_targets() can
 # call them without a forward dependency on the orientagraph.smk include.
 

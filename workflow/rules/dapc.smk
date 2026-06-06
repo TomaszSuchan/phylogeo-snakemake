@@ -63,7 +63,7 @@ rule mapmixture_dapc:
         plot = "results/{project}/dapc/plots/{project}.dapc.K{k}.map.pdf",
         plot_rds = "results/{project}/dapc/plots/{project}.dapc.K{k}.map.rds"
     params:
-        unpack(lambda wildcards: _mapmixture_map_params(wildcards))
+        lambda wildcards: _mapmixture_map_params(wildcards)
     log:
         "logs/{project}/mapmixture_dapc.K{k}.log"
     conda:
