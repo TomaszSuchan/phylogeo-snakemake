@@ -34,7 +34,7 @@ rule tess3_genotypes:
         indpopdata = rules.generate_popdata.output.indpopdata,
         install = rules.install_tess3.output
     output:
-        geno_rds = temporary("results/{project}/tess3/{project}.genotypes.rds")
+        geno_rds = "results/{project}/filtered_data/{project}.tess3.genotypes.rds"
     log:
         "logs/{project}/tess3_genotypes.log"
     benchmark:
