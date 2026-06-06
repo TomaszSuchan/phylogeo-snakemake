@@ -1130,14 +1130,14 @@ def get_all_targets():
                     + ".amova_variance_components.rds",
                 ])
 
-        # ROH targets
+        # ROH targets (plots are a directory() output from roh_summary)
         if analyses.get("roh", False):
             targets.extend([
                 f"results/{project}/roh/{project}.bcftools_roh.txt",
                 f"results/{project}/roh/{project}.roh_summary.txt",
                 f"results/{project}/roh/{project}.roh_per_ind.txt",
                 f"results/{project}/roh/{project}.roh_stats_comparisons.txt",
-                f"results/{project}/roh/plots/froh_histogram.pdf",
+                f"results/{project}/roh/plots",
             ])
 
         # Genetic distance targets
