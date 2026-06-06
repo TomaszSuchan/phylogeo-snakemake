@@ -4,12 +4,6 @@ import re
 import sys
 from pathlib import Path
 
-try:
-    import snakemake  # type: ignore
-except ImportError:
-    snakemake = None  # type: ignore
-
-
 CV_PATTERNS = (
     re.compile(r"Cross-validation error:\s*([0-9.eE+-]+)"),
     re.compile(r"CV error[^:]*:\s*([0-9.eE+-]+)"),
@@ -32,15 +26,7 @@ def parse_k_from_log(log_path: Path) -> int:
     return int(match.group(1))
 
 
-def main() -> None:
-    if snakemake is None:
-        print("This script is intended to run under Snakemake.", file=sys.stderr)
-        sys.exit(1)
-
-    log_files = [Path(p) for p in snakemake.input]
-    choose_k_file = Path(snakemake.output["choose_k_results"])
-    cv_summary_file = Path(snakemake.output["cv_summary"])
-
+def main(log_files, choose_k_file, cv_summary_file) -> None:
     rows: list[tuple[int, float]] = []
     errors: list[str] = []
 
@@ -80,4 +66,12 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        log_files = [Path(p) for p in snakemake.input]
+        choose_k_file = Path(snakemake.output["choose_k_results"])
+        cv_summary_file = Path(snakemake.output["cv_summary"])
+    except NameError:
+        print("This script is intended to run under Snakemake.", file=sys.stderr)
+        sys.exit(1)
+
+    main(log_files, choose_k_file, cv_summary_file)
