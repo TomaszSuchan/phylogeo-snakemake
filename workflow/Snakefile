@@ -378,6 +378,67 @@ def _pixy_pi_map_params(wildcards):
     }
 
 
+def _roh_froh_map_inputs(wildcards):
+    """Mean F_ROH per Site map merges roh_per_ind with indpopdata Site coordinates."""
+    inputs = {
+        "per_ind": f"results/{wildcards.project}/roh/{wildcards.project}.roh_per_ind.txt",
+        "indpopdata": f"results/{wildcards.project}/indpopdata.txt",
+        "install": ".snakemake/mapmixture_installed",
+    }
+    inputs.update(_map_background_inputs(wildcards))
+    return inputs
+
+
+def _roh_group_by_columns_from_params(params):
+    """Metadata columns configured for ROH group summaries and plots."""
+    roh = params.get("roh", {})
+    group_by = roh.get("group_by", ["Site"])
+    if isinstance(group_by, list):
+        return [
+            str(x)
+            for x in group_by
+            if x and str(x).strip().lower() != "none"
+        ]
+    if isinstance(group_by, str) and group_by.strip().lower() != "none":
+        return [group_by.strip()]
+    return []
+
+
+def _roh_group_by_columns(wildcards):
+    params = config["projects"][wildcards.project]["parameters"]
+    return _roh_group_by_columns_from_params(params)
+
+
+def _roh_summary_plot_paths(project, group_by_cols):
+    """All ROH summary plot paths (fixed plots + group_by expansions)."""
+    plot_dir = f"results/{project}/roh/plots"
+    paths = [
+        f"{plot_dir}/froh_histogram.pdf",
+        f"{plot_dir}/n_roh_segments_histogram.pdf",
+        f"{plot_dir}/total_roh_length_histogram.pdf",
+        f"{plot_dir}/roh_segment_length_distribution.pdf",
+        f"{plot_dir}/roh_by_class.pdf",
+        f"{plot_dir}/froh_vs_n_segments.pdf",
+    ]
+    for col in group_by_cols:
+        paths.extend([
+            f"{plot_dir}/froh_by_{col}.pdf",
+            f"{plot_dir}/n_roh_segments_by_{col}.pdf",
+            f"{plot_dir}/roh_class_by_{col}.pdf",
+        ])
+    return paths
+
+
+def _roh_froh_map_params(wildcards):
+    """Params for plot_roh_froh_map (map_background + roh map knobs)."""
+    roh = config["projects"][wildcards.project]["parameters"].get("roh", {})
+    return {
+        **_map_bg_params(wildcards),
+        "point_size": roh.get("point_size", 3),
+        "map_outline": roh.get("map_outline", True),
+    }
+
+
 def _normalize_max_overlaps(value):
     """Return a Snakemake/R-safe value for ggrepel max.overlaps (never Python float inf)."""
     if value is None:
@@ -1239,15 +1300,21 @@ def get_all_targets():
                     + ".amova_variance_components.rds",
                 ])
 
-        # ROH targets (plots are a directory() output from roh_summary)
+        # ROH targets
         if analyses.get("roh", False):
+            roh_groupings = _roh_group_by_columns_from_params(params)
             targets.extend([
                 f"results/{project}/roh/{project}.bcftools_roh.txt",
                 f"results/{project}/roh/{project}.roh_summary.txt",
                 f"results/{project}/roh/{project}.roh_per_ind.txt",
                 f"results/{project}/roh/{project}.roh_stats_comparisons.txt",
-                f"results/{project}/roh/plots",
             ])
+            targets.extend(_roh_summary_plot_paths(project, roh_groupings))
+            if _has_popdata(params):
+                targets.extend([
+                    f"results/{project}/roh/plots/{project}.roh_froh_map.pdf",
+                    f"results/{project}/roh/plots/{project}.roh_froh_map.rds",
+                ])
 
         # Genetic distance targets
         if analyses.get("gen_dist", False):

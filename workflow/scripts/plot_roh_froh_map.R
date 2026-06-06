@@ -1,0 +1,164 @@
+#!/usr/bin/env Rscript
+# Plot mean F_ROH per Site on a map (same aesthetics as plot_pixy_maps.R)
+
+library(tidyverse)
+library(mapmixture)
+library(RColorBrewer)
+library(grid)
+library(sf)
+library(terra)
+
+common_functions <- tryCatch({
+  script_dir <- dirname(normalizePath(snakemake@script))
+  file.path(script_dir, "common_map_functions.R")
+}, error = function(e) "workflow/scripts/common_map_functions.R")
+if (file.exists(common_functions)) {
+  source(common_functions)
+} else {
+  source("workflow/scripts/common_map_functions.R")
+}
+
+params <- snakemake_rule_params()
+
+pdf(NULL)
+
+log_file <- file(snakemake@log[[1]], open = "wt")
+sink(log_file, type = "output")
+sink(log_file, type = "message")
+
+indpopdata_file <- snakemake@input[["indpopdata"]]
+per_ind_file <- snakemake@input[["per_ind"]]
+output_pdf <- snakemake@output[["pdf"]]
+output_rds <- snakemake@output[["rds"]]
+
+if (is.null(indpopdata_file) || indpopdata_file == "NULL" || indpopdata_file == "" || !file.exists(indpopdata_file)) {
+  stop("ERROR: indpopdata file not found or not specified. Map plotting requires an indpopdata file with geographic coordinates.")
+}
+
+map_params <- extract_map_params(params)
+use_elevation_bg <- isTRUE(params[["use_elevation_bg"]])
+map_params$basemap <- resolve_map_basemap(
+  use_elevation_bg,
+  snakemake@input,
+  map_params$basemap
+)
+map_params$raster_is_elevation_dem <- isTRUE(use_elevation_bg)
+
+map_outline <- as.logical(params[["map_outline"]])
+if (is.na(map_outline)) {
+  map_outline <- TRUE
+}
+
+message("\n=== READING INDPOPDATA ===\n")
+indpopdata <- read.table(indpopdata_file, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
+if (!all(c("Site", "Lat", "Lon") %in% colnames(indpopdata))) {
+  stop("ERROR: indpopdata must contain Site, Lat, and Lon columns for map plotting.")
+}
+
+coords_df <- indpopdata %>%
+  dplyr::select(Site, Lat, Lon) %>%
+  dplyr::distinct(Site, .keep_all = TRUE) %>%
+  dplyr::mutate(Lat = as.numeric(Lat), Lon = as.numeric(Lon)) %>%
+  dplyr::filter(!is.na(Lat) & !is.na(Lon))
+message(sprintf("Coords dataframe: %d unique sites\n", nrow(coords_df)))
+
+if (nrow(coords_df) == 0) {
+  stop("ERROR: No sites with valid Lat/Lon coordinates found in indpopdata.")
+}
+
+message("\n=== READING PER-INDIVIDUAL ROH SUMMARY ===\n")
+per_ind <- read.table(per_ind_file, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
+if (!all(c("Site", "F_ROH") %in% colnames(per_ind))) {
+  stop("ERROR: ROH per-individual summary must contain Site and F_ROH columns.")
+}
+
+summary_df <- per_ind %>%
+  dplyr::group_by(Site) %>%
+  dplyr::summarise(
+    mean_froh = mean(F_ROH, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+value_col <- "mean_froh"
+plot_data <- merge(coords_df, summary_df, by = "Site", all.x = TRUE)
+legend_title <- expression(F[ROH])
+
+plot_data <- plot_data[!is.na(plot_data[[value_col]]), ]
+plot_data[[value_col]] <- as.numeric(plot_data[[value_col]])
+if (nrow(plot_data) == 0) {
+  stop("ERROR: No sites with mean F_ROH values to plot.")
+}
+
+message(sprintf("Merged data: %d sites with mean F_ROH values\n", nrow(plot_data)))
+message(sprintf("Value range: [%.6f, %.6f]\n",
+                min(plot_data[[value_col]], na.rm = TRUE),
+                max(plot_data[[value_col]], na.rm = TRUE)))
+
+message("\n=== TRANSFORMING COORDINATES ===\n")
+message(sprintf("Target CRS: %d\n", map_params$crs))
+plot_data_transformed <- transform_coordinates(plot_data, map_params$crs)
+message(sprintf("Coordinates transformed. Range: Lon [%.2f, %.2f], Lat [%.2f, %.2f]\n",
+                min(plot_data_transformed$Lon), max(plot_data_transformed$Lon),
+                min(plot_data_transformed$Lat), max(plot_data_transformed$Lat)))
+
+message("\n=== CREATING MAPMIXTURE BASEMAP ===\n")
+p <- create_basemap(coords_df, map_params)
+
+message("\n=== ADDING COLORED POINTS ===\n")
+p <- p +
+  geom_point(
+    data = plot_data_transformed,
+    aes(x = Lon, y = Lat, color = !!sym(value_col)),
+    size = map_params$point_size,
+    shape = 19
+  )
+
+if (map_outline) {
+  p <- p +
+    geom_point(
+      data = plot_data_transformed,
+      aes(x = Lon, y = Lat),
+      color = "black",
+      size = map_params$point_size,
+      shape = 1
+    )
+}
+
+p <- p +
+  scale_color_gradientn(
+    name = legend_title,
+    colours = RColorBrewer::brewer.pal(9, "YlOrBr"),
+    na.value = "gray90",
+    guide = guide_colorbar(
+      title.position = "top",
+      barwidth = 1,
+      barheight = 10
+    )
+  )
+
+p <- p + theme(legend.position = "right")
+
+message("\n=== SAVING OUTPUT ===\n")
+message(sprintf("Output PDF: %s\n", output_pdf))
+message(sprintf("Output RDS: %s\n", output_rds))
+message(sprintf("Plot dimensions: %.1f x %.1f inches @ %d dpi\n",
+                map_params$width, map_params$height, map_params$dpi))
+
+dir.create(dirname(output_pdf), recursive = TRUE, showWarnings = FALSE)
+ggsave(
+  filename = output_pdf,
+  plot = p,
+  width = map_params$width,
+  height = map_params$height,
+  dpi = map_params$dpi,
+  device = "pdf"
+)
+
+dir.create(dirname(output_rds), recursive = TRUE, showWarnings = FALSE)
+saveRDS(p, output_rds)
+
+message("\n=== COMPLETED SUCCESSFULLY ===\n")
+
+sink(type = "message")
+sink(type = "output")
+close(log_file)

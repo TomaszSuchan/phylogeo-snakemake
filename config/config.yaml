@@ -457,6 +457,9 @@ parameters: &global_params
   # Runs of homozygosity calls and group summaries.
   roh:
     group_by: ["Site"]   # columns in indpopdata to summarize/compare ROH
+    # Map-specific parameters for mean F_ROH per Site maps (when popdata coordinates exist)
+    point_size: 3        # size of points on F_ROH maps
+    map_outline: true    # add point outlines (true/false, default: true)
 
   ## Genome scan parameters
   # Sliding-window FST, pi, and dXY between two metadata groups.

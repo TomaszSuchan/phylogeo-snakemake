@@ -14,9 +14,11 @@ indpopdata_file <- snakemake@input[["indpopdata"]]
 output_summary <- snakemake@output[["summary"]]
 output_per_ind <- snakemake@output[["per_ind"]]
 output_stats <- snakemake@output[["stats"]]
-output_plots <- snakemake@output[["plots"]]
 log_file <- snakemake@log[[1]]
 group_by <- snakemake@params[["group_by"]]
+
+plot_dir <- dirname(snakemake@output[["froh_histogram"]])
+dir.create(plot_dir, recursive = TRUE, showWarnings = FALSE)
 
 # Redirect output to log
 log_con <- file(log_file, open = "wt")
@@ -208,12 +210,6 @@ cat("\n")
 
 cat("Creating visualizations...\n")
 
-# Create output directory for plots (output_plots is already a directory path)
-plot_dir <- output_plots
-if (!dir.exists(plot_dir)) {
-  dir.create(plot_dir, recursive = TRUE)
-}
-
 # Plot 1: F_ROH distribution
 p1 <- ggplot(per_ind, aes(x = F_ROH)) +
   geom_histogram(bins = 30, fill = "steelblue", alpha = 0.7, color = "black") +
@@ -225,7 +221,7 @@ p1 <- ggplot(per_ind, aes(x = F_ROH)) +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5))
 
-ggsave(file.path(plot_dir, "froh_histogram.pdf"), p1, width = 8, height = 6)
+ggsave(snakemake@output[["froh_histogram"]], p1, width = 8, height = 6)
 
 # Plot 2: Number of ROH segments distribution
 p2 <- ggplot(per_ind, aes(x = N_ROH_segments)) +
@@ -238,7 +234,7 @@ p2 <- ggplot(per_ind, aes(x = N_ROH_segments)) +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5))
 
-ggsave(file.path(plot_dir, "n_roh_segments_histogram.pdf"), p2, width = 8, height = 6)
+ggsave(snakemake@output[["n_roh_segments_histogram"]], p2, width = 8, height = 6)
 
 # Plot 3: Total ROH length distribution
 p3 <- ggplot(per_ind, aes(x = Total_ROH_length_Mb)) +
@@ -251,7 +247,7 @@ p3 <- ggplot(per_ind, aes(x = Total_ROH_length_Mb)) +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5))
 
-ggsave(file.path(plot_dir, "total_roh_length_histogram.pdf"), p3, width = 8, height = 6)
+ggsave(snakemake@output[["total_roh_length_histogram"]], p3, width = 8, height = 6)
 
 # Plot 4: ROH length distribution (all segments)
 p4 <- ggplot(roh_data, aes(x = Length_Mb)) +
@@ -265,7 +261,7 @@ p4 <- ggplot(roh_data, aes(x = Length_Mb)) +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5))
 
-ggsave(file.path(plot_dir, "roh_segment_length_distribution.pdf"), p4, width = 8, height = 6)
+ggsave(snakemake@output[["roh_segment_length_distribution"]], p4, width = 8, height = 6)
 
 # Plot 5: ROH by length class
 p5 <- ggplot(roh_data, aes(x = ROH_class, fill = ROH_class)) +
@@ -282,7 +278,7 @@ p5 <- ggplot(roh_data, aes(x = ROH_class, fill = ROH_class)) +
   theme(plot.title = element_text(hjust = 0.5),
         legend.position = "none")
 
-ggsave(file.path(plot_dir, "roh_by_class.pdf"), p5, width = 8, height = 6)
+ggsave(snakemake@output[["roh_by_class"]], p5, width = 8, height = 6)
 
 # Plot 6: F_ROH vs Number of ROH segments
 p6 <- ggplot(per_ind, aes(x = N_ROH_segments, y = F_ROH)) +
@@ -296,100 +292,9 @@ p6 <- ggplot(per_ind, aes(x = N_ROH_segments, y = F_ROH)) +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5))
 
-ggsave(file.path(plot_dir, "froh_vs_n_segments.pdf"), p6, width = 8, height = 6)
+ggsave(snakemake@output[["froh_vs_n_segments"]], p6, width = 8, height = 6)
 
-# Population-level plots if available and group_by is specified
-if (!is.null(indpopdata) && !is.null(group_by) && length(group_by) > 0 && !("none" %in% group_by)) {
-  # Filter out "none" if present
-  group_by <- group_by[group_by != "none"]
-  
-  if (length(group_by) > 0) {
-    # Check which grouping columns exist in the data
-    available_cols <- colnames(per_ind)
-    valid_group_by <- group_by[group_by %in% available_cols]
-    
-    if (length(valid_group_by) > 0) {
-      cat("Generating population-level plots for grouping columns:", paste(valid_group_by, collapse = ", "), "\n")
-      
-      # Generate plots for each grouping column
-      for (group_col in valid_group_by) {
-        # Check if column has valid data (not all NA)
-        if (sum(!is.na(per_ind[[group_col]])) > 0 && length(unique(per_ind[[group_col]][!is.na(per_ind[[group_col]])])) > 1) {
-          
-          # Plot: F_ROH by grouping column
-          p_group_froh <- ggplot(per_ind, aes(x = .data[[group_col]], y = F_ROH, fill = .data[[group_col]])) +
-            geom_boxplot(alpha = 0.7) +
-            geom_jitter(width = 0.2, alpha = 0.5) +
-            labs(
-              title = paste("F_ROH by", group_col),
-              x = group_col,
-              y = "F_ROH"
-            ) +
-            theme_minimal() +
-            theme(plot.title = element_text(hjust = 0.5),
-                  axis.text.x = element_text(angle = 45, hjust = 1),
-                  legend.position = "none")
-          
-          ggsave(file.path(plot_dir, paste0("froh_by_", group_col, ".pdf")), 
-                 p_group_froh, width = max(8, length(unique(per_ind[[group_col]][!is.na(per_ind[[group_col]])])) * 0.8), 
-                 height = 6)
-          
-          # Plot: Number of ROH segments by grouping column
-          p_group_nseg <- ggplot(per_ind, aes(x = .data[[group_col]], y = N_ROH_segments, fill = .data[[group_col]])) +
-            geom_boxplot(alpha = 0.7) +
-            geom_jitter(width = 0.2, alpha = 0.5) +
-            labs(
-              title = paste("Number of ROH Segments by", group_col),
-              x = group_col,
-              y = "Number of ROH Segments"
-            ) +
-            theme_minimal() +
-            theme(plot.title = element_text(hjust = 0.5),
-                  axis.text.x = element_text(angle = 45, hjust = 1),
-                  legend.position = "none")
-          
-          ggsave(file.path(plot_dir, paste0("n_roh_segments_by_", group_col, ".pdf")), 
-                 p_group_nseg, width = max(8, length(unique(per_ind[[group_col]][!is.na(per_ind[[group_col]])])) * 0.8), 
-                 height = 6)
-          
-          # Plot: ROH length classes by grouping column
-          roh_class_summary <- roh_data %>%
-            filter(!is.na(.data[[group_col]])) %>%
-            group_by(.data[[group_col]], ROH_class) %>%
-            summarise(N_segments = n(), .groups = "drop")
-          
-          p_group_class <- ggplot(roh_class_summary, aes(x = .data[[group_col]], y = N_segments, fill = ROH_class)) +
-            geom_bar(stat = "identity", position = "stack", color = "black") +
-            scale_fill_manual(values = c("Short (<1 Mb)" = "lightblue", 
-                                          "Medium (1-5 Mb)" = "lightgreen", 
-                                          "Long (>5 Mb)" = "salmon"),
-                              name = "ROH Class") +
-            labs(
-              title = paste("ROH Segments by Length Class and", group_col),
-              x = group_col,
-              y = "Number of Segments"
-            ) +
-            theme_minimal() +
-            theme(plot.title = element_text(hjust = 0.5),
-                  axis.text.x = element_text(angle = 45, hjust = 1))
-          
-          ggsave(file.path(plot_dir, paste0("roh_class_by_", group_col, ".pdf")), 
-                 p_group_class, width = max(10, length(unique(roh_class_summary[[group_col]])) * 0.8), 
-                 height = 6)
-          
-          cat("  Generated plots for", group_col, "\n")
-        } else {
-          cat("  Skipping", group_col, "- insufficient data or only one group\n")
-        }
-      }
-    } else {
-      cat("  Warning: None of the specified group_by columns found in indpopdata\n")
-      cat("  Available columns:", paste(available_cols, collapse = ", "), "\n")
-    }
-  }
-}
-
-cat("  Created", length(list.files(plot_dir, pattern = "\\.pdf$")), "plot files\n")
+cat("  Created 6 summary plot files\n")
 cat("\n")
 
 # ==============================================================================
