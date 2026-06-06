@@ -73,7 +73,14 @@ show_labels <- as.logical(params[["show_labels"]])
 force <- as.numeric(params[["force"]])
 force_pull <- as.numeric(params[["force_pull"]])
 max.overlaps <- params[["max_overlaps"]]
-if (is.null(max.overlaps)) max.overlaps <- Inf
+if (is.null(max.overlaps)) {
+  max.overlaps <- Inf
+} else if (is.character(max.overlaps) && length(max.overlaps) == 1L &&
+           toupper(max.overlaps) %in% c("INF", "INFINITY", ".INF")) {
+  max.overlaps <- Inf
+} else {
+  max.overlaps <- as.numeric(max.overlaps)
+}
 min.segment.length <- as.numeric(params[["min_segment_length"]])
 segment.color <- params[["segment_color"]]
 segment.size <- as.numeric(params[["segment_size"]])

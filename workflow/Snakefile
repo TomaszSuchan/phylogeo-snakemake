@@ -358,6 +358,15 @@ def _pixy_pi_map_params(wildcards):
     }
 
 
+def _normalize_max_overlaps(value):
+    """YAML `Inf` is often read as the string 'Inf'; ggrepel needs a numeric value."""
+    if value is None:
+        return float("inf")
+    if isinstance(value, str) and value.lower() in ("inf", "infinity", ".inf"):
+        return float("inf")
+    return value
+
+
 def _population_map_params(wildcards):
     """Params for plot_population_map (map_background + label/ggrepel knobs)."""
     pm = config["projects"][wildcards.project]["parameters"]["population_map"]
@@ -373,7 +382,7 @@ def _population_map_params(wildcards):
         "show_labels": pm.get("show_labels", True),
         "force": pm.get("force", 10),
         "force_pull": pm.get("force_pull", 1),
-        "max_overlaps": pm.get("max.overlaps", float("inf")),
+        "max_overlaps": _normalize_max_overlaps(pm.get("max.overlaps", float("inf"))),
         "min_segment_length": pm.get("min.segment.length", 0.5),
         "segment_color": pm.get("segment.color", "grey50"),
         "segment_size": pm.get("segment.size", 0.5),

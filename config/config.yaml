@@ -188,7 +188,7 @@ parameters: &global_params
     # ggrepel parameters for label positioning
     force: 10                    # force of repulsion between labels
     force_pull: 1                # force pulling labels toward points
-    max.overlaps: Inf            # maximum number of overlapping labels to show (Inf = show all labels)
+    max.overlaps: .inf            # maximum overlapping labels to show (.inf = show all; avoid bare Inf — YAML reads it as a string)
     min.segment.length: 0.5      # minimum length of leader line segment (in map units)
     segment.color: "black"      # color of leader lines
     segment.size: 0.2            # line width of leader lines
