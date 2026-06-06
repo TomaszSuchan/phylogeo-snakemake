@@ -8,6 +8,17 @@ library(ggrepel)
 library(sf)
 library(terra)
 
+#' Unwrap Snakemake params when a rule uses `params: lambda wildcards: { ... }`.
+#' Snakemake stores that dict as a single nested element (access via params[[1]]),
+#' not as top-level named params.
+snakemake_rule_params <- function() {
+  p <- snakemake@params
+  if (length(p) == 1L && is.list(p[[1L]]) && length(names(p)) == 0L) {
+    return(p[[1L]])
+  }
+  p
+}
+
 #' Coerce Lat/Lon to numeric; stop with row diagnostics if any value is invalid.
 #' @noRd
 coerce_indpopdata_lat_lon <- function(df) {
@@ -463,6 +474,11 @@ resolve_map_basemap <- function(use_elevation_bg, inputs_named_list, basemap_par
     r <- terra::rast(tif)
     if (terra::nlyr(r) > 1L) {
       r <- r[[1L]]
+    }
+    # mapmixture crops raster basemaps in WGS84; older caches projected to plot CRS fail.
+    if (!isTRUE(tryCatch(terra::same.crs(r, "EPSG:4326"), error = function(e) FALSE))) {
+      message("Reprojecting elevation basemap to EPSG:4326 for mapmixture compatibility")
+      r <- terra::project(r, "EPSG:4326", method = "bilinear")
     }
     return(r)
   }

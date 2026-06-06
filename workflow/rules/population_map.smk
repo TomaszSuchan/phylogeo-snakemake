@@ -49,7 +49,7 @@ rule cache_naturalearth_basemap:
         "../scripts/cache_naturalearth_basemap.R"
 
 
-# DEM basemap via elevatr (written in map_background.crs).
+# DEM basemap via elevatr (cached in EPSG:4326 for mapmixture cropping).
 rule cache_map_elevation:
     input:
         indpopdata=rules.generate_popdata.output.indpopdata,

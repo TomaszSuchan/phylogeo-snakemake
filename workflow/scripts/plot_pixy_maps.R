@@ -22,6 +22,8 @@ if (file.exists(common_functions)) {
   source("workflow/scripts/common_map_functions.R")
 }
 
+params <- snakemake_rule_params()
+
 # Prevent creation of Rplots.pdf
 pdf(NULL)
 
@@ -32,7 +34,7 @@ sink(log_file, type = "message")
 
 # Snakemake inputs/outputs
 indpopdata_file <- snakemake@input[["indpopdata"]]
-stat_type <- snakemake@params[["stat_type"]]  # Only "pi" makes sense for maps
+stat_type <- params[["stat_type"]]  # Only "pi" makes sense for maps
 summary_file <- snakemake@input[["summary"]]
 output_pdf <- snakemake@output[["pdf"]]
 output_rds <- snakemake@output[["rds"]]
@@ -43,8 +45,8 @@ if (is.null(indpopdata_file) || indpopdata_file == "NULL" || indpopdata_file == 
 }
 
 # Extract map parameters
-map_params <- extract_map_params(snakemake@params)
-use_elevation_bg <- isTRUE(snakemake@params[["use_elevation_bg"]])
+map_params <- extract_map_params(params)
+use_elevation_bg <- isTRUE(params[["use_elevation_bg"]])
 map_params$basemap <- resolve_map_basemap(
   use_elevation_bg,
   snakemake@input,
@@ -53,7 +55,7 @@ map_params$basemap <- resolve_map_basemap(
 map_params$raster_is_elevation_dem <- isTRUE(use_elevation_bg)
 
 # Extract pixy-specific parameters
-map_outline <- as.logical(snakemake@params[["map_outline"]])
+map_outline <- as.logical(params[["map_outline"]])
 if (is.na(map_outline)) {
   map_outline <- TRUE  # default to true if not specified
 }

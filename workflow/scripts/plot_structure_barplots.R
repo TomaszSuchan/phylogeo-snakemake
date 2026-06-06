@@ -18,6 +18,18 @@ suppressPackageStartupMessages({
   library(mapmixture)
 })
 
+common_functions <- tryCatch({
+  script_dir <- dirname(normalizePath(snakemake@script))
+  file.path(script_dir, "common_map_functions.R")
+}, error = function(e) "workflow/scripts/common_map_functions.R")
+if (file.exists(common_functions)) {
+  source(common_functions)
+} else {
+  source("workflow/scripts/common_map_functions.R")
+}
+
+params <- snakemake_rule_params()
+
 # Prevent creation of Rplots.pdf
 pdf(NULL)
 
@@ -26,21 +38,21 @@ qmatrix_file <- snakemake@input[["qmatrix"]]
 indpopdata_file <- snakemake@input[["indpopdata"]]
 output_barplot <- snakemake@output[["barplot"]]
 output_barplot_rds <- snakemake@output[["barplot_rds"]]
-output_prefix <- snakemake@params[["output_prefix"]]
+output_prefix <- params[["output_prefix"]]
 
 # Plot dimension parameters
-width <- as.numeric(snakemake@params[["width"]])
-height <- as.numeric(snakemake@params[["height"]])
-dpi <- as.numeric(snakemake@params[["dpi"]])
+width <- as.numeric(params[["width"]])
+height <- as.numeric(params[["height"]])
+dpi <- as.numeric(params[["dpi"]])
 
 # Barplot-specific parameters
-site_dividers <- as.logical(snakemake@params[["site_dividers"]])
-divider_width <- as.numeric(snakemake@params[["divider_width"]])
-site_order <- snakemake@params[["site_order"]]
-population_sort_by <- snakemake@params[["population_sort_by"]]
-flip_axis <- as.logical(snakemake@params[["flip_axis"]])
-site_labels_angle <- as.numeric(snakemake@params[["site_labels_angle"]])
-population_labels <- snakemake@params[["population_labels"]]
+site_dividers <- as.logical(params[["site_dividers"]])
+divider_width <- as.numeric(params[["divider_width"]])
+site_order <- params[["site_order"]]
+population_sort_by <- params[["population_sort_by"]]
+flip_axis <- as.logical(params[["flip_axis"]])
+site_labels_angle <- as.numeric(params[["site_labels_angle"]])
+population_labels <- params[["population_labels"]]
 
 # Fixed parameters optimized for 1.2 inch height
 site_ticks_size <- -0.05
@@ -139,7 +151,7 @@ colnames(qmatrix_with_data) <- gsub("V", "Cluster", colnames(qmatrix_with_data))
 
 # Get color palette from config - subset first n_clusters colors
 cat(sprintf("\n=== SETTING UP COLOR PALETTE ===\n"))
-structure_colors_full <- unlist(snakemake@params[["structure_colors"]])
+structure_colors_full <- unlist(params[["structure_colors"]])
 cluster_cols_val <- structure_colors_full[1:n_clusters]
 cat(sprintf("Using first %d colors from structure_colors palette: %s\n",
             n_clusters, paste(cluster_cols_val, collapse = ", ")))

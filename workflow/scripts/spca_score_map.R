@@ -28,6 +28,8 @@ if (file.exists(common_functions)) {
   source("workflow/scripts/common_map_functions.R")
 }
 
+params <- snakemake_rule_params()
+
 `%||%` <- function(x, y) if (is.null(x)) y else x
 
 unwrap_spca <- function(path) {
@@ -45,8 +47,8 @@ unwrap_spca <- function(path) {
   stop("Unrecognized sPCA results RDS format: ", path)
 }
 
-score_type <- as.character(snakemake@params[["score_type"]])
-axis <- as.integer(snakemake@params[["axis"]])
+score_type <- as.character(params[["score_type"]])
+axis <- as.integer(params[["axis"]])
 
 message("=== sPCA score map ===")
 message("score_type: ", score_type)
@@ -113,37 +115,37 @@ coords_df <- indpopdata %>%
   select(Site, Lat, Lon) %>%
   distinct(Site, .keep_all = TRUE)
 
-width <- as.numeric(snakemake@params[["width"]])
-height <- as.numeric(snakemake@params[["height"]])
-dpi <- as.numeric(snakemake@params[["dpi"]])
-crs <- as.numeric(snakemake@params[["crs"]])
-basemap <- snakemake@params[["basemap"]]
-use_elevation_bg <- isTRUE(snakemake@params[["use_elevation_bg"]])
+width <- as.numeric(params[["width"]])
+height <- as.numeric(params[["height"]])
+dpi <- as.numeric(params[["dpi"]])
+crs <- as.numeric(params[["crs"]])
+basemap <- params[["basemap"]]
+use_elevation_bg <- isTRUE(params[["use_elevation_bg"]])
 
-plot_title <- snakemake@params[["plot_title"]]
+plot_title <- params[["plot_title"]]
 if (is.null(plot_title)) {
   plot_title <- ""
 }
 
 map_params <- list(
-  boundary = snakemake@params[["boundary"]],
+  boundary = params[["boundary"]],
   crs = crs,
   basemap = basemap,
-  land_colour = snakemake@params[["land_colour"]],
-  sea_colour = snakemake@params[["sea_colour"]],
-  expand = as.logical(snakemake@params[["expand"]]),
-  arrow = as.logical(snakemake@params[["arrow"]]),
-  arrow_size = as.numeric(snakemake@params[["arrow_size"]]),
-  arrow_position = snakemake@params[["arrow_position"]],
-  scalebar = as.logical(snakemake@params[["scalebar"]]),
-  scalebar_size = as.numeric(snakemake@params[["scalebar_size"]]),
-  scalebar_position = snakemake@params[["scalebar_position"]],
+  land_colour = params[["land_colour"]],
+  sea_colour = params[["sea_colour"]],
+  expand = as.logical(params[["expand"]]),
+  arrow = as.logical(params[["arrow"]]),
+  arrow_size = as.numeric(params[["arrow_size"]]),
+  arrow_position = params[["arrow_position"]],
+  scalebar = as.logical(params[["scalebar"]]),
+  scalebar_size = as.numeric(params[["scalebar_size"]]),
+  scalebar_position = params[["scalebar_position"]],
   plot_title = plot_title,
-  axis_title_size = as.numeric(snakemake@params[["axis_title_size"]]),
-  axis_text_size = as.numeric(snakemake@params[["axis_text_size"]]),
-  basemap_border = as.logical(snakemake@params[["basemap_border"]]),
-  basemap_border_col = snakemake@params[["basemap_border_col"]],
-  basemap_border_lwd = as.numeric(snakemake@params[["basemap_border_lwd"]])
+  axis_title_size = as.numeric(params[["axis_title_size"]]),
+  axis_text_size = as.numeric(params[["axis_text_size"]]),
+  basemap_border = as.logical(params[["basemap_border"]]),
+  basemap_border_col = params[["basemap_border_col"]],
+  basemap_border_lwd = as.numeric(params[["basemap_border_lwd"]])
 )
 map_params$basemap <- resolve_map_basemap(use_elevation_bg, snakemake@input, basemap)
 map_params$raster_is_elevation_dem <- isTRUE(use_elevation_bg)
@@ -155,14 +157,14 @@ p <- create_basemap(coords_df, map_params) +
   geom_point(
     data = plot_df_transformed,
     aes(x = Lon, y = Lat, color = spca_score),
-    size = as.numeric(snakemake@params[["point_size"]]),
-    alpha = as.numeric(snakemake@params[["point_alpha"]])
+    size = as.numeric(params[["point_size"]]),
+    alpha = as.numeric(params[["point_alpha"]])
   ) +
   scale_color_gradient2(
     name = score_label,
-    low = snakemake@params[["low_colour"]],
-    mid = snakemake@params[["mid_colour"]],
-    high = snakemake@params[["high_colour"]],
+    low = params[["low_colour"]],
+    mid = params[["mid_colour"]],
+    high = params[["high_colour"]],
     midpoint = 0
   ) +
   theme(legend.position = "right")

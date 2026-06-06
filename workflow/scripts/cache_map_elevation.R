@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
-# Writes results/{project}/maps/elevation_basemap.tif via elevatr.
-# Output CRS matches map_background.crs: bbox stays WGS84 for z heuristics, then the
-# polygon is transformed before get_elev_raster() so elevatr warps once (same idea as NE cache).
+# Writes results/{project}/maps/elevation_basemap.tif via elevatr in EPSG:4326.
+# mapmixture crops SpatRaster basemaps in lon/lat space; projecting the DEM to
+# map_background.crs (e.g. EPSG:2180) breaks terra::crop inside mapmixture.
 
 log_file <- file(snakemake@log[[1]], open = "wt")
 sink(log_file, type = "output")
@@ -67,12 +67,8 @@ plot_epsg <- as.integer(round(plot_crs))
 message("Requesting elevatr download in EPSG:4326 (WGS84)\n")
 r_elev <- elevatr::get_elev_raster(poly_wgs84, z = z)
 r_terra <- terra::rast(r_elev)
-
-# elevatr returns a raster in lon/lat; project explicitly if the plot CRS differs.
-if (plot_epsg != 4326L) {
-  message(sprintf("Projecting elevation raster to EPSG:%d\n", plot_epsg))
-  r_terra <- terra::project(r_terra, paste0("EPSG:", plot_epsg), method = "bilinear")
-}
+message(sprintf("Writing elevation raster in %s (plot CRS is EPSG:%d)\n",
+                as.character(terra::crs(r_terra)), plot_epsg))
 
 terra::writeRaster(r_terra, out_tif, overwrite = TRUE, datatype = "FLT4S")
 message(sprintf("Wrote %s\n", out_tif))

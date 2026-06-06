@@ -29,6 +29,8 @@ if (file.exists(common_functions)) {
   source("workflow/scripts/common_map_functions.R")
 }
 
+params <- snakemake_rule_params()
+
 # Prevent creation of Rplots.pdf
 pdf(NULL)
 
@@ -44,48 +46,48 @@ if (is.null(indpopdata_file) || indpopdata_file == "NULL" || indpopdata_file == 
 }
 
 # Plot dimension parameters
-width <- as.numeric(snakemake@params[["width"]])
-height <- as.numeric(snakemake@params[["height"]])
-dpi <- as.numeric(snakemake@params[["dpi"]])
+width <- as.numeric(params[["width"]])
+height <- as.numeric(params[["height"]])
+dpi <- as.numeric(params[["dpi"]])
 
 # Map and coordinate parameters
-boundary <- snakemake@params[["boundary"]]
-crs <- as.numeric(snakemake@params[["crs"]])
-basemap <- snakemake@params[["basemap"]]
+boundary <- params[["boundary"]]
+crs <- as.numeric(params[["crs"]])
+basemap <- params[["basemap"]]
 
 # Pie chart parameters
-pie_size <- as.numeric(snakemake@params[["pie_size"]])
-pie_border <- as.numeric(snakemake@params[["pie_border"]])
-pie_border_col <- snakemake@params[["pie_border_col"]]
-pie_opacity <- as.numeric(snakemake@params[["pie_opacity"]])
+pie_size <- as.numeric(params[["pie_size"]])
+pie_border <- as.numeric(params[["pie_border"]])
+pie_border_col <- params[["pie_border_col"]]
+pie_opacity <- as.numeric(params[["pie_opacity"]])
 
 # Color parameters
-land_colour <- snakemake@params[["land_colour"]]
-sea_colour <- snakemake@params[["sea_colour"]]
+land_colour <- params[["land_colour"]]
+sea_colour <- params[["sea_colour"]]
 
 # Map display parameters
-expand <- as.logical(snakemake@params[["expand"]])
-arrow <- as.logical(snakemake@params[["arrow"]])
-arrow_size <- as.numeric(snakemake@params[["arrow_size"]])
-arrow_position <- snakemake@params[["arrow_position"]]
-scalebar <- as.logical(snakemake@params[["scalebar"]])
-scalebar_size <- as.numeric(snakemake@params[["scalebar_size"]])
-scalebar_position <- snakemake@params[["scalebar_position"]]
+expand <- as.logical(params[["expand"]])
+arrow <- as.logical(params[["arrow"]])
+arrow_size <- as.numeric(params[["arrow_size"]])
+arrow_position <- params[["arrow_position"]]
+scalebar <- as.logical(params[["scalebar"]])
+scalebar_size <- as.numeric(params[["scalebar_size"]])
+scalebar_position <- params[["scalebar_position"]]
 
 # Text parameters
-plot_title <- snakemake@params[["plot_title"]]
-axis_title_size <- as.numeric(snakemake@params[["axis_title_size"]])
-axis_text_size <- as.numeric(snakemake@params[["axis_text_size"]])
+plot_title <- params[["plot_title"]]
+axis_title_size <- as.numeric(params[["axis_title_size"]])
+axis_text_size <- as.numeric(params[["axis_text_size"]])
 
 # Border parameters
-basemap_border <- as.logical(snakemake@params[["basemap_border"]])
-basemap_border_col <- snakemake@params[["basemap_border_col"]]
-basemap_border_lwd <- as.numeric(snakemake@params[["basemap_border_lwd"]])
+basemap_border <- as.logical(params[["basemap_border"]])
+basemap_border_col <- params[["basemap_border_col"]]
+basemap_border_lwd <- as.numeric(params[["basemap_border_lwd"]])
 
 # Legend parameter
-legend <- as.logical(snakemake@params[["legend"]])
+legend <- as.logical(params[["legend"]])
 
-use_elevation_bg <- isTRUE(snakemake@params[["use_elevation_bg"]])
+use_elevation_bg <- isTRUE(params[["use_elevation_bg"]])
 
 # Read DAPC results
 message("\n=== READING DAPC RESULTS ===\n")
@@ -113,7 +115,7 @@ if (k != n_clusters) {
 
 # Get color palette from config - subset first n_clusters colors
 message(sprintf("\n=== SETTING UP COLOR PALETTE ===\n"))
-structure_colors_full <- unlist(snakemake@params[["structure_colors"]])
+structure_colors_full <- unlist(params[["structure_colors"]])
 strcolors <- structure_colors_full[1:n_clusters]
 message(sprintf("Using first %d colors from palette: %s\n", n_clusters, paste(strcolors, collapse = ", ")))
 

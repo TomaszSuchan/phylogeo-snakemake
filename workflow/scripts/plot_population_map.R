@@ -15,6 +15,8 @@ if (file.exists(common_functions)) {
   source("workflow/scripts/common_map_functions.R")
 }
 
+params <- snakemake_rule_params()
+
 # Prevent creation of Rplots.pdf
 pdf(NULL)
 
@@ -34,47 +36,47 @@ if (is.null(indpopdata_file) || indpopdata_file == "NULL" || indpopdata_file == 
 }
 
 # Reuse mapmixture parameters (same as structure plots)
-width <- as.numeric(snakemake@params[["width"]])
-height <- as.numeric(snakemake@params[["height"]])
-dpi <- as.numeric(snakemake@params[["dpi"]])
-boundary <- snakemake@params[["boundary"]]
-crs <- as.numeric(snakemake@params[["crs"]])
-basemap <- snakemake@params[["basemap"]]
-land_colour <- snakemake@params[["land_colour"]]
-sea_colour <- snakemake@params[["sea_colour"]]
-expand <- as.logical(snakemake@params[["expand"]])
-arrow <- as.logical(snakemake@params[["arrow"]])
-arrow_size <- as.numeric(snakemake@params[["arrow_size"]])
-arrow_position <- snakemake@params[["arrow_position"]]
-scalebar <- as.logical(snakemake@params[["scalebar"]])
-scalebar_size <- as.numeric(snakemake@params[["scalebar_size"]])
-scalebar_position <- snakemake@params[["scalebar_position"]]
-plot_title <- snakemake@params[["plot_title"]]
-axis_title_size <- as.numeric(snakemake@params[["axis_title_size"]])
-axis_text_size <- as.numeric(snakemake@params[["axis_text_size"]])
-basemap_border <- as.logical(snakemake@params[["basemap_border"]])
-basemap_border_col <- snakemake@params[["basemap_border_col"]]
-basemap_border_lwd <- as.numeric(snakemake@params[["basemap_border_lwd"]])
-use_elevation_bg <- isTRUE(snakemake@params[["use_elevation_bg"]])
+width <- as.numeric(params[["width"]])
+height <- as.numeric(params[["height"]])
+dpi <- as.numeric(params[["dpi"]])
+boundary <- params[["boundary"]]
+crs <- as.numeric(params[["crs"]])
+basemap <- params[["basemap"]]
+land_colour <- params[["land_colour"]]
+sea_colour <- params[["sea_colour"]]
+expand <- as.logical(params[["expand"]])
+arrow <- as.logical(params[["arrow"]])
+arrow_size <- as.numeric(params[["arrow_size"]])
+arrow_position <- params[["arrow_position"]]
+scalebar <- as.logical(params[["scalebar"]])
+scalebar_size <- as.numeric(params[["scalebar_size"]])
+scalebar_position <- params[["scalebar_position"]]
+plot_title <- params[["plot_title"]]
+axis_title_size <- as.numeric(params[["axis_title_size"]])
+axis_text_size <- as.numeric(params[["axis_text_size"]])
+basemap_border <- as.logical(params[["basemap_border"]])
+basemap_border_col <- params[["basemap_border_col"]]
+basemap_border_lwd <- as.numeric(params[["basemap_border_lwd"]])
+use_elevation_bg <- isTRUE(params[["use_elevation_bg"]])
 
 # Label-specific parameters
-point_size <- as.numeric(snakemake@params[["point_size"]])
-point_color <- snakemake@params[["point_color"]]
-point_shape <- as.numeric(snakemake@params[["point_shape"]])
-label_size <- as.numeric(snakemake@params[["label_size"]])
-label_color <- snakemake@params[["label_color"]]
-label_fontface <- snakemake@params[["label_fontface"]]
-show_points <- as.logical(snakemake@params[["show_points"]])
-show_labels <- as.logical(snakemake@params[["show_labels"]])
+point_size <- as.numeric(params[["point_size"]])
+point_color <- params[["point_color"]]
+point_shape <- as.numeric(params[["point_shape"]])
+label_size <- as.numeric(params[["label_size"]])
+label_color <- params[["label_color"]]
+label_fontface <- params[["label_fontface"]]
+show_points <- as.logical(params[["show_points"]])
+show_labels <- as.logical(params[["show_labels"]])
 
 # ggrepel parameters
-force <- as.numeric(snakemake@params[["force"]])
-force_pull <- as.numeric(snakemake@params[["force_pull"]])
-max.overlaps <- snakemake@params[["max_overlaps"]]
+force <- as.numeric(params[["force"]])
+force_pull <- as.numeric(params[["force_pull"]])
+max.overlaps <- params[["max_overlaps"]]
 if (is.null(max.overlaps)) max.overlaps <- Inf
-min.segment.length <- as.numeric(snakemake@params[["min_segment_length"]])
-segment.color <- snakemake@params[["segment_color"]]
-segment.size <- as.numeric(snakemake@params[["segment_size"]])
+min.segment.length <- as.numeric(params[["min_segment_length"]])
+segment.color <- params[["segment_color"]]
+segment.size <- as.numeric(params[["segment_size"]])
 
 message("\n=== READING INDPOPDATA ===\n")
 indpopdata <- read.table(indpopdata_file, header = TRUE, sep = "\t")

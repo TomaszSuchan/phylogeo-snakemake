@@ -42,6 +42,8 @@ if (file.exists(common_functions)) {
   source("workflow/scripts/common_map_functions.R")
 }
 
+params <- snakemake_rule_params()
+
 append_ggplot_layers <- function(base_plt, overlay_plt) {
   if (is.null(overlay_plt$layers) || length(overlay_plt$layers) == 0) {
     return(base_plt)
@@ -79,14 +81,14 @@ indpopdata_file <- snakemake@input[["indpopdata"]]
 output_pdf <- snakemake@output[["pdf"]]
 output_rds <- snakemake@output[["rds"]]
 
-k <- as.integer(snakemake@params[["k"]])
-map_resolution <- as.integer(unlist(snakemake@params[["map_resolution"]]))
-interpolation_knots <- as.integer(snakemake@params[["interpolation_knots"]])
-structure_colors <- unlist(snakemake@params[["structure_colors"]])
-point_size <- as.numeric(snakemake@params[["point_size"]])
-use_elevation_bg <- isTRUE(snakemake@params[["use_elevation_bg"]])
-basemap <- snakemake@params[["basemap"]]
-crs <- as.numeric(snakemake@params[["crs"]])
+k <- as.integer(params[["k"]])
+map_resolution <- as.integer(unlist(params[["map_resolution"]]))
+interpolation_knots <- as.integer(params[["interpolation_knots"]])
+structure_colors <- unlist(params[["structure_colors"]])
+point_size <- as.numeric(params[["point_size"]])
+use_elevation_bg <- isTRUE(params[["use_elevation_bg"]])
+basemap <- params[["basemap"]]
+crs <- as.numeric(params[["crs"]])
 
 if (crs != 4326) {
   stop(
@@ -95,30 +97,30 @@ if (crs != 4326) {
   )
 }
 
-plot_title <- snakemake@params[["plot_title"]]
+plot_title <- params[["plot_title"]]
 if (is.null(plot_title)) {
   plot_title <- ""
 }
 
 map_params <- list(
-  boundary = snakemake@params[["boundary"]],
+  boundary = params[["boundary"]],
   crs = crs,
   basemap = basemap,
-  land_colour = snakemake@params[["land_colour"]],
-  sea_colour = snakemake@params[["sea_colour"]],
-  expand = as.logical(snakemake@params[["expand"]]),
-  arrow = as.logical(snakemake@params[["arrow"]]),
-  arrow_size = as.numeric(snakemake@params[["arrow_size"]]),
-  arrow_position = snakemake@params[["arrow_position"]],
-  scalebar = as.logical(snakemake@params[["scalebar"]]),
-  scalebar_size = as.numeric(snakemake@params[["scalebar_size"]]),
-  scalebar_position = snakemake@params[["scalebar_position"]],
+  land_colour = params[["land_colour"]],
+  sea_colour = params[["sea_colour"]],
+  expand = as.logical(params[["expand"]]),
+  arrow = as.logical(params[["arrow"]]),
+  arrow_size = as.numeric(params[["arrow_size"]]),
+  arrow_position = params[["arrow_position"]],
+  scalebar = as.logical(params[["scalebar"]]),
+  scalebar_size = as.numeric(params[["scalebar_size"]]),
+  scalebar_position = params[["scalebar_position"]],
   plot_title = plot_title,
-  axis_title_size = as.numeric(snakemake@params[["axis_title_size"]]),
-  axis_text_size = as.numeric(snakemake@params[["axis_text_size"]]),
-  basemap_border = as.logical(snakemake@params[["basemap_border"]]),
-  basemap_border_col = snakemake@params[["basemap_border_col"]],
-  basemap_border_lwd = as.numeric(snakemake@params[["basemap_border_lwd"]])
+  axis_title_size = as.numeric(params[["axis_title_size"]]),
+  axis_text_size = as.numeric(params[["axis_text_size"]]),
+  basemap_border = as.logical(params[["basemap_border"]]),
+  basemap_border_col = params[["basemap_border_col"]],
+  basemap_border_lwd = as.numeric(params[["basemap_border_lwd"]])
 )
 map_params$basemap <- resolve_map_basemap(use_elevation_bg, snakemake@input, basemap)
 map_params$raster_is_elevation_dem <- isTRUE(use_elevation_bg)
@@ -196,9 +198,9 @@ dir.create(dirname(output_pdf), recursive = TRUE, showWarnings = FALSE)
 ggplot2::ggsave(
   filename = output_pdf,
   plot = combined_plt,
-  width = as.numeric(snakemake@params[["width"]]),
-  height = as.numeric(snakemake@params[["height"]]),
-  dpi = as.numeric(snakemake@params[["dpi"]])
+  width = as.numeric(params[["width"]]),
+  height = as.numeric(params[["height"]]),
+  dpi = as.numeric(params[["dpi"]])
 )
 saveRDS(combined_plt, file = output_rds)
 
