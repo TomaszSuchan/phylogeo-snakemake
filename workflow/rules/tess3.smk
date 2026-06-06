@@ -15,6 +15,10 @@ rule install_tess3:
         touch(".snakemake/tess3_installed")
     conda:
         "../envs/tess3.yaml"
+    threads: config["parameters"]["resources"]["default-long"]["threads"]
+    resources:
+        mem_mb = config["parameters"]["resources"]["default-long"]["mem_mb"],
+        runtime = config["parameters"]["resources"]["default-long"]["runtime"]
     shell:
         """
         Rscript --vanilla -e 'lib <- .libPaths()[1]; unlink(list.files(lib, pattern="^00LOCK-", full.names=TRUE), recursive=TRUE, force=TRUE); if (!requireNamespace("tess3r", quietly=TRUE, lib.loc=lib)) remotes::install_github("bcm-uga/TESS3_encho_sen", upgrade="never", dependencies=TRUE, lib=lib); if (!requireNamespace("tess3r", quietly=TRUE, lib.loc=lib)) stop("Failed to install required R package: tess3r"); options(repos="https://cloud.r-project.org/"); pkgs <- c("mapmixture", "elevatr"); for (p in pkgs) if (!requireNamespace(p, quietly=TRUE, lib.loc=lib)) install.packages(p, lib=lib)'
