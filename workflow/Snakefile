@@ -413,18 +413,18 @@ def _roh_summary_plot_paths(project, group_by_cols):
     """All ROH summary plot paths (fixed plots + group_by expansions)."""
     plot_dir = f"results/{project}/roh/plots"
     paths = [
-        f"{plot_dir}/froh_histogram.pdf",
-        f"{plot_dir}/n_roh_segments_histogram.pdf",
-        f"{plot_dir}/total_roh_length_histogram.pdf",
-        f"{plot_dir}/roh_segment_length_distribution.pdf",
-        f"{plot_dir}/roh_by_class.pdf",
-        f"{plot_dir}/froh_vs_n_segments.pdf",
+        f"{plot_dir}/{project}.froh_histogram.pdf",
+        f"{plot_dir}/{project}.n_roh_segments_histogram.pdf",
+        f"{plot_dir}/{project}.total_roh_length_histogram.pdf",
+        f"{plot_dir}/{project}.roh_segment_length_distribution.pdf",
+        f"{plot_dir}/{project}.roh_by_class.pdf",
+        f"{plot_dir}/{project}.froh_vs_n_segments.pdf",
     ]
     for col in group_by_cols:
         paths.extend([
-            f"{plot_dir}/froh_by_{col}.pdf",
-            f"{plot_dir}/n_roh_segments_by_{col}.pdf",
-            f"{plot_dir}/roh_class_by_{col}.pdf",
+            f"{plot_dir}/{project}.froh_by_{col}.pdf",
+            f"{plot_dir}/{project}.n_roh_segments_by_{col}.pdf",
+            f"{plot_dir}/{project}.roh_class_by_{col}.pdf",
         ])
     return paths
 
