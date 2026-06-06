@@ -39,8 +39,6 @@ rule construct_analysis:
         k = lambda wildcards: int(wildcards.k),
         n_chains = lambda wildcards: config["projects"][wildcards.project]["parameters"]["construct"].get("n_chains", 2),
         n_iterations = lambda wildcards: config["projects"][wildcards.project]["parameters"]["construct"].get("n_iterations", 50000),
-        geoDist = lambda wildcards: config["projects"][wildcards.project]["parameters"]["construct"].get("geoDist", None),
-        coords = lambda wildcards: config["projects"][wildcards.project]["parameters"]["construct"].get("coords", None),
         save_files = lambda wildcards: config["projects"][wildcards.project]["parameters"]["construct"].get("save.files", True)
     conda:
         "../envs/construct.yaml"

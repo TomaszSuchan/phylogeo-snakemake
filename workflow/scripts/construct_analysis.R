@@ -44,17 +44,7 @@ log_file <- snakemake@output[['log_file']]
 k <- as.integer(snakemake@params[['k']])
 n_chains <- as.integer(snakemake@params[['n_chains']])
 n_iterations <- as.integer(snakemake@params[['n_iterations']])
-geoDist_param <- snakemake@params[['geoDist']]
-coords_param <- snakemake@params[['coords']]
 save.files <- as.logical(snakemake@params[['save_files']])
-
-# Handle NULL/None values from Python (convert to R NULL)
-if (is.null(geoDist_param) || geoDist_param == "None" || geoDist_param == "NULL") {
-  geoDist_param <- NULL
-}
-if (is.null(coords_param) || coords_param == "None" || coords_param == "NULL") {
-  coords_param <- NULL
-}
 
 # Debug output
 cat("=== conStruct Analysis Script ===\n")
@@ -227,10 +217,6 @@ cat("Starting MCMC chains...\n")
 # Note: conStruct writes files to disk by default
 cat("Running conStruct with K =", k, "layers...\n")
 
-# Use provided coords/geoDist if available, otherwise use computed ones
-final_coords <- if (!is.null(coords_param)) coords_param else coords_matrix
-final_geoDist <- if (!is.null(geoDist_param)) geoDist_param else geoDist
-
 # Set up prefix for output files
 output_prefix <- file.path(output_dir, paste0(basename(tools::file_path_sans_ext(results_rds)), ".K", k))
 
@@ -242,8 +228,8 @@ construct_results <- conStruct::conStruct(
   spatial = TRUE,
   K = k,
   freqs = allele.frequencies,
-  coords = final_coords,
-  geoDist = final_geoDist,
+  coords = coords_matrix,
+  geoDist = geoDist,
   n.iter = n_iterations,
   prefix = output_prefix
 )

@@ -248,8 +248,6 @@ parameters: &global_params
   construct:
     n_chains: 2        # independent MCMC chains; >=2 is required to assess convergence across chains (1 cannot)
     n_iterations: 50000  # MCMC iterations per chain; a safer minimum than 10000. Increase for final runs and verify convergence from trace plots
-    geoDist: null      # optional pre-computed geographic distance matrix (null = compute from coords)
-    coords: null       # optional coordinate matrix (null = use from indpopdata)
     save.files: true   # whether to save intermediate files
     crs: 4326          # coordinate reference system for plotting (4326 = WGS84)
   
