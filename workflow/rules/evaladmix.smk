@@ -99,7 +99,7 @@ rule evaladmix_admixture:
     benchmark:
         "benchmarks/{project}/evaladmix_admixture.K{k}.txt"
     params:
-        plink_prefix = "results/{project}/filtered_data/{project}.biallelic_snps",
+        plink_prefix = "results/{project}/filtered_data/{project}.biallelic_snps_thinned",
         output_prefix = lambda wildcards, output: str(output.corres)
     conda:
         "../envs/evaladmix.yaml"
@@ -136,7 +136,7 @@ rule evaladmix_faststructure:
     benchmark:
         "benchmarks/{project}/evaladmix_faststructure.K{k}.txt"
     params:
-        plink_prefix = "results/{project}/filtered_data/{project}.biallelic_snps",
+        plink_prefix = "results/{project}/filtered_data/{project}.biallelic_snps_thinned",
         output_prefix = lambda wildcards, output: str(output.corres)
     conda:
         "../envs/evaladmix.yaml"
@@ -203,7 +203,7 @@ rule evaladmix_structure:
     benchmark:
         "benchmarks/{project}/evaladmix_structure.K{k}.txt"
     params:
-        plink_prefix = "results/{project}/filtered_data/{project}.biallelic_snps",
+        plink_prefix = "results/{project}/filtered_data/{project}.biallelic_snps_thinned",
         output_prefix = lambda wildcards, output: str(output.corres)
     conda:
         "../envs/evaladmix.yaml"
