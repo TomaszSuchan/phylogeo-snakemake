@@ -78,6 +78,7 @@ parameters: &global_params
   # evaladmix: Residual-correlation diagnostics for ancestry model fit.
   # tess3: Spatially regularized ancestry estimation with tess3r.
   # snmf: Fast IBD-robust ancestry estimation with sNMF (LEA) and cross-entropy K selection.
+  # alstructure: Likelihood-free ancestry estimation (ALStructure) with native K estimation (estimate_d).
   # construct: Spatial population structure model with conStruct.
   # dapc: Discriminant analysis of principal components clustering.
   # spca: Spatial PCA combining genetic variance and spatial autocorrelation.
@@ -261,6 +262,23 @@ parameters: &global_params
     iterations: 200           # snmf() iterations: maximum number of iterations per run
     percentage: 0.05          # snmf() percentage: fraction of genotypes masked to compute the cross-entropy criterion
     seed: 42                  # snmf() seed: random seed for reproducible runs
+
+  ## ALStructure parameters
+  # Likelihood-free ancestry estimation (Cabreros & Storey 2019): the same PSD
+  # admixture model as STRUCTURE/ADMIXTURE, fit by latent-subspace estimation +
+  # alternating least squares. Spectral, so it converges deterministically (no
+  # MCMC/EM local optima) and is robust to unbalanced sampling; it estimates K
+  # natively with estimate_d() (Leek 2011). Non-spatial, like ADMIXTURE/sNMF.
+  # Genotypes are converted from VCF GT fields to alternate-allele dosages
+  # (0..ploidy); ALStructure imputes missing genotypes internally (per-locus mean).
+  # Requires K >= 2 (estimate_d enforces d >= 2); K = 1 in k_values is skipped, like DAPC.
+  alstructure:
+    ploidy: 2                 # allele dosage range 0..ploidy (use 1 for haploids/inbred diploids coded as haploid)
+    svd_method: "base"        # alstructure() svd_method: "base" (base svd) or "truncated_svd" (svd::propack.svd, faster on large m)
+    tolerance: 1.0e-5         # alstructure() tol: ALS convergence criterion on Q
+    max_iters: 1000           # alstructure() max_iters: maximum ALS iterations
+    order_method: "ave_admixture"  # alstructure() order_method: cluster ordering, "ave_admixture" or "var_explained"
+    seed: 42                  # random seed fixing the ALS initialisation for reproducibility
 
   ## conStruct parameters
   # Spatial population structure model where covariance can decay with geography.
@@ -556,6 +574,10 @@ parameters: &global_params
       threads: 4
       mem_mb: 16000
       runtime: 120
+    alstructure:
+      threads: 4
+      mem_mb: 16000
+      runtime: 120
     pcaone:
       threads: 12
       mem_mb: 8000
@@ -651,7 +673,8 @@ projects:
       faststructure: false    # Fast variational ancestry clustering using PLINK input.
       admixture: false        # Maximum-likelihood ancestry clustering with CV error per K.
       tess3: false            # Spatially regularized ancestry estimation with tess3r.
-      snmf: true             # Fast IBD-robust ancestry estimation with sNMF (LEA), cross-entropy K selection.
+      snmf: false             # Fast IBD-robust ancestry estimation with sNMF (LEA), cross-entropy K selection.
+      alstructure: true      # Likelihood-free ancestry estimation (ALStructure) with native K estimation (estimate_d).
       gen_dist: false         # Pairwise Euclidean and p-distance matrices from SNP genotypes.
       pcoa: false             # Principal coordinates analysis from the Euclidean distance matrix.
       neighbornet: false      # Split network from p-distance genetic distances.
@@ -703,6 +726,7 @@ projects:
   #     evaladmix: true         # Residual-correlation diagnostics for ancestry model fit.
   #     tess3: false            # Spatially regularized ancestry estimation with tess3r.
   #     snmf: false             # Fast IBD-robust ancestry estimation with sNMF (LEA), cross-entropy K selection.
+  #     alstructure: false      # Likelihood-free ancestry estimation (ALStructure) with native K estimation (estimate_d).
   #     construct: false        # Spatial population structure model with conStruct.
   #     dapc: true              # Discriminant analysis of principal components clustering.
   #     spca: false             # Spatial PCA combining genetic variance and spatial autocorrelation.

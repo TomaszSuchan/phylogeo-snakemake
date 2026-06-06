@@ -127,6 +127,16 @@ def _snmf_map_inputs(wildcards):
     return inputs
 
 
+def _alstructure_map_inputs(wildcards):
+    inputs = {
+        "qmatrix": f"results/{wildcards.project}/alstructure/{wildcards.project}.alstructure.K{wildcards.k}.Qmatrix.txt",
+        "indpopdata": f"results/{wildcards.project}/indpopdata.txt",
+        "install": ".snakemake/mapmixture_installed",
+    }
+    inputs.update(_map_background_inputs(wildcards))
+    return inputs
+
+
 def _tess3_ggmap_inputs(wildcards):
     inputs = {
         "results_rds": f"results/{wildcards.project}/tess3/{wildcards.project}.tess3.K{wildcards.k}.results.rds",
@@ -493,6 +503,7 @@ include: "rules/dapc.smk"
 include: "rules/construct.smk"
 include: "rules/tess3.smk"
 include: "rules/snmf.smk"
+include: "rules/alstructure.smk"
 include: "rules/spca.smk"
 include: "rules/evaladmix.smk"
 include: "rules/genome_scan.smk"
@@ -733,6 +744,37 @@ def get_all_targets():
                        k=k_values),
                 expand(f"results/{project}/snmf/plots/{project}.snmf.K{{k}}.barplot.rds",
                        k=k_values)
+            ])
+
+        # ALStructure targets
+        if analyses.get("alstructure", False):
+            # ALStructure requires at least 2 latent populations (estimate_d enforces
+            # d >= 2 and estimate_F collapses at d = 1); skip K = 1 like DAPC.
+            alstructure_k_values = [k for k in k_values if int(k) >= 2]
+            targets.extend([
+                f"results/{project}/alstructure/{project}.alstructure.chooseK_results.txt",
+                f"results/{project}/alstructure/{project}.alstructure.cv_summary.txt",
+                f"results/{project}/alstructure/plots/{project}.alstructure.cv_plot.pdf",
+                f"results/{project}/alstructure/plots/{project}.alstructure.cv_plot.rds",
+                expand(f"results/{project}/alstructure/{project}.alstructure.K{{k}}.Qmatrix.txt",
+                       k=alstructure_k_values),
+                expand(f"results/{project}/alstructure/{project}.alstructure.K{{k}}.results.rds",
+                       k=alstructure_k_values),
+            ])
+            # Only add map plots if popdata is specified
+            if _has_popdata(params):
+                targets.extend([
+                    expand(f"results/{project}/alstructure/plots/{project}.alstructure.K{{k}}.map.pdf",
+                           k=alstructure_k_values),
+                    expand(f"results/{project}/alstructure/plots/{project}.alstructure.K{{k}}.map.rds",
+                           k=alstructure_k_values)
+                ])
+            # Always add barplots
+            targets.extend([
+                expand(f"results/{project}/alstructure/plots/{project}.alstructure.K{{k}}.barplot.pdf",
+                       k=alstructure_k_values),
+                expand(f"results/{project}/alstructure/plots/{project}.alstructure.K{{k}}.barplot.rds",
+                       k=alstructure_k_values)
             ])
 
         # PCAone targets (standard)

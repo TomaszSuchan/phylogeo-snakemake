@@ -422,6 +422,32 @@ if analyses.get("snmf", False):
         f"sample coordinates were available, as pie maps on the shared basemap."
     )
 
+if analyses.get("alstructure", False):
+    ap = p.get("alstructure", {})
+    a_ploidy = ap.get("ploidy", 2)
+    a_svd    = ap.get("svd_method", "base")
+    a_order  = ap.get("order_method", "ave_admixture")
+    struct_parts.append(
+        f"Ancestry proportions were additionally estimated with ALStructure "
+        f"(Cabreros & Storey 2019), a likelihood-free estimator of the same PSD "
+        f"admixture model, on the {dataset_label} ({n_snps} SNPs, {n_samples} "
+        f"individuals). Genotypes were converted from VCF GT fields to "
+        f"alternate-allele dosages (0–{a_ploidy}), with missing genotypes imputed "
+        f"by per-locus means. ALStructure estimates the latent admixture subspace "
+        f"from the spectrum of a bias-corrected genotype covariance matrix and then "
+        f"recovers ancestral allele frequencies and individual ancestry coefficients "
+        f"by alternating least squares; being a deterministic spectral procedure "
+        f"rather than MCMC or block-relaxation EM, it avoids random restarts and "
+        f"local-optima/convergence issues and is comparatively robust to unbalanced "
+        f"sampling. The number of ancestral populations was estimated natively from "
+        f"the rank of the latent subspace with estimate_d (Leek 2011), and the "
+        f"latent-subspace eigenvalue scree across K = {k_tested} was inspected to "
+        f"corroborate it. The model was fit for each K = {k_tested} using the "
+        f"\"{a_svd}\" SVD method and \"{a_order}\" cluster ordering. Ancestry "
+        f"coefficients were visualised as mapmixture barplots and, where sample "
+        f"coordinates were available, as pie maps on the shared basemap."
+    )
+
 if analyses.get("evaladmix", False):
     eval_methods = []
     if analyses.get("admixture", False):
@@ -979,6 +1005,17 @@ if analyses.get("snmf", False):
         "Alexander, D.H. & Lange, K. (2011). Enhancements to the ADMIXTURE "
         "algorithm for individual ancestry estimation. *BMC Bioinformatics*, "
         "12, 246."
+    )
+
+if analyses.get("alstructure", False):
+    refs["alstructure"] = (
+        "Cabreros, I. & Storey, J.D. (2019). A likelihood-free estimator of "
+        "population structure bridging admixture models and principal components "
+        "analysis. *Genetics*, 212, 1009–1029."
+    )
+    refs["estimate_d"] = (
+        "Leek, J.T. (2011). Asymptotic conditional singular value decomposition "
+        "for high-dimensional genomic data. *Biometrics*, 67, 344–352."
     )
 
 if analyses.get("evaladmix", False):

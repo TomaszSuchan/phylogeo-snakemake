@@ -1,0 +1,15 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  # ALStructure (Cabreros & Storey 2019) is a pure-R package not on conda; it is
+  # installed from GitHub (StoreyLab/alstructure) by the install_alstructure rule.
+  # Its only hard dependency is the `svd` package (r-svd), provided here so the
+  # GitHub install does not recompile it. r-ggplot2 is used for the eigenvalue
+  # (choose-K) plot, r-vcfr for the genotype dosage conversion.
+  - r-base
+  - r-vcfr
+  - r-svd
+  - r-ggplot2
+  - r-remotes
