@@ -12,7 +12,7 @@ rule iqtree:
         model=lambda wildcards: config["projects"][wildcards.project]["parameters"]["iqtree"].get("model", "MFP"),
         bootstraps=lambda wildcards: config["projects"][wildcards.project]["parameters"]["iqtree"].get("bootstraps", "1000"),
         outgroup=lambda wildcards: (f"-o {config['projects'][wildcards.project]['parameters']['iqtree']['outgroup']}"
-                                    if "outgroup" in config["projects"][wildcards.project]["parameters"].get("iqtree", {})
+                                    if config["projects"][wildcards.project]["parameters"].get("iqtree", {}).get("outgroup")
                                     else "")
     conda:
         "../envs/iqtree.yaml"
@@ -41,7 +41,7 @@ rule iqtree_robust:
         robust_phy=lambda wildcards: config['projects'][wildcards.project]["parameters"]["iqtree"].get("robust-phy", "0.95"),
         bootstraps=lambda wildcards: config["projects"][wildcards.project]["parameters"]["iqtree"].get("bootstraps", "1000"),
         outgroup=lambda wildcards: (f"-o {config['projects'][wildcards.project]['parameters']['iqtree']['outgroup']}"
-                                    if "outgroup" in config["projects"][wildcards.project]["parameters"].get("iqtree", {})
+                                    if config["projects"][wildcards.project]["parameters"].get("iqtree", {}).get("outgroup")
                                     else "")
     conda:
         "../envs/iqtree.yaml"
