@@ -24,6 +24,15 @@ suppressPackageStartupMessages({
   library(mapmixture)
   library(terra)
 })
+if (!requireNamespace("ggnewscale", quietly = TRUE)) {
+  stop(
+    "plot_tess3_ggmap requires ggnewscale (elevation DEM fill vs ggtess3Q tiles). ",
+    "Re-run install_tess3 or rebuild the tess3 conda env after adding r-ggnewscale."
+  )
+}
+suppressPackageStartupMessages({
+  library(ggnewscale)
+})
 
 if (!requireNamespace("tess3r", quietly = TRUE)) {
   stop("tess3r is not installed in this rule environment.")
@@ -88,12 +97,13 @@ structure_colors <- unlist(params[["structure_colors"]])
 point_size <- as.numeric(params[["point_size"]])
 use_elevation_bg <- isTRUE(params[["use_elevation_bg"]])
 basemap <- params[["basemap"]]
-crs <- as.numeric(params[["crs"]])
-
-if (crs != 4326) {
-  stop(
-    "plot_tess3_ggmap requires map_background.crs = 4326 because ggtess3Q ",
-    "interpolates in geographic longitude/latitude."
+config_crs <- as.numeric(params[["crs"]])
+# ggtess3Q tiles are always WGS84 lon/lat; plot in 4326 even when map_background.crs differs.
+crs <- 4326L
+if (config_crs != 4326L) {
+  message(
+    "plot_tess3_ggmap uses EPSG:4326 (ggtess3Q is geographic); ",
+    "map_background.crs=", config_crs, " applies to other map rules only.\n"
   )
 }
 
@@ -179,8 +189,9 @@ tess_plt <- ggtess3Q(
   col.palette = palette
 )
 
-# Basemap first, tess tiles on top; include scale_fill_identity() from ggtess3Q.
-combined_plt <- append_ggplot_layers(base_plt, tess_plt)
+# Separate fill scales: DEM uses continuous fill; ggtess3Q uses scale_fill_identity().
+combined_plt <- base_plt + ggnewscale::new_scale_fill()
+combined_plt <- append_ggplot_layers(combined_plt, tess_plt)
 
 coord_df <- as.data.frame(coords)
 colnames(coord_df) <- c("Lon", "Lat")

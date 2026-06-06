@@ -49,21 +49,20 @@ coerce_indpopdata_lat_lon <- function(df) {
   df
 }
 
-#' Build mapmixture-style ggplot with a terra raster basemap but without the dummy
-#' legend geom (discrete fill). mapmixture::mapmixture adds geom_point + scale_fill_manual
-#' for the cluster legend; that clashes with ggspatial::layer_spatial raster (continuous fill)
-#' and triggers vctrs errors in recent ggplot2.
+#' Build mapmixture-style ggplot with a terra raster basemap.
+#' mapmixture::mapmixture adds geom_point + scale_fill_manual for the cluster legend;
+#' that clashes with ggspatial::layer_spatial raster (continuous fill) in ggplot2 >= 3.5.
 #' @noRd
-.basemap_raster_without_discrete_legend <- function(
+.mapmixture_raster_plot <- function(
+    admixture_df,
     coords_df,
-    params,
-    basemap_raster,
+    cluster_cols,
     boundary_parsed,
-    dummy_qmatrix,
-    cluster_cols
+    basemap_raster,
+    params
 ) {
   crs <- params$crs
-  admixture_df <- mapmixture::standardise_data(dummy_qmatrix, type = "admixture")
+  admixture_df <- mapmixture::standardise_data(admixture_df, type = "admixture")
   coords_std <- mapmixture::standardise_data(coords_df, type = "coordinates")
   cs <- as.character(coords_std[[1]])
   uq <- as.character(unique(admixture_df[[1]]))
@@ -122,11 +121,11 @@ coerce_indpopdata_lat_lon <- function(df) {
       admix_columns = 4:ncol(admix_coords),
       lat_column = "lat",
       lon_column = "lon",
-      pie_size = 0,
+      pie_size = params$pie_size,
       pie_colours = cluster_cols,
-      border = 0,
-      border_col = "transparent",
-      opacity = 0
+      border = params$pie_border,
+      border_col = params$pie_border_col,
+      opacity = params$pie_opacity
     ) +
     ggplot2::ggtitle(params$plot_title) +
     ggplot2::xlab("Longitude") +
@@ -184,6 +183,93 @@ coerce_indpopdata_lat_lon <- function(df) {
   plt
 }
 
+#' mapmixture wrapper: raster basemaps use ggspatial (ggplot2 3.5-safe); vector/NULL use mapmixture().
+mapmixture_plot <- function(
+    admixture_df,
+    coords_df,
+    cluster_cols,
+    boundary = NULL,
+    crs,
+    basemap = NULL,
+    pie_size = 1,
+    pie_border = 0.2,
+    pie_border_col = "black",
+    pie_opacity = 1,
+    land_colour = "#d9d9d9",
+    sea_colour = "#deebf7",
+    expand = FALSE,
+    arrow = TRUE,
+    arrow_size = 1,
+    arrow_position = "tl",
+    scalebar = TRUE,
+    scalebar_size = 1,
+    scalebar_position = "tl",
+    plot_title = "",
+    axis_title_size = 10,
+    axis_text_size = 8,
+    basemap_border = TRUE,
+    basemap_border_col = "black",
+    basemap_border_lwd = 0.1,
+    raster_is_elevation_dem = FALSE
+) {
+  if (inherits(basemap, "SpatRaster")) {
+    params <- list(
+      crs = crs,
+      expand = expand,
+      arrow = arrow,
+      arrow_size = arrow_size,
+      arrow_position = arrow_position,
+      scalebar = scalebar,
+      scalebar_size = scalebar_size,
+      scalebar_position = scalebar_position,
+      plot_title = plot_title,
+      axis_title_size = axis_title_size,
+      axis_text_size = axis_text_size,
+      sea_colour = sea_colour,
+      pie_size = pie_size,
+      pie_border = pie_border,
+      pie_border_col = pie_border_col,
+      pie_opacity = pie_opacity,
+      raster_is_elevation_dem = raster_is_elevation_dem
+    )
+    return(.mapmixture_raster_plot(
+      admixture_df,
+      coords_df,
+      cluster_cols,
+      boundary,
+      basemap,
+      params
+    ))
+  }
+  mapmixture::mapmixture(
+    admixture_df = admixture_df,
+    coords_df = coords_df,
+    cluster_cols = cluster_cols,
+    boundary = boundary,
+    crs = crs,
+    basemap = basemap,
+    pie_size = pie_size,
+    pie_border = pie_border,
+    pie_border_col = pie_border_col,
+    pie_opacity = pie_opacity,
+    land_colour = land_colour,
+    sea_colour = sea_colour,
+    expand = expand,
+    arrow = arrow,
+    arrow_size = arrow_size,
+    arrow_position = arrow_position,
+    scalebar = scalebar,
+    scalebar_size = scalebar_size,
+    scalebar_position = scalebar_position,
+    plot_title = plot_title,
+    axis_title_size = axis_title_size,
+    axis_text_size = axis_text_size,
+    basemap_border = basemap_border,
+    basemap_border_col = basemap_border_col,
+    basemap_border_lwd = basemap_border_lwd
+  )
+}
+
 #' Create basemap using mapmixture (without pie charts)
 #' This function creates a styled basemap with all the same parameters as structure plots
 create_basemap <- function(coords_df, params) {
@@ -213,13 +299,18 @@ create_basemap <- function(coords_df, params) {
   
   cluster_cols <- c("#000000")
   if (inherits(basemap, "SpatRaster")) {
-    p <- .basemap_raster_without_discrete_legend(
-      coords_df,
-      params,
-      basemap,
-      boundary,
+    basemap_params <- params
+    basemap_params$pie_size <- 0
+    basemap_params$pie_border <- 0
+    basemap_params$pie_border_col <- "transparent"
+    basemap_params$pie_opacity <- 0
+    p <- .mapmixture_raster_plot(
       dummy_qmatrix,
-      cluster_cols
+      coords_df,
+      cluster_cols,
+      boundary,
+      basemap,
+      basemap_params
     )
   } else {
     p <- mapmixture::mapmixture(

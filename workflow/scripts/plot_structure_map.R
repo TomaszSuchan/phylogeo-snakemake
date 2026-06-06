@@ -275,7 +275,7 @@ if (!(length(boundary) == 0 || is.null(boundary) || boundary == "NULL")) {
 
 basemap_resolved <- resolve_map_basemap(use_elevation_bg, snakemake@input, basemap)
 
-p <- mapmixture(
+p <- mapmixture_plot(
   admixture_df = admixture_site_df,
   coords_df = coords_df,
   cluster_cols = strcolors,
@@ -300,7 +300,8 @@ p <- mapmixture(
   axis_text_size = axis_text_size,
   basemap_border = basemap_border,
   basemap_border_col = basemap_border_col,
-  basemap_border_lwd = basemap_border_lwd
+  basemap_border_lwd = basemap_border_lwd,
+  raster_is_elevation_dem = use_elevation_bg
 )
 
 # Remove legend if legend parameter is FALSE
