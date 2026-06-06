@@ -389,6 +389,39 @@ if analyses.get("tess3", False):
         f"summaries and barplots were also inspected."
     )
 
+if analyses.get("snmf", False):
+    sp = p.get("snmf", {})
+    reps      = sp.get("repetitions", 10)
+    alpha     = sp.get("alpha",       10)
+    ploidy    = sp.get("ploidy",      2)
+    tol       = sp.get("tolerance",   1e-05)
+    iters     = sp.get("iterations",  200)
+    pct       = sp.get("percentage",  0.05)
+    struct_parts.append(
+        f"As a fast complement to the model-based clustering above, ancestry "
+        f"proportions were also estimated with sparse non-negative matrix "
+        f"factorisation as implemented in sNMF (Frichot et al. 2014) in the LEA R "
+        f"package (Frichot & François 2015), on the {dataset_label} ({n_snps} SNPs, "
+        f"{n_samples} individuals). Genotypes were converted from VCF GT fields to "
+        f"alternate-allele dosages (0–{ploidy}, missing genotypes retained and "
+        f"handled natively by sNMF). sNMF estimates individual ancestry coefficients "
+        f"and ancestral allele frequencies by regularised least squares rather than "
+        f"by fitting an explicit Hardy-Weinberg/linkage-equilibrium likelihood, which "
+        f"makes it computationally efficient and comparatively robust to departures "
+        f"from these assumptions, including the continuous allele-frequency gradients "
+        f"produced by isolation by distance that can lead likelihood-based methods to "
+        f"over-split clinal variation. The model was fit for each value of "
+        f"K = {k_tested} with ploidy = {ploidy}, a regularisation parameter "
+        f"alpha = {alpha}, a convergence tolerance of {tol}, and up to "
+        f"{int(iters):,} iterations. For each K, {reps} independent runs were "
+        f"performed and the run with the lowest cross-entropy was retained. The "
+        f"number of ancestral populations was assessed from the cross-entropy "
+        f"criterion, computed on a masked fraction ({pct}) of held-out genotypes "
+        f"and minimised across K (Alexander & Lange 2011; Frichot et al. 2014). "
+        f"Ancestry coefficients were visualised as mapmixture barplots and, where "
+        f"sample coordinates were available, as pie maps on the shared basemap."
+    )
+
 if analyses.get("evaladmix", False):
     eval_methods = []
     if analyses.get("admixture", False):
@@ -929,6 +962,23 @@ if analyses.get("tess3", False):
         "Caye, K., Deist, T.M., Martins, H., Michel, O. & François, O. (2016). "
         "TESS3: fast inference of spatial population structure and genome scans "
         "for selection. *Molecular Ecology Resources*, 16, 540–548."
+    )
+
+if analyses.get("snmf", False):
+    refs["snmf"] = (
+        "Frichot, E., Mathieu, F., Trouillon, T., Bouchard, G. & François, O. "
+        "(2014). Fast and efficient estimation of individual ancestry "
+        "coefficients. *Genetics*, 196, 973–983."
+    )
+    refs["lea"] = (
+        "Frichot, E. & François, O. (2015). LEA: an R package for landscape and "
+        "ecological association studies. *Methods in Ecology and Evolution*, 6, "
+        "925–929."
+    )
+    refs["crossentropy"] = (
+        "Alexander, D.H. & Lange, K. (2011). Enhancements to the ADMIXTURE "
+        "algorithm for individual ancestry estimation. *BMC Bioinformatics*, "
+        "12, 246."
     )
 
 if analyses.get("evaladmix", False):

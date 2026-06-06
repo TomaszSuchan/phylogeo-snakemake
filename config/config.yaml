@@ -77,6 +77,7 @@ parameters: &global_params
   # admixture: Maximum-likelihood ancestry clustering with CV error per K.
   # evaladmix: Residual-correlation diagnostics for ancestry model fit.
   # tess3: Spatially regularized ancestry estimation with tess3r.
+  # snmf: Fast IBD-robust ancestry estimation with sNMF (LEA) and cross-entropy K selection.
   # construct: Spatial population structure model with conStruct.
   # dapc: Discriminant analysis of principal components clustering.
   # spca: Spatial PCA combining genetic variance and spatial autocorrelation.
@@ -185,10 +186,13 @@ parameters: &global_params
     label_color: "black"         # color of labels
     label_fontface: "plain"      # font face: plain, bold, italic, bold.italic
     show_labels: true            # show population labels (true/false)
-    # ggrepel parameters for label positioning
-    force: 10                    # force of repulsion between labels
-    force_pull: 1                # force pulling labels toward points
-    max.overlaps: .inf            # maximum overlapping labels to show (.inf = show all; avoid bare Inf — YAML reads it as a string)
+    # ggrepel parameters for label positioning (plot_population_map.R)
+    force: 10                    # repulsion between labels (higher = more spread)
+    force_pull: 1                # pull labels toward their points
+    # max.overlaps: ggrepel cap on overlapping labels per site. Use ".inf" (quoted) to
+    # show all labels; lower integers hide labels with more than that many overlaps.
+    # Must stay quoted: unquoted .inf is parsed as YAML float inf and breaks all R rules.
+    max.overlaps: ".inf"
     min.segment.length: 0.5      # minimum length of leader line segment (in map units)
     segment.color: "black"      # color of leader lines
     segment.size: 0.2            # line width of leader lines
@@ -240,6 +244,24 @@ parameters: &global_params
     ggmap_point_size: 0.8     # sample-point size on ggtess3Q + mapmixture basemap maps (workflow default; not a tess3r package argument)
     ggmap_tile_alpha: 1.0     # ancestry-surface tile opacity on ggtess3Q ggplot maps (1 = opaque)
   
+  ## sNMF parameters (LEA package; Frichot et al. 2014)
+  # Fast non-spatial ancestry estimation by sparse non-negative matrix factorisation.
+  # sNMF is a fast complement to STRUCTURE/ADMIXTURE that is robust to departures
+  # from Hardy-Weinberg/linkage equilibrium, including the allele-frequency
+  # gradients created by isolation by distance (IBD). The number of ancestral
+  # populations is chosen from the cross-entropy of masked genotypes (lower is
+  # better). Genotypes are converted from VCF GT fields to an LEA .geno file
+  # (alternate-allele dosage 0..ploidy, missing coded 9). Maps are only produced
+  # when popdata coordinates are available; barplots are always produced.
+  snmf:
+    ploidy: 2                 # snmf() ploidy: allele dosage range 0..ploidy (use 1 for haploids/inbred diploids coded as haploid)
+    repetitions: 10           # snmf() repetitions: independent runs per K; the lowest-cross-entropy run is kept
+    alpha: 10                 # snmf() alpha: regularisation on ancestry coefficients; increase (e.g. 100) for small/noisy SNP sets to reduce overfitting
+    tolerance: 1.0e-5         # snmf() tolerance: convergence tolerance
+    iterations: 200           # snmf() iterations: maximum number of iterations per run
+    percentage: 0.05          # snmf() percentage: fraction of genotypes masked to compute the cross-entropy criterion
+    seed: 42                  # snmf() seed: random seed for reproducible runs
+
   ## conStruct parameters
   # Spatial population structure model where covariance can decay with geography.
   # NOTE: conStruct is computationally heavy. Run it on a SMALL, aggressively
@@ -530,6 +552,10 @@ parameters: &global_params
       threads: 4
       mem_mb: 16000
       runtime: 120
+    snmf:
+      threads: 4
+      mem_mb: 16000
+      runtime: 120
     pcaone:
       threads: 12
       mem_mb: 8000
@@ -624,7 +650,8 @@ projects:
       structure: false        # Bayesian ancestry clustering with STRUCTURE across k_values.
       faststructure: false    # Fast variational ancestry clustering using PLINK input.
       admixture: false        # Maximum-likelihood ancestry clustering with CV error per K.
-      tess3: true            # Spatially regularized ancestry estimation with tess3r.
+      tess3: false            # Spatially regularized ancestry estimation with tess3r.
+      snmf: true             # Fast IBD-robust ancestry estimation with sNMF (LEA), cross-entropy K selection.
       gen_dist: false         # Pairwise Euclidean and p-distance matrices from SNP genotypes.
       pcoa: false             # Principal coordinates analysis from the Euclidean distance matrix.
       neighbornet: false      # Split network from p-distance genetic distances.
@@ -675,6 +702,7 @@ projects:
   #     admixture: true         # Maximum-likelihood ancestry clustering with CV error per K.
   #     evaladmix: true         # Residual-correlation diagnostics for ancestry model fit.
   #     tess3: false            # Spatially regularized ancestry estimation with tess3r.
+  #     snmf: false             # Fast IBD-robust ancestry estimation with sNMF (LEA), cross-entropy K selection.
   #     construct: false        # Spatial population structure model with conStruct.
   #     dapc: true              # Discriminant analysis of principal components clustering.
   #     spca: false             # Spatial PCA combining genetic variance and spatial autocorrelation.

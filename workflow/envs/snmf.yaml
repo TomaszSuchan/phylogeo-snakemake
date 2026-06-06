@@ -1,0 +1,11 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  # sNMF is provided by the LEA Bioconductor package (Frichot & Francois 2015);
+  # unlike tess3r it is on bioconda, so no source-install rule is required.
+  - bioconductor-lea
+  - r-base
+  - r-vcfr
+  - r-ggplot2

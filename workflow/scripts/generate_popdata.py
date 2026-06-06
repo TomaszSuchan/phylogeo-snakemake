@@ -43,6 +43,7 @@ def load_existing_popmap(popmap_file):
             sep="\t",
             header=None,
             names=["Ind", "Site"],
+            compression=None,
         )
     except FileNotFoundError:
         print(f"ERROR: Popmap file not found: {popmap_file}")
@@ -69,6 +70,7 @@ def build_site_mapping(vcf_samples, popmap_file, popseparator):
                 sep="\t",
                 header=None,
                 names=["Ind", "Site"],
+                compression=None,
             )
         except FileNotFoundError:
             print(f"ERROR: Popmap file not found: {popmap_file}")
@@ -128,7 +130,7 @@ print(f"  Found {ind_site_df['Site'].nunique()} unique sites")
 # Check if popdata file is provided and exists
 if popdata_path and popdata_path.strip() and os.path.exists(popdata_path):
     print(f"\nReading popdata file: {popdata_path}")
-    popdata_df = pd.read_csv(popdata_path, sep="\t", header=0)
+    popdata_df = pd.read_csv(popdata_path, sep="\t", header=0, compression=None)
     print(f"  Found {len(popdata_df)} rows in popdata (before deduplication)")
 
     if "Site" not in popdata_df.columns:

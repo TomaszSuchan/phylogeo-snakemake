@@ -117,6 +117,16 @@ def _tess3_map_inputs(wildcards):
     return inputs
 
 
+def _snmf_map_inputs(wildcards):
+    inputs = {
+        "qmatrix": f"results/{wildcards.project}/snmf/{wildcards.project}.snmf.K{wildcards.k}.Qmatrix.txt",
+        "indpopdata": f"results/{wildcards.project}/indpopdata.txt",
+        "install": ".snakemake/mapmixture_installed",
+    }
+    inputs.update(_map_background_inputs(wildcards))
+    return inputs
+
+
 def _tess3_ggmap_inputs(wildcards):
     inputs = {
         "results_rds": f"results/{wildcards.project}/tess3/{wildcards.project}.tess3.K{wildcards.k}.results.rds",
@@ -359,11 +369,13 @@ def _pixy_pi_map_params(wildcards):
 
 
 def _normalize_max_overlaps(value):
-    """YAML `Inf` is often read as the string 'Inf'; ggrepel needs a numeric value."""
+    """Return a Snakemake/R-safe value for ggrepel max.overlaps (never Python float inf)."""
     if value is None:
-        return float("inf")
+        return ".inf"
+    if isinstance(value, float) and value == float("inf"):
+        return ".inf"
     if isinstance(value, str) and value.lower() in ("inf", "infinity", ".inf"):
-        return float("inf")
+        return ".inf"
     return value
 
 
@@ -382,7 +394,7 @@ def _population_map_params(wildcards):
         "show_labels": pm.get("show_labels", True),
         "force": pm.get("force", 10),
         "force_pull": pm.get("force_pull", 1),
-        "max_overlaps": _normalize_max_overlaps(pm.get("max.overlaps", float("inf"))),
+        "max_overlaps": _normalize_max_overlaps(pm.get("max.overlaps", ".inf")),
         "min_segment_length": pm.get("min.segment.length", 0.5),
         "segment_color": pm.get("segment.color", "grey50"),
         "segment_size": pm.get("segment.size", 0.5),
@@ -480,6 +492,7 @@ include: "rules/fineradstructure.smk"
 include: "rules/dapc.smk"
 include: "rules/construct.smk"
 include: "rules/tess3.smk"
+include: "rules/snmf.smk"
 include: "rules/spca.smk"
 include: "rules/evaladmix.smk"
 include: "rules/genome_scan.smk"
@@ -691,6 +704,36 @@ def get_all_targets():
                     expand(f"results/{project}/tess3/plots/{project}.tess3.K{{k}}.barplot.rds",
                            k=k_values)
                 ])
+
+        # sNMF (LEA) targets
+        if analyses.get("snmf", False):
+            targets.extend([
+                f"results/{project}/snmf/{project}.snmf.chooseK_results.txt",
+                f"results/{project}/snmf/{project}.snmf.cv_summary.txt",
+                f"results/{project}/snmf/plots/{project}.snmf.cv_plot.pdf",
+                f"results/{project}/snmf/plots/{project}.snmf.cv_plot.rds",
+                expand(f"results/{project}/snmf/{project}.snmf.K{{k}}.Qmatrix.txt",
+                       k=k_values),
+                expand(f"results/{project}/snmf/{project}.snmf.K{{k}}.cross_entropy.txt",
+                       k=k_values),
+                expand(f"results/{project}/snmf/{project}.snmf.K{{k}}.results.rds",
+                       k=k_values),
+            ])
+            # Only add map plots if popdata is specified
+            if _has_popdata(params):
+                targets.extend([
+                    expand(f"results/{project}/snmf/plots/{project}.snmf.K{{k}}.map.pdf",
+                           k=k_values),
+                    expand(f"results/{project}/snmf/plots/{project}.snmf.K{{k}}.map.rds",
+                           k=k_values)
+                ])
+            # Always add barplots
+            targets.extend([
+                expand(f"results/{project}/snmf/plots/{project}.snmf.K{{k}}.barplot.pdf",
+                       k=k_values),
+                expand(f"results/{project}/snmf/plots/{project}.snmf.K{{k}}.barplot.rds",
+                       k=k_values)
+            ])
 
         # PCAone targets (standard)
         if analyses.get("pcaone", False):
