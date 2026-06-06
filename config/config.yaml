@@ -242,10 +242,12 @@ parameters: &global_params
   
   ## conStruct parameters
   # Spatial population structure model where covariance can decay with geography.
+  # NOTE: conStruct is computationally heavy. Run it on a SMALL, aggressively
+  # thinned SNP set (~1,000-5,000 loci); thin the full marker set for conStruct
+  # and use tess3r on the fuller set for visualisation. See the README conStruct note.
   construct:
-    n_chains: 1        # number of MCMC chains to run
-    n_iterations: 10000  # number of MCMC iterations per chain
-    make.freqs: true   # whether to make allele frequencies from genotype data
+    n_chains: 2        # independent MCMC chains; >=2 is required to assess convergence across chains (1 cannot)
+    n_iterations: 50000  # MCMC iterations per chain; a safer minimum than 10000. Increase for final runs and verify convergence from trace plots
     geoDist: null      # optional pre-computed geographic distance matrix (null = compute from coords)
     coords: null       # optional coordinate matrix (null = use from indpopdata)
     save.files: true   # whether to save intermediate files

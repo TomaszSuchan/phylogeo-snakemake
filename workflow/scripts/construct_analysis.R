@@ -44,7 +44,6 @@ log_file <- snakemake@output[['log_file']]
 k <- as.integer(snakemake@params[['k']])
 n_chains <- as.integer(snakemake@params[['n_chains']])
 n_iterations <- as.integer(snakemake@params[['n_iterations']])
-make.freqs <- as.logical(snakemake@params[['make_freqs']])
 geoDist_param <- snakemake@params[['geoDist']]
 coords_param <- snakemake@params[['coords']]
 save.files <- as.logical(snakemake@params[['save_files']])
@@ -237,8 +236,8 @@ output_prefix <- file.path(output_dir, paste0(basename(tools::file_path_sans_ext
 
 # Run conStruct analysis
 # conStruct returns a list with results
-# Note: make.freqs and save.files are not valid parameters for conStruct
-# We already provide allele frequencies directly, so make.freqs is not needed
+# Note: save.files is not a valid parameter for conStruct; allele frequencies
+# are always computed from the genotype data and provided directly below.
 construct_results <- conStruct::conStruct(
   spatial = TRUE,
   K = k,
