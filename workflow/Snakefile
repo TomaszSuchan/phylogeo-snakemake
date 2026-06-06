@@ -1170,6 +1170,12 @@ def get_all_targets():
             )
             targets.extend(
                 expand(
+                    f"results/{project}/neighbornet/plots/{project}.pdistance.neighbornet-{color_by}.phangorn.pdf",
+                    color_by=neighbornet_color_by,
+                )
+            )
+            targets.extend(
+                expand(
                     f"results/{project}/neighbornet/plots/{project}.pdistance.neighbornet-{color_by}.rds",
                     color_by=neighbornet_color_by,
                 )

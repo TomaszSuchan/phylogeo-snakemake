@@ -35,6 +35,7 @@ rule plot_neighbornet:
     output:
         pdf_with_tip_labels="results/{project}/neighbornet/plots/{project}.pdistance.neighbornet-{color_by}.with_tip_labels.pdf",
         pdf_no_tip_labels="results/{project}/neighbornet/plots/{project}.pdistance.neighbornet-{color_by}.no_tip_labels.pdf",
+        pdf_phangorn="results/{project}/neighbornet/plots/{project}.pdistance.neighbornet-{color_by}.phangorn.pdf",
         rds="results/{project}/neighbornet/plots/{project}.pdistance.neighbornet-{color_by}.rds",
     log:
         "logs/{project}/plot_neighbornet_{color_by}.log"
