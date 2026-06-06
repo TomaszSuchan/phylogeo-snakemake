@@ -1,7 +1,4 @@
-#!/usr/bin/env python3
 """Parse ADMIXTURE cross-validation errors from per-K log files."""
-
-from __future__ import annotations
 
 import re
 import sys
