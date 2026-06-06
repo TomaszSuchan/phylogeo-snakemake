@@ -373,7 +373,7 @@ def _population_map_params(wildcards):
         "show_labels": pm.get("show_labels", True),
         "force": pm.get("force", 10),
         "force_pull": pm.get("force_pull", 1),
-        "max_overlaps": str(pm.get("max.overlaps", float("inf"))),
+        "max_overlaps": pm.get("max.overlaps", float("inf")),
         "min_segment_length": pm.get("min.segment.length", 0.5),
         "segment_color": pm.get("segment.color", "grey50"),
         "segment_size": pm.get("segment.size", 0.5),

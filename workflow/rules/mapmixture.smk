@@ -1,6 +1,6 @@
 # Rules for plotting STRUCTURE, fastStructure, and ADMIXTURE results on maps using mapmixture
 
-# Rule to install mapmixture once (all plotting rules depend on this)
+# Install mapmixture once (map rules depend on this to avoid parallel CRAN installs).
 rule install_mapmixture:
     output:
         touch(".snakemake/mapmixture_installed")
@@ -8,7 +8,7 @@ rule install_mapmixture:
         "../envs/mapmixture.yaml"
     shell:
         """
-        Rscript -e 'lib <- .libPaths()[1]; options(repos="https://cloud.r-project.org/"); pkgs <- c("mapmixture", "elevatr", "rnaturalearth", "RColorBrewer"); for (p in pkgs) if (!requireNamespace(p, quietly=TRUE, lib.loc=lib)) install.packages(p, lib=lib)'
+        Rscript -e 'lib <- .libPaths()[1]; options(repos="https://cloud.r-project.org/"); pkgs <- c("mapmixture", "elevatr", "rnaturalearth", "RColorBrewer"); for (p in pkgs) if (!requireNamespace(p, quietly=TRUE, lib.loc=lib)) install.packages(p, lib=lib); missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly=TRUE, lib.loc=lib)]; if (length(missing)) stop("Failed to install required R packages: ", paste(missing, collapse=", "))'
         """
 
 
@@ -77,7 +77,7 @@ rule barplot_structure:
     input:
         qmatrix = "results/{project}/structure/{project}.structure.K{k}.Qmatrix.txt",
         indpopdata = rules.generate_popdata.output.indpopdata,
-        install = rules.install_mapmixture.output
+        install = rules.install_mapmixture.output,
     output:
         barplot = "results/{project}/structure/plots/{project}.structure.K{k}.barplot.pdf",
         barplot_rds = "results/{project}/structure/plots/{project}.structure.K{k}.barplot.rds"
@@ -99,7 +99,7 @@ rule barplot_faststructure:
     input:
         qmatrix = "results/{project}/faststructure/{project}.faststructure.{k}.meanQ",
         indpopdata = rules.generate_popdata.output.indpopdata,
-        install = rules.install_mapmixture.output
+        install = rules.install_mapmixture.output,
     output:
         barplot = "results/{project}/faststructure/plots/{project}.faststructure.K{k}.barplot.pdf",
         barplot_rds = "results/{project}/faststructure/plots/{project}.faststructure.K{k}.barplot.rds"
@@ -121,7 +121,7 @@ rule barplot_admixture:
     input:
         qmatrix = "results/{project}/admixture/{project}.biallelic_snps_thinned.{k}.Q",
         indpopdata = rules.generate_popdata.output.indpopdata,
-        install = rules.install_mapmixture.output
+        install = rules.install_mapmixture.output,
     output:
         barplot = "results/{project}/admixture/plots/{project}.admixture.K{k}.barplot.pdf",
         barplot_rds = "results/{project}/admixture/plots/{project}.admixture.K{k}.barplot.rds"

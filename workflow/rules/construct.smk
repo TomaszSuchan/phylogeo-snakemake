@@ -162,7 +162,7 @@ rule barplot_construct:
     input:
         qmatrix = rules.construct_qmatrix.output.qmatrix,
         indpopdata = rules.generate_popdata.output.indpopdata,
-        install = rules.install_mapmixture.output
+        install = rules.install_mapmixture.output,
     output:
         barplot = "results/{project}/construct/plots/{project}.construct.K{k}.barplot.pdf",
         barplot_rds = "results/{project}/construct/plots/{project}.construct.K{k}.barplot.rds"

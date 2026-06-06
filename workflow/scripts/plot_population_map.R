@@ -2,18 +2,7 @@
 # Plot population locations on map with labels and leader lines
 # Uses mapmixture for basemap (same as structure plots), then adds labels
 
-# Install mapmixture if not available (same as structure plots)
-if (!require("mapmixture", quietly = TRUE)) {
-  install.packages("mapmixture", repos = "https://cloud.r-project.org/")
-}
-
-library(tidyverse)
-library(mapmixture)
-library(ggrepel)
-library(sf)
-library(terra)
-
-# Source common map functions
+# Source common map functions (loads mapmixture and shared helpers)
 # Try to get script directory, fallback to relative path
 common_functions <- tryCatch({
   script_dir <- dirname(normalizePath(snakemake@script))
@@ -81,15 +70,8 @@ show_labels <- as.logical(snakemake@params[["show_labels"]])
 # ggrepel parameters
 force <- as.numeric(snakemake@params[["force"]])
 force_pull <- as.numeric(snakemake@params[["force_pull"]])
-# Handle Inf for max.overlaps (show all labels)
-max_overlaps_val <- snakemake@params[["max_overlaps"]]
-if (is.character(max_overlaps_val) && (tolower(max_overlaps_val) == "inf" || tolower(max_overlaps_val) == "infinity")) {
-  max.overlaps <- Inf
-} else if (is.infinite(as.numeric(max_overlaps_val))) {
-  max.overlaps <- Inf
-} else {
-  max.overlaps <- as.numeric(max_overlaps_val)
-}
+max.overlaps <- snakemake@params[["max_overlaps"]]
+if (is.null(max.overlaps)) max.overlaps <- Inf
 min.segment.length <- as.numeric(snakemake@params[["min_segment_length"]])
 segment.color <- snakemake@params[["segment_color"]]
 segment.size <- as.numeric(snakemake@params[["segment_size"]])
