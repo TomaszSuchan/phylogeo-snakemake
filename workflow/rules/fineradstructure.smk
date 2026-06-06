@@ -7,7 +7,10 @@ rule fineradstructure_all:
 
 rule fineradstructure_prepare_input:
     input:
-        vcf = rules.select_biallelic_snps.output.biallelic_vcf
+        # Use the missingness-filtered variant set (no MAC/MAF filter, un-thinned, multiallelic
+        # SNPs retained). fineRADstructure's recent-coancestry signal is dominated by rare alleles,
+        # so singletons must be kept; the biallelic_snps set (MAC>1, -m2 -M2) would remove them.
+        vcf = rules.subset_vcf_after_relatedness.output.vcf
     output:
         finestr_input = "results/{project}/fineradstructure/{project}.input"
     log:

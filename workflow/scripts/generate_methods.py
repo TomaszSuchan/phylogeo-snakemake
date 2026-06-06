@@ -763,12 +763,27 @@ if analyses.get("fineradstructure", False):
     th  = cl.get("thinning",        1000)
     mct = fr.get("tree", {}).get("mcmc_iterations", 10000)
     frs_ver = v(versions, "fineradstructure")
+    # f_missing is the only variant filter that touches the fineRADstructure input
+    # (a site-level missingness filter; it removes gappy loci, not rare alleles).
+    frs_missing_clause = (
+        f"after removing sites with more than {100*f_missing:.0f}% missing "
+        f"genotype calls"
+        if f_missing < 1.0
+        else "without any missingness filtering"
+    )
     phy_parts.append(
         f"Fine-scale population structure was additionally inferred from shared "
         f"co-ancestry with fineRADstructure version {frs_ver} (Malinsky et al. "
         f"2018), a method tailored to RAD-seq data that exploits the haplotype "
         f"(phase) information available within each RAD locus and is sensitive to "
-        f"recent shared ancestry. RADpainter first summarised, for every pair of "
+        f"recent shared ancestry. Because this co-ancestry signal is carried "
+        f"disproportionately by rare alleles, fineRADstructure was run on the "
+        f"variant set obtained {frs_missing_clause}, retaining all remaining SNPs "
+        f"(including singletons and multiallelic sites) without the minor allele "
+        f"count, minor allele frequency, or one-SNP-per-locus thinning filters "
+        f"applied to the other analyses, since those filters would remove the "
+        f"variants most informative for recent co-ancestry. "
+        f"RADpainter first summarised, for every pair of "
         f"individuals, the extent to which they share their most closely related "
         f"haplotypes, producing a pairwise co-ancestry matrix ({n_samples} "
         f"individuals). fineSTRUCTURE (Lawson et al. 2012) then clustered "

@@ -128,7 +128,7 @@ The pipeline applies filtering steps in the following order:
 - **Parameters** (from `config["parameters"]["vcf_filtering"]`):
   - `f_missing` <FLOAT>: Maximum missing data threshold for variant filtering (default: `1.0`)
     - Variants missing in > `f_missing` proportion of samples are filtered out
-    - `1` keeps all variants, `0.5` keeps variants genotyped in at least half of samples, and `0` removes variants with any missing data. Lower values are stricter and reduce missingness but also reduce SNP count.
+    - `1` keeps all variants, `0.5` keeps variants genotyped in at least half of samples, and `0` removes variants with any missing data. Lower values are stricter and reduce missingness but also reduce SNP count. This is a site-level filter that drops poorly-genotyped loci, not rare alleles. 
 - **Note**: If `f_missing >= 1`, missing data filtering is skipped
 
 #### 5. Biallelic SNP Filtering
@@ -269,7 +269,7 @@ conStruct is computationally much heavier than tess3r-style spatial NMF because 
 
 **trimAl + IQ-TREE** adds an alignment-trimming step before phylogenetic inference. It uses `trimAl` to remove sites with excessive gaps and then runs IQ-TREE on the trimmed alignment. `trimal.gt` is the gap threshold: values close to `1` are permissive, while lower values remove columns with more gaps. The downstream tree step uses the same `iqtree` settings.
 
-**fineRADstructure** uses `RADpainter` and `fineRADstructure` to infer recent coancestry and hierarchical relationships among individuals from RAD-seq loci. It takes `biallelic_snps.vcf.gz`, that is, the biallelic SNP set before thinning or LD pruning, together with `indpopdata.txt`. `fineradstructure.cluster.mcmc_iterations` controls clustering MCMC length, `cluster.burnin` is discarded before summarising the chain, and `cluster.thinning` controls how often samples are retained. `tree.mcmc_iterations` controls tree-building MCMC. `plot.max_indv` and `plot.max_pop` cap heatmap size for large datasets.
+**fineRADstructure** uses `RADpainter` and `fineRADstructure` to infer recent coancestry and hierarchical relationships among individuals from RAD-seq loci. It takes `filtered.vcf.gz`, that is, the missingness-filtered variant set after sample subsetting and relatedness filtering, together with `indpopdata.txt`. This set deliberately keeps **all** SNPs — including singletons and multiallelic sites — and is **not** passed through the `MAC > 1`, `maf`, or one-SNP-per-locus thinning filters used by the other analyses. fineRADstructure's recent-coancestry signal is dominated by rare alleles, so removing singletons (as `biallelic_snps.vcf.gz` does) would discard the most informative variants; the un-thinned set also keeps multiple SNPs per RAD locus so haplotypes can be reconstructed. The only variant filter applied is the optional `vcf_filtering.f_missing` missingness threshold (disabled by default); this is a site-level filter that drops poorly-genotyped loci, not rare alleles, so it does not undercut the rare-allele signal described above. `fineradstructure.cluster.mcmc_iterations` controls clustering MCMC length, `cluster.burnin` is discarded before summarising the chain, and `cluster.thinning` controls how often samples are retained. `tree.mcmc_iterations` controls tree-building MCMC. `plot.max_indv` and `plot.max_pop` cap heatmap size for large datasets.
 
 ### Population metadata
 
