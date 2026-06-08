@@ -45,7 +45,11 @@ rule fineradstructure_paint:
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["fineradstructure"]["runtime"]
     shell:
         """
-        RADpainter paint {input.finestr_input} &> {log}
+        set -euo pipefail
+        # Snakemake pre-creates an empty output file; RADpainter writes only at the end.
+        rm -f {output.finestr_chunks}
+        RADpainter paint {input.finestr_input} &>> {log}
+        test -s {output.finestr_chunks}  # reject cancelled/interrupted runs
         """
 
 rule fineradstructure_cluster:
@@ -69,7 +73,10 @@ rule fineradstructure_cluster:
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["fineradstructure"]["runtime"]
     shell:
         """
-        finestructure -Y -x {params.mcmc_iterations} -y {params.burnin} -z {params.thinning} -X -Y {input.finestr_chunks} {output.finestr_mcmc} &> {log}
+        set -euo pipefail
+        test -s {input.finestr_chunks}  # coancestry matrix must exist before MCMC
+        # -x burn-in, -y sample iterations; -X/-Y: row and column names in chunks file
+        finestructure -X -Y -x {params.burnin} -y {params.mcmc_iterations} -z {params.thinning} {input.finestr_chunks} {output.finestr_mcmc} &> {log}
         """
 
 rule fineradstructure_tree:
