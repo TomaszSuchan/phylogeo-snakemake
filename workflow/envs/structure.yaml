@@ -1,6 +1,5 @@
 channels:
   - conda-forge
   - bioconda
-  - defaults
 dependencies:
  - structure=2.3.4

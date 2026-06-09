@@ -1,7 +1,6 @@
 channels:
   - conda-forge
   - bioconda
-  - defaults
 dependencies:
   - r-base
   - r-pophelper=2.3.1
