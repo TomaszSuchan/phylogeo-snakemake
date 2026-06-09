@@ -2,6 +2,40 @@
 
 Snakemake pipeline for population genetics and phylogeographic data analysis from ipyrad output (`.vcf` and `.loci` files).
 
+### How software is installed
+
+Most tools run in per-rule conda environments defined in `workflow/envs/*.yaml`. With `--use-conda`, Snakemake creates those environments in `.snakemake/conda/` (hashed by the YAML contents) before jobs are submitted. Environments use **conda-forge** and **bioconda** only.
+
+A few R packages are not on conda and are installed once by dedicated rules from CRAN or GitHub (for example `mapmixture`, `elevatr`, `alstructure`, `tess3r`, `conStruct`). Those rules run inside the conda env from the matching YAML, then call `install.packages()` or `remotes::install_github()` as needed.
+
+Always use **mamba** as the conda frontend (`--conda-frontend mamba`): it solves environments faster and with less memory than plain `conda`.
+
+**HPC note:** Snakemake builds missing conda environments on the machine that runs the Snakemake driver (often the login node). Some solves (for example `pixy`) can hit login-node memory limits and fail at `Solving environment...` with no clear error. If that happens, create environments on a compute node first, then launch the workflow from the login node as usual:
+
+```bash
+# 1) On a compute node with enough RAM and walltime
+srun --partition=plgrid --account=your-cpu-account --mem=32G --cpus-per-task=4 --time=120:00 bash
+cd phylogeo-snakemake
+source /path/to/miniforge3/bin/activate snakemake   # or your snakemake env
+
+snakemake --conda-create-envs-only \
+  --use-conda --conda-frontend mamba \
+  --configfile config/your_project.yaml
+
+# 2) Back on the login node — envs already exist
+exit
+
+# 3) run the snakemake pipeline as usula from the login node
+
+snakemake --executor slurm \
+  --default-resources slurm_account=your-cpu-account slurm_partition=plgrid runtime=300 \
+  --cores 48 --jobs 300 \
+  --use-conda --conda-frontend mamba \
+  --configfile config/your_project.yaml
+```
+
+On scratch filesystems with inode quotas, run `conda clean -a -y` periodically; conda package caches and many Snakemake envs each hold thousands of files.
+
 ## Cloning
 
 This repository uses a git submodule. Clone with:
@@ -85,18 +119,29 @@ Override resources per project when your dataset is larger or your cluster has d
 
 ## Running
 
-Best is to use conda/mamba:
-```
+Use conda/mamba for all rules (`--use-conda --conda-frontend mamba`). See **How software is installed** above if environment creation fails on the login node.
+
+Local or interactive run:
+
+```bash
 snakemake --configfile config/config.yaml --use-conda --conda-frontend mamba
 ```
 
-On HPC you need to specify the executor and resources, eg.:
+On HPC, specify the executor and resources:
 
-```
-snakemake --configfile config/config.yaml --executor slurm --cores 10 --default-resource slurm_account=plgapollo2-cpu slurm_partition=plgrid --use-conda --conda-frontend mamba --jobs 10
+```bash
+snakemake --configfile config/config.yaml --executor slurm --cores 10 \
+  --default-resources slurm_account=plgapollo2-cpu slurm_partition=plgrid \
+  --use-conda --conda-frontend mamba --jobs 10
 ```
 
-Other useful flags are `--rerun-incomplete`,  `--rerun-triggers mtime`. Add `-n` for a dry-run.
+Other useful flags: `--rerun-incomplete`, `--rerun-triggers mtime`. Add `-n` for a dry-run.
+
+Optional: set strict channel priority once in your conda installation:
+
+```bash
+conda config --set channel_priority strict
+```
 
 ## Workflow
 
