@@ -231,9 +231,15 @@ if rel_on:
 miss_clause = (f"sites with more than {100*f_missing:.0f}% missing genotype calls "
                f"across individuals were excluded to limit the influence of "
                f"poorly sequenced loci, and " if f_missing < 1.0 else "")
-maf_clause  = (f", and a minimum minor allele frequency (MAF) of {maf} was imposed "
-               f"to further exclude very rare variants"
-               if maf > 0 else "")
+if maf > 0:
+    maf_clause = (
+        f", and a minimum minor allele frequency (MAF) of {maf:g} was imposed "
+        f"to further exclude very rare variants"
+    )
+else:
+    maf_clause = (
+        ", with no minimum minor allele frequency (MAF) threshold applied"
+    )
 filt_parts.append(
     f"SNP genotypes called by ipyrad were then filtered with bcftools version "
     f"{v(versions,'bcftools')} (Danecek et al. 2021). Specifically, {miss_clause}"
@@ -308,6 +314,13 @@ def _fmt_pct(value):
     return f"{100 * value:.1f}%" if value is not None else "an unrecorded fraction"
 
 
+def _biallelic_filter_label(maf_value):
+    """Short label for biallelic datasets, always stating the MAF filter."""
+    if maf_value > 0:
+        return f"biallelic SNPs with MAC > 1 and MAF ≥ {maf_value:g}"
+    return "biallelic SNPs with MAC > 1 and no MAF filter"
+
+
 def _fmt_depth_triplet(depth):
     overall = depth.get("overall_mean_depth", "[MEAN_DEPTH]")
     ind_med = depth.get("individual_median_depth", "[IND_MEDIAN_DEPTH]")
@@ -323,11 +336,12 @@ ds_clauses = [
     f"an all-SNP dataset (all variant sites passing sample, relatedness and "
     f"missingness filtering; {_fmt_int(vcf_stats_filtered.get('variants', '[NA]'))} SNPs; "
     f"mean per-individual missingness {_fmt_pct(imiss_filtered)})",
-    f"a biallelic SNP dataset (biallelic SNPs with MAC > 1; "
+    f"a biallelic SNP dataset ({_biallelic_filter_label(maf)}; "
     f"{_fmt_int(vcf_stats_biallelic.get('variants', '[NA]'))} SNPs; "
     f"{_fmt_pct(imiss_biallelic)})",
     f"the {dataset_label} used for most analyses "
-    f"({_fmt_int(n_snps)} SNPs across {_fmt_int(n_loci)} RAD loci; {_fmt_pct(imiss_thinned)})",
+    f"({_biallelic_filter_label(maf)}; {_fmt_int(n_snps)} SNPs across "
+    f"{_fmt_int(n_loci)} RAD loci; {_fmt_pct(imiss_thinned)})",
 ]
 
 filt_parts.append(
