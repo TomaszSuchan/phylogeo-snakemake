@@ -31,9 +31,11 @@ def _methods_inputs(wildcards):
         # All-SNP (filtered) dataset
         "vcf_stats_filtered": f"{base}/stats_vcf/filtered/{proj}.filtered.vcf_stats.txt",
         "imiss_filtered": f"{base}/stats_vcf/filtered/{proj}.filtered.imiss",
+        "depth_summary_filtered": f"{base}/stats_vcf/filtered/{proj}.filtered.depth_summary.txt",
         # Biallelic SNP dataset
         "vcf_stats_biallelic": f"{base}/stats_vcf/biallelic/{proj}.biallelic_snps.vcf_stats.txt",
         "imiss_biallelic": f"{base}/stats_vcf/biallelic/{proj}.biallelic_snps.imiss",
+        "depth_summary_biallelic": f"{base}/stats_vcf/biallelic/{proj}.biallelic_snps.depth_summary.txt",
     }
 
 

@@ -190,6 +190,50 @@ rule summarize_depth_vcf_filtered:
     script:
         "../scripts/summarize_depth_stats.py"
 
+# Sequencing depth from the un-thinned biallelic SNP VCF (for the methods dataset summary)
+rule calculate_depth_vcf_biallelic:
+    input:
+        vcf = rules.select_biallelic_snps.output.biallelic_vcf
+    output:
+        individual_depth = "results/{project}/stats_vcf/biallelic/{project}.biallelic_snps.idepth",
+        site_depth = "results/{project}/stats_vcf/biallelic/{project}.biallelic_snps.ldepth.mean"
+    log:
+        "logs/{project}/calculate_depth_vcf_biallelic.log"
+    params:
+        out_prefix = lambda wildcards: f"results/{wildcards.project}/stats_vcf/biallelic/{wildcards.project}.biallelic_snps"
+    conda:
+        "../envs/vcftools.yaml"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    shell:
+        """
+        vcftools --gzvcf {input.vcf} \
+                 --depth \
+                 --out {params.out_prefix} > {log} 2>&1
+        vcftools --gzvcf {input.vcf} \
+                 --site-mean-depth \
+                 --out {params.out_prefix} >> {log} 2>&1
+        """
+
+rule summarize_depth_vcf_biallelic:
+    input:
+        individual_depth = rules.calculate_depth_vcf_biallelic.output.individual_depth,
+        site_depth = rules.calculate_depth_vcf_biallelic.output.site_depth
+    output:
+        summary = "results/{project}/stats_vcf/biallelic/{project}.biallelic_snps.depth_summary.txt"
+    log:
+        "logs/{project}/summarize_depth_vcf_biallelic.log"
+    conda:
+        "../envs/python.yaml"
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    script:
+        "../scripts/summarize_depth_stats.py"
+
 rule plot_idepth_histogram_filtered:
     input:
         idepth = rules.calculate_depth_vcf_filtered.output.individual_depth

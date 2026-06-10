@@ -170,6 +170,8 @@ vcf_stats_biallelic = parse_vcf_stats(snakemake.input.vcf_stats_biallelic)
 imiss_thinned   = parse_imiss(snakemake.input.imiss_thinned)
 imiss_filtered  = parse_imiss(snakemake.input.imiss_filtered)
 imiss_biallelic = parse_imiss(snakemake.input.imiss_biallelic)
+depth_filtered  = parse_depth_summary(snakemake.input.depth_summary_filtered)
+depth_biallelic = parse_depth_summary(snakemake.input.depth_summary_biallelic)
 
 n_snps     = vcf_stats.get("variants",      "[N_SNPS]")
 n_loci     = vcf_stats.get("rad_fragments", "[N_RAD_LOCI]")
