@@ -352,6 +352,13 @@ sections.append(("Data filtering and dataset construction",
 
 k_vals  = p.get("k_values", list(range(1, 10)))
 k_tested = k_str(k_vals)   # e.g. "1, 2, 3, 4, 5, 6, 7, 8, 9"
+_MAPMIXTURE_ANCESTRY_ANALYSES = (
+    "structure", "faststructure", "admixture", "snmf",
+    "alstructure", "tess3", "construct", "dapc",
+)
+uses_mapmixture_ancestry = any(
+    analyses.get(a) for a in _MAPMIXTURE_ANCESTRY_ANALYSES
+)
 struct_parts = []
 
 if analyses.get("structure", False):
@@ -448,10 +455,9 @@ if analyses.get("tess3", False):
         f"\"{method}\", {reps} replicate start(s), a maximum of "
         f"{int(max_iter):,} iterations, and a convergence tolerance of {tol}. "
         f"The number of ancestral populations was evaluated from {score_desc} "
-        f"across K (tess3r choose-K plot). For each K, ancestry was visualised "
-        f"with mapmixture pie maps, tess3r interpolated surfaces, and ggplot maps "
-        f"combining ggtess3Q with the shared mapmixture basemap; cross-entropy "
-        f"summaries and barplots were also inspected."
+        f"across K (tess3r choose-K plot). For each K, tess3r interpolated "
+        f"surfaces and ggtess3Q ggplot maps were also produced; cross-entropy "
+        f"summaries were inspected."
     )
 
 if analyses.get("snmf", False):
@@ -482,9 +488,7 @@ if analyses.get("snmf", False):
         f"performed and the run with the lowest cross-entropy was retained. The "
         f"number of ancestral populations was assessed from the cross-entropy "
         f"criterion, computed on a masked fraction ({pct}) of held-out genotypes "
-        f"and minimised across K (Alexander & Lange 2011; Frichot et al. 2014). "
-        f"Ancestry coefficients were visualised as mapmixture barplots and, where "
-        f"sample coordinates were available, as pie maps on the shared basemap."
+        f"and minimised across K (Alexander & Lange 2011; Frichot et al. 2014)."
     )
 
 if analyses.get("alstructure", False):
@@ -510,9 +514,7 @@ if analyses.get("alstructure", False):
         f"the rank of the latent subspace with estimate_d (Leek 2011), and the "
         f"latent-subspace eigenvalue scree across K = {k_tested} was inspected to "
         f"corroborate it. The model was fit for each K = {k_tested} using the "
-        f"\"{a_svd}\" SVD method and \"{a_order}\" cluster ordering. Ancestry "
-        f"coefficients were visualised as mapmixture barplots and, where sample "
-        f"coordinates were available, as pie maps on the shared basemap."
+        f"\"{a_svd}\" SVD method and \"{a_order}\" cluster ordering."
     )
 
 if analyses.get("evaladmix", False):
@@ -662,6 +664,12 @@ if analyses.get("treemix", False):
         f"counts."
     )
 
+if uses_mapmixture_ancestry:
+    struct_parts.append(
+        f"Ancestry coefficients were visualised as barplots and pie-chart maps "
+        f"using the mapmixture R package (Jenkins 2024)."
+    )
+
 if struct_parts:
     sections.append(("Population structure and ancestry",
                      "\n\n".join(struct_parts)))
@@ -691,15 +699,31 @@ if analyses.get("pcaone", False):
         f"components via {svd_desc}."
     )
 
-if analyses.get("pcaone_emu", False) or analyses.get("emupca", False):
+if analyses.get("pcaone_emu", False):
     pp   = p.get("PCAone", {})
     n_pc = pp.get("PCnum", 10)
+    compare_clause = (
+        " The results were compared with the standard PCA above."
+        if analyses.get("pcaone", False)
+        else ""
+    )
     pca_parts.append(
         f"Because missing genotypes can distort principal components, PCA was also "
-        f"run in EMU mode in PCAone version {v(versions,'pcaone')}, which uses an "
-        f"iterative expectation-maximisation algorithm to account for missing data "
-        f"while estimating the {n_pc} leading principal components, and the results "
-        f"were compared with the standard PCA above."
+        f"run in EMU mode (Meisner et al. 2021) within PCAone version "
+        f"{v(versions,'pcaone')}, which uses an expectation-maximisation algorithm "
+        f"to model missing data while estimating the {n_pc} leading principal "
+        f"components.{compare_clause}"
+    )
+
+if analyses.get("emupca", False):
+    emu_p  = p.get("EMU", {})
+    eig    = emu_p.get("eig", 2)
+    eig_out = emu_p.get("eig_out", 10)
+    pca_parts.append(
+        f"Principal component analysis accommodating missing genotypes was also "
+        f"performed with EMU (Meisner et al. 2021) on the {dataset_label} "
+        f"({n_snps} SNPs, {n_samples} individuals), extracting principal "
+        f"components {eig} through {eig_out}."
     )
 
 if analyses.get("pcoa", False):
@@ -1119,6 +1143,14 @@ if analyses.get("construct", False):
         "discrete population genetic structure across space. *Genetics*, 210, 33–52."
     )
 
+if uses_mapmixture_ancestry:
+    refs["mapmixture"] = (
+        "Jenkins, T.L. (2024). mapmixture: an R package and web app for spatial "
+        "visualisation of admixture and population structure. "
+        "*Molecular Ecology Resources*, 24, e13943. "
+        "https://doi.org/10.1111/1755-0998.13943"
+    )
+
 if analyses.get("treemix", False):
     refs["orientagraph"] = (
         "Molloy, E.K., Durvasula, A. & Sankararaman, S. (2021). Advancing "
@@ -1137,11 +1169,18 @@ if analyses.get("treemix", False):
         "6(1), bpab017. https://doi.org/10.1093/biomethods/bpab017"
     )
 
-if analyses.get("pcaone", False) or analyses.get("pcaone_emu", False) \
-        or analyses.get("emupca", False):
+if analyses.get("pcaone", False) or analyses.get("pcaone_emu", False):
     refs["pcaone"] = (
         "Zhang, C. & Meisner, J. (2023). Fast and accurate out-of-core PCA framework "
         "for large biobank data. *Genome Research*, 33, 1599–1608."
+    )
+
+if analyses.get("pcaone_emu", False) or analyses.get("emupca", False):
+    refs["emu"] = (
+        "Meisner, J., Liu, S., Huang, M. & Albrechtsen, A. (2021). Large-scale "
+        "inference of population structure in presence of missingness using PCA. "
+        "*Bioinformatics*, 37, 1868–1875. "
+        "https://doi.org/10.1093/bioinformatics/btab027"
     )
 
 if analyses.get("pixy", False):
