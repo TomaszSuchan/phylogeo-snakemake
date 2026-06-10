@@ -33,6 +33,7 @@ rule roh_summary:
         total_roh_length_histogram="results/{project}/roh/plots/{project}.total_roh_length_histogram.pdf",
         roh_segment_length_distribution="results/{project}/roh/plots/{project}.roh_segment_length_distribution.pdf",
         roh_by_class="results/{project}/roh/plots/{project}.roh_by_class.pdf",
+        froh_by_class_panel="results/{project}/roh/plots/{project}.froh_per_class_panel.pdf",
         froh_vs_n_segments="results/{project}/roh/plots/{project}.froh_vs_n_segments.pdf"
     params:
         group_by = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("roh", {}).get("group_by", ["Site"])
@@ -57,6 +58,7 @@ rule roh_group_plots:
         indpopdata=rules.generate_popdata.output.indpopdata
     output:
         froh="results/{project}/roh/plots/{project}.froh_by_{group_col}.pdf",
+        froh_class_panel="results/{project}/roh/plots/{project}.froh_by_{group_col}_per_class_panel.pdf",
         nseg="results/{project}/roh/plots/{project}.n_roh_segments_by_{group_col}.pdf",
         roh_class="results/{project}/roh/plots/{project}.roh_class_by_{group_col}.pdf"
     params:

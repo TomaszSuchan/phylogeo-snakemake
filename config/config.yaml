@@ -455,6 +455,9 @@ parameters: &global_params
 
   ## ROH parameters
   # Runs of homozygosity calls and group summaries.
+  # Length classes (Mb) approximate generations since common ancestry using
+  # G = 100/(2 × cM), assuming 1 cM/Mb: >5 Mb (≤10 gen), 1-5 Mb (10-50 gen),
+  # <1 Mb (>50 gen).
   roh:
     group_by: ["Site"]   # columns in indpopdata to summarize/compare ROH
     # Map-specific parameters for mean F_ROH per Site maps (when popdata coordinates exist)

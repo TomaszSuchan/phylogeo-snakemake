@@ -4,11 +4,22 @@
 library(data.table)
 library(ggplot2)
 library(dplyr)
+library(tidyr)
+
+roh_utils <- tryCatch({
+  file.path(dirname(normalizePath(snakemake@script)), "roh_utils.R")
+}, error = function(e) "workflow/scripts/roh_utils.R")
+if (file.exists(roh_utils)) {
+  source(roh_utils)
+} else {
+  source("workflow/scripts/roh_utils.R")
+}
 
 roh_file <- snakemake@input[["roh"]]
 indpopdata_file <- snakemake@input[["indpopdata"]]
 per_ind_file <- snakemake@input[["per_ind"]]
 output_froh <- snakemake@output[["froh"]]
+output_froh_class <- snakemake@output[["froh_class_panel"]]
 output_nseg <- snakemake@output[["nseg"]]
 output_class <- snakemake@output[["roh_class"]]
 group_col <- snakemake@params[["group_col"]]
@@ -58,6 +69,44 @@ p_group_froh <- ggplot(per_ind, aes(x = .data[[group_col]], y = F_ROH, fill = .d
   )
 ggsave(output_froh, p_group_froh, width = plot_width, height = 6)
 
+froh_class_cols <- paste0("F_ROH_", ROH_CLASS_LEVELS)
+froh_class_cols <- froh_class_cols[froh_class_cols %in% colnames(per_ind)]
+if (length(froh_class_cols) == 0) {
+  stop(
+    "Per-individual ROH summary is missing per-class F_ROH columns (",
+    paste(paste0("F_ROH_", ROH_CLASS_LEVELS), collapse = ", "),
+    "). Re-run roh_summary after updating the workflow."
+  )
+}
+
+froh_by_class_long <- per_ind %>%
+  filter(!is.na(.data[[group_col]])) %>%
+  select(Sample, all_of(group_col), all_of(froh_class_cols)) %>%
+  pivot_longer(
+    cols = all_of(froh_class_cols),
+    names_to = "ROH_class",
+    names_prefix = "F_ROH_",
+    values_to = "F_ROH"
+  ) %>%
+  mutate(ROH_class = factor(ROH_class, levels = ROH_CLASS_LEVELS))
+
+p_group_froh_class <- ggplot(
+  froh_by_class_long,
+  aes(x = .data[[group_col]], y = F_ROH, fill = .data[[group_col]])
+) +
+  geom_boxplot(alpha = 0.7) +
+  geom_jitter(width = 0.2, alpha = 0.5) +
+  facet_wrap(~ ROH_class, nrow = 1, scales = "free_x") +
+  labs(x = group_col, y = "F_ROH", caption = ROH_LENGTH_CLASS_CAPTION) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "none",
+    strip.text = element_text(size = 10, face = "bold"),
+    plot.caption = element_text(size = 8, hjust = 0)
+  )
+ggsave(output_froh_class, p_group_froh_class, width = max(12, n_groups * 2.4), height = 5.5)
+
 p_group_nseg <- ggplot(per_ind, aes(x = .data[[group_col]], y = N_ROH_segments, fill = .data[[group_col]])) +
   geom_boxplot(alpha = 0.7) +
   geom_jitter(width = 0.2, alpha = 0.5) +
@@ -78,11 +127,7 @@ roh_data <- fread(roh_file, skip = 4, header = FALSE)
 colnames(roh_data) <- c("Type", "Sample", "Chromosome", "Start", "End", "Length_bp", "N_markers", "Quality")
 roh_data <- roh_data[Type == "RG", ]
 roh_data$Length_Mb <- as.numeric(roh_data$Length_bp) / 1e6
-roh_data$ROH_class <- case_when(
-  roh_data$Length_Mb < 1 ~ "Short (<1 Mb)",
-  roh_data$Length_Mb >= 1 & roh_data$Length_Mb < 5 ~ "Medium (1-5 Mb)",
-  roh_data$Length_Mb >= 5 ~ "Long (>5 Mb)"
-)
+roh_data$ROH_class <- factor(assign_roh_class(roh_data$Length_Mb), levels = ROH_CLASS_LEVELS)
 
 indpopdata <- fread(indpopdata_file, header = TRUE)
 ind_col <- if ("Ind" %in% colnames(indpopdata)) "Ind" else "Sample"
@@ -99,22 +144,17 @@ roh_class_summary <- roh_data %>%
 
 p_group_class <- ggplot(roh_class_summary, aes(x = .data[[group_col]], y = N_segments, fill = ROH_class)) +
   geom_bar(stat = "identity", position = "stack", color = "black") +
-  scale_fill_manual(
-    values = c(
-      "Short (<1 Mb)" = "lightblue",
-      "Medium (1-5 Mb)" = "lightgreen",
-      "Long (>5 Mb)" = "salmon"
-    ),
-    name = "ROH Class"
-  ) +
+  scale_fill_manual(values = ROH_CLASS_FILL, name = "ROH Class") +
   labs(
     title = paste("ROH Segments by Length Class and", group_col),
     x = group_col,
-    y = "Number of Segments"
+    y = "Number of Segments",
+    caption = ROH_LENGTH_CLASS_CAPTION
   ) +
   theme_minimal() +
   theme(
     plot.title = element_text(hjust = 0.5),
+    plot.caption = element_text(size = 8, hjust = 0),
     axis.text.x = element_text(angle = 45, hjust = 1)
   )
 ggsave(

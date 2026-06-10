@@ -8,6 +8,15 @@ library(dplyr)
 library(tidyr)
 library(multcomp)
 
+roh_utils <- tryCatch({
+  file.path(dirname(normalizePath(snakemake@script)), "roh_utils.R")
+}, error = function(e) "workflow/scripts/roh_utils.R")
+if (file.exists(roh_utils)) {
+  source(roh_utils)
+} else {
+  source("workflow/scripts/roh_utils.R")
+}
+
 # Snakemake inputs/outputs
 roh_file <- snakemake@input[["roh"]]
 indpopdata_file <- snakemake@input[["indpopdata"]]
@@ -112,15 +121,9 @@ cat("  Estimated genome size (from ROH data):", genome_size / 1e6, "Mb\n")
 
 per_ind$F_ROH <- per_ind$Total_ROH_length_bp / genome_size
 
-# Categorize ROH by length classes
-# Short: < 1 Mb (ancient inbreeding)
-# Medium: 1-5 Mb (intermediate)
-# Long: > 5 Mb (recent inbreeding)
-roh_data$ROH_class <- case_when(
-  roh_data$Length_Mb < 1 ~ "Short (<1 Mb)",
-  roh_data$Length_Mb >= 1 & roh_data$Length_Mb < 5 ~ "Medium (1-5 Mb)",
-  roh_data$Length_Mb >= 5 ~ "Long (>5 Mb)"
-)
+roh_data$ROH_class <- factor(assign_roh_class(roh_data$Length_Mb), levels = ROH_CLASS_LEVELS)
+cat("  ROH length classes use G = 100/(2 × cM) at ", ROH_RECOMBINATION_RATE_CM_PER_MB,
+    " cM/Mb: ", paste(ROH_CLASS_LEVELS, collapse = "; "), "\n", sep = "")
 
 # Count ROH segments by class per individual
 roh_by_class <- roh_data %>%
@@ -145,6 +148,14 @@ class_cols <- grep("N_segments_|Total_length_Mb_", colnames(per_ind), value = TR
 if (length(class_cols) > 0) {
   for (col in class_cols) {
     per_ind[[col]][is.na(per_ind[[col]])] <- 0
+  }
+}
+
+for (cls in ROH_CLASS_LEVELS) {
+  len_col <- paste0("Total_length_Mb_", cls)
+  froh_col <- paste0("F_ROH_", cls)
+  if (len_col %in% colnames(per_ind)) {
+    per_ind[[froh_col]] <- per_ind[[len_col]] * 1e6 / genome_size
   }
 }
 
@@ -266,19 +277,48 @@ ggsave(snakemake@output[["roh_segment_length_distribution"]], p4, width = 8, hei
 # Plot 5: ROH by length class
 p5 <- ggplot(roh_data, aes(x = ROH_class, fill = ROH_class)) +
   geom_bar(color = "black") +
-  scale_fill_manual(values = c("Short (<1 Mb)" = "lightblue", 
-                                "Medium (1-5 Mb)" = "lightgreen", 
-                                "Long (>5 Mb)" = "salmon")) +
+  scale_fill_manual(values = ROH_CLASS_FILL) +
+  scale_x_discrete(limits = ROH_CLASS_LEVELS) +
   labs(
     title = "ROH Segments by Length Class",
     x = "ROH Length Class",
-    y = "Number of Segments"
+    y = "Number of Segments",
+    caption = ROH_LENGTH_CLASS_CAPTION
   ) +
   theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5),
-        legend.position = "none")
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    plot.caption = element_text(size = 8, hjust = 0),
+    legend.position = "none",
+    axis.text.x = element_text(angle = 30, hjust = 1)
+  )
 
-ggsave(snakemake@output[["roh_by_class"]], p5, width = 8, height = 6)
+ggsave(snakemake@output[["roh_by_class"]], p5, width = 10, height = 6.5)
+
+froh_class_cols <- paste0("F_ROH_", ROH_CLASS_LEVELS)
+froh_class_cols <- froh_class_cols[froh_class_cols %in% colnames(per_ind)]
+froh_by_class_long <- per_ind %>%
+  select(Sample, all_of(froh_class_cols)) %>%
+  pivot_longer(
+    cols = all_of(froh_class_cols),
+    names_to = "ROH_class",
+    names_prefix = "F_ROH_",
+    values_to = "F_ROH"
+  ) %>%
+  mutate(ROH_class = factor(ROH_class, levels = ROH_CLASS_LEVELS))
+
+p_froh_class_panel <- ggplot(froh_by_class_long, aes(x = F_ROH)) +
+  geom_histogram(bins = 30, fill = "steelblue", alpha = 0.7, color = "black") +
+  facet_wrap(~ ROH_class, nrow = 1, scales = "free_y") +
+  labs(
+    x = "F_ROH",
+    y = "Number of Individuals",
+    caption = ROH_LENGTH_CLASS_CAPTION
+  ) +
+  theme_minimal() +
+  theme(plot.caption = element_text(size = 8, hjust = 0))
+
+ggsave(snakemake@output[["froh_by_class_panel"]], p_froh_class_panel, width = 12, height = 4.5)
 
 # Plot 6: F_ROH vs Number of ROH segments
 p6 <- ggplot(per_ind, aes(x = N_ROH_segments, y = F_ROH)) +
@@ -294,7 +334,7 @@ p6 <- ggplot(per_ind, aes(x = N_ROH_segments, y = F_ROH)) +
 
 ggsave(snakemake@output[["froh_vs_n_segments"]], p6, width = 8, height = 6)
 
-cat("  Created 6 summary plot files\n")
+cat("  Created 7 summary plot files\n")
 cat("\n")
 
 # ==============================================================================

@@ -1008,7 +1008,12 @@ if analyses.get("roh", False):
         f"ROH calling requires. The number and total length "
         f"of ROH were summarised per individual and compared across {group_str} "
         f"groups, and the proportion of the genome falling within ROH (F_ROH) was "
-        f"used as a genomic estimate of the individual inbreeding coefficient."
+        f"used as a genomic estimate of the individual inbreeding coefficient. "
+        f"ROH segments were classified by physical length as long (>5 Mb), "
+        f"medium (1-5 Mb), or short (<1 Mb), corresponding approximately to "
+        f"≤10, 10-50, and >50 generations since common ancestry under "
+        f"G = 100/(2 × cM) with cM estimated from megabases assuming a "
+        f"uniform recombination rate of 1 cM/Mb."
     )
 
 if rel_parts:

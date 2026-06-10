@@ -418,11 +418,13 @@ def _roh_summary_plot_paths(project, group_by_cols):
         f"{plot_dir}/{project}.total_roh_length_histogram.pdf",
         f"{plot_dir}/{project}.roh_segment_length_distribution.pdf",
         f"{plot_dir}/{project}.roh_by_class.pdf",
+        f"{plot_dir}/{project}.froh_per_class_panel.pdf",
         f"{plot_dir}/{project}.froh_vs_n_segments.pdf",
     ]
     for col in group_by_cols:
         paths.extend([
             f"{plot_dir}/{project}.froh_by_{col}.pdf",
+            f"{plot_dir}/{project}.froh_by_{col}_per_class_panel.pdf",
             f"{plot_dir}/{project}.n_roh_segments_by_{col}.pdf",
             f"{plot_dir}/{project}.roh_class_by_{col}.pdf",
         ])
