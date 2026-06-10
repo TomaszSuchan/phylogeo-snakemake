@@ -6,7 +6,7 @@ Sources used (all filled in automatically):
   - snakemake.params.parameters – every config parameter
   - data/mainparams             – STRUCTURE BURNIN / NUMREPS
   - vcf_stats.txt               – variant count, RAD-loci count, sample count
-  - depth_summary.txt           – sequencing depth summaries
+  - depth_summary.txt (filtered and biallelic) – sequencing depth summaries
   - workflow/envs/*.yaml        – software versions
 
 The text is intentionally explicit and explains what each method does, so
@@ -161,7 +161,6 @@ envs_dir = snakemake.params.envs_dir
 
 mainparams = parse_mainparams(snakemake.input.mainparams)
 vcf_stats  = parse_vcf_stats(snakemake.input.vcf_stats)        # unlinked biallelic (thinned)
-depth_stats = parse_depth_summary(snakemake.input.depth_summary)
 versions   = parse_versions(envs_dir)
 
 # Per-dataset summary stats (counts + mean per-individual missingness).
@@ -177,9 +176,6 @@ n_snps     = vcf_stats.get("variants",      "[N_SNPS]")
 n_loci     = vcf_stats.get("rad_fragments", "[N_RAD_LOCI]")
 n_samples  = vcf_stats.get("samples",       "[N_SAMPLES]")
 n_snps_biallelic = vcf_stats_biallelic.get("variants", "[N_SNPS]")
-overall_depth = depth_stats.get("overall_mean_depth", "[MEAN_DEPTH]")
-ind_median_depth = depth_stats.get("individual_median_depth", "[IND_MEDIAN_DEPTH]")
-site_median_depth = depth_stats.get("site_median_depth", "[SITE_MEDIAN_DEPTH]")
 
 # ── dataset label from thinning strategy ─────────────────────────────────────
 
@@ -265,9 +261,8 @@ if thinning_strat == "thinning":
         f"independent. Because methods such as STRUCTURE, ADMIXTURE and PCA assume "
         f"that markers are effectively unlinked, the data were thinned to a single "
         f"SNP per RAD locus by retaining, within each locus, {thin_desc}. "
-        f"This produced the **unlinked biallelic SNP dataset** "
-        f"({n_snps} SNPs across {n_loci} RAD loci; {n_samples} individuals), "
-        f"which was used for all analyses that assume linkage equilibrium."
+        f"This produced the **unlinked biallelic SNP dataset**, which was used for "
+        f"all analyses that assume linkage equilibrium."
     )
 elif thinning_strat == "ld_pruning":
     filt_parts.append(
@@ -313,6 +308,17 @@ def _fmt_pct(value):
     return f"{100 * value:.1f}%" if value is not None else "an unrecorded fraction"
 
 
+def _fmt_depth_triplet(depth):
+    overall = depth.get("overall_mean_depth", "[MEAN_DEPTH]")
+    ind_med = depth.get("individual_median_depth", "[IND_MEDIAN_DEPTH]")
+    site_med = depth.get("site_median_depth", "[SITE_MEDIAN_DEPTH]")
+    return (
+        f"mean depth across called genotypes was {overall}, with a median "
+        f"individual mean depth of {ind_med} and a median site mean depth of "
+        f"{site_med}"
+    )
+
+
 ds_clauses = [
     f"an all-SNP dataset (all variant sites passing sample, relatedness and "
     f"missingness filtering; {_fmt_int(vcf_stats_filtered.get('variants', '[NA]'))} SNPs; "
@@ -326,16 +332,16 @@ ds_clauses = [
 
 filt_parts.append(
     f"In summary, across the {n_samples} retained individuals the workflow produced "
-    f"the following genotype datasets: " + "; ".join(ds_clauses) + "."
+    f"the following genotype datasets, all spanning {_fmt_int(n_loci)} RAD loci: "
+    + "; ".join(ds_clauses) + "."
 )
 
 filt_parts.append(
-    f"Sequencing depth was summarised from the final analysis VCF with vcftools "
+    f"Sequencing depth was summarised with vcftools "
     f"version {v(versions,'vcftools')} (Danecek et al. 2011), using --depth to "
     f"estimate mean read depth per individual and --site-mean-depth to estimate "
-    f"mean read depth per SNP. In the final {dataset_label}, the mean depth across "
-    f"called genotypes was {overall_depth}, with a median individual mean depth of "
-    f"{ind_median_depth} and a median site mean depth of {site_median_depth}. "
+    f"mean read depth per SNP. In the all-SNP dataset, {_fmt_depth_triplet(depth_filtered)}. "
+    f"In the biallelic SNP dataset, {_fmt_depth_triplet(depth_biallelic)}."
 )
 
 sections.append(("Data filtering and dataset construction",

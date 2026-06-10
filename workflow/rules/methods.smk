@@ -2,9 +2,9 @@
 Rule to generate a manuscript-ready methods.md for each project.
 
 Reads the project config (analyses enabled/disabled, all parameters),
-data/mainparams (STRUCTURE BURNIN/NUMREPS), the thinned-VCF stats file
-(SNP and RAD-loci counts), the thinned-VCF depth summary, and
-workflow/envs/*.yaml (software versions).
+data/mainparams (STRUCTURE BURNIN/NUMREPS), VCF stats and depth summaries
+for the filtered, biallelic, and thinned datasets, and workflow/envs/*.yaml
+(software versions).
 
 Only sections for enabled analyses are emitted. All parameter values and
 software versions are filled in automatically. Best-K values are not
@@ -26,7 +26,6 @@ def _methods_inputs(wildcards):
         "samples_to_keep": f"{base}/filtered_data/{proj}.samples_to_keep.txt",
         # Analysis (unlinked biallelic / thinned) dataset
         "vcf_stats": f"{base}/stats_vcf/thinned/{proj}.biallelic_snps.vcf_stats.txt",
-        "depth_summary": f"{base}/stats_vcf/thinned/{proj}.biallelic_snps.depth_summary.txt",
         "imiss_thinned": f"{base}/stats_vcf/thinned/{proj}.biallelic_snps.imiss",
         # All-SNP (filtered) dataset
         "vcf_stats_filtered": f"{base}/stats_vcf/filtered/{proj}.filtered.vcf_stats.txt",
