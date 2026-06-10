@@ -53,7 +53,7 @@ git submodule update --init --recursive
 ## Inputs
 
 - **Main configuration**: pass explicitly with `--configfile` (e.g. `config/config.yaml`)
-- **Per-project ipyrad output**: `<ipyrad_prefix>.vcf` or `<ipyrad_prefix>.vcf.gz`, and (for pixy) `<ipyrad_prefix>.loci`  
+- **Per-project ipyrad output**: `<ipyrad_prefix>.vcf` or `<ipyrad_prefix>.vcf.gz`, and (for pixy, genome_scan, and neighbornet) `<ipyrad_prefix>.loci`  
   - `ipyrad_prefix` is defined per project in `config/config.yaml` under `config["projects"][project_name]["ipyrad_prefix"]`
 - **Population map (individual → population)**: `data/popmap.txt`
 - **Population metadata with coordinates** (optional but required for map-based analyses): `data/popdata.txt`
@@ -291,7 +291,7 @@ After running the analysis, inspect the per-parameter and posterior-probability 
 
 **VCF2PCACluster** performs PCA with its own internal SNP filtering and optional clustering/kinship correction, using the final analysis VCF as input. It starts from the main downstream SNP set and then applies its own internal `MAF`, missingness, heterozygosity, and HWE filters. `vcf2pcacluster.PCnum` sets the number of PCs, `cluster_method` controls optional clustering (`Kmean`, `EM`, `DBSCAN`, or `None`), and `SNP_filtering` is separate from the workflow's main preprocessing filters, making it useful for method-specific sensitivity analyses. `KinshipMethod` selects the tool's kinship correction estimator; keep the default unless you know which estimator fits your design.
 
-**Euclidean genetic distance** computes pairwise distances between individuals from the PLINK export of the final analysis VCF by treating biallelic genotypes as alternate-allele dosages (`0`, `1`, `2`) and mean-imputing missing values per SNP. This matrix is the downstream input for PCoA and MAPI.
+**Euclidean genetic distance** (and the Kosman-Leonard and average-squared distances) is computed from the PLINK export of the **un-thinned biallelic SNP set** (`biallelic_snps.vcf.gz`), treating genotypes as alternate-allele dosages (`0`, `1`, `2`) and mean-imputing missing values per SNP. Distance-based methods do not assume unlinked markers, so the full biallelic SNP set is used instead of the thinned set — this retains more data and makes the result deterministic (the thinned set depends on random tie-breaking). The set still carries the `MAC > 1` (and optional `maf`) filtering from `select_biallelic_snps`. This matrix is the downstream input for PCoA and MAPI.
 
 **PCoA** performs principal coordinates analysis on the Euclidean distance matrix and reuses the same plotting system as PCAone for colored, labeled, missingness-based, and faceted ordinations. `pca_plot.pc_max` controls plotted axis combinations, `color_by` selects metadata columns for colouring/faceting, and `pca_colors` supplies categorical colours.
 
@@ -314,7 +314,7 @@ After running the analysis, inspect the per-parameter and posterior-probability 
 
 ### Phylogenetic and historical inference
 
-**NeighborNet (phangorn + tanggle)** infers a split network from the p-distance matrix using `phangorn::neighborNet` and plots it with `tanggle`. p-distance is computed from diploid biallelic dosages (`0`, `1`, `2`) as the pairwise mean of `|g_i - g_j| / 2` over loci where both individuals are non-missing. `neighbornet.color_by` selects metadata columns used to colour tips, `neigbournet_colors` can provide a manual palette, and `width`, `height`, and `dpi` set plot dimensions/resolution.
+**NeighborNet (phangorn)** infers a split network from the p-distance matrix using `phangorn::neighborNet`. The p-distance here is a **true per-site distance** computed from the all-sites VCF (variant + invariant sites reconstructed from the ipyrad `.loci` file), as the pairwise mean of `|g_i - g_j| / 2` over biallelic and invariant sites genotyped in both individuals; counting invariant sites in the denominator makes the distance a genuine per-site value rather than a SNP-ascertainment-dependent one. Because it uses the reconstructed all-sites data, **NeighborNet requires the `.loci` file**. The network is drawn from phangorn's planar split-graph coordinates with `ggplot2` (so the split "boxes" close correctly), and phangorn's reference `plot.networx` figure is also written. `neighbornet.color_by` selects metadata columns used to colour tips, `neigbournet_colors` can provide a manual palette, and `width`, `height`, and `dpi` set plot dimensions/resolution.
 
 **IQ-TREE** performs maximum-likelihood phylogenetic inference from the ipyrad `.phy` alignment. `iqtree.model` sets the substitution model; `"MFP"` asks IQ-TREE ModelFinder Plus to choose one. `bootstraps` controls ultrafast bootstrap replicates, where more replicates improve support stability but increase runtime. Rooting uses `iqtree.outgroup` when provided (single sample or comma-separated sample set), otherwise midpoint rooting is used automatically. `robust-phy` controls the workflow's robust-tree selection, and `support_threshold` is the minimum bootstrap support displayed on plotted trees.
 

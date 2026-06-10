@@ -49,6 +49,23 @@ rule calculate_stats_vcf_thinned:
     script:
         "../scripts/calculate_vcf_stats.py"
 
+# VCF statistics from the un-thinned biallelic SNP VCF (MAC>1, optional MAF)
+rule calculate_stats_vcf_biallelic:
+    input:
+        vcf = rules.select_biallelic_snps.output.biallelic_vcf
+    output:
+        stats = "results/{project}/stats_vcf/biallelic/{project}.biallelic_snps.vcf_stats.txt"
+    log:
+        "logs/{project}/calculate_stats_vcf_biallelic.log"
+    conda:
+        "../envs/python.yaml"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    script:
+        "../scripts/calculate_vcf_stats.py"
+
 # Sequencing depth statistics from original VCF (after user sample subset, before relatedness filtering)
 rule calculate_depth_vcf_original:
     input:

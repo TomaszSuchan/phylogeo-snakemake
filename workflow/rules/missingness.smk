@@ -78,6 +78,29 @@ rule calculate_missing_indv_filtered:
                  --out {params.out_prefix} &> {log}
         """
 
+# Per-individual missingness from the un-thinned biallelic SNP VCF (for methods summary)
+rule calculate_missing_indv_biallelic:
+    input:
+        vcf = rules.select_biallelic_snps.output.biallelic_vcf
+    output:
+        imiss = "results/{project}/stats_vcf/biallelic/{project}.biallelic_snps.imiss"
+    log:
+        "logs/{project}/calculate_missing_indv_biallelic.log"
+    params:
+        out_prefix = lambda wildcards: f"results/{wildcards.project}/stats_vcf/biallelic/{wildcards.project}.biallelic_snps"
+    conda:
+        "../envs/vcftools.yaml"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    shell:
+        """
+        vcftools --gzvcf {input.vcf} \
+                 --missing-indv \
+                 --out {params.out_prefix} &> {log}
+        """
+
 rule calculate_missing_loci_filtered:
     input:
         vcf = rules.subset_vcf_after_relatedness.output.vcf

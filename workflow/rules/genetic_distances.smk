@@ -10,9 +10,9 @@ rule kosman_distance:
     Implemented in Python with bed-reader to avoid vcfR/genind OOM on large VCFs.
     """
     input:
-        bed=rules.vcf_to_plink.output.bed,
-        bim=rules.vcf_to_plink.output.bim,
-        fam=rules.vcf_to_plink.output.fam,
+        bed=rules.vcf_to_plink_biallelic.output.bed,
+        bim=rules.vcf_to_plink_biallelic.output.bim,
+        fam=rules.vcf_to_plink_biallelic.output.fam,
     output:
         dist="results/{project}/gen_dist/{project}.kosman_distance.tsv",
     conda:
@@ -37,9 +37,9 @@ rule euclidean_distance:
     by preprocessing.
     """
     input:
-        bed=rules.vcf_to_plink.output.bed,
-        bim=rules.vcf_to_plink.output.bim,
-        fam=rules.vcf_to_plink.output.fam,
+        bed=rules.vcf_to_plink_biallelic.output.bed,
+        bim=rules.vcf_to_plink_biallelic.output.bim,
+        fam=rules.vcf_to_plink_biallelic.output.fam,
     output:
         dist="results/{project}/gen_dist/{project}.euclidean_distance.tsv",
     conda:
@@ -58,14 +58,15 @@ rule euclidean_distance:
 
 rule p_distance:
     """
-    Calculate p-distance (normalized Hamming distance) from PLINK genotypes.
-    For diploid biallelic dosages (0, 1, 2), per-locus dissimilarity is
-    |g_i - g_j| / 2, averaged over loci where both samples are non-missing.
+    True per-site p-distance from the all-sites (variant + invariant) VCF.
+    Computed over biallelic + invariant sites as the pairwise mean of
+    |g_i - g_j| / 2 (diploid dosages 0/1/2), where invariant sites contribute 0
+    to the numerator and 1 to the denominator, normalising the SNP dissimilarity
+    into a true per-site distance. Uses the same reconstructed all-sites VCF as
+    pixy, so this analysis requires the ipyrad .loci file.
     """
     input:
-        bed=rules.vcf_to_plink.output.bed,
-        bim=rules.vcf_to_plink.output.bim,
-        fam=rules.vcf_to_plink.output.fam,
+        vcf=rules.prepare_invariant_vcf_gz.output.vcf,
     output:
         dist="results/{project}/gen_dist/{project}.p_distance.tsv",
     conda:
@@ -90,9 +91,9 @@ rule average_squared_genetic_difference:
       diffs_ij = similarity_ii + similarity_jj - 2 * similarity_ij
     """
     input:
-        bed=rules.vcf_to_plink.output.bed,
-        bim=rules.vcf_to_plink.output.bim,
-        fam=rules.vcf_to_plink.output.fam,
+        bed=rules.vcf_to_plink_biallelic.output.bed,
+        bim=rules.vcf_to_plink_biallelic.output.bim,
+        fam=rules.vcf_to_plink_biallelic.output.fam,
     output:
         dist="results/{project}/gen_dist/{project}.avgsquared_distance.tsv",
     conda:

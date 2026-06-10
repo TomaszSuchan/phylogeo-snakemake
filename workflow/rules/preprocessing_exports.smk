@@ -29,6 +29,39 @@ rule vcf_to_plink:
               --double-id &> {log}
         """
 
+# Rule to convert the un-thinned biallelic SNP VCF to PLINK format.
+# Used by the genetic-distance analyses (Euclidean/Kosman/avg-squared), which
+# do not assume unlinked markers and benefit from the full biallelic SNP set
+# rather than the one-SNP-per-locus thinned set. Filtering is whatever
+# select_biallelic_snps applied (MAC>1 always; MAF only if maf>0).
+rule vcf_to_plink_biallelic:
+    input:
+        vcf = rules.select_biallelic_snps.output.biallelic_vcf
+    output:
+        bed = "results/{project}/filtered_data/{project}.biallelic_snps.bed",
+        bim = "results/{project}/filtered_data/{project}.biallelic_snps.bim",
+        fam = "results/{project}/filtered_data/{project}.biallelic_snps.fam"
+    log:
+        "logs/{project}/vcf_to_plink_biallelic.log"
+    benchmark:
+        "benchmarks/{project}/vcf_to_plink_biallelic.txt"
+    params:
+        output_prefix = lambda wildcards: f"results/{wildcards.project}/filtered_data/{wildcards.project}.biallelic_snps"
+    conda:
+        "../envs/plink.yaml"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    shell:
+        """
+        plink --vcf {input.vcf} \
+              --make-bed \
+              --out {params.output_prefix} \
+              --allow-extra-chr 0 \
+              --double-id &> {log}
+        """
+
 # Rule to convert filtered VCF to STRUCTURE format
 rule vcf_to_structure:
     input:

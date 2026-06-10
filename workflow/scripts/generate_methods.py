@@ -86,6 +86,27 @@ def parse_depth_summary(path):
     return result
 
 
+def parse_imiss(path):
+    """Mean per-individual missingness (F_MISS) from a vcftools .imiss file."""
+    try:
+        with open(path) as fh:
+            header = fh.readline().rstrip("\n").split("\t")
+            if "F_MISS" not in header:
+                return None
+            idx = header.index("F_MISS")
+            vals = []
+            for line in fh:
+                parts = line.rstrip("\n").split("\t")
+                if len(parts) > idx:
+                    try:
+                        vals.append(float(parts[idx]))
+                    except ValueError:
+                        pass
+        return sum(vals) / len(vals) if vals else None
+    except (FileNotFoundError, OSError):
+        return None
+
+
 def parse_versions(envs_dir):
     """
     Scan all *.yaml files in envs_dir and return {package_name_lower: version}.
@@ -139,13 +160,21 @@ project  = snakemake.params.project
 envs_dir = snakemake.params.envs_dir
 
 mainparams = parse_mainparams(snakemake.input.mainparams)
-vcf_stats  = parse_vcf_stats(snakemake.input.vcf_stats)
+vcf_stats  = parse_vcf_stats(snakemake.input.vcf_stats)        # unlinked biallelic (thinned)
 depth_stats = parse_depth_summary(snakemake.input.depth_summary)
 versions   = parse_versions(envs_dir)
+
+# Per-dataset summary stats (counts + mean per-individual missingness).
+vcf_stats_filtered  = parse_vcf_stats(snakemake.input.vcf_stats_filtered)
+vcf_stats_biallelic = parse_vcf_stats(snakemake.input.vcf_stats_biallelic)
+imiss_thinned   = parse_imiss(snakemake.input.imiss_thinned)
+imiss_filtered  = parse_imiss(snakemake.input.imiss_filtered)
+imiss_biallelic = parse_imiss(snakemake.input.imiss_biallelic)
 
 n_snps     = vcf_stats.get("variants",      "[N_SNPS]")
 n_loci     = vcf_stats.get("rad_fragments", "[N_RAD_LOCI]")
 n_samples  = vcf_stats.get("samples",       "[N_SAMPLES]")
+n_snps_biallelic = vcf_stats_biallelic.get("variants", "[N_SNPS]")
 overall_depth = depth_stats.get("overall_mean_depth", "[MEAN_DEPTH]")
 ind_median_depth = depth_stats.get("individual_median_depth", "[IND_MEDIAN_DEPTH]")
 site_median_depth = depth_stats.get("site_median_depth", "[SITE_MEDIAN_DEPTH]")
@@ -269,6 +298,34 @@ if analyses.get("pixy", False):
         f"invariant and rare sites that pixy (Korunes & Samuk 2021) requires for "
         f"unbiased estimation."
     )
+
+# Dataset summary: SNP/site counts and mean per-individual missingness per dataset.
+def _fmt_int(value):
+    try:
+        return f"{int(value):,}"
+    except (ValueError, TypeError):
+        return str(value)
+
+
+def _fmt_pct(value):
+    return f"{100 * value:.1f}%" if value is not None else "an unrecorded fraction"
+
+
+ds_clauses = [
+    f"an all-SNP dataset (all variant sites passing sample, relatedness and "
+    f"missingness filtering; {_fmt_int(vcf_stats_filtered.get('variants', '[NA]'))} SNPs; "
+    f"mean per-individual missingness {_fmt_pct(imiss_filtered)})",
+    f"a biallelic SNP dataset (biallelic SNPs with MAC > 1; "
+    f"{_fmt_int(vcf_stats_biallelic.get('variants', '[NA]'))} SNPs; "
+    f"{_fmt_pct(imiss_biallelic)})",
+    f"the {dataset_label} used for most analyses "
+    f"({_fmt_int(n_snps)} SNPs across {_fmt_int(n_loci)} RAD loci; {_fmt_pct(imiss_thinned)})",
+]
+
+filt_parts.append(
+    f"In summary, across the {n_samples} retained individuals the workflow produced "
+    f"the following genotype datasets: " + "; ".join(ds_clauses) + "."
+)
 
 filt_parts.append(
     f"Sequencing depth was summarised from the final analysis VCF with vcftools "
@@ -723,19 +780,25 @@ if analyses.get("gen_dist", False):
     dist_parts.append(
         f"To summarise overall genetic similarity among individuals independently "
         f"of any population model, four complementary pairwise genetic distance "
-        f"matrices were computed from the {dataset_label} ({n_snps} SNPs, "
-        f"{n_samples} individuals) using custom Python scripts that read PLINK "
-        f"binary genotype files via the bed-reader library: "
+        f"matrices were computed with custom Python scripts. Because distance-based "
+        f"methods do not assume that markers are unlinked, three dosage-based "
+        f"distances were calculated from the full (un-thinned) biallelic SNP dataset "
+        f"({n_snps_biallelic} SNPs, {n_samples} individuals), read from PLINK binary "
+        f"files via the bed-reader library: "
         f"(i) the Kosman-Leonard distance (Kosman & Leonard 2005), a distance "
         f"designed for diploid codominant markers that scores heterozygotes as "
         f"intermediate between the two homozygotes; "
         f"(ii) the Euclidean distance between per-SNP allele-dosage vectors "
         f"(coded 0, 1, 2 for the number of copies of the alternate allele), with "
-        f"missing genotypes replaced by the per-SNP mean; "
-        f"(iii) the p-distance, the proportion of allelic differences between two "
-        f"individuals averaged over all loci scored in both; and "
-        f"(iv) the average squared genotype difference (the bed2diffs formulation "
-        f"used by EEMS), which underlies several landscape-genetic methods."
+        f"missing genotypes replaced by the per-SNP mean; and "
+        f"(iii) the average squared genotype difference (the bed2diffs formulation "
+        f"used by EEMS), which underlies several landscape-genetic methods. "
+        f"In addition, (iv) a true per-site p-distance was computed from the all-site "
+        f"dataset (variant and invariant sites reconstructed from the ipyrad .loci "
+        f"file) as the pairwise mean of |g_i - g_j| / 2 over biallelic and invariant "
+        f"sites scored in both individuals; counting invariant sites in the "
+        f"denominator yields a per-site distance whose magnitude does not depend on "
+        f"SNP ascertainment."
     )
 
 if analyses.get("neighbornet", False):
@@ -745,22 +808,23 @@ if analyses.get("neighbornet", False):
     # back to it; otherwise describe its computation here so this paragraph is
     # self-contained.
     if analyses.get("gen_dist", False):
-        pdist_clause = "the p-distance matrix described above"
+        pdist_clause = "the per-site p-distance matrix described above"
     else:
         pdist_clause = (
-            f"a pairwise p-distance matrix, computed from the {dataset_label} "
-            f"({n_snps} SNPs, {n_samples} individuals) with a custom Python script "
-            f"reading PLINK binary genotype files via the bed-reader library as the "
-            f"proportion of allelic differences between two individuals averaged "
-            f"over all loci genotyped in both"
+            f"a true per-site p-distance matrix, computed with a custom Python script "
+            f"from the all-site dataset (variant and invariant sites reconstructed "
+            f"from the ipyrad .loci file; {n_samples} individuals) as the pairwise "
+            f"mean of |g_i - g_j| / 2 over biallelic and invariant sites scored in "
+            f"both individuals"
         )
     dist_parts.append(
         f"To visualise relationships among individuals while allowing for "
         f"conflicting or reticulate signal (which a strictly bifurcating tree "
         f"cannot represent), a NeighborNet split network (Bryant & Moulton 2004) "
-        f"was constructed with the phangorn package (Schliep 2011) in R and drawn "
-        f"with the tanggle package, with tips coloured by {color_str}. The network "
-        f"was built from {pdist_clause}."
+        f"was constructed with the phangorn package (Schliep 2011) in R, with tips "
+        f"coloured by {color_str}. The network was built from {pdist_clause}, and "
+        f"drawn from phangorn's planar split-graph coordinates (ggplot2), alongside "
+        f"phangorn's reference plot.networx rendering."
     )
 
 if dist_parts:
