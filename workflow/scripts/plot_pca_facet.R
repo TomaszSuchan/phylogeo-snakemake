@@ -98,11 +98,7 @@ plot_pca_facet <- function(individuals, eigenvecs, eigenvals, popdata,
       geom_text(aes(label = Ind), size = 1, check_overlap = FALSE) +
       facet_grid(PC_Y_full ~ PC_X_full, scales = "free") +
       labs(x = NULL, y = NULL) +
-      theme_bw() +
-      theme(
-        strip.text = element_text(size = 9, face = "bold"),
-        strip.background = element_rect(fill = "gray90")
-      )
+      theme_bw()
 
   } else if (plot_type == "missing") {
     # Color by missing data rate
@@ -124,11 +120,7 @@ plot_pca_facet <- function(individuals, eigenvecs, eigenvals, popdata,
       facet_grid(PC_Y_full ~ PC_X_full, scales = "free") +
       labs(x = NULL, y = NULL) +
       theme_bw() +
-      theme(
-        strip.text = element_text(size = 9, face = "bold"),
-        strip.background = element_rect(fill = "gray90"),
-        legend.position = "right"
-      )
+      theme(legend.position = "right")
 
   } else {
     # Colored by population/metadata
@@ -138,11 +130,7 @@ plot_pca_facet <- function(individuals, eigenvecs, eigenvals, popdata,
         geom_point(size = 2, alpha = 0.7, pch = 21, fill = "gray80", color = "black") +
         facet_grid(PC_Y_full ~ PC_X_full, scales = "free") +
         labs(x = NULL, y = NULL) +
-        theme_bw() +
-        theme(
-          strip.text = element_text(size = 9, face = "bold"),
-          strip.background = element_rect(fill = "gray90")
-        )
+        theme_bw()
     } else {
       # Categorical coloring by population metadata
       ind_col <- colnames(popdata)[1]
@@ -188,11 +176,7 @@ plot_pca_facet <- function(individuals, eigenvecs, eigenvals, popdata,
         facet_grid(PC_Y_full ~ PC_X_full, scales = "free") +
         labs(x = NULL, y = NULL, fill = color_col) +
         theme_bw() +
-        theme(
-          strip.text = element_text(size = 9, face = "bold"),
-          strip.background = element_rect(fill = "gray90"),
-          legend.position = "right"
-        )
+        theme(legend.position = "right")
 
       if (!is.null(colors)) {
         p <- p + scale_fill_manual(values = colors)
