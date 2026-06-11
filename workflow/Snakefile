@@ -409,25 +409,41 @@ def _roh_group_by_columns(wildcards):
     return _roh_group_by_columns_from_params(params)
 
 
-def _roh_summary_plot_paths(project, group_by_cols):
-    """All ROH summary plot paths (fixed plots + group_by expansions)."""
-    plot_dir = f"results/{project}/roh/plots"
-    paths = [
-        f"{plot_dir}/{project}.froh_histogram.pdf",
-        f"{plot_dir}/{project}.n_roh_segments_histogram.pdf",
-        f"{plot_dir}/{project}.total_roh_length_histogram.pdf",
-        f"{plot_dir}/{project}.roh_segment_length_distribution.pdf",
-        f"{plot_dir}/{project}.roh_by_class.pdf",
-        f"{plot_dir}/{project}.froh_per_class_panel.pdf",
-        f"{plot_dir}/{project}.froh_vs_n_segments.pdf",
+def _roh_plot_artifacts(plot_dir, project, stem):
+    """PDF + ggplot RDS paths for one ROH plot stem."""
+    base = f"{plot_dir}/{project}.{stem}"
+    return [f"{base}.pdf", f"{base}.rds"]
+
+
+def _roh_plot_stems(group_by_cols):
+    """Plot filename stems for one ROH plots rule."""
+    stems = [
+        "froh_histogram",
+        "nroh_histogram",
+        "length_histogram",
+        "length_segments_histogram",
+        "froh_classes",
+        "froh_classes_histogram",
+        "nroh_classes",
+        "nroh_classes_histogram",
+        "froh_vs_nroh",
     ]
     for col in group_by_cols:
-        paths.extend([
-            f"{plot_dir}/{project}.froh_by_{col}.pdf",
-            f"{plot_dir}/{project}.froh_by_{col}_per_class_panel.pdf",
-            f"{plot_dir}/{project}.n_roh_segments_by_{col}.pdf",
-            f"{plot_dir}/{project}.roh_class_by_{col}.pdf",
+        stems.extend([
+            f"froh_by_{col}",
+            f"froh_by_{col}_classes",
+            f"nroh_by_{col}",
+            f"nroh_by_{col}_classes",
         ])
+    return stems
+
+
+def _roh_plot_paths(project, group_by_cols):
+    """All ROH plot paths (fixed plots + group_by expansions)."""
+    plot_dir = f"results/{project}/roh/plots"
+    paths = []
+    for stem in _roh_plot_stems(group_by_cols):
+        paths.extend(_roh_plot_artifacts(plot_dir, project, stem))
     return paths
 
 
@@ -573,6 +589,7 @@ include: "rules/genome_scan.smk"
 include: "rules/amova.smk"
 include: "rules/roh.smk"
 include: "rules/iqtree_trimal.smk"
+include: "rules/njtree.smk"
 include: "rules/orientagraph.smk"
 include: "rules/methods.smk"
 
@@ -1033,6 +1050,28 @@ def get_all_targets():
                             color_by=arrange_by,
                         )
                     )
+                    targets.extend(
+                        expand(
+                            "results/"
+                            + project
+                            + "/pixy/plots/"
+                            + project
+                            + ".{grouping}.pixy_pi_colored_by_{color_by}.pdf",
+                            grouping=pixy_groupings,
+                            color_by=arrange_by,
+                        )
+                    )
+                    targets.extend(
+                        expand(
+                            "results/"
+                            + project
+                            + "/pixy/plots/"
+                            + project
+                            + ".{grouping}.pixy_pi_colored_by_{color_by}.rds",
+                            grouping=pixy_groupings,
+                            color_by=arrange_by,
+                        )
+                    )
                 # π map uses Site-level summary only (merge to geographic Site coordinates)
                 if "Site" in pixy_groupings:
                     if _has_popdata(params):
@@ -1157,6 +1196,16 @@ def get_all_targets():
                 f"results/{project}/iqtree_robust/plots/{project}.tree_plot.rooted.rds",
                 f"results/{project}/iqtree_robust/{project}.iqtree_robust.unrooted.treefile",
                 f"results/{project}/iqtree_robust/{project}.iqtree_robust.rooted.treefile"
+            ])
+
+        # NJ tree targets
+        if analyses.get("njtree", False):
+            targets.extend([
+                f"results/{project}/njtree/{project}.njtree.treefile",
+                f"results/{project}/njtree/{project}.njtree.log",
+                f"results/{project}/njtree/plots/{project}.tree_plot.unrooted.pdf",
+                f"results/{project}/njtree/plots/{project}.tree_plot.unrooted.rds",
+                f"results/{project}/njtree/{project}.njtree.unrooted.treefile",
             ])
 
         # IQ-TREE after trimAl targets
@@ -1323,7 +1372,7 @@ def get_all_targets():
                 f"results/{project}/roh/{project}.roh_per_ind.txt",
                 f"results/{project}/roh/{project}.roh_stats_comparisons.txt",
             ])
-            targets.extend(_roh_summary_plot_paths(project, roh_groupings))
+            targets.extend(_roh_plot_paths(project, roh_groupings))
             if _has_popdata(params):
                 targets.extend([
                     f"results/{project}/roh/plots/{project}.roh_froh_map.pdf",
