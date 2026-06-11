@@ -926,6 +926,31 @@ for iq_key, label in [("iqtree",        ""),
         f"{supp_thr}% support are not shown. The tree was {root_clause} for display."
     )
 
+if analyses.get("njtree", False):
+    nj = p.get("njtree", {})
+    dist_model = nj.get("distance_model", "kim")
+    boots = int(nj.get("bootstraps", 1000))
+    supp_thr = nj.get("support_threshold", 70)
+    dist_name = (
+        "Kimura's two-parameter distance"
+        if dist_model == "kim"
+        else "Jukes-Cantor distance"
+    )
+    boot_clause = (
+        f"Branch support was estimated from {boots:,} bootstrap replicates; "
+        f"nodes with less than {supp_thr}% support are not shown."
+        if boots > 0
+        else "No bootstrap support values were computed."
+    )
+    phy_parts.append(
+        f"A neighbour-joining phylogeny was inferred from the concatenated "
+        f"RAD-seq sequence alignment exported by ipyrad using RapidNJ version "
+        f"{v(versions, 'rapidnj')} (Simonsen et al. 2008). Pairwise distances "
+        f"were computed under {dist_name}, and the tree was reconstructed with "
+        f"the neighbour-joining algorithm. {boot_clause} The tree was displayed "
+        f"unrooted."
+    )
+
 if analyses.get("fineradstructure", False):
     fr  = p.get("fineradstructure", {})
     cl  = fr.get("cluster", {})
@@ -1011,7 +1036,7 @@ if analyses.get("roh", False):
         f"used as a genomic estimate of the individual inbreeding coefficient. "
         f"ROH segments were classified by physical length as long (>5 Mb), "
         f"medium (1-5 Mb), or short (<1 Mb), corresponding approximately to "
-        f"≤10, 10-50, and >50 generations since common ancestry under "
+        f"<10, 10-50, and >50 generations since common ancestry under "
         f"G = 100/(2 × cM) with cM estimated from megabases assuming a "
         f"uniform recombination rate of 1 cM/Mb."
     )
@@ -1258,6 +1283,13 @@ if analyses.get("iqtree_trimal", False):
         "Capella-Gutiérrez, S., Silla-Martínez, J.M. & Gabaldón, T. (2009). "
         "trimAl: a tool for automated alignment trimming in large-scale phylogenetic "
         "studies. *Bioinformatics*, 25, 1972–1973."
+    )
+
+if analyses.get("njtree", False):
+    refs["rapidnj"] = (
+        "Simonsen, M., Mailund, T. & Pedersen, C.N.S. (2008). Rapid neighbour "
+        "joining. In *Algorithms in Bioinformatics* (WABI 2008), LNBI 5251, "
+        "113–122. Springer."
     )
 
 if analyses.get("fineradstructure", False):
