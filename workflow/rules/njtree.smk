@@ -1,3 +1,10 @@
+"""
+Neighbour-joining tree with rapidNJ from the ipyrad PHYLIP alignment.
+
+Requires {ipyrad_prefix}.phy in the ipyrad output directory. The workflow
+converts PHYLIP to FASTA internally because rapidNJ cannot read PHYLIP alignments.
+"""
+
 rule phy_to_fasta:
     input:
         phy=lambda wildcards: f"{config['projects'][wildcards.project]['ipyrad_prefix']}.phy",
@@ -25,7 +32,6 @@ rule njtree:
         "benchmarks/{project}/njtree.txt",
     params:
         distance_model=lambda wildcards: config["projects"][wildcards.project]["parameters"]["njtree"].get("distance_model", "kim"),
-        bootstraps=lambda wildcards: int(config["projects"][wildcards.project]["parameters"]["njtree"].get("bootstraps", 1000)),
         bootstrap_flag=lambda wildcards: (
             f"-b {int(config['projects'][wildcards.project]['parameters']['njtree'].get('bootstraps', 1000))}"
             if int(config["projects"][wildcards.project]["parameters"]["njtree"].get("bootstraps", 1000)) > 0

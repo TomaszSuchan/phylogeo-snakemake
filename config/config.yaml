@@ -99,7 +99,7 @@ parameters: &global_params
   # iqtree: Maximum-likelihood phylogeny from the ipyrad PHYLIP alignment.
   # iqtree_trimal: trimAl alignment trimming followed by IQ-TREE inference.
   # iqtree_robust: Robust IQ-TREE output selection based on support threshold.
-  # njtree: Neighbour-joining phylogeny (rapidNJ) from the ipyrad PHYLIP alignment.
+  # njtree: rapidNJ neighbour-joining tree from the ipyrad PHYLIP alignment (requires .phy file).
   # fineradstructure: RADpainter/fineRADstructure coancestry and clustering.
   # treemix: OrientAGraph historical population graph with migration edges from allele counts.
 
@@ -563,7 +563,8 @@ parameters: &global_params
     # - Newick: .iqtree.unrooted.treefile and .iqtree.rooted.treefile
 
   ## rapidNJ neighbour-joining parameters
-  # Neighbour-joining phylogeny from the ipyrad PHYLIP alignment (converted to FASTA).
+  # Alignment-based NJ from the ipyrad PHYLIP file ({ipyrad_prefix}.phy must exist).
+  # rapidNJ supports Kimura and Jukes-Cantor distance models plus bootstrap replicates.
   njtree:
     distance_model: kim    # jc (Jukes-Cantor) or kim (Kimura 2-parameter)
     bootstraps: 1000       # bootstrap replicates; set 0 to skip
@@ -726,7 +727,7 @@ projects:
       iqtree: false           # Maximum-likelihood phylogeny from the ipyrad PHYLIP alignment.
       iqtree_trimal: false    # trimAl alignment trimming followed by IQ-TREE inference.
       iqtree_robust: false    # Robust IQ-TREE output selection based on support threshold.
-      njtree: false           # Neighbour-joining phylogeny (rapidNJ) from the ipyrad PHYLIP alignment.
+      njtree: false           # rapidNJ neighbour-joining tree from ipyrad PHYLIP alignment (requires .phy).
       fineradstructure: false # RADpainter/fineRADstructure coancestry and clustering.
       treemix: false          # OrientAGraph historical population graph with migration edges.
       construct: false        # Spatial population structure model with conStruct.

@@ -6,20 +6,16 @@ library(ggtree)
 library(ggplot2)
 library(ape)
 
-ggsave_utils <- tryCatch(
-  file.path(dirname(normalizePath(snakemake@script)), "plot_ggsave_utils.R"),
-  error = function(e) "workflow/scripts/plot_ggsave_utils.R"
-)
-if (file.exists(ggsave_utils)) {
-  source(ggsave_utils)
-} else {
-  source("workflow/scripts/plot_ggsave_utils.R")
-}
-
 treefile <- snakemake@input[["treefile"]]
 support_threshold <- snakemake@params[["support_threshold"]]
+if (is.null(support_threshold)) {
+  support_threshold <- 0
+}
 
 add_support_labels <- function(plot_obj, tree_phylo, threshold) {
+  if (is.null(threshold) || is.na(threshold) || threshold <= 0) {
+    return(plot_obj)
+  }
   if (is.null(tree_phylo$node.label)) {
     return(plot_obj)
   }
@@ -58,7 +54,7 @@ p <- ggtree(tree, layout = "daylight") +
 p <- add_support_labels(p, tree, support_threshold)
 
 dims <- plot_dimensions(tree)
-ggsave_pdf(
+ggsave(
   snakemake@output[["unrooted_pdf"]],
   plot = p,
   width = dims$width,
@@ -72,6 +68,8 @@ write.tree(tree, file = snakemake@output[["unrooted_tree"]])
 cat("NJ tree plotting complete.\n")
 cat(sprintf("  Number of tips: %d\n", dims$n_tips))
 cat(sprintf("  Plot dimensions: %.1f x %.1f inches\n", dims$width, dims$height))
-cat(sprintf("  Support threshold: %.0f\n", support_threshold))
+if (!is.null(support_threshold) && !is.na(support_threshold) && support_threshold > 0) {
+  cat(sprintf("  Support threshold: %.0f\n", support_threshold))
+}
 cat(sprintf("  Unrooted PDF: %s\n", snakemake@output[["unrooted_pdf"]]))
 cat(sprintf("  Unrooted Newick: %s\n", snakemake@output[["unrooted_tree"]]))

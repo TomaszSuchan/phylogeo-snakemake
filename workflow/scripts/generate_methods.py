@@ -944,11 +944,11 @@ if analyses.get("njtree", False):
     )
     phy_parts.append(
         f"A neighbour-joining phylogeny was inferred from the concatenated "
-        f"RAD-seq sequence alignment exported by ipyrad using RapidNJ version "
-        f"{v(versions, 'rapidnj')} (Simonsen et al. 2008). Pairwise distances "
-        f"were computed under {dist_name}, and the tree was reconstructed with "
-        f"the neighbour-joining algorithm. {boot_clause} The tree was displayed "
-        f"unrooted."
+        f"RAD-seq sequence alignment exported by ipyrad (PHYLIP format) using "
+        f"RapidNJ version {v(versions, 'rapidnj')} (Simonsen et al. 2008). "
+        f"Pairwise distances were computed under {dist_name}, and the tree was "
+        f"reconstructed with the neighbour-joining algorithm. {boot_clause} "
+        f"The tree was displayed unrooted."
     )
 
 if analyses.get("fineradstructure", False):
