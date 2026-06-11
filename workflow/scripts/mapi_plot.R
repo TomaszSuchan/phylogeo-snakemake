@@ -14,6 +14,16 @@ on.exit({
   close(log_con)
 }, add = TRUE)
 
+ggsave_utils <- tryCatch(
+  file.path(dirname(normalizePath(snakemake@script)), "plot_ggsave_utils.R"),
+  error = function(e) "workflow/scripts/plot_ggsave_utils.R"
+)
+if (file.exists(ggsave_utils)) {
+  source(ggsave_utils)
+} else {
+  source("workflow/scripts/plot_ggsave_utils.R")
+}
+
 suppressPackageStartupMessages({
   library(sf)
   library(ggplot2)
@@ -405,7 +415,7 @@ if (nrow(mapi_results) > 0) {
       lower_tail_color = lower_tail_color
     )
 
-    ggsave(mapi_plot, plot = pl, width = width, height = height, dpi = dpi)
+    ggsave_pdf(mapi_plot, plot = pl, width = width, height = height, dpi = dpi)
     saveRDS(pl, file = mapi_plot_rds)
     cat("Plot saved to:", mapi_plot, "\n")
   }, error = function(e) {
@@ -413,7 +423,7 @@ if (nrow(mapi_results) > 0) {
     # Create minimal empty plot as placeholder
     pl_empty <- ggplot() +
       theme_void()
-    ggsave(mapi_plot, plot = pl_empty, width = width, height = height, dpi = dpi)
+    ggsave_pdf(mapi_plot, plot = pl_empty, width = width, height = height, dpi = dpi)
     saveRDS(pl_empty, file = mapi_plot_rds)
     cat("Empty plot created (plotting function failed)\n")
   })
@@ -421,7 +431,7 @@ if (nrow(mapi_results) > 0) {
   warning("No MAPI results to plot")
   pl_empty <- ggplot() +
     theme_void()
-  ggsave(mapi_plot, plot = pl_empty, width = width, height = height, dpi = dpi)
+  ggsave_pdf(mapi_plot, plot = pl_empty, width = width, height = height, dpi = dpi)
   saveRDS(pl_empty, file = mapi_plot_rds)
 }
 

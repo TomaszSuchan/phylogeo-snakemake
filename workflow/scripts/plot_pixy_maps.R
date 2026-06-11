@@ -153,13 +153,12 @@ message(sprintf("Plot dimensions: %.1f x %.1f inches @ %d dpi\n",
                 map_params$width, map_params$height, map_params$dpi))
 
 dir.create(dirname(output_pdf), recursive = TRUE, showWarnings = FALSE)
-ggsave(
+ggsave_pdf(
   filename = output_pdf,
   plot = p,
   width = map_params$width,
   height = map_params$height,
-  dpi = map_params$dpi,
-  device = "pdf"
+  dpi = map_params$dpi
 )
 
 dir.create(dirname(output_rds), recursive = TRUE, showWarnings = FALSE)

@@ -5,6 +5,16 @@
 library(tidyverse)
 library(gridExtra)
 
+ggsave_utils <- tryCatch(
+  file.path(dirname(normalizePath(snakemake@script)), "plot_ggsave_utils.R"),
+  error = function(e) "workflow/scripts/plot_ggsave_utils.R"
+)
+if (file.exists(ggsave_utils)) {
+  source(ggsave_utils)
+} else {
+  source("workflow/scripts/plot_ggsave_utils.R")
+}
+
 # Helper to extract legend from a ggplot
 g_legend <- function(a.gplot) {
   g <- ggplot_gtable(ggplot_build(a.gplot))
@@ -254,7 +264,7 @@ combined_plot <- grid.arrange(
 
 # Save plot
 message(sprintf("\nSaving plot to %s...", output_pdf))
-ggsave(output_pdf, combined_plot, width = 12, height = 10, dpi = 300)
+ggsave_pdf(output_pdf, combined_plot, width = 12, height = 10, dpi = 300)
 message("Plot saved successfully")
 
 # Save RDS

@@ -25,6 +25,16 @@ suppressPackageStartupMessages({
   library(phangorn)
 })
 
+ggsave_utils <- tryCatch(
+  file.path(dirname(normalizePath(snakemake@script)), "plot_ggsave_utils.R"),
+  error = function(e) "workflow/scripts/plot_ggsave_utils.R"
+)
+if (file.exists(ggsave_utils)) {
+  source(ggsave_utils)
+} else {
+  source("workflow/scripts/plot_ggsave_utils.R")
+}
+
 pdf(NULL)
 
 log_file <- file(snakemake@log[[1]], open = "wt")
@@ -223,7 +233,7 @@ p_base <- finalize_plot_margins(p_base, PLOT_EXPAND_MULT_NO_LABELS)
 
 dir.create(dirname(output_pdf_with), recursive = TRUE, showWarnings = FALSE)
 
-ggsave(
+ggsave_pdf(
   filename = output_pdf_with,
   plot = p_with,
   width = plot_width,
@@ -233,7 +243,7 @@ ggsave(
   limitsize = FALSE
 )
 
-ggsave(
+ggsave_pdf(
   filename = output_pdf_no,
   plot = p_base,
   width = plot_width,

@@ -22,6 +22,16 @@ suppressPackageStartupMessages({
   library(scales)
 })
 
+ggsave_utils <- tryCatch(
+  file.path(dirname(normalizePath(snakemake@script)), "plot_ggsave_utils.R"),
+  error = function(e) "workflow/scripts/plot_ggsave_utils.R"
+)
+if (file.exists(ggsave_utils)) {
+  source(ggsave_utils)
+} else {
+  source("workflow/scripts/plot_ggsave_utils.R")
+}
+
 # Debug: working directory
 message("Working directory: ", getwd())
 
@@ -272,7 +282,7 @@ plot_height <- nrows * 3.5
 
 # Save PDF
 dir.create(dirname(output_pdf), recursive = TRUE, showWarnings = FALSE)
-ggplot2::ggsave(output_pdf, plt_pca_facet, width = plot_width, height = plot_height, dpi = 300)
+ggsave_pdf(output_pdf, plt_pca_facet, width = plot_width, height = plot_height, dpi = 300)
 message("PDF saved to ", output_pdf)
 
 # Save RDS (ggplot2 object)

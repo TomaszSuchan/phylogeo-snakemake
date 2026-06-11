@@ -4,6 +4,16 @@
 library(ggplot2)
 library(dplyr)
 
+ggsave_utils <- tryCatch(
+  file.path(dirname(normalizePath(snakemake@script)), "plot_ggsave_utils.R"),
+  error = function(e) "workflow/scripts/plot_ggsave_utils.R"
+)
+if (file.exists(ggsave_utils)) {
+  source(ggsave_utils)
+} else {
+  source("workflow/scripts/plot_ggsave_utils.R")
+}
+
 # Prevent creation of Rplots.pdf
 pdf(NULL)
 
@@ -306,13 +316,12 @@ message(sprintf("Output PDF: %s\n", output_pdf))
 message(sprintf("Output RDS: %s\n", output_rds))
 
 dir.create(dirname(output_pdf), recursive = TRUE, showWarnings = FALSE)
-ggsave(
+ggsave_pdf(
   filename = output_pdf,
   plot = p,
   width = max(8, nrow(pi_df) * 0.3),  # Adjust width based on number of populations
   height = 6,
-  dpi = 300,
-  device = "pdf"
+  dpi = 300
 )
 
 dir.create(dirname(output_rds), recursive = TRUE, showWarnings = FALSE)

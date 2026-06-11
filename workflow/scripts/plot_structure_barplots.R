@@ -261,13 +261,12 @@ width <- max(8, 1 + 0.01 * n_individuals)  # at least 8 inches, scaling with ind
 cat(sprintf("Plot dimensions: %.2f x %.2f inches\n", width, height))
 
 # Save barplot
-ggsave(
+ggsave_pdf(
   filename = output_barplot,
   plot = structure_barplot,
   width = width,
   height = height,
-  dpi = dpi,
-  device = "pdf"
+  dpi = dpi
 )
 
 # Save barplot ggplot object as RDS

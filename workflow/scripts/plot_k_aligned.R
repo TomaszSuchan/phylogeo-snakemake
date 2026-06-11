@@ -2,6 +2,16 @@ library(pophelper)
 library(gridExtra)
 library(ggplot2)
 
+ggsave_utils <- tryCatch(
+  file.path(dirname(normalizePath(snakemake@script)), "plot_ggsave_utils.R"),
+  error = function(e) "workflow/scripts/plot_ggsave_utils.R"
+)
+if (file.exists(ggsave_utils)) {
+  source(ggsave_utils)
+} else {
+  source("workflow/scripts/plot_ggsave_utils.R")
+}
+
 # Snakemake inputs/outputs
 runs <- unlist(snakemake@input)
 print(runs)
@@ -34,7 +44,7 @@ if (height > max_height) {
   height <- max_height
 }
 
-ggsave(
+ggsave_pdf(
   filename = output_plot,
   plot = p$plot[[1]],
   width = width,

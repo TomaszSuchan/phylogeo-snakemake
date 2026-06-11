@@ -223,7 +223,7 @@ combined_plt <- combined_plt +
   )
 
 dir.create(dirname(output_pdf), recursive = TRUE, showWarnings = FALSE)
-ggplot2::ggsave(
+ggsave_pdf(
   filename = output_pdf,
   plot = combined_plt,
   width = as.numeric(params[["width"]]),

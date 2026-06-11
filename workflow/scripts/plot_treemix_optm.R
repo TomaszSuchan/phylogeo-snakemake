@@ -5,6 +5,16 @@ suppressPackageStartupMessages({
   library(OptM)
 })
 
+ggsave_utils <- tryCatch(
+  file.path(dirname(normalizePath(snakemake@script)), "plot_ggsave_utils.R"),
+  error = function(e) "workflow/scripts/plot_ggsave_utils.R"
+)
+if (file.exists(ggsave_utils)) {
+  source(ggsave_utils)
+} else {
+  source("workflow/scripts/plot_ggsave_utils.R")
+}
+
 pdf(NULL)
 
 log_file <- file(snakemake@log[[1]], open = "wt")
@@ -161,7 +171,7 @@ if (!is.null(optm_result)) {
       y = "Final log likelihood"
     ) +
     ggplot2::theme_minimal(base_size = 11)
-  ggplot2::ggsave(snakemake@output[["pdf"]], plot_obj, width = width, height = height, dpi = dpi)
+  ggsave_pdf(snakemake@output[["pdf"]], plot_obj, width = width, height = height, dpi = dpi)
   saveRDS(
     list(
       plot = plot_obj,

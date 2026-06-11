@@ -177,13 +177,12 @@ message(sprintf("Output RDS: %s\n", output_plot_rds))
 message(sprintf("Plot dimensions: %.1f x %.1f inches @ %d dpi\n", width, height, dpi))
 
 # Save plot
-ggsave(
+ggsave_pdf(
   filename = output_plot,
   plot = p,
   width = width,
   height = height,
-  dpi = dpi,
-  device = "pdf"
+  dpi = dpi
 )
 saveRDS(p, file = output_plot_rds)
 

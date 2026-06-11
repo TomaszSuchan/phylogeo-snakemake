@@ -10,6 +10,16 @@ library(ggplot2)
 library(ape)
 library(phangorn)
 
+ggsave_utils <- tryCatch(
+  file.path(dirname(normalizePath(snakemake@script)), "plot_ggsave_utils.R"),
+  error = function(e) "workflow/scripts/plot_ggsave_utils.R"
+)
+if (file.exists(ggsave_utils)) {
+  source(ggsave_utils)
+} else {
+  source("workflow/scripts/plot_ggsave_utils.R")
+}
+
 # Get parameters from Snakemake object
 treefile <- snakemake@input[["treefile"]]
 support_threshold <- snakemake@params[["support_threshold"]]
@@ -99,7 +109,7 @@ save_plot_outputs <- function(tree_phylo, pdf_path, rds_path, threshold, layout 
   dims <- plot_dimensions(tree_phylo, layout = layout)
   p <- build_tree_plot(tree_phylo, threshold, layout = layout, scale_width = scale_width)
 
-  ggsave(
+  ggsave_pdf(
     pdf_path,
     plot = p,
     width = dims$width,

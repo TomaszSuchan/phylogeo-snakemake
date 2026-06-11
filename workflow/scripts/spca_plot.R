@@ -26,6 +26,16 @@ suppressPackageStartupMessages({
   library(ggplot2)
 })
 
+ggsave_utils <- tryCatch(
+  file.path(dirname(normalizePath(snakemake@script)), "plot_ggsave_utils.R"),
+  error = function(e) "workflow/scripts/plot_ggsave_utils.R"
+)
+if (file.exists(ggsave_utils)) {
+  source(ggsave_utils)
+} else {
+  source("workflow/scripts/plot_ggsave_utils.R")
+}
+
 save_base_plot <- function(path, expr, width = 8, height = 6) {
   dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
   pdf(path, width = width, height = height)
@@ -218,7 +228,7 @@ if (run_main) {
         y = sprintf("Axis %d", pc2)
       ) +
       theme_bw()
-    ggsave(pdf_out, plot = p, width = 8, height = 6)
+    ggsave_pdf(pdf_out, plot = p, width = 8, height = 6)
     saveRDS(list(plot = p, spca_obj = spca_obj, scores = scores), rds_out)
   }
 

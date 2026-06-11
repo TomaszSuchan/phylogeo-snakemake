@@ -105,7 +105,7 @@ plot_group_boxplots <- function(col, fill_values = NULL) {
 
   p_froh <- group_boxplot(per_ind, col, "F_ROH", fill_values) +
     labs(x = col, y = "F_ROH")
-  ggsave(out_pdf("froh"), p_froh, width = plot_width, height = 6)
+  ggsave_pdf(out_pdf("froh"), p_froh, width = plot_width, height = 6)
   saveRDS(p_froh, out_rds("froh"))
 
   froh_group_long <- per_ind %>%
@@ -123,12 +123,12 @@ plot_group_boxplots <- function(col, fill_values = NULL) {
     facet_wrap(~ ROH_class, ncol = 1, scales = "free_y") +
     labs(x = col, y = "F_ROH", caption = ROH_LENGTH_CLASS_CAPTION) +
     theme(plot.caption = element_text(size = 8, hjust = 0))
-  ggsave(out_pdf("froh_classes"), p_froh_classes, width = plot_width, height = classes_panel_height)
+  ggsave_pdf(out_pdf("froh_classes"), p_froh_classes, width = plot_width, height = classes_panel_height)
   saveRDS(p_froh_classes, out_rds("froh_classes"))
 
   p_nroh <- group_boxplot(per_ind, col, "N_ROH_segments", fill_values) +
     labs(x = col, y = "Number of ROH Segments")
-  ggsave(out_pdf("nroh"), p_nroh, width = plot_width, height = 6)
+  ggsave_pdf(out_pdf("nroh"), p_nroh, width = plot_width, height = 6)
   saveRDS(p_nroh, out_rds("nroh"))
 
   nroh_group_long <- per_ind %>%
@@ -146,7 +146,7 @@ plot_group_boxplots <- function(col, fill_values = NULL) {
     facet_wrap(~ ROH_class, ncol = 1, scales = "free_y") +
     labs(x = col, y = "Number of ROH Segments", caption = ROH_LENGTH_CLASS_CAPTION) +
     theme(plot.caption = element_text(size = 8, hjust = 0))
-  ggsave(out_pdf("nroh_classes"), p_nroh_classes, width = plot_width, height = classes_panel_height)
+  ggsave_pdf(out_pdf("nroh_classes"), p_nroh_classes, width = plot_width, height = classes_panel_height)
   saveRDS(p_nroh_classes, out_rds("nroh_classes"))
 }
 
@@ -173,28 +173,28 @@ p1 <- ggplot(per_ind, aes(x = F_ROH)) +
   geom_histogram_styled(bins = 30) +
   labs(x = "F_ROH", y = "Number of Individuals") +
   histogram_plot_theme()
-ggsave(out_pdf("froh_histogram"), p1, width = 8, height = 6)
+ggsave_pdf(out_pdf("froh_histogram"), p1, width = 8, height = 6)
 saveRDS(p1, out_rds("froh_histogram"))
 
 p2 <- ggplot(per_ind, aes(x = N_ROH_segments)) +
   geom_histogram_styled(bins = 30) +
   labs(x = "Number of ROH Segments", y = "Number of Individuals") +
   histogram_plot_theme()
-ggsave(out_pdf("nroh_histogram"), p2, width = 8, height = 6)
+ggsave_pdf(out_pdf("nroh_histogram"), p2, width = 8, height = 6)
 saveRDS(p2, out_rds("nroh_histogram"))
 
 p3 <- ggplot(per_ind, aes(x = Total_ROH_length_Mb)) +
   geom_histogram_styled(bins = 30) +
   labs(x = "Total ROH Length (Mb)", y = "Number of Individuals") +
   histogram_plot_theme()
-ggsave(out_pdf("length_histogram"), p3, width = 8, height = 6)
+ggsave_pdf(out_pdf("length_histogram"), p3, width = 8, height = 6)
 saveRDS(p3, out_rds("length_histogram"))
 
 p4 <- ggplot(roh_data, aes(x = Length_Mb)) +
   geom_histogram_styled() +
   labs(x = "ROH Length (Mb)", y = "Number of Segments") +
   histogram_plot_theme()
-ggsave(out_pdf("length_segments_histogram"), p4, width = 8, height = 6)
+ggsave_pdf(out_pdf("length_segments_histogram"), p4, width = 8, height = 6)
 saveRDS(p4, out_rds("length_segments_histogram"))
 
 froh_class_summary <- froh_by_class_long %>%
@@ -210,7 +210,7 @@ p5 <- ggplot(froh_class_summary, aes(x = ROH_class, y = Mean_F_ROH)) +
     plot.caption = element_text(size = 8, hjust = 0),
     axis.text.x = element_text(angle = 30, hjust = 1)
   )
-ggsave(out_pdf("froh_classes"), p5, width = 10, height = 6.5)
+ggsave_pdf(out_pdf("froh_classes"), p5, width = 10, height = 6.5)
 saveRDS(p5, out_rds("froh_classes"))
 
 p6 <- ggplot(froh_by_class_long, aes(x = F_ROH)) +
@@ -219,7 +219,7 @@ p6 <- ggplot(froh_by_class_long, aes(x = F_ROH)) +
   labs(x = "F_ROH", y = "Number of Individuals", caption = ROH_LENGTH_CLASS_CAPTION) +
   histogram_plot_theme() +
   theme(plot.caption = element_text(size = 8, hjust = 0))
-ggsave(out_pdf("froh_classes_histogram"), p6, width = 8, height = classes_panel_height)
+ggsave_pdf(out_pdf("froh_classes_histogram"), p6, width = 8, height = classes_panel_height)
 saveRDS(p6, out_rds("froh_classes_histogram"))
 
 nroh_class_counts <- roh_data %>%
@@ -235,7 +235,7 @@ p7 <- ggplot(nroh_class_counts, aes(x = ROH_class, y = N_segments)) +
     plot.caption = element_text(size = 8, hjust = 0),
     axis.text.x = element_text(angle = 30, hjust = 1)
   )
-ggsave(out_pdf("nroh_classes"), p7, width = 10, height = 6.5)
+ggsave_pdf(out_pdf("nroh_classes"), p7, width = 10, height = 6.5)
 saveRDS(p7, out_rds("nroh_classes"))
 
 p8 <- ggplot(nroh_by_class_long, aes(x = N_ROH_segments)) +
@@ -248,7 +248,7 @@ p8 <- ggplot(nroh_by_class_long, aes(x = N_ROH_segments)) +
   ) +
   histogram_plot_theme() +
   theme(plot.caption = element_text(size = 8, hjust = 0))
-ggsave(out_pdf("nroh_classes_histogram"), p8, width = 8, height = classes_panel_height)
+ggsave_pdf(out_pdf("nroh_classes_histogram"), p8, width = 8, height = classes_panel_height)
 saveRDS(p8, out_rds("nroh_classes_histogram"))
 
 p9 <- ggplot(per_ind, aes(x = N_ROH_segments, y = F_ROH)) +
@@ -256,7 +256,7 @@ p9 <- ggplot(per_ind, aes(x = N_ROH_segments, y = F_ROH)) +
   geom_smooth(method = "lm", se = TRUE) +
   labs(x = "Number of ROH Segments", y = "F_ROH") +
   theme_bw()
-ggsave(out_pdf("froh_vs_nroh"), p9, width = 8, height = 6)
+ggsave_pdf(out_pdf("froh_vs_nroh"), p9, width = 8, height = 6)
 saveRDS(p9, out_rds("froh_vs_nroh"))
 
 cat("=== ROH plots complete ===\n")

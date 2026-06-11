@@ -1,3 +1,13 @@
+ggsave_utils <- tryCatch(
+  file.path(dirname(normalizePath(snakemake@script)), "plot_ggsave_utils.R"),
+  error = function(e) "workflow/scripts/plot_ggsave_utils.R"
+)
+if (file.exists(ggsave_utils)) {
+  source(ggsave_utils)
+} else {
+  source("workflow/scripts/plot_ggsave_utils.R")
+}
+
 # Shared ggplot helpers for choose-K / model-comparison score plots.
 #
 # Why a separate file?
@@ -45,7 +55,7 @@ choose_k_ggsave <- function(
   dpi = DEFAULT_CHOOSE_K_PLOT_DPI,
   ...
 ) {
-  ggplot2::ggsave(
+  ggsave_pdf(
     filename = filename,
     plot = plot,
     width = width,

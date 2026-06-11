@@ -57,17 +57,12 @@ evanno_plot <- ggplot(data=evanno_long, aes(x=k, y=Value, ymin=Min, ymax=Max)) +
                choose_k_plot_theme() +
                theme(strip.text = ggtext::element_markdown())
 
-# Save as PDF. Use the cairo_pdf device when available so Unicode glyphs in the
-# facet labels (e.g. the delta in "ΔK") render correctly; the default pdf()
-# device lacks those glyphs and prints them as a missing-glyph dot.
-pdf_device <- if (isTRUE(capabilities("cairo"))) grDevices::cairo_pdf else NULL
 choose_k_ggsave(
   filename = output_pdf,
   plot = evanno_plot,
   width = plot_dims$width,
   height = plot_dims$height,
-  dpi = plot_dims$dpi,
-  device = pdf_device
+  dpi = plot_dims$dpi
 )
 
 # Save as RDS

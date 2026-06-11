@@ -253,13 +253,12 @@ message(sprintf("Plot dimensions: %.1f x %.1f inches @ %d dpi\n", width, height,
 
 # Save the plot
 dir.create(dirname(output_plot), recursive = TRUE, showWarnings = FALSE)
-ggsave(
+ggsave_pdf(
   filename = output_plot,
   plot = p,
   width = width,
   height = height,
-  dpi = dpi,
-  device = "pdf"
+  dpi = dpi
 )
 
 # Save the ggplot object as RDS

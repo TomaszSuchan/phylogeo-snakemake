@@ -4,6 +4,16 @@ suppressPackageStartupMessages({
   library(ggplot2)
 })
 
+ggsave_utils <- tryCatch(
+  file.path(dirname(normalizePath(snakemake@script)), "plot_ggsave_utils.R"),
+  error = function(e) "workflow/scripts/plot_ggsave_utils.R"
+)
+if (file.exists(ggsave_utils)) {
+  source(ggsave_utils)
+} else {
+  source("workflow/scripts/plot_ggsave_utils.R")
+}
+
 pdf(NULL)
 
 log_file <- file(snakemake@log[[1]], open = "wt")
@@ -47,7 +57,7 @@ plot_obj <- ggplot2::ggplot(summary, ggplot2::aes(migration_edges, final_log_lik
   ggplot2::theme_minimal(base_size = 11)
 
 dir.create(dirname(snakemake@output[["pdf"]]), recursive = TRUE, showWarnings = FALSE)
-ggplot2::ggsave(
+ggsave_pdf(
   snakemake@output[["pdf"]],
   plot_obj,
   width = as.numeric(snakemake@params[["width"]]),

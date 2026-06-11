@@ -6,6 +6,16 @@ library(ggtree)
 library(ggplot2)
 library(ape)
 
+ggsave_utils <- tryCatch(
+  file.path(dirname(normalizePath(snakemake@script)), "plot_ggsave_utils.R"),
+  error = function(e) "workflow/scripts/plot_ggsave_utils.R"
+)
+if (file.exists(ggsave_utils)) {
+  source(ggsave_utils)
+} else {
+  source("workflow/scripts/plot_ggsave_utils.R")
+}
+
 treefile <- snakemake@input[["treefile"]]
 support_threshold <- snakemake@params[["support_threshold"]]
 
@@ -48,7 +58,7 @@ p <- ggtree(tree, layout = "daylight") +
 p <- add_support_labels(p, tree, support_threshold)
 
 dims <- plot_dimensions(tree)
-ggsave(
+ggsave_pdf(
   snakemake@output[["unrooted_pdf"]],
   plot = p,
   width = dims$width,

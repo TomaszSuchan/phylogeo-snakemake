@@ -8,6 +8,16 @@ library(adegenet)
 library(poppr)
 library(ggplot2)
 
+ggsave_utils <- tryCatch(
+  file.path(dirname(normalizePath(snakemake@script)), "plot_ggsave_utils.R"),
+  error = function(e) "workflow/scripts/plot_ggsave_utils.R"
+)
+if (file.exists(ggsave_utils)) {
+  source(ggsave_utils)
+} else {
+  source("workflow/scripts/plot_ggsave_utils.R")
+}
+
 # Get inputs from snakemake
 vcf_file <- snakemake@input[["vcf"]]
 popdata_file <- snakemake@input[["popdata"]]
@@ -273,7 +283,7 @@ p <- ggplot(var_data, aes(x = Source, y = Percentage)) +
   )
 
 # Save plot as PDF
-ggsave(output_plot, plot = p, width = 5, height = 3, dpi = 300)
+ggsave_pdf(output_plot, plot = p, width = 5, height = 3, dpi = 300)
 
 # Save plot as ggplot object (RDS)
 saveRDS(p, file = output_plot_rds)

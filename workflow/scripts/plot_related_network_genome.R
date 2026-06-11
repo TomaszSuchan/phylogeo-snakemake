@@ -8,6 +8,16 @@ library(igraph)
 library(tidygraph)
 library(ggraph)
 
+ggsave_utils <- tryCatch(
+  file.path(dirname(normalizePath(snakemake@script)), "plot_ggsave_utils.R"),
+  error = function(e) "workflow/scripts/plot_ggsave_utils.R"
+)
+if (file.exists(ggsave_utils)) {
+  source(ggsave_utils)
+} else {
+  source("workflow/scripts/plot_ggsave_utils.R")
+}
+
 # Prevent creation of Rplots.pdf
 pdf(NULL)
 
@@ -145,7 +155,7 @@ if (n_nodes == 0) {
     theme_void()
   
   dir.create(dirname(output_pdf), recursive = TRUE, showWarnings = FALSE)
-  ggsave(
+  ggsave_pdf(
     filename = output_pdf,
     plot = p,
     width = 10,
@@ -362,7 +372,7 @@ if (!is.null(node_color_col) && node_color_col %in% colnames(layout)) {
 dir.create(dirname(output_pdf), recursive = TRUE, showWarnings = FALSE)
 
 # Save plot
-ggsave(
+ggsave_pdf(
   filename = output_pdf,
   plot = p,
   width = 12,

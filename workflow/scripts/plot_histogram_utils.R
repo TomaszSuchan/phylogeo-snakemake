@@ -1,3 +1,13 @@
+ggsave_utils <- tryCatch(
+  file.path(dirname(normalizePath(snakemake@script)), "plot_ggsave_utils.R"),
+  error = function(e) "workflow/scripts/plot_ggsave_utils.R"
+)
+if (file.exists(ggsave_utils)) {
+  source(ggsave_utils)
+} else {
+  source("workflow/scripts/plot_ggsave_utils.R")
+}
+
 # Shared ggplot helpers for histogram plots (stats_vcf, ROH, genome_scan, etc.).
 
 HISTOGRAM_FILL <- "steelblue"

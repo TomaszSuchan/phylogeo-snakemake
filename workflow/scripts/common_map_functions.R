@@ -8,6 +8,16 @@ library(ggrepel)
 library(sf)
 library(terra)
 
+ggsave_utils <- tryCatch(
+  file.path(dirname(normalizePath(snakemake@script)), "plot_ggsave_utils.R"),
+  error = function(e) "workflow/scripts/plot_ggsave_utils.R"
+)
+if (file.exists(ggsave_utils)) {
+  source(ggsave_utils)
+} else {
+  source("workflow/scripts/plot_ggsave_utils.R")
+}
+
 #' Unwrap Snakemake params when a rule uses `params: lambda wildcards: { ... }`.
 #' Snakemake stores that dict as a single nested element (access via params[[1]]),
 #' not as top-level named params.

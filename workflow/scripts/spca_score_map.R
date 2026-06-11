@@ -170,13 +170,12 @@ p <- create_basemap(coords_df, map_params) +
   theme(legend.position = "right")
 
 dir.create(dirname(snakemake@output[["plot"]]), recursive = TRUE, showWarnings = FALSE)
-ggsave(
+ggsave_pdf(
   filename = snakemake@output[["plot"]],
   plot = p,
   width = width,
   height = height,
-  dpi = dpi,
-  device = "pdf"
+  dpi = dpi
 )
 saveRDS(p, snakemake@output[["plot_rds"]])
 

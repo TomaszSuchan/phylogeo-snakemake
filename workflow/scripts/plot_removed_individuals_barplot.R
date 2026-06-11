@@ -5,6 +5,16 @@
 library(ggplot2)
 library(dplyr)
 
+ggsave_utils <- tryCatch(
+  file.path(dirname(normalizePath(snakemake@script)), "plot_ggsave_utils.R"),
+  error = function(e) "workflow/scripts/plot_ggsave_utils.R"
+)
+if (file.exists(ggsave_utils)) {
+  source(ggsave_utils)
+} else {
+  source("workflow/scripts/plot_ggsave_utils.R")
+}
+
 # Prevent creation of Rplots.pdf
 pdf(NULL)
 
@@ -45,13 +55,12 @@ if (nrow(removed_df) == 0 || (nrow(removed_df) == 1 && removed_df$individual[1] 
     theme_void()
   
   dir.create(dirname(output_pdf), recursive = TRUE, showWarnings = FALSE)
-  ggsave(
+  ggsave_pdf(
     filename = output_pdf,
     plot = p,
     width = 8,
     height = 6,
     dpi = 300,
-    device = "pdf",
     limitsize = FALSE
   )
   
@@ -227,13 +236,12 @@ message(sprintf("Output PDF: %s\n", output_pdf))
 message(sprintf("Output RDS: %s\n", output_rds))
 
 dir.create(dirname(output_pdf), recursive = TRUE, showWarnings = FALSE)
-ggsave(
+ggsave_pdf(
   filename = output_pdf,
   plot = p,
   width = max(12, length(unique(count_df$Site)) * 0.4),
   height = 6,
   dpi = 300,
-  device = "pdf",
   limitsize = FALSE
 )
 

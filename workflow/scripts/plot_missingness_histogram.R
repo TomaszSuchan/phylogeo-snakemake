@@ -142,13 +142,12 @@ message(sprintf("Output PDF: %s\n", output_pdf))
 message(sprintf("Output RDS: %s\n", output_rds))
 
 dir.create(dirname(output_pdf), recursive = TRUE, showWarnings = FALSE)
-ggsave(
+ggsave_pdf(
   filename = output_pdf,
   plot = p,
   width = 10,
   height = 6,
-  dpi = 300,
-  device = "pdf"
+  dpi = 300
 )
 
 dir.create(dirname(output_rds), recursive = TRUE, showWarnings = FALSE)
