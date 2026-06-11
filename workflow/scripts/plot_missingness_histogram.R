@@ -3,6 +3,15 @@
 
 library(ggplot2)
 
+histogram_utils <- tryCatch({
+  file.path(dirname(normalizePath(snakemake@script)), "plot_histogram_utils.R")
+}, error = function(e) "workflow/scripts/plot_histogram_utils.R")
+if (file.exists(histogram_utils)) {
+  source(histogram_utils)
+} else {
+  source("workflow/scripts/plot_histogram_utils.R")
+}
+
 # Prevent creation of Rplots.pdf
 pdf(NULL)
 
@@ -51,16 +60,12 @@ message(sprintf("Missingness range: %.4f to %.4f\n",
 # Create histogram (no title)
 message("\n=== CREATING HISTOGRAM ===\n")
 p <- ggplot(missing_df, aes(x = .data[[missing_col]])) +
-  geom_histogram(bins = 50, fill = "steelblue", color = "black", alpha = 0.7) +
+  geom_histogram_styled() +
   labs(
     x = x_label,
     y = "Frequency"
   ) +
-  theme_bw() +
-  theme(
-    axis.title = element_text(size = 12),
-    axis.text = element_text(size = 10)
-  )
+  histogram_plot_theme()
 
 # Create summary statistics and save to text file (if output defined)
 summary_path <- NULL

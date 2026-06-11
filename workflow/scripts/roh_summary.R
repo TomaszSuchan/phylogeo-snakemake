@@ -1,9 +1,7 @@
 #!/usr/bin/env Rscript
-# ROH Summary and Visualization Script
-# Processes bcftools roh output and generates summary statistics and visualizations
+# ROH summary statistics (tables and tests; plots are in roh_plots.R)
 
 library(data.table)
-library(ggplot2)
 library(dplyr)
 library(tidyr)
 library(multcomp)
@@ -25,9 +23,6 @@ output_per_ind <- snakemake@output[["per_ind"]]
 output_stats <- snakemake@output[["stats"]]
 log_file <- snakemake@log[[1]]
 group_by <- snakemake@params[["group_by"]]
-
-plot_dir <- dirname(snakemake@output[["froh_histogram"]])
-dir.create(plot_dir, recursive = TRUE, showWarnings = FALSE)
 
 # Redirect output to log
 log_con <- file(log_file, open = "wt")
@@ -216,129 +211,7 @@ cat("  Mean max ROH length:", mean(per_ind$Max_ROH_length_Mb, na.rm = TRUE), "Mb
 cat("\n")
 
 # ==============================================================================
-# 4. Create visualizations
-# ==============================================================================
-
-cat("Creating visualizations...\n")
-
-# Plot 1: F_ROH distribution
-p1 <- ggplot(per_ind, aes(x = F_ROH)) +
-  geom_histogram(bins = 30, fill = "steelblue", alpha = 0.7, color = "black") +
-  labs(
-    title = "Distribution of F_ROH (Fraction of Genome in ROH)",
-    x = "F_ROH",
-    y = "Number of Individuals"
-  ) +
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))
-
-ggsave(snakemake@output[["froh_histogram"]], p1, width = 8, height = 6)
-
-# Plot 2: Number of ROH segments distribution
-p2 <- ggplot(per_ind, aes(x = N_ROH_segments)) +
-  geom_histogram(bins = 30, fill = "darkgreen", alpha = 0.7, color = "black") +
-  labs(
-    title = "Distribution of Number of ROH Segments",
-    x = "Number of ROH Segments",
-    y = "Number of Individuals"
-  ) +
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))
-
-ggsave(snakemake@output[["n_roh_segments_histogram"]], p2, width = 8, height = 6)
-
-# Plot 3: Total ROH length distribution
-p3 <- ggplot(per_ind, aes(x = Total_ROH_length_Mb)) +
-  geom_histogram(bins = 30, fill = "purple", alpha = 0.7, color = "black") +
-  labs(
-    title = "Distribution of Total ROH Length",
-    x = "Total ROH Length (Mb)",
-    y = "Number of Individuals"
-  ) +
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))
-
-ggsave(snakemake@output[["total_roh_length_histogram"]], p3, width = 8, height = 6)
-
-# Plot 4: ROH length distribution (all segments)
-p4 <- ggplot(roh_data, aes(x = Length_Mb)) +
-  geom_histogram(bins = 50, fill = "orange", alpha = 0.7, color = "black") +
-  scale_x_log10() +
-  labs(
-    title = "Distribution of ROH Segment Lengths",
-    x = "ROH Length (Mb, log10 scale)",
-    y = "Number of Segments"
-  ) +
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))
-
-ggsave(snakemake@output[["roh_segment_length_distribution"]], p4, width = 8, height = 6)
-
-# Plot 5: ROH by length class
-p5 <- ggplot(roh_data, aes(x = ROH_class, fill = ROH_class)) +
-  geom_bar(color = "black") +
-  scale_fill_manual(values = ROH_CLASS_FILL) +
-  scale_x_discrete(limits = ROH_CLASS_LEVELS) +
-  labs(
-    title = "ROH Segments by Length Class",
-    x = "ROH Length Class",
-    y = "Number of Segments",
-    caption = ROH_LENGTH_CLASS_CAPTION
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5),
-    plot.caption = element_text(size = 8, hjust = 0),
-    legend.position = "none",
-    axis.text.x = element_text(angle = 30, hjust = 1)
-  )
-
-ggsave(snakemake@output[["roh_by_class"]], p5, width = 10, height = 6.5)
-
-froh_class_cols <- paste0("F_ROH_", ROH_CLASS_LEVELS)
-froh_class_cols <- froh_class_cols[froh_class_cols %in% colnames(per_ind)]
-froh_by_class_long <- per_ind %>%
-  select(Sample, all_of(froh_class_cols)) %>%
-  pivot_longer(
-    cols = all_of(froh_class_cols),
-    names_to = "ROH_class",
-    names_prefix = "F_ROH_",
-    values_to = "F_ROH"
-  ) %>%
-  mutate(ROH_class = factor(ROH_class, levels = ROH_CLASS_LEVELS))
-
-p_froh_class_panel <- ggplot(froh_by_class_long, aes(x = F_ROH)) +
-  geom_histogram(bins = 30, fill = "steelblue", alpha = 0.7, color = "black") +
-  facet_wrap(~ ROH_class, nrow = 1, scales = "free_y") +
-  labs(
-    x = "F_ROH",
-    y = "Number of Individuals",
-    caption = ROH_LENGTH_CLASS_CAPTION
-  ) +
-  theme_minimal() +
-  theme(plot.caption = element_text(size = 8, hjust = 0))
-
-ggsave(snakemake@output[["froh_by_class_panel"]], p_froh_class_panel, width = 12, height = 4.5)
-
-# Plot 6: F_ROH vs Number of ROH segments
-p6 <- ggplot(per_ind, aes(x = N_ROH_segments, y = F_ROH)) +
-  geom_point(alpha = 0.6, color = "steelblue") +
-  geom_smooth(method = "lm", se = TRUE, color = "red") +
-  labs(
-    title = "F_ROH vs Number of ROH Segments",
-    x = "Number of ROH Segments",
-    y = "F_ROH"
-  ) +
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5))
-
-ggsave(snakemake@output[["froh_vs_n_segments"]], p6, width = 8, height = 6)
-
-cat("  Created 7 summary plot files\n")
-cat("\n")
-
-# ==============================================================================
-# 5. Calculate statistics and perform multiple comparison tests
+# 4. Calculate statistics and perform multiple comparison tests
 # ==============================================================================
 
 cat("Calculating statistics and performing multiple comparison tests...\n")
@@ -544,7 +417,7 @@ cat("  Statistics written to:", output_stats, "\n")
 cat("\n")
 
 # ==============================================================================
-# 6. Write output files
+# 5. Write output files
 # ==============================================================================
 
 cat("Writing output files...\n")

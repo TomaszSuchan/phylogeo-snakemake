@@ -21,7 +21,7 @@ output_rds <- snakemake@output[["rds"]]
 # Parameters
 color_by_name <- NULL
 pca_colors <- NULL
-plot_type <- "grouped"  # "grouped" or "sorted"
+plot_type <- "grouped"  # "grouped", "sorted", or "colored"
 if ("color_by" %in% names(snakemake@params)) {
   color_by_param <- snakemake@params[["color_by"]]
   if (!is.null(color_by_param) && !is.na(color_by_param)) {
@@ -31,6 +31,16 @@ if ("color_by" %in% names(snakemake@params)) {
     }
   } else {
     color_by_name <- NULL
+  }
+}
+group_colors <- NULL
+if ("group_colors" %in% names(snakemake@params)) {
+  group_colors_param <- snakemake@params[["group_colors"]]
+  if (!is.null(group_colors_param)) {
+    group_colors <- unlist(group_colors_param, use.names = TRUE)
+    if (length(group_colors) == 0 || all(names(group_colors) == "")) {
+      group_colors <- NULL
+    }
   }
 }
 if ("pca_colors" %in% names(snakemake@params)) {
@@ -177,26 +187,28 @@ if (is.null(color_by_name)) {
     )
 } else {
   # Colored by stratification
-  # Determine colors to use - ensure consistent color mapping across plot types
-  unique_categories <- sort(unique(pi_df[[color_by_name]]))  # Sort to ensure consistent order
+  unique_categories <- sort(unique(pi_df[[color_by_name]]))
   n_categories <- length(unique_categories)
-  
-  if (!is.null(pca_colors) && length(pca_colors) > 0) {
-    # Use colors from config
+
+  if (!is.null(group_colors)) {
+    message(sprintf(
+      "Pi barplot: using parameters.pixy.colors.%s (%d defined colors).",
+      color_by_name, length(group_colors)
+    ))
+    colors <- group_colors
+  } else if (!is.null(pca_colors) && length(pca_colors) > 0) {
     if (n_categories > length(pca_colors)) {
-      # More categories than colors - interpolate using colorRampPalette
-      message(sprintf("Pi barplot: %d categories but only %d colors defined. Interpolating additional colors.",
-                     n_categories, length(pca_colors)))
+      message(sprintf(
+        "Pi barplot: %d categories but only %d pca_colors defined. Interpolating additional colors.",
+        n_categories, length(pca_colors)
+      ))
       colors_all <- colorRampPalette(pca_colors)(n_categories)
     } else {
-      # Use subset of defined colors
       colors_all <- pca_colors[1:n_categories]
     }
-    # Create named vector for consistent color mapping
     names(colors_all) <- unique_categories
     colors <- colors_all
   } else {
-    # Fallback to default ggplot2 colors if no colors provided
     message("Pi barplot: No colors defined in config. Using default ggplot2 colors.")
     colors <- NULL
   }
@@ -205,10 +217,10 @@ if (is.null(color_by_name)) {
     # Sorted by pi value (low to high), colored by stratification
     pi_df <- pi_df[order(pi_df$mean_pi), ]
     pi_df$population <- factor(pi_df$population, levels = pi_df$population)
-    
+
     p <- ggplot(pi_df, aes(x = population, y = mean_pi, fill = .data[[color_by_name]])) +
       geom_bar(stat = "identity", alpha = 0.7, color = "black", linewidth = 0.3) +
-      geom_errorbar(aes(ymin = ci_low, ymax = ci_high), 
+      geom_errorbar(aes(ymin = ci_low, ymax = ci_high),
                     width = 0.2, color = "black", linewidth = 0.5) +
       labs(
         x = "Population",
@@ -221,13 +233,36 @@ if (is.null(color_by_name)) {
         panel.grid.major.x = element_blank(),
         legend.position = "right"
       )
-    
-    # Add color scale if colors were defined
+
     if (!is.null(colors)) {
       p <- p + scale_fill_manual(values = colors)
     }
-    
-  } else {
+
+  } else if (plot_type == "colored") {
+    # Alphabetical population order, colored by stratification, no legend
+    pi_df <- pi_df[order(pi_df$population), ]
+    pi_df$population <- factor(pi_df$population, levels = pi_df$population)
+
+    p <- ggplot(pi_df, aes(x = population, y = mean_pi, fill = .data[[color_by_name]])) +
+      geom_bar(stat = "identity", alpha = 0.7, color = "black", linewidth = 0.3) +
+      geom_errorbar(aes(ymin = ci_low, ymax = ci_high),
+                    width = 0.2, color = "black", linewidth = 0.5) +
+      labs(
+        x = "Population",
+        y = expression(paste("Nucleotide Diversity (", pi, ")"))
+      ) +
+      theme_bw() +
+      theme(
+        axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
+        panel.grid.major.x = element_blank(),
+        legend.position = "none"
+      )
+
+    if (!is.null(colors)) {
+      p <- p + scale_fill_manual(values = colors)
+    }
+
+  } else if (plot_type == "grouped") {
     # Grouped by stratification - use facet_wrap like removed individuals plot
     # Order populations within each group by pi value
     pi_df <- pi_df %>%
@@ -260,6 +295,8 @@ if (is.null(color_by_name)) {
     if (!is.null(colors)) {
       p <- p + scale_fill_manual(values = colors)
     }
+  } else {
+    stop("Unknown plot_type: ", plot_type)
   }
 }
 
