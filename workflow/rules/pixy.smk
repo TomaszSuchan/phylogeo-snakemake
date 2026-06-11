@@ -296,6 +296,7 @@ rule plot_pixy_pi_barplot:
         "logs/{project}/plot_pixy_pi_barplot_{grouping}_grouped_by_{color_by}.log"
     params:
         color_by = lambda wildcards: wildcards.color_by if wildcards.color_by != "none" else None,
+        group_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pixy", {}).get("colors", {}).get(wildcards.color_by, None),
         pca_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pca_colors", None),
         plot_type = "grouped"  # Grouped by stratification
     conda:
@@ -320,8 +321,33 @@ rule plot_pixy_pi_barplot_sorted:
         "logs/{project}/plot_pixy_pi_barplot_{grouping}_sorted_by_{color_by}.log"
     params:
         color_by = lambda wildcards: wildcards.color_by,
+        group_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pixy", {}).get("colors", {}).get(wildcards.color_by, None),
         pca_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pca_colors", None),
         plot_type = "sorted"  # Sorted by pi value
+    conda:
+        "../envs/r-plot.yaml"
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    script:
+        "../scripts/plot_pixy_pi_barplot.R"
+
+# Pi barplot in alphabetical population order, colored by stratification, no legend
+rule plot_pixy_pi_barplot_colored:
+    input:
+        pi_summary = "results/{project}/pixy/{project}.{grouping}.pixy_pi-summary.txt",
+        popdata = rules.generate_popdata.output.indpopdata
+    output:
+        pdf = "results/{project}/pixy/plots/{project}.{grouping}.pixy_pi_colored_by_{color_by}.pdf",
+        rds = "results/{project}/pixy/plots/{project}.{grouping}.pixy_pi_colored_by_{color_by}.rds"
+    log:
+        "logs/{project}/plot_pixy_pi_barplot_{grouping}_colored_by_{color_by}.log"
+    params:
+        color_by = lambda wildcards: wildcards.color_by,
+        group_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pixy", {}).get("colors", {}).get(wildcards.color_by, None),
+        pca_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pca_colors", None),
+        plot_type = "colored"
     conda:
         "../envs/r-plot.yaml"
     threads: 1

@@ -27,14 +27,7 @@ rule roh_summary:
     output:
         summary="results/{project}/roh/{project}.roh_summary.txt",
         per_ind="results/{project}/roh/{project}.roh_per_ind.txt",
-        stats="results/{project}/roh/{project}.roh_stats_comparisons.txt",
-        froh_histogram="results/{project}/roh/plots/{project}.froh_histogram.pdf",
-        n_roh_segments_histogram="results/{project}/roh/plots/{project}.n_roh_segments_histogram.pdf",
-        total_roh_length_histogram="results/{project}/roh/plots/{project}.total_roh_length_histogram.pdf",
-        roh_segment_length_distribution="results/{project}/roh/plots/{project}.roh_segment_length_distribution.pdf",
-        roh_by_class="results/{project}/roh/plots/{project}.roh_by_class.pdf",
-        froh_by_class_panel="results/{project}/roh/plots/{project}.froh_per_class_panel.pdf",
-        froh_vs_n_segments="results/{project}/roh/plots/{project}.froh_vs_n_segments.pdf"
+        stats="results/{project}/roh/{project}.roh_stats_comparisons.txt"
     params:
         group_by = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("roh", {}).get("group_by", ["Site"])
     log:
@@ -51,18 +44,60 @@ rule roh_summary:
         "../scripts/roh_summary.R"
 
 
-rule roh_group_plots:
+rule roh_plots:
     input:
         roh=rules.bcftools_roh.output.roh,
-        per_ind=rules.roh_summary.output.per_ind,
-        indpopdata=rules.generate_popdata.output.indpopdata
+        per_ind=rules.roh_summary.output.per_ind
+    output:
+        froh_histogram="results/{project}/roh/plots/{project}.froh_histogram.pdf",
+        froh_histogram_rds="results/{project}/roh/plots/{project}.froh_histogram.rds",
+        nroh_histogram="results/{project}/roh/plots/{project}.nroh_histogram.pdf",
+        nroh_histogram_rds="results/{project}/roh/plots/{project}.nroh_histogram.rds",
+        length_histogram="results/{project}/roh/plots/{project}.length_histogram.pdf",
+        length_histogram_rds="results/{project}/roh/plots/{project}.length_histogram.rds",
+        length_segments_histogram="results/{project}/roh/plots/{project}.length_segments_histogram.pdf",
+        length_segments_histogram_rds="results/{project}/roh/plots/{project}.length_segments_histogram.rds",
+        froh_classes="results/{project}/roh/plots/{project}.froh_classes.pdf",
+        froh_classes_rds="results/{project}/roh/plots/{project}.froh_classes.rds",
+        froh_classes_histogram="results/{project}/roh/plots/{project}.froh_classes_histogram.pdf",
+        froh_classes_histogram_rds="results/{project}/roh/plots/{project}.froh_classes_histogram.rds",
+        nroh_classes="results/{project}/roh/plots/{project}.nroh_classes.pdf",
+        nroh_classes_rds="results/{project}/roh/plots/{project}.nroh_classes.rds",
+        nroh_classes_histogram="results/{project}/roh/plots/{project}.nroh_classes_histogram.pdf",
+        nroh_classes_histogram_rds="results/{project}/roh/plots/{project}.nroh_classes_histogram.rds",
+        froh_vs_nroh="results/{project}/roh/plots/{project}.froh_vs_nroh.pdf",
+        froh_vs_nroh_rds="results/{project}/roh/plots/{project}.froh_vs_nroh.rds"
+    params:
+        group_col=None
+    log:
+        "logs/{project}/{project}.roh_plots.log"
+    benchmark:
+        "benchmarks/{project}/roh_plots.txt"
+    conda:
+        "../envs/r-plot.yaml"
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["roh"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["roh"]["runtime"]
+    script:
+        "../scripts/roh_plots.R"
+
+
+rule roh_group_plots:
+    input:
+        per_ind=rules.roh_summary.output.per_ind
     output:
         froh="results/{project}/roh/plots/{project}.froh_by_{group_col}.pdf",
-        froh_class_panel="results/{project}/roh/plots/{project}.froh_by_{group_col}_per_class_panel.pdf",
-        nseg="results/{project}/roh/plots/{project}.n_roh_segments_by_{group_col}.pdf",
-        roh_class="results/{project}/roh/plots/{project}.roh_class_by_{group_col}.pdf"
+        froh_rds="results/{project}/roh/plots/{project}.froh_by_{group_col}.rds",
+        froh_classes="results/{project}/roh/plots/{project}.froh_by_{group_col}_classes.pdf",
+        froh_classes_rds="results/{project}/roh/plots/{project}.froh_by_{group_col}_classes.rds",
+        nroh="results/{project}/roh/plots/{project}.nroh_by_{group_col}.pdf",
+        nroh_rds="results/{project}/roh/plots/{project}.nroh_by_{group_col}.rds",
+        nroh_classes="results/{project}/roh/plots/{project}.nroh_by_{group_col}_classes.pdf",
+        nroh_classes_rds="results/{project}/roh/plots/{project}.nroh_by_{group_col}_classes.rds"
     params:
-        group_col = lambda wildcards: wildcards.group_col
+        group_col=lambda wildcards: wildcards.group_col,
+        group_colors=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("roh", {}).get("colors", {}).get(wildcards.group_col, None),
     log:
         "logs/{project}/roh_group_plots.{group_col}.log"
     benchmark:
@@ -74,7 +109,7 @@ rule roh_group_plots:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["roh"]["mem_mb"],
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["roh"]["runtime"]
     script:
-        "../scripts/roh_group_plots.R"
+        "../scripts/roh_plots.R"
 
 
 rule plot_roh_froh_map:
