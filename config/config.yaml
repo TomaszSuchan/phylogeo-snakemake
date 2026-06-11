@@ -99,6 +99,7 @@ parameters: &global_params
   # iqtree: Maximum-likelihood phylogeny from the ipyrad PHYLIP alignment.
   # iqtree_trimal: trimAl alignment trimming followed by IQ-TREE inference.
   # iqtree_robust: Robust IQ-TREE output selection based on support threshold.
+  # njtree: Neighbour-joining phylogeny (rapidNJ) from the ipyrad PHYLIP alignment.
   # fineradstructure: RADpainter/fineRADstructure coancestry and clustering.
   # treemix: OrientAGraph historical population graph with migration edges from allele counts.
 
@@ -440,12 +441,19 @@ parameters: &global_params
                           # Include "Site" in this list to run per-site pixy π and build the geographic π map
                           # (e.g. ["Site", "Region", "Region2"]).
     # Optional: grouping variables for Pi barplots that should be
-    # produced as grouped and sorted versions.
+    # produced as grouped, sorted, and colored versions.
+    # grouped: facet panels; sorted: by pi with legend; colored: alphabetical, no legend.
     # If empty or omitted, only the plain Pi barplot is generated.
     arrange_by: ["Region"]
     # Map-specific parameters for pixy PI maps
     point_size: 3        # size of points on genetic diversity maps
     map_outline: true    # add point outlines (true/false, default: true)
+    # Optional fill colors for grouped/sorted/colored Pi barplots (parameters.pixy.colors.{arrange_by column}).
+    # Named map per stratification column; omit for pca_colors fallback or ggplot defaults.
+    # colors:
+    #   Region:
+    #     RegionA: "#E41A1C"
+    #     RegionB: "#377EB8"
 
   ## AMOVA parameters
   # AMOVA variance partitioning across metadata strata.
@@ -456,13 +464,21 @@ parameters: &global_params
   ## ROH parameters
   # Runs of homozygosity calls and group summaries.
   # Length classes (Mb) approximate generations since common ancestry using
-  # G = 100/(2 × cM), assuming 1 cM/Mb: >5 Mb (≤10 gen), 1-5 Mb (10-50 gen),
+  # G = 100/(2 × cM), assuming 1 cM/Mb: >5 Mb (<10 gen), 1-5 Mb (10-50 gen),
   # <1 Mb (>50 gen).
   roh:
     group_by: ["Site"]   # columns in indpopdata to summarize/compare ROH
     # Map-specific parameters for mean F_ROH per Site maps (when popdata coordinates exist)
     point_size: 3        # size of points on F_ROH maps
     map_outline: true    # add point outlines (true/false, default: true)
+    # Optional fill colors for group boxplots (froh_by_{X}, nroh_by_{X}, *_classes).
+    # One named map per group_by column; omit a column or set null for default grey boxplots.
+    # colors:
+    #   Site:
+    #     SiteA: "#E41A1C"
+    #     SiteB: "#377EB8"
+    #   Massif:
+    #     MassifA: "#4DAF4A"
 
   ## Genome scan parameters
   # Sliding-window FST, pi, and dXY between two metadata groups.
@@ -546,6 +562,13 @@ parameters: &global_params
     # - plots: .tree_plot.unrooted.{pdf,rds} and .tree_plot.rooted.{pdf,rds}
     # - Newick: .iqtree.unrooted.treefile and .iqtree.rooted.treefile
 
+  ## rapidNJ neighbour-joining parameters
+  # Neighbour-joining phylogeny from the ipyrad PHYLIP alignment (converted to FASTA).
+  njtree:
+    distance_model: kim    # jc (Jukes-Cantor) or kim (Kimura 2-parameter)
+    bootstraps: 1000       # bootstrap replicates; set 0 to skip
+    support_threshold: 70  # minimum bootstrap support value to display on tree (0-100)
+
   ## Analysis resources
   #
   # Define computational resources for different analysis steps.
@@ -612,6 +635,10 @@ parameters: &global_params
       threads: 12
       mem_mb: 8000
       runtime: 720
+    njtree:
+      threads: 12
+      mem_mb: 8000
+      runtime: 120
     mapi:
       threads: 4
       mem_mb: 16000
@@ -699,6 +726,7 @@ projects:
       iqtree: false           # Maximum-likelihood phylogeny from the ipyrad PHYLIP alignment.
       iqtree_trimal: false    # trimAl alignment trimming followed by IQ-TREE inference.
       iqtree_robust: false    # Robust IQ-TREE output selection based on support threshold.
+      njtree: false           # Neighbour-joining phylogeny (rapidNJ) from the ipyrad PHYLIP alignment.
       fineradstructure: false # RADpainter/fineRADstructure coancestry and clustering.
       treemix: false          # OrientAGraph historical population graph with migration edges.
       construct: false        # Spatial population structure model with conStruct.
