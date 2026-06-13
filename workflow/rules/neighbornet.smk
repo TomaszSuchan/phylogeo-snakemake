@@ -1,20 +1,40 @@
 """
 Rules for phylogenetic network inference and visualization using NeighborNet.
-NeighborNet is inferred from the p-distance genetic distance matrix.
+NeighborNet is inferred from the p-distance genetic distance matrix via fastnntr.
 """
+
+rule install_fastnntr:
+    """
+    Install the CRAN fastnntr package into the neighbornet conda env.
+    """
+    output:
+        touch(".snakemake/fastnntr_installed")
+    conda:
+        "../envs/neighbornet.yaml"
+    log:
+        "logs/install_fastnntr.log"
+    shell:
+        """
+        Rscript --vanilla -e 'lib <- .libPaths()[1]; unlink(list.files(lib, pattern="^00LOCK-", full.names=TRUE), recursive=TRUE, force=TRUE); if (!requireNamespace("fastnntr", quietly=TRUE, lib.loc=lib)) install.packages("fastnntr", repos="https://cloud.r-project.org/", lib=lib); if (!requireNamespace("fastnntr", quietly=TRUE, lib.loc=lib)) stop("Failed to install required R package: fastnntr")' &> {log}
+        touch {output}
+        """
 
 rule neighbornet_pdistance:
     """
     Build a NeighborNet network from the p-distance genetic distance matrix.
     """
     input:
-        dist=rules.p_distance.output.dist
+        dist=rules.p_distance.output.dist,
+        install=rules.install_fastnntr.output
     output:
         net="results/{project}/neighbornet/{project}.pdistance.neighbornet.rds"
     log:
         "logs/{project}/neighbornet_pdistance.log"
     benchmark:
         "benchmarks/{project}/neighbornet_pdistance.txt"
+    params:
+        ordering_method=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("neighbornet", {}).get("ordering_method", "closest-pair"),
+        inference_method=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("neighbornet", {}).get("inference_method", "active-set"),
     conda:
         "../envs/neighbornet.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["neighbornet"]["threads"]

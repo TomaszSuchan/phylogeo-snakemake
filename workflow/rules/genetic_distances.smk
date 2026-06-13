@@ -58,15 +58,14 @@ rule euclidean_distance:
 
 rule p_distance:
     """
-    True per-site p-distance from the all-sites (variant + invariant) VCF.
-    Computed over biallelic + invariant sites as the pairwise mean of
-    |g_i - g_j| / 2 (diploid dosages 0/1/2), where invariant sites contribute 0
-    to the numerator and 1 to the denominator, normalising the SNP dissimilarity
-    into a true per-site distance. Uses the same reconstructed all-sites VCF as
-    pixy, so this analysis requires the ipyrad .loci file.
+    Pairwise p-distance from the missingness-filtered variant VCF (no MAC/MAF/thinning).
+    Same input stage as fineRADstructure: sample subsetting, optional relatedness filtering,
+    and optional vcf_filtering.f_missing only. Computed as the pairwise mean of
+    |g_i - g_j| / 2 (diploid dosages 0/1/2) over biallelic variant sites where both
+    individuals are genotyped (pairwise-complete sites; multiallelic sites skipped).
     """
     input:
-        vcf=rules.prepare_invariant_vcf_gz.output.vcf,
+        vcf=rules.subset_vcf_after_relatedness.output.vcf,
     output:
         dist="results/{project}/gen_dist/{project}.p_distance.tsv",
     conda:

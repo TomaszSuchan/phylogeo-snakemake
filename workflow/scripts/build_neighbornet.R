@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 
 suppressPackageStartupMessages({
-  library(phangorn)
+  library(fastnntr)
 })
 
 # Prevent accidental Rplots.pdf creation.
@@ -14,6 +14,9 @@ sink(log_file, type = "message")
 
 dist_file <- snakemake@input[["dist"]]
 output_net <- snakemake@output[["net"]]
+ordering_method <- as.character(snakemake@params[["ordering_method"]])
+inference_method <- as.character(snakemake@params[["inference_method"]])
+n_threads <- as.integer(snakemake@threads[[1]])
 
 cat("Reading distance matrix:", dist_file, "\n")
 dist_df <- read.table(
@@ -44,8 +47,17 @@ if (any(dist_mat < 0, na.rm = TRUE)) {
   stop("Distance matrix contains negative values.")
 }
 
-dist_obj <- as.dist(dist_mat)
-net <- phangorn::neighborNet(dist_obj)
+fastnntr::set_fastnnt_threads(n_threads)
+cat(
+  "Running fastnntr NeighborNet (ordering=", ordering_method,
+  ", inference=", inference_method, ", threads=", n_threads, ")\n",
+  sep = ""
+)
+net <- fastnntr::run_neighbournet_networkx(
+  dist_df,
+  ordering_method = ordering_method,
+  inference_method = inference_method
+)
 
 dir.create(dirname(output_net), recursive = TRUE, showWarnings = FALSE)
 saveRDS(net, output_net)

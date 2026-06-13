@@ -87,7 +87,7 @@ parameters: &global_params
   # pcaone_emu: PCAone EMU mode for PCA with missing genotype modelling.
   # pcaone_miss: PCAone sensitivity runs across missing-data thresholds.
   # vcf2pcacluster: PCA/clustering with VCF2PCACluster internal SNP filters.
-  # gen_dist: Pairwise Euclidean and p-distance matrices from SNP genotypes.
+  # gen_dist: Pairwise Euclidean, Kosman, average-squared, and p-distance matrices.
   # pcoa: Principal coordinates analysis from the Euclidean distance matrix.
   # neighbornet: Split network from p-distance genetic distances.
   # pixy: Nucleotide diversity, FST, and dXY from variant/invariant sites.
@@ -494,9 +494,11 @@ parameters: &global_params
     window_size_dxy: 1000000     # window size for dxy
 
   ## NeighborNet parameters
-  # Split network from p-distance genetic distances.
+  # Split network from p-distance genetic distances (fastnntr).
   neighbornet:
     color_by: ["Region"]   # columns in indpopdata used to color tips
+    ordering_method: "closest-pair"  # multiway | closest-pair (SplitsTree6-style: multiway)
+    inference_method: "active-set"     # active-set | cg (SplitsTree4-style: cg)
     width: 12            # plot width in inches
     height: 12           # plot height in inches
     dpi: 300             # plot dpi

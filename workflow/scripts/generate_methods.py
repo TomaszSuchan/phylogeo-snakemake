@@ -841,38 +841,43 @@ if analyses.get("gen_dist", False):
         f"missing genotypes replaced by the per-SNP mean; and "
         f"(iii) the average squared genotype difference (the bed2diffs formulation "
         f"used by EEMS), which underlies several landscape-genetic methods. "
-        f"In addition, (iv) a true per-site p-distance was computed from the all-site "
-        f"dataset (variant and invariant sites reconstructed from the ipyrad .loci "
-        f"file) as the pairwise mean of |g_i - g_j| / 2 over biallelic and invariant "
-        f"sites scored in both individuals; counting invariant sites in the "
-        f"denominator yields a per-site distance whose magnitude does not depend on "
-        f"SNP ascertainment."
+        f"In addition, (iv) a pairwise p-distance was computed from the "
+        f"**missingness-filtered variant dataset** ({_fmt_int(vcf_stats_filtered.get('variants', '[NA]'))} "
+        f"variant sites, {n_samples} individuals) — the same VCF stage used by "
+        f"fineRADstructure, before biallelic/MAC/MAF and thinning filters — as the "
+        f"pairwise mean of |g_i - g_j| / 2 over biallelic variant sites scored in "
+        f"both individuals (multiallelic sites excluded)."
     )
 
 if analyses.get("neighbornet", False):
     nn_color  = p.get("neighbornet", {}).get("color_by", ["Site"])
+    nn_order  = p.get("neighbornet", {}).get("ordering_method", "closest-pair")
+    nn_infer  = p.get("neighbornet", {}).get("inference_method", "active-set")
     color_str = ", ".join(nn_color) if isinstance(nn_color, list) else nn_color
     # If the genetic-distance section above already defined the p-distance, refer
     # back to it; otherwise describe its computation here so this paragraph is
     # self-contained.
     if analyses.get("gen_dist", False):
-        pdist_clause = "the per-site p-distance matrix described above"
+        pdist_clause = "the p-distance matrix described above"
     else:
         pdist_clause = (
-            f"a true per-site p-distance matrix, computed with a custom Python script "
-            f"from the all-site dataset (variant and invariant sites reconstructed "
-            f"from the ipyrad .loci file; {n_samples} individuals) as the pairwise "
-            f"mean of |g_i - g_j| / 2 over biallelic and invariant sites scored in "
-            f"both individuals"
+            f"a pairwise p-distance matrix, computed with a custom Python script "
+            f"from the missingness-filtered variant dataset "
+            f"({_fmt_int(vcf_stats_filtered.get('variants', '[NA]'))} variant sites, "
+            f"{n_samples} individuals) — the same VCF stage used by fineRADstructure, "
+            f"before biallelic/MAC/MAF and thinning filters — as the pairwise mean of "
+            f"|g_i - g_j| / 2 over biallelic variant sites scored in both individuals "
+            f"(multiallelic sites excluded)"
         )
     dist_parts.append(
         f"To visualise relationships among individuals while allowing for "
         f"conflicting or reticulate signal (which a strictly bifurcating tree "
         f"cannot represent), a NeighborNet split network (Bryant & Moulton 2004) "
-        f"was constructed with the phangorn package (Schliep 2011) in R, with tips "
-        f"coloured by {color_str}. The network was built from {pdist_clause}, and "
-        f"drawn from phangorn's planar split-graph coordinates (ggplot2), alongside "
-        f"phangorn's reference plot.networx rendering."
+        f"was constructed with the fastnntr R package (Newell & McMaster 2025; "
+        f"Fast-NNT v0.2.5), using {nn_order} ordering and {nn_infer} split-weight "
+        f"inference, with tips coloured by {color_str}. The network was built from "
+        f"{pdist_clause}, and drawn from phangorn's planar split-graph coordinates "
+        f"(ggplot2), alongside phangorn's reference plot.networx rendering."
     )
 
 if dist_parts:
@@ -1255,9 +1260,14 @@ if analyses.get("gen_dist", False):
 
 if analyses.get("neighbornet", False):
     refs["neighbornet"] = (
-        "Bryant, D. & Moulton, V. (2004). Neighbor-Net: an agglomerative method "
+        "Bryant, D. & Moulton, V. (2004). Neighbor-net: An agglomerative method "
         "for the construction of phylogenetic networks. "
-        "*Molecular Biology and Evolution*, 21, 255–265."
+        "*Molecular Biology and Evolution*, 21(2), 255–265."
+    )
+    refs["fastnntr"] = (
+        "Newell, R. J. P., & McMaster, E. S. (2025). Fast-NNT: Fast NeighbourNet "
+        "Split Trees For Unrooted Phylogenetic Analysis (v0.2.5). Zenodo. "
+        "https://doi.org/10.5281/zenodo.16907379"
     )
     refs["phangorn"] = (
         "Schliep, K.P. (2011). phangorn: phylogenetic analysis in R. "

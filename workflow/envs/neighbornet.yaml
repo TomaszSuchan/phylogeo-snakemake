@@ -5,5 +5,7 @@ dependencies:
   - r-base
   - r-phangorn
   - r-ggplot2
+  - r-remotes
   - bioconductor-ggtree
   - bioconductor-tanggle
+  # fastnntr is CRAN-only and is installed by install_fastnntr before inference.

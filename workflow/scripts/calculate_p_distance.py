@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
 # pyright: reportMissingImports=false, reportUndefinedVariable=false
 """
-Calculate a true per-site p-distance from the all-sites (variant + invariant) VCF.
+Calculate pairwise p-distance from the missingness-filtered variant VCF.
+
+Uses the same VCF stage as fineRADstructure: after sample subsetting, optional
+relatedness filtering, and optional vcf_filtering.f_missing, but before biallelic
+MAC/MAF filtering and thinning. Invariant sites are not included (variant-only VCF).
 
 For diploid genotypes coded as alternate-allele dosage (0, 1, 2), the per-site
 difference between two individuals is |g_i - g_j| / 2. The p-distance is the mean
-of this difference over all sites where both individuals are non-missing, counting
-BOTH variant and invariant sites. Invariant sites contribute 0 to the numerator and
-1 to the denominator, which normalises the SNP-only dissimilarity into a proper
-per-site p-distance whose magnitude does not depend on SNP ascertainment
-(MAC/MAF/thinning).
-
-Input is the reconstructed all-sites VCF (the same one pixy uses), read with vcfpy.
-Multiallelic sites are skipped (no well-defined biallelic dosage); biallelic and
-invariant sites are used. No cross-sample imputation (pairwise-complete sites only).
+of this difference over variant sites where both individuals are non-missing.
+Multiallelic sites are skipped (no well-defined biallelic dosage). No cross-sample
+imputation (pairwise-complete sites only).
 """
 
 import re
@@ -32,7 +30,7 @@ sys.stdout = open(log_path, "w")
 sys.stderr = sys.stdout
 
 print("=" * 80)
-print("p-distance (true per-site, all-sites VCF)")
+print("p-distance (variant VCF, fineRADstructure-equivalent input)")
 print("=" * 80)
 print(f"Input VCF: {vcf_path}")
 print(f"Output: {output_path}")
@@ -49,7 +47,7 @@ def parse_dosage(gt):
     return float(sum(1 for a in alleles if a != "0"))
 
 
-print("Reading all-sites VCF and building dosage matrix...")
+print("Reading variant VCF and building dosage matrix...")
 reader = vcfpy.Reader.from_path(vcf_path)
 sample_ids = list(reader.header.samples.names)
 n_samples = len(sample_ids)
@@ -59,9 +57,12 @@ print(f"Samples: {n_samples}")
 dosage_cols = []          # one (n_samples,) array per retained site
 n_total = 0
 n_multiallelic = 0
+n_invariant = 0
 for record in reader:
     n_total += 1
-    # Keep invariant (no ALT) and biallelic (one ALT); skip multiallelic.
+    if not record.ALT:
+        n_invariant += 1
+        continue
     if len(record.ALT) > 1:
         n_multiallelic += 1
         continue
@@ -76,10 +77,11 @@ reader.close()
 
 n_sites = len(dosage_cols)
 print(f"Total records: {n_total}")
-print(f"Retained sites (biallelic + invariant): {n_sites}")
+print(f"Retained biallelic variant sites: {n_sites}")
+print(f"Skipped invariant sites: {n_invariant}")
 print(f"Skipped multiallelic sites: {n_multiallelic}")
 if n_sites == 0:
-    raise ValueError("No usable (biallelic or invariant) sites found in the all-sites VCF.")
+    raise ValueError("No usable biallelic variant sites found in the input VCF.")
 
 # genotypes: n_samples x n_sites, NaN for missing.
 genotypes = np.ascontiguousarray(np.array(dosage_cols, dtype=np.float32).T)
