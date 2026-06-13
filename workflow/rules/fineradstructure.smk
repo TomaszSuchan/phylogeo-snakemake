@@ -1,9 +1,4 @@
 ## fineRADstructure analysis targets
-rule fineradstructure_all:
-    """Target rule to run complete fineRADstructure analysis"""
-    input:
-        finestr_mcmcTree = "results/{project}/fineradstructure/{project}_chunks.mcmcTree.xml"
-    default_target: True
 
 rule fineradstructure_prepare_input:
     input:
@@ -131,3 +126,13 @@ rule fineradstructure_plot:
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
     script:
         "../scripts/fineradstructure_plot.R"
+
+rule fineradstructure_all:
+    """Target rule to run complete fineRADstructure analysis"""
+    input:
+        finestr_mcmcTree = rules.fineradstructure_tree.output.finestr_mcmcTree,
+        simple_pdf = rules.fineradstructure_plot.output.simple_pdf,
+        popavg_pdf = rules.fineradstructure_plot.output.popavg_pdf,
+        labeled_pdf = rules.fineradstructure_plot.output.labeled_pdf,
+        rds = rules.fineradstructure_plot.output.rds,
+    default_target: True

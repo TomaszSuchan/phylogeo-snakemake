@@ -1433,7 +1433,11 @@ def get_all_targets():
                 f"results/{project}/fineradstructure/{project}.input",
                 f"results/{project}/fineradstructure/{project}_chunks.out",
                 f"results/{project}/fineradstructure/{project}_chunks.mcmc.xml",
-                f"results/{project}/fineradstructure/{project}_chunks.mcmcTree.xml"
+                f"results/{project}/fineradstructure/{project}_chunks.mcmcTree.xml",
+                f"results/{project}/fineradstructure/plots/{project}.SimpleCoancestry.pdf",
+                f"results/{project}/fineradstructure/plots/{project}.PopAveragedCoancestry.pdf",
+                f"results/{project}/fineradstructure/plots/{project}.PopAveragedCoancestryLabeled.pdf",
+                f"results/{project}/fineradstructure/plots/{project}.fineradstructure_plots.rds",
             ])
 
         # TreeMix targets
