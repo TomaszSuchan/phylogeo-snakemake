@@ -12,12 +12,6 @@ ROH_CLASS_LEVELS <- c(
   "Long (>5 Mb; <10 gen)"
 )
 
-ROH_LENGTH_CLASS_CAPTION <- paste0(
-  "ROH length classes approximate generations since common ancestry as ",
-  "G = 100/(2 × cM), with cM estimated from physical length assuming ",
-  ROH_RECOMBINATION_RATE_CM_PER_MB, " cM/Mb."
-)
-
 assign_roh_class <- function(length_mb) {
   dplyr::case_when(
     length_mb < 1 ~ ROH_CLASS_LEVELS[1],
