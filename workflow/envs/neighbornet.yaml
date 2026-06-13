@@ -8,4 +8,9 @@ dependencies:
   - r-remotes
   - bioconductor-ggtree
   - bioconductor-tanggle
-  # fastnntr is CRAN-only and is installed by install_fastnntr before inference.
+  - rust
+  - xz
+  - make
+  - pkg-config
+  - cxx-compiler
+  # fastnntr (extendr/Rust) is installed from GitHub by install_fastnntr.

@@ -5,17 +5,24 @@ NeighborNet is inferred from the p-distance genetic distance matrix via fastnntr
 
 rule install_fastnntr:
     """
-    Install the CRAN fastnntr package into the neighbornet conda env.
+    Install fastnntr once into the Snakemake conda environment from GitHub.
+    fastnntr is an extendr/Rust package (not on conda); the env provides rustc/cargo
+    and this rule installs a pinned release before NeighborNet inference.
     """
     output:
         touch(".snakemake/fastnntr_installed")
     conda:
         "../envs/neighbornet.yaml"
+    threads: config["parameters"]["resources"]["default-long"]["threads"]
+    resources:
+        mem_mb = config["parameters"]["resources"]["default-long"]["mem_mb"],
+        runtime = config["parameters"]["resources"]["default-long"]["runtime"]
     log:
         "logs/install_fastnntr.log"
     shell:
         """
-        Rscript --vanilla -e 'lib <- .libPaths()[1]; unlink(list.files(lib, pattern="^00LOCK-", full.names=TRUE), recursive=TRUE, force=TRUE); if (!requireNamespace("fastnntr", quietly=TRUE, lib.loc=lib)) install.packages("fastnntr", repos="https://cloud.r-project.org/", lib=lib); if (!requireNamespace("fastnntr", quietly=TRUE, lib.loc=lib)) stop("Failed to install required R package: fastnntr")' &> {log}
+        set -euo pipefail
+        Rscript --vanilla -e 'lib <- .libPaths()[1]; unlink(list.files(lib, pattern="^00LOCK-", full.names=TRUE), recursive=TRUE, force=TRUE); if (!requireNamespace("fastnntr", quietly=TRUE, lib.loc=lib)) remotes::install_github("rhysnewell/fast-nnt", subdir="fastnntr", ref="v0.2.5", upgrade="never", dependencies=TRUE, build_vignettes=FALSE, lib=lib); if (!requireNamespace("fastnntr", quietly=TRUE, lib.loc=lib)) stop("Failed to install required R package: fastnntr")' &> {log}
         touch {output}
         """
 

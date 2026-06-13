@@ -1,5 +1,12 @@
 #!/usr/bin/env Rscript
 
+if (!requireNamespace("fastnntr", quietly = TRUE)) {
+  stop(
+    "fastnntr is not installed in this rule environment. ",
+    "The install_fastnntr Snakemake rule should install it before analysis."
+  )
+}
+
 suppressPackageStartupMessages({
   library(fastnntr)
 })
