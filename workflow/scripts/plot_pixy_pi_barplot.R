@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-# Create Pi barplot with confidence intervals, optionally grouped by stratification
+# Pi barplot with confidence intervals, one plot per pixy group_by column.
 
 library(ggplot2)
 library(dplyr)
@@ -14,312 +14,99 @@ if (file.exists(ggsave_utils)) {
   source("workflow/scripts/plot_ggsave_utils.R")
 }
 
-# Prevent creation of Rplots.pdf
+plot_group_utils <- tryCatch(
+  file.path(dirname(normalizePath(snakemake@script)), "plot_group_utils.R"),
+  error = function(e) "workflow/scripts/plot_group_utils.R"
+)
+if (file.exists(plot_group_utils)) {
+  source(plot_group_utils)
+} else {
+  source("workflow/scripts/plot_group_utils.R")
+}
+
+DEFAULT_FILL <- "steelblue"
+
 pdf(NULL)
 
-# Redirect all output to log file
 log_file <- file(snakemake@log[[1]], open = "wt")
 sink(log_file, type = "output")
 sink(log_file, type = "message")
 
-# Snakemake inputs/outputs
 pi_summary_file <- snakemake@input[["pi_summary"]]
 popdata_file <- snakemake@input[["popdata"]]
 output_pdf <- snakemake@output[["pdf"]]
 output_rds <- snakemake@output[["rds"]]
 
-# Parameters
-color_by_name <- NULL
-pca_colors <- NULL
-plot_type <- "grouped"  # "grouped", "sorted", or "colored"
-if ("color_by" %in% names(snakemake@params)) {
-  color_by_param <- snakemake@params[["color_by"]]
-  if (!is.null(color_by_param) && !is.na(color_by_param)) {
-    color_by_name <- as.character(color_by_param)
-    if (length(color_by_name) == 0 || color_by_name == "" || color_by_name == "none") {
-      color_by_name <- NULL
-    }
-  } else {
-    color_by_name <- NULL
-  }
-}
-group_colors <- NULL
-if ("group_colors" %in% names(snakemake@params)) {
-  group_colors_param <- snakemake@params[["group_colors"]]
-  if (!is.null(group_colors_param)) {
-    group_colors <- unlist(group_colors_param, use.names = TRUE)
-    if (length(group_colors) == 0 || all(names(group_colors) == "")) {
-      group_colors <- NULL
-    }
-  }
-}
-if ("pca_colors" %in% names(snakemake@params)) {
-  pca_colors <- snakemake@params[["pca_colors"]]
-  if (!is.null(pca_colors)) {
-    pca_colors <- unlist(pca_colors)
-  }
-}
-if ("plot_type" %in% names(snakemake@params)) {
-  plot_type <- as.character(snakemake@params[["plot_type"]])
-}
+grouping_name <- as.character(snakemake@params[["grouping"]])
+group_colors <- group_fill_values(snakemake@params[["group_colors"]])
+population_sort_by <- snakemake@params[["population_sort_by"]]
 
 message("\n=== READING PI SUMMARY ===\n")
 pi_df <- read.table(pi_summary_file, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
-pi_df_original <- pi_df
-message(sprintf("Loaded %d populations\n", nrow(pi_df)))
+message(sprintf("Loaded %d populations for grouping '%s'\n", nrow(pi_df), grouping_name))
 
-# Read popdata if stratification is requested
-if (!is.null(color_by_name)) {
-  message("\n=== READING POPDATA ===\n")
-  popdata <- read.table(popdata_file, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
-  message(sprintf("Popdata columns: %s\n", paste(names(popdata), collapse = ", ")))
-  
-  # Get Site column name (prefer "Site" if it exists, otherwise use first column)
-  if ("Site" %in% colnames(popdata)) {
-    site_col <- "Site"
-  } else {
-    site_col <- colnames(popdata)[1]
-  }
+popdata <- read.table(popdata_file, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
+site_col <- if ("Site" %in% colnames(popdata)) "Site" else colnames(popdata)[1]
 
-  # Validate grouping column before subsetting to avoid hard failure
-  if (!color_by_name %in% colnames(popdata)) {
-    warning(sprintf("Column '%s' not found in popdata. Plotting without grouping.\n", color_by_name))
-    color_by_name <- NULL
-  }
-  
-  if (!is.null(color_by_name)) {
-    # If summary populations already correspond to the grouping column values
-    # (e.g. pixy run with grouping=Region and color_by=Region), avoid Site-based merge.
-    group_values <- unique(as.character(popdata[[color_by_name]]))
-    if (
-      !any(pi_df$population %in% popdata[[site_col]]) &&
-      all(pi_df$population %in% group_values)
-    ) {
-      pi_df[[color_by_name]] <- pi_df$population
-      message(sprintf(
-        "Detected summary grouped by '%s'; using direct population-to-group mapping.",
-        color_by_name
-      ))
-    } else {
-    # Get unique population-level data from popdata.
-    # Use a dedicated merge key so site_col == color_by_name (e.g. both "Site") does not
-    # duplicate columns (R renames to Site.1) or drop the fill column after merge().
-    pdu <- popdata[!duplicated(popdata[[site_col]]), , drop = FALSE]
-    popdata_unique <- data.frame(
-      .pixy_merge_key = pdu[[site_col]],
-      stringsAsFactors = FALSE
-    )
-    popdata_unique[[color_by_name]] <- pdu[[color_by_name]]
+if (is.null(group_sort_by(population_sort_by))) {
+  message(sprintf("Using alphabetical order for %s\n", grouping_name))
+} else if (length(group_sort_by(population_sort_by)) == 1 &&
+           group_sort_by(population_sort_by) %in% colnames(popdata)) {
+  message(sprintf(
+    "Sorting %s by column '%s'\n",
+    grouping_name,
+    group_sort_by(population_sort_by)[1]
+  ))
+} else {
+  message(sprintf("Using configured level order for %s\n", grouping_name))
+}
 
-    message(sprintf("Unique populations in popdata: %d\n", nrow(popdata_unique)))
+pop_order <- population_levels(pi_df$population, popdata, population_sort_by, site_col)
+pi_df$population <- factor(pi_df$population, levels = pop_order)
+pi_df <- pi_df[order(match(as.character(pi_df$population), pop_order)), , drop = FALSE]
 
-    # Try matching population names
-    # First try: direct match with full population name (e.g., "Csr_BBE")
-    pi_df_merged <- merge(pi_df, popdata_unique,
-                          by.x = "population",
-                          by.y = ".pixy_merge_key",
-                          all.x = TRUE)
-
-    # If that fails for some populations, try removing project prefix (e.g., "BBE")
-    if (any(is.na(pi_df_merged[[color_by_name]]))) {
-      # Only try alternative matching for populations that didn't match
-      unmatched <- is.na(pi_df_merged[[color_by_name]])
-      pi_df_unmatched <- pi_df[unmatched, ]
-
-      if (nrow(pi_df_unmatched) > 0) {
-        pi_df_unmatched$population_clean <- gsub("^[^_]+_", "", pi_df_unmatched$population)
-        pi_df_unmatched_merged <- merge(pi_df_unmatched, popdata_unique,
-                                        by.x = "population_clean",
-                                        by.y = ".pixy_merge_key",
-                                        all.x = TRUE)
-        # Remove temporary column
-        pi_df_unmatched_merged$population_clean <- NULL
-        
-        # Combine matched and unmatched results
-        pi_df_merged[unmatched, ] <- pi_df_unmatched_merged
-      }
-    }
-    
-    # Remove populations without stratification data
-    na_mask <- is.na(pi_df_merged[[color_by_name]])
-    if (any(na_mask)) {
-      n_na <- sum(na_mask)
-      warning(sprintf("%d populations have missing values in '%s' column and will be excluded\n", 
-                      n_na, color_by_name))
-      pi_df_merged <- pi_df_merged[!na_mask, ]
-    }
-    
-    # Remove empty strings
-    empty_mask <- pi_df_merged[[color_by_name]] == ""
-    if (any(empty_mask)) {
-      n_empty <- sum(empty_mask)
-      warning(sprintf("%d populations have empty strings in '%s' column and will be excluded\n", 
-                      n_empty, color_by_name))
-      pi_df_merged <- pi_df_merged[!empty_mask, ]
-    }
-    
-    pi_df <- pi_df_merged
-    message(sprintf("After merging with popdata: %d populations\n", nrow(pi_df)))
-    }
-
-    # If grouping removed all rows, fall back to ungrouped plot instead of failing.
-    if (nrow(pi_df) == 0) {
-      warning(sprintf(
-        "No populations left after applying grouping '%s'. Falling back to ungrouped barplot.",
-        color_by_name
-      ))
-      pi_df <- pi_df_original
-      color_by_name <- NULL
-    }
-  }
+if (!is.null(group_colors) && length(group_colors) > 0) {
+  message(sprintf(
+    "Using configured fill colors for %s (%d colors)\n",
+    grouping_name,
+    length(group_colors)
+  ))
 }
 
 message("\n=== CREATING BARPLOT ===\n")
 
-# Create base plot
-if (is.null(color_by_name)) {
-  # No grouping - simple barplot, ordered by pi value
-  pi_df <- pi_df[order(pi_df$mean_pi), ]
-  pi_df$population <- factor(pi_df$population, levels = pi_df$population)
-  
-  p <- ggplot(pi_df, aes(x = population, y = mean_pi)) +
-    geom_bar(stat = "identity", fill = "steelblue", alpha = 0.7, color = "black", linewidth = 0.3) +
-    geom_errorbar(aes(ymin = ci_low, ymax = ci_high), 
-                  width = 0.2, color = "black", linewidth = 0.5) +
-    labs(
-      x = "Population",
-      y = expression(paste("Nucleotide Diversity (", pi, ")"))
-    ) +
-    theme_bw() +
-    theme(
-      axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
-      panel.grid.major.x = element_blank()
-    )
+if (!is.null(group_colors) && length(group_colors) > 0) {
+  p <- ggplot(pi_df, aes(x = population, y = mean_pi, fill = population)) +
+    geom_bar(stat = "identity", alpha = 0.7, color = "black", linewidth = 0.3) +
+    scale_fill_manual(values = group_colors)
 } else {
-  # Colored by stratification
-  unique_categories <- sort(unique(pi_df[[color_by_name]]))
-  n_categories <- length(unique_categories)
-
-  if (!is.null(group_colors)) {
-    message(sprintf(
-      "Pi barplot: using parameters.pixy.colors.%s (%d defined colors).",
-      color_by_name, length(group_colors)
-    ))
-    colors <- group_colors
-  } else if (!is.null(pca_colors) && length(pca_colors) > 0) {
-    if (n_categories > length(pca_colors)) {
-      message(sprintf(
-        "Pi barplot: %d categories but only %d pca_colors defined. Interpolating additional colors.",
-        n_categories, length(pca_colors)
-      ))
-      colors_all <- colorRampPalette(pca_colors)(n_categories)
-    } else {
-      colors_all <- pca_colors[1:n_categories]
-    }
-    names(colors_all) <- unique_categories
-    colors <- colors_all
-  } else {
-    message("Pi barplot: No colors defined in config. Using default ggplot2 colors.")
-    colors <- NULL
-  }
-  
-  if (plot_type == "sorted") {
-    # Sorted by pi value (low to high), colored by stratification
-    pi_df <- pi_df[order(pi_df$mean_pi), ]
-    pi_df$population <- factor(pi_df$population, levels = pi_df$population)
-
-    p <- ggplot(pi_df, aes(x = population, y = mean_pi, fill = .data[[color_by_name]])) +
-      geom_bar(stat = "identity", alpha = 0.7, color = "black", linewidth = 0.3) +
-      geom_errorbar(aes(ymin = ci_low, ymax = ci_high),
-                    width = 0.2, color = "black", linewidth = 0.5) +
-      labs(
-        x = "Population",
-        y = expression(paste("Nucleotide Diversity (", pi, ")")),
-        fill = color_by_name
-      ) +
-      theme_bw() +
-      theme(
-        axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
-        panel.grid.major.x = element_blank(),
-        legend.position = "right"
-      )
-
-    if (!is.null(colors)) {
-      p <- p + scale_fill_manual(values = colors)
-    }
-
-  } else if (plot_type == "colored") {
-    # Alphabetical population order, colored by stratification, no legend
-    pi_df <- pi_df[order(pi_df$population), ]
-    pi_df$population <- factor(pi_df$population, levels = pi_df$population)
-
-    p <- ggplot(pi_df, aes(x = population, y = mean_pi, fill = .data[[color_by_name]])) +
-      geom_bar(stat = "identity", alpha = 0.7, color = "black", linewidth = 0.3) +
-      geom_errorbar(aes(ymin = ci_low, ymax = ci_high),
-                    width = 0.2, color = "black", linewidth = 0.5) +
-      labs(
-        x = "Population",
-        y = expression(paste("Nucleotide Diversity (", pi, ")"))
-      ) +
-      theme_bw() +
-      theme(
-        axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
-        panel.grid.major.x = element_blank(),
-        legend.position = "none"
-      )
-
-    if (!is.null(colors)) {
-      p <- p + scale_fill_manual(values = colors)
-    }
-
-  } else if (plot_type == "grouped") {
-    # Grouped by stratification - use facet_wrap like removed individuals plot
-    # Order populations within each group by pi value
-    pi_df <- pi_df %>%
-      group_by(.data[[color_by_name]]) %>%
-      arrange(mean_pi) %>%
-      ungroup()
-    
-    # Create factor levels to maintain order within each group
-    pi_df$population <- factor(pi_df$population, levels = unique(pi_df$population))
-    
-    p <- ggplot(pi_df, aes(x = population, y = mean_pi, fill = .data[[color_by_name]])) +
-      geom_bar(stat = "identity", alpha = 0.7, color = "black", linewidth = 0.3) +
-      geom_errorbar(aes(ymin = ci_low, ymax = ci_high), 
-                    width = 0.2, color = "black", linewidth = 0.5) +
-      facet_wrap(as.formula(paste("~", color_by_name)), scales = "free_x", ncol = 4) +
-      labs(
-        x = "Population",
-        y = expression(paste("Nucleotide Diversity (", pi, ")")),
-        fill = color_by_name
-      ) +
-      theme_bw() +
-      theme(
-        axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
-        panel.grid.major.x = element_blank(),
-        legend.position = "bottom",
-        strip.text = element_text(size = 10, face = "bold")
-      )
-    
-    # Add color scale if colors were defined (use same colors as sorted version)
-    if (!is.null(colors)) {
-      p <- p + scale_fill_manual(values = colors)
-    }
-  } else {
-    stop("Unknown plot_type: ", plot_type)
-  }
+  p <- ggplot(pi_df, aes(x = population, y = mean_pi)) +
+    geom_bar(stat = "identity", fill = DEFAULT_FILL, alpha = 0.7, color = "black", linewidth = 0.3)
 }
 
-# Save plots
+p <- p +
+  geom_errorbar(aes(ymin = ci_low, ymax = ci_high), width = 0.2, color = "black", linewidth = 0.5) +
+  labs(
+    x = grouping_name,
+    y = expression(paste("Nucleotide Diversity (", pi, ")"))
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
+    panel.grid.major.x = element_blank(),
+    legend.position = "none"
+  )
+
 message("\n=== SAVING OUTPUT ===\n")
 message(sprintf("Output PDF: %s\n", output_pdf))
 message(sprintf("Output RDS: %s\n", output_rds))
 
+plot_width <- min(50, max(8, nrow(pi_df) * 0.3))
 dir.create(dirname(output_pdf), recursive = TRUE, showWarnings = FALSE)
 ggsave_pdf(
   filename = output_pdf,
   plot = p,
-  width = max(8, nrow(pi_df) * 0.3),  # Adjust width based on number of populations
+  width = plot_width,
   height = 6,
   dpi = 300
 )
@@ -329,8 +116,6 @@ saveRDS(p, output_rds)
 
 message("\n=== COMPLETED SUCCESSFULLY ===\n")
 
-# Close log file sinks
 sink(type = "message")
 sink(type = "output")
 close(log_file)
-

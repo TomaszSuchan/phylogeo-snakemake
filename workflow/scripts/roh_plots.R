@@ -88,7 +88,13 @@ group_boxplot <- function(data, col, y, fill_values = NULL) {
     )
 }
 
-plot_group_boxplots <- function(col, fill_values = NULL) {
+apply_group_levels <- function(data, col, sort_by = NULL) {
+  level_order <- roh_group_levels(data, col, sort_by)
+  data[[col]] <- factor(data[[col]], levels = level_order)
+  data
+}
+
+plot_group_boxplots <- function(col, fill_values = NULL, sort_by = NULL) {
   if (!(col %in% colnames(per_ind))) {
     stop("ROH group_by column '", col, "' not found in per-individual summary.")
   }
@@ -96,19 +102,30 @@ plot_group_boxplots <- function(col, fill_values = NULL) {
     stop("ROH group_by column '", col, "' has no non-NA values.")
   }
 
-  n_groups <- length(unique(per_ind[[col]][!is.na(per_ind[[col]])]))
+  level_order <- roh_group_levels(per_ind, col, sort_by)
+  if (is.null(roh_group_sort_by(sort_by))) {
+    cat("Using alphabetical order for", col, "\n")
+  } else if (length(roh_group_sort_by(sort_by)) == 1 &&
+             roh_group_sort_by(sort_by) %in% colnames(per_ind)) {
+    cat("Sorting", col, "by column", roh_group_sort_by(sort_by)[1], "\n")
+  } else {
+    cat("Using configured level order for", col, "\n")
+  }
+
+  plot_data <- apply_group_levels(per_ind, col, sort_by)
+  n_groups <- length(level_order)
   plot_width <- min(50, max(8, n_groups * 0.8))
 
   if (!is.null(fill_values) && length(fill_values) > 0) {
     cat("Using configured fill colors for", col, "\n")
   }
 
-  p_froh <- group_boxplot(per_ind, col, "F_ROH", fill_values) +
+  p_froh <- group_boxplot(plot_data, col, "F_ROH", fill_values) +
     labs(x = col, y = "F_ROH")
   ggsave_pdf(out_pdf("froh"), p_froh, width = plot_width, height = 6)
   saveRDS(p_froh, out_rds("froh"))
 
-  froh_group_long <- per_ind %>%
+  froh_group_long <- plot_data %>%
     dplyr::select(Sample, all_of(col), all_of(froh_class_cols)) %>%
     filter(!is.na(.data[[col]])) %>%
     pivot_longer(
@@ -125,12 +142,12 @@ plot_group_boxplots <- function(col, fill_values = NULL) {
   ggsave_pdf(out_pdf("froh_classes"), p_froh_classes, width = plot_width, height = classes_panel_height)
   saveRDS(p_froh_classes, out_rds("froh_classes"))
 
-  p_nroh <- group_boxplot(per_ind, col, "N_ROH_segments", fill_values) +
+  p_nroh <- group_boxplot(plot_data, col, "N_ROH_segments", fill_values) +
     labs(x = col, y = "Number of ROH Segments")
   ggsave_pdf(out_pdf("nroh"), p_nroh, width = plot_width, height = 6)
   saveRDS(p_nroh, out_rds("nroh"))
 
-  nroh_group_long <- per_ind %>%
+  nroh_group_long <- plot_data %>%
     dplyr::select(Sample, all_of(col), all_of(nroh_class_cols)) %>%
     filter(!is.na(.data[[col]])) %>%
     pivot_longer(
@@ -151,7 +168,11 @@ plot_group_boxplots <- function(col, fill_values = NULL) {
 if (!plot_summary) {
   dir.create(dirname(out_pdf("froh")), recursive = TRUE, showWarnings = FALSE)
   group_fill_values <- roh_group_fill_values(snakemake@params[["group_colors"]])
-  plot_group_boxplots(group_col, fill_values = group_fill_values)
+  plot_group_boxplots(
+    group_col,
+    fill_values = group_fill_values,
+    sort_by = snakemake@params[["group_sort_by"]]
+  )
   cat("=== ROH plots complete ===\n")
   quit(save = "no", status = 0)
 }

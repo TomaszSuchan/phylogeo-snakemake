@@ -440,20 +440,20 @@ parameters: &global_params
                           # The full list is used to define which groupings are available for pixy plots.
                           # Include "Site" in this list to run per-site pixy π and build the geographic π map
                           # (e.g. ["Site", "Region", "Region2"]).
-    # Optional: grouping variables for Pi barplots that should be
-    # produced as grouped, sorted, and colored versions.
-    # grouped: facet panels; sorted: by pi with legend; colored: alphabetical, no legend.
-    # If empty or omitted, only the plain Pi barplot is generated.
-    arrange_by: ["Region"]
     # Map-specific parameters for pixy PI maps
     point_size: 3        # size of points on genetic diversity maps
     map_outline: true    # add point outlines (true/false, default: true)
-    # Optional fill colors for grouped/sorted/colored Pi barplots (parameters.pixy.colors.{arrange_by column}).
-    # Named map per stratification column; omit for pca_colors fallback or ggplot defaults.
-    # colors:
-    #   Region:
-    #     RegionA: "#E41A1C"
-    #     RegionB: "#377EB8"
+    # Optional per-group settings for pi barplots (one plot per group_by column).
+    # Omit a column block for default grey bars and alphabetical order.
+    # Site:
+    #   sort_by: ["Region"]   # indpopdata column to order x-axis; null/empty = alphabetical
+    #   colors:
+    #     SiteA: "#E41A1C"
+    #     SiteB: "#377EB8"
+    # Massif:
+    #   sort_by:
+    #   colors:
+    #     MassifA: "#4DAF4A"
 
   ## AMOVA parameters
   # AMOVA variance partitioning across metadata strata.
@@ -471,13 +471,16 @@ parameters: &global_params
     # Map-specific parameters for mean F_ROH per Site maps (when popdata coordinates exist)
     point_size: 3        # size of points on F_ROH maps
     map_outline: true    # add point outlines (true/false, default: true)
-    # Optional fill colors for group boxplots (froh_by_{X}, nroh_by_{X}, *_classes).
-    # One named map per group_by column; omit a column or set null for default grey boxplots.
-    # colors:
-    #   Site:
+    # Optional per-group settings for group boxplots (froh_by_{X}, nroh_by_{X}, *_classes).
+    # One block per group_by column; omit a column for default grey boxplots and alphabetical order.
+    # Site:
+    #   sort_by: ["Region"]   # indpopdata column to order x-axis; null/empty = alphabetical
+    #   colors:
     #     SiteA: "#E41A1C"
     #     SiteB: "#377EB8"
-    #   Massif:
+    # Massif:
+    #   sort_by: ["Malá Fatra", "Nízke Tatry"]  # explicit level order; null/empty = alphabetical
+    #   colors:
     #     MassifA: "#4DAF4A"
 
   ## Genome scan parameters
@@ -838,7 +841,6 @@ projects:
   #       window_size: 10000
   #       bootstrap_replicates: 1000
   #       group_by: ["Site", "Region"]
-  #       arrange_by: ["Region"]
   #     amova:
   #       strata: ["Region", "Site"]
   #       nperm: 999

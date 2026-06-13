@@ -21,14 +21,15 @@ assign_roh_class <- function(length_mb) {
   )
 }
 
-# Named level -> color map from parameters.roh.colors.{group_col}, or NULL.
-roh_group_fill_values <- function(group_colors_param) {
-  if (is.null(group_colors_param)) {
-    return(NULL)
-  }
-  colors <- unlist(group_colors_param, use.names = TRUE)
-  if (length(colors) == 0 || all(names(colors) == "")) {
-    return(NULL)
-  }
-  colors
+plot_group_utils <- tryCatch({
+  file.path(dirname(normalizePath(snakemake@script)), "plot_group_utils.R")
+}, error = function(e) "workflow/scripts/plot_group_utils.R")
+if (file.exists(plot_group_utils)) {
+  source(plot_group_utils)
+} else {
+  source("workflow/scripts/plot_group_utils.R")
 }
+
+roh_group_fill_values <- group_fill_values
+roh_group_sort_by <- group_sort_by
+roh_group_levels <- group_levels

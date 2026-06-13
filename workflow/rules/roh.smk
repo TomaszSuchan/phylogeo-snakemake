@@ -97,7 +97,12 @@ rule roh_group_plots:
         nroh_classes_rds="results/{project}/roh/plots/{project}.nroh_by_{group_col}_classes.rds"
     params:
         group_col=lambda wildcards: wildcards.group_col,
-        group_colors=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("roh", {}).get("colors", {}).get(wildcards.group_col, None),
+        group_colors=lambda wildcards: _roh_group_setting(
+            wildcards.project, wildcards.group_col, "colors"
+        ),
+        group_sort_by=lambda wildcards: _roh_group_setting(
+            wildcards.project, wildcards.group_col, "sort_by"
+        ),
     log:
         "logs/{project}/roh_group_plots.{group_col}.log"
     benchmark:
