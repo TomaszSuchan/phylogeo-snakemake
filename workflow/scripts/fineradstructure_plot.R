@@ -215,8 +215,22 @@ if (is.null(population_columns)) {
     tab <- sort(table(pops), decreasing = TRUE)
     paste(paste0(tab, names(tab)), collapse = ";")
   }
+  # dominant population value per cluster (for label colouring)
+  cluster_dom_pop <- sapply(mapstatelist, function(members) {
+    pops <- first_lookup[members]
+    pops <- pops[!is.na(pops)]
+    if (length(pops) == 0) return(NA_character_)
+    names(which.max(table(pops)))
+  })
+
   nms_to_custom <- setNames(sapply(mapstatelist, make_pop_label),
                             sapply(mapstatelist, NameMoreSummary))
+  # custom label → colour of its dominant population
+  custom_to_color <- setNames(
+    col_color_maps[[first_col]][cluster_dom_pop],
+    sapply(mapstatelist, make_pop_label)
+  )
+
   popdendclear_labeled <- dendrapply(popdendclear, function(node) {
     lbl <- attr(node, "label")
     if (!is.null(lbl) && lbl %in% names(nms_to_custom))
@@ -224,6 +238,14 @@ if (is.null(population_columns)) {
     node
   })
   cat("Relabelled clusters using indpopdata column:", first_col, "\n")
+
+  # colour vector in the order plotFinestructure will draw the K labels
+  label_colors <- {
+    lbls <- labels(popdendclear_labeled)
+    cols <- custom_to_color[lbls]
+    cols[is.na(cols)] <- "#000000"
+    unname(cols)
+  }
 
   # --- label positions (individual scale → K centres) ------------------------
   mappopcorrectorder <- NameExpand(labels(popdend))
@@ -251,10 +273,11 @@ if (is.null(population_columns)) {
   plotFinestructure(
     tmpmat,
     dimnames(tmpmat)[[1]],
-    labelsx  = labels(popdendclear_labeled),
+    labelsx   = labels(popdendclear_labeled),
     labelsatx = labellocs,
     labelsaty = labellocs,
     labelsoff = c(text_labelsoff, text_labelsoff),
+    text.col  = label_colors,
     xcrt = 0,
     ycrt = 45,
     cols = some.colors_end,
