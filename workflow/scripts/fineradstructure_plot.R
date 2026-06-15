@@ -147,6 +147,7 @@ plotFinestructure(
   dimnames(tmpmat)[[1]],
   labelsx = labels(popdendclear),
   labelsatx = labellocs,
+  labelsaty = labellocs,  # mirror x: K labels at K population centres, not recycled over N ticks
   xcrt = xcrt,
   cols = some.colors_end,
   ycrt = ycrt,
