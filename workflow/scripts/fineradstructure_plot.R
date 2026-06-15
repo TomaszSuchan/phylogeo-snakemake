@@ -22,6 +22,7 @@ snakemake@source("FinestructureLibrary.R")
 chunkfile <- snakemake@input[["chunks"]]
 mcmcfile <- snakemake@input[["mcmc"]]
 treefile <- snakemake@input[["mcmcTree"]]
+indpopdata_file <- snakemake@input[["indpopdata"]]
 
 simple_pdf <- snakemake@output[["simple_pdf"]]
 popavg_pdf <- snakemake@output[["popavg_pdf"]]
@@ -30,11 +31,14 @@ output_rds <- snakemake@output[["rds"]]
 
 maxIndv <- as.numeric(snakemake@params[["max_indv"]])
 maxPop <- as.numeric(snakemake@params[["max_pop"]])
+population_column <- snakemake@params[["population_column"]]
 
 cat("=== fineRADstructure plotting (upstream-style) ===\n")
 cat("chunks:", chunkfile, "\n")
 cat("mcmc:", mcmcfile, "\n")
 cat("tree:", treefile, "\n")
+cat("indpopdata:", indpopdata_file, "\n")
+cat("population_column:", if (is.null(population_column)) "NULL (using individual-name summaries)" else population_column, "\n")
 cat("================================================\n\n")
 
 some.colors_end <- MakeColorYRP(final = c(0.2, 0.2, 0.2))
@@ -95,6 +99,48 @@ popdend <- makemydend(tdend, mapstatelist)
 popdend <- fixMidpointMembers(popdend)
 popdendclear <- makemydend(tdend, mapstatelist, "NameMoreSummary")
 popdendclear <- fixMidpointMembers(popdendclear)
+
+# Optionally relabel popdendclear leaves using an indpopdata column instead of
+# the individual-name NameMoreSummary format (e.g. "3popA;2popB").
+if (!is.null(population_column) && nchar(population_column) > 0) {
+  indpopdata_df <- read.table(
+    indpopdata_file, header = TRUE, sep = "\t",
+    stringsAsFactors = FALSE, check.names = FALSE, quote = ""
+  )
+  if (!"Ind" %in% colnames(indpopdata_df)) {
+    stop("indpopdata file must contain an 'Ind' column.")
+  }
+  if (!population_column %in% colnames(indpopdata_df)) {
+    stop(sprintf(
+      "population_column '%s' not found in indpopdata. Available columns: %s",
+      population_column, paste(colnames(indpopdata_df), collapse = ", ")
+    ))
+  }
+  ind_to_pop <- setNames(indpopdata_df[[population_column]], indpopdata_df[["Ind"]])
+
+  make_pop_label <- function(members) {
+    pops <- ind_to_pop[members]
+    pops <- pops[!is.na(pops)]
+    if (length(pops) == 0) return(paste(members, collapse = ";"))
+    tab <- sort(table(pops), decreasing = TRUE)
+    paste(paste0(tab, names(tab)), collapse = ";")
+  }
+
+  # Map NameMoreSummary(cluster) -> population-column label for each cluster
+  label_map <- setNames(
+    sapply(mapstatelist, make_pop_label),
+    sapply(mapstatelist, NameMoreSummary)
+  )
+
+  popdendclear <- dendrapply(popdendclear, function(node) {
+    lbl <- attr(node, "label")
+    if (!is.null(lbl) && lbl %in% names(label_map)) {
+      attr(node, "label") <- label_map[[lbl]]
+    }
+    node
+  })
+  cat("Relabelled clusters using indpopdata column:", population_column, "\n")
+}
 
 fullorder <- labels(tdend)
 miss <- setdiff(fullorder, rownames(dataraw))

@@ -516,6 +516,7 @@ parameters: &global_params
     plot:
       max_indv: 10000           # max individuals for plotting
       max_pop: 10000            # max populations for plotting
+      population_column: "Site" # indpopdata column for cluster labels (e.g. Site, Region); null = use individual-name summaries
 
   ## OrientAGraph parameters
   # Historical population graph inference from population allele counts.
