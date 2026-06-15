@@ -116,7 +116,13 @@ rule fineradstructure_plot:
         max_indv = lambda wildcards: config["projects"][wildcards.project]["parameters"]["fineradstructure"].get("plot", {}).get("max_indv", 10000),
         max_pop = lambda wildcards: config["projects"][wildcards.project]["parameters"]["fineradstructure"].get("plot", {}).get("max_pop", 10000),
         population_columns = lambda wildcards: config["projects"][wildcards.project]["parameters"]["fineradstructure"].get("plot", {}).get("population_columns", ["Site"]),
-        population_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["fineradstructure"].get("plot", {}).get("population_colors", None),
+        population_colors = lambda wildcards: {
+            col: _fineradstructure_plot_setting(wildcards.project, col, "colors")
+            for col in (
+                config["projects"][wildcards.project]["parameters"]["fineradstructure"]
+                .get("plot", {}).get("population_columns") or []
+            )
+        },
     log:
         "logs/{project}/fineradstructure_plot.log"
     benchmark:

@@ -518,7 +518,16 @@ parameters: &global_params
       max_pop: 10000            # max populations for plotting
       population_columns: ["Site"] # indpopdata columns for annotation bars and cluster labels;
                                    # null = skip the labeled plot entirely
-      population_colors: null   # optional named map {population_value: "#hexcolor", ...}
+      # Per-column color settings (same structure as roh / pixy).
+      # One block per entry in population_columns; omit a column for auto-generated colors.
+      # Site:
+      #   colors:
+      #     Pop1: "#E41A1C"
+      #     Pop2: "#377EB8"
+      # Region:
+      #   colors:
+      #     North: "#4DAF4A"
+      #     South: "#FF7F00"
 
   ## OrientAGraph parameters
   # Historical population graph inference from population allele counts.

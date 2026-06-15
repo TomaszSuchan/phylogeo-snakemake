@@ -188,18 +188,20 @@ if (is.null(population_columns)) {
     "#8DA0CB","#E78AC3","#A6D854","#FFD92F","#E5C494",
     "#B3B3B3","#1B9E77","#D95F02","#7570B3","#E7298A"
   )
-  user_colors <- if (!is.null(population_colors))
-    unlist(population_colors, use.names = TRUE) else NULL
-
+  # population_colors is a named list {col -> {value -> hex} or NULL}
   col_color_maps <- lapply(population_columns, function(col) {
     vals <- sort(unique(na.omit(indpopdata_df[[col]])))
     n <- length(vals)
     base_pal <- if (n <= length(qual_pal)) qual_pal[seq_len(n)]
                 else rainbow(n, s = 0.8, v = 0.85)
     auto_map <- setNames(base_pal, vals)
-    if (!is.null(user_colors))
-      auto_map[names(user_colors)[names(user_colors) %in% vals]] <-
-        user_colors[names(user_colors) %in% vals]
+    # override with per-column user colors (fineradstructure.plot.{col}.colors)
+    user_col <- population_colors[[col]]
+    if (!is.null(user_col)) {
+      user_vec <- unlist(user_col, use.names = TRUE)
+      matching <- names(user_vec)[names(user_vec) %in% vals]
+      auto_map[matching] <- user_vec[matching]
+    }
     auto_map
   })
   names(col_color_maps) <- population_columns
