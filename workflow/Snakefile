@@ -1371,13 +1371,13 @@ def get_all_targets():
             targets.append(f"results/{project}/stats_vcf/thinned/{project}.biallelic_snps.imiss")
             targets.extend(
                 expand(
-                    f"results/{project}/PCoA/{project}.PCoA_{distance}.eigvecs",
+                    f"results/{project}/PCoA/{project}.PCoA_{{distance}}.eigvecs",
                     distance=pcoa_distances,
                 )
             )
             targets.extend(
                 expand(
-                    f"results/{project}/PCoA/{project}.PCoA_{distance}.eigvals",
+                    f"results/{project}/PCoA/{project}.PCoA_{{distance}}.eigvals",
                     distance=pcoa_distances,
                 )
             )
