@@ -11,6 +11,9 @@ dependencies:
   - r-rcolorbrewer
   - r-rnaturalearth
   - r-rnaturalearthdata
+  # Avoid CRAN compilation/locking issues during install_mapmixture (elevatr deps)
+  - r-raster
+  - r-slippymath
   - r-scales
   - r-sf
   - r-terra
