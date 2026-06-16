@@ -1091,25 +1091,25 @@ def get_all_targets():
             ])
             targets.extend(
                 expand(
-                    f"results/{project}/relatedness/plots/{project}.genome_network-{color_by}.pdf",
+                    f"results/{project}/relatedness/plots/{project}.genome_network-{{color_by}}.pdf",
                     color_by=relatedness_color_by,
                 )
             )
             targets.extend(
                 expand(
-                    f"results/{project}/relatedness/plots/{project}.genome_network-{color_by}.rds",
+                    f"results/{project}/relatedness/plots/{project}.genome_network-{{color_by}}.rds",
                     color_by=relatedness_color_by,
                 )
             )
             targets.extend(
                 expand(
-                    f"results/{project}/relatedness/plots/{project}.king_network-{color_by}.pdf",
+                    f"results/{project}/relatedness/plots/{project}.king_network-{{color_by}}.pdf",
                     color_by=relatedness_color_by,
                 )
             )
             targets.extend(
                 expand(
-                    f"results/{project}/relatedness/plots/{project}.king_network-{color_by}.rds",
+                    f"results/{project}/relatedness/plots/{project}.king_network-{{color_by}}.rds",
                     color_by=relatedness_color_by,
                 )
             )
@@ -1341,25 +1341,25 @@ def get_all_targets():
             ])
             targets.extend(
                 expand(
-                    f"results/{project}/neighbornet/plots/{project}.pdistance.neighbornet-{color_by}.with_tip_labels.pdf",
+                    f"results/{project}/neighbornet/plots/{project}.pdistance.neighbornet-{{color_by}}.with_tip_labels.pdf",
                     color_by=neighbornet_color_by,
                 )
             )
             targets.extend(
                 expand(
-                    f"results/{project}/neighbornet/plots/{project}.pdistance.neighbornet-{color_by}.no_tip_labels.pdf",
+                    f"results/{project}/neighbornet/plots/{project}.pdistance.neighbornet-{{color_by}}.no_tip_labels.pdf",
                     color_by=neighbornet_color_by,
                 )
             )
             targets.extend(
                 expand(
-                    f"results/{project}/neighbornet/plots/{project}.pdistance.neighbornet-{color_by}.phangorn.pdf",
+                    f"results/{project}/neighbornet/plots/{project}.pdistance.neighbornet-{{color_by}}.phangorn.pdf",
                     color_by=neighbornet_color_by,
                 )
             )
             targets.extend(
                 expand(
-                    f"results/{project}/neighbornet/plots/{project}.pdistance.neighbornet-{color_by}.rds",
+                    f"results/{project}/neighbornet/plots/{project}.pdistance.neighbornet-{{color_by}}.rds",
                     color_by=neighbornet_color_by,
                 )
             )
