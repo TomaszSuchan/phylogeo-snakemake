@@ -381,7 +381,7 @@ rule categorize_removed_individuals:
     log:
         "logs/{project}/categorize_removed_individuals.log"
     params:
-        enabled=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_filtering", {}).get("enabled", False),
+        enabled=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_filtering", {}).get("enabled", True),
         clone_threshold=0.354,  # duplicates/monozygotic twins
         first_degree_threshold=0.177,  # parents/siblings
         second_degree_threshold=0.0884  # half-siblings/grandparents

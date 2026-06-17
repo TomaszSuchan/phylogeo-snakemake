@@ -38,7 +38,7 @@ parameters: &global_params
   # Step 3: relatedness filtering happens before variant missingness filtering so
   # missingness and allele-frequency filters are calculated after related samples are removed.
   relatedness_filtering:
-    enabled: false            # enable KING-based relatedness filtering in preprocessing
+    enabled: true             # enable KING-based relatedness filtering in preprocessing
     king_threshold: 0.0884    # 2nd-degree relatives threshold
     mac_threshold: 1          # minimum MAC used for KING calculation
     group_by: ["Region"]      # grouping columns for removed-individual plots
