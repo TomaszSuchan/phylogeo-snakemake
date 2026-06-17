@@ -47,7 +47,7 @@ rule ld_prune_calculate:
         "benchmarks/{project}/ld_prune_calculate.txt"
     params:
         plink_prefix = "results/{project}/filtered_data/{project}.ld_prune_temp",
-        r2 = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("ld_pruning", {}).get("r2", 0.5),
+        r2 = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("ld_pruning", {}).get("r2", 0.2),
         window_size = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("ld_pruning", {}).get("window_size", 50),
         step_size = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("ld_pruning", {}).get("step_size", 5)
     conda:

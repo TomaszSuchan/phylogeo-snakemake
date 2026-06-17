@@ -67,7 +67,7 @@ parameters: &global_params
   # Settings used only when thinning_strategy: "ld_pruning".
   # Window and step sizes are PLINK-style LD-pruning window parameters.
   ld_pruning:
-    r2: 0.5                   # LD r^2 threshold
+    r2: 0.2                   # LD r^2 threshold
     window_size: 50           # LD window size
     step_size: 5              # LD step size
   
