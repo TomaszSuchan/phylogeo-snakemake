@@ -1,27 +1,12 @@
 #!/usr/bin/env Rscript
 
-# NeighborNet plotting.
-#
-# Edge and tip coordinates are taken from phangorn::coords(net, dim = "2D") --
-# the same planar split-graph coordinates the reference plot.networx renderer
-# uses. NeighborNet always produces a circular (planar) split system, so the
-# split "boxes" close by construction when drawn from these coordinates.
-# tanggle::ggsplitnet was used previously but its own coordinate handling left
-# the boxes open; we now draw the ggplot directly with geom_segment instead, and
-# additionally emit the base phangorn plot.networx figure as a reference.
-
-TIP_LABEL_OFFSET_FRAC <- 0.02 # fraction of x/y span; offset along edge, outward from parent
-TIP_LABEL_SIZE_MM <- 2.3      # geom_text font size in mm (ggplot2)
-EDGE_COLOUR <- "grey20"       # split-network edge colour (SplitsTree-like thin dark lines)
-EDGE_LINEWIDTH <- 0.3         # split-network edge width
-
-# Extra room so angled tip names are not clipped (data limits + panel + outer margins)
-PLOT_EXPAND_MULT_WITH_LABELS <- 0.12   # scale_x/y expansion multipliers when labels are shown
-PLOT_EXPAND_MULT_NO_LABELS <- 0.06     # smaller padding for the no-label PDF
-PLOT_MARGIN_MM <- 14                   # theme plot.margin on all sides
+# NeighborNet plotting via tanggle::ggsplitnet (standard phangorn/ggtree workflow).
+# See tanggle vignette: ggsplitnet(net) + geom_tiplab2().
 
 suppressPackageStartupMessages({
   library(ggplot2)
+  library(ggtree)
+  library(tanggle)
   library(phangorn)
 })
 
@@ -33,6 +18,16 @@ if (file.exists(ggsave_utils)) {
   source(ggsave_utils)
 } else {
   source("workflow/scripts/plot_ggsave_utils.R")
+}
+
+group_utils <- tryCatch(
+  file.path(dirname(normalizePath(snakemake@script)), "plot_group_utils.R"),
+  error = function(e) "workflow/scripts/plot_group_utils.R"
+)
+if (file.exists(group_utils)) {
+  source(group_utils)
+} else {
+  source("workflow/scripts/plot_group_utils.R")
 }
 
 pdf(NULL)
@@ -52,17 +47,14 @@ color_by <- as.character(snakemake@params[["color_by"]])
 plot_width <- as.numeric(snakemake@params[["width"]])
 plot_height <- as.numeric(snakemake@params[["height"]])
 plot_dpi <- as.numeric(snakemake@params[["dpi"]])
-
-user_colors <- NULL
-if ("neighbornet_colors" %in% names(snakemake@params)) {
-  user_colors <- snakemake@params[["neighbornet_colors"]]
-  if (!is.null(user_colors)) {
-    user_colors <- unlist(user_colors)
-  }
-}
+group_colors_param <- snakemake@params[["group_colors"]]
 
 cat("Reading NeighborNet object:", net_file, "\n")
 net <- readRDS(net_file)
+
+if (is.null(net$Ntip) || length(net$Ntip) != 1L || !is.finite(net$Ntip)) {
+  net$Ntip <- length(net$tip.label)
+}
 
 tip_labels <- net$tip.label
 if (is.null(tip_labels) || length(tip_labels) == 0) {
@@ -91,145 +83,69 @@ if (!(color_by %in% colnames(indpopdata))) {
   )
 }
 
-tip_meta <- data.frame(label = tip_labels, stringsAsFactors = FALSE)
-tip_meta <- merge(
-  tip_meta,
+tip_data <- data.frame(label = tip_labels, stringsAsFactors = FALSE)
+tip_data <- merge(
+  tip_data,
   indpopdata[, c("Ind", color_by), drop = FALSE],
   by.x = "label",
   by.y = "Ind",
   all.x = TRUE,
   sort = FALSE
 )
-colnames(tip_meta)[colnames(tip_meta) == color_by] <- "group"
-tip_meta$group[is.na(tip_meta$group) | tip_meta$group == ""] <- "unassigned"
-tip_meta$group <- as.factor(tip_meta$group)
-# Keep tip_meta row order aligned with the network's tip ordering (1..ntip).
-tip_meta <- tip_meta[match(tip_labels, tip_meta$label), , drop = FALSE]
+colnames(tip_data)[colnames(tip_data) == color_by] <- "group"
+tip_data$group[is.na(tip_data$group) | tip_data$group == ""] <- "unassigned"
+tip_data <- tip_data[match(tip_labels, tip_data$label), , drop = FALSE]
+tip_data$group <- factor(tip_data$group, levels = sort(unique(as.character(tip_data$group))))
 
-n_groups <- length(levels(tip_meta$group))
+n_groups <- length(levels(tip_data$group))
 cat("Number of tips:", ntip, "\n")
 cat("Coloring tips by:", color_by, "\n")
-cat("Groups:", paste(levels(tip_meta$group), collapse = ", "), "\n")
+cat("Groups:", paste(levels(tip_data$group), collapse = ", "), "\n")
 
-# Resolve a named colour palette (shared by the ggplot and the base-R figure).
-palette_vals <- NULL
-if (!is.null(user_colors) && length(user_colors) > 0) {
-  if (n_groups > length(user_colors)) {
-    palette_vals <- grDevices::colorRampPalette(user_colors)(n_groups)
+palette_vals <- group_fill_values(group_colors_param)
+if (is.null(palette_vals) && !is.null(group_colors_param)) {
+  unnamed <- unlist(group_colors_param, use.names = FALSE)
+  unnamed <- unnamed[!is.na(unnamed) & unnamed != ""]
+  if (length(unnamed) > 0) {
+    if (n_groups > length(unnamed)) {
+      palette_vals <- grDevices::colorRampPalette(unnamed)(n_groups)
+    } else {
+      palette_vals <- unnamed[seq_len(n_groups)]
+    }
+    names(palette_vals) <- levels(tip_data$group)
+  }
+}
+
+tip_label_size <- if (ntip > 120) 1.4 else if (ntip > 60) 1.8 else 2.2
+expand_frac <- if (ntip > 120) 0.18 else if (ntip > 60) 0.14 else 0.10
+
+build_plot <- function(show_tip_labels) {
+  p <- ggsplitnet(net) %<+% tip_data +
+    theme_tree() +
+    ggexpand(expand_frac) +
+    ggexpand(expand_frac, direction = -1)
+
+  if (show_tip_labels) {
+    p <- p +
+      geom_tiplab2(
+        mapping = aes(color = group),
+        size = tip_label_size
+      ) +
+      labs(color = color_by) +
+      theme(legend.position = "right")
   } else {
-    palette_vals <- user_colors[seq_len(n_groups)]
+    p <- p + theme(legend.position = "none")
   }
-  names(palette_vals) <- levels(tip_meta$group)
-}
 
-# --- Planar split-graph coordinates from phangorn (boxes close by construction) ---
-xy <- phangorn::coords(net, dim = "2D")
-if (is.null(dim(xy)) || ncol(xy) < 2) {
-  stop("phangorn::coords(net, dim = '2D') did not return a 2-column coordinate matrix.")
-}
-edge <- net$edge
-if (is.null(edge) || ncol(edge) != 2) {
-  stop("NeighborNet object has no usable $edge matrix.")
-}
-if (max(edge) > nrow(xy)) {
-  stop("Edge indices exceed the number of coordinate vertices; cannot draw network.")
-}
-
-# Every split edge connects two graph vertices; drawing all of them reproduces
-# the closed parallelogram "boxes" of the split network.
-seg_df <- data.frame(
-  x = xy[edge[, 1], 1],
-  y = xy[edge[, 1], 2],
-  xend = xy[edge[, 2], 1],
-  yend = xy[edge[, 2], 2]
-)
-
-# Tip vertices are nodes 1..ntip (networx follows the ape tip-numbering convention).
-tip_df <- data.frame(
-  label = tip_labels,
-  x = xy[seq_len(ntip), 1],
-  y = xy[seq_len(ntip), 2],
-  group = tip_meta$group,
-  stringsAsFactors = FALSE
-)
-
-# Place each tip label just past the tip, along the direction of its terminal
-# edge (neighbour vertex -> tip), and flip text in the left hemisphere so it
-# stays readable -- same convention as ggtree::geom_tiplab2.
-parent_of_tip <- vapply(seq_len(ntip), function(i) {
-  er <- which(edge[, 1] == i | edge[, 2] == i)[1]
-  if (is.na(er)) return(NA_integer_)
-  if (edge[er, 1] == i) edge[er, 2] else edge[er, 1]
-}, integer(1))
-
-span <- max(diff(range(xy[, 1])), diff(range(xy[, 2])))
-if (!is.finite(span) || span <= 0) span <- 1
-eps <- span * TIP_LABEL_OFFSET_FRAC
-
-dx <- tip_df$x - xy[parent_of_tip, 1]
-dy <- tip_df$y - xy[parent_of_tip, 2]
-ang <- atan2(dy, dx)
-ang[is.na(ang)] <- 0
-tip_df$x_lab <- tip_df$x + eps * cos(ang)
-tip_df$y_lab <- tip_df$y + eps * sin(ang)
-
-deg <- ang * 180 / pi
-flip <- deg > 90 | deg < -90
-tip_df$text_angle <- ifelse(flip, deg + 180, deg)
-tip_df$hjust <- ifelse(flip, 1, 0)
-
-# --- ggplot figures (edges from phangorn coordinates) ---
-build_base <- function() {
-  p <- ggplot2::ggplot() +
-    ggplot2::geom_segment(
-      data = seg_df,
-      mapping = ggplot2::aes(x = x, y = y, xend = xend, yend = yend),
-      colour = EDGE_COLOUR,
-      linewidth = EDGE_LINEWIDTH
-    ) +
-    ggplot2::geom_point(
-      data = tip_df,
-      mapping = ggplot2::aes(x = x, y = y, color = group),
-      size = 2
-    ) +
-    ggplot2::labs(color = color_by) +
-    ggplot2::theme_void() +
-    ggplot2::theme(legend.position = "right")
   if (!is.null(palette_vals)) {
-    p <- p + ggplot2::scale_color_manual(values = palette_vals)
+    p <- p + scale_color_manual(values = palette_vals, drop = FALSE)
   }
+
   p
 }
 
-p_base <- build_base()
-p_with <- p_base +
-  ggplot2::geom_text(
-    data = tip_df,
-    mapping = ggplot2::aes(
-      x = x_lab,
-      y = y_lab,
-      label = label,
-      color = group,
-      angle = text_angle,
-      hjust = hjust
-    ),
-    inherit.aes = FALSE,
-    size = TIP_LABEL_SIZE_MM,
-    lineheight = 0.9,
-    show.legend = FALSE
-  )
-
-finalize_plot_margins <- function(p, expand_mult) {
-  m <- ggplot2::margin(PLOT_MARGIN_MM, PLOT_MARGIN_MM, PLOT_MARGIN_MM, PLOT_MARGIN_MM, unit = "mm")
-  p +
-    ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = c(expand_mult, expand_mult))) +
-    ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = c(expand_mult, expand_mult))) +
-    ggplot2::coord_fixed(clip = "off") +
-    ggplot2::theme(plot.margin = m)
-}
-
-p_with <- finalize_plot_margins(p_with, PLOT_EXPAND_MULT_WITH_LABELS)
-p_base <- finalize_plot_margins(p_base, PLOT_EXPAND_MULT_NO_LABELS)
+p_with <- build_plot(show_tip_labels = TRUE)
+p_base <- build_plot(show_tip_labels = FALSE)
 
 dir.create(dirname(output_pdf_with), recursive = TRUE, showWarnings = FALSE)
 
@@ -253,11 +169,10 @@ ggsave_pdf(
   limitsize = FALSE
 )
 
-# --- Reference base-R figure via phangorn::plot.networx ---
-# This is phangorn's own renderer (the canonical NeighborNet drawing); it draws
-# every split and closes the boxes, and serves as a cross-check on the ggplot.
 tip_cols <- if (!is.null(palette_vals)) {
-  unname(palette_vals[as.character(tip_meta$group)])
+  vals <- palette_vals[as.character(tip_data$group)]
+  vals[is.na(vals)] <- "grey40"
+  unname(vals)
 } else {
   rep("black", ntip)
 }
@@ -281,9 +196,7 @@ saveRDS(
     with_tip_labels = p_with,
     no_tip_labels = p_base,
     net = net,
-    tip_metadata = tip_meta,
-    tip_label_positions = tip_df,
-    edges = seg_df,
+    tip_metadata = tip_data,
     color_by = color_by
   ),
   output_rds

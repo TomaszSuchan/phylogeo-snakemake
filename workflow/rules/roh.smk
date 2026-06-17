@@ -117,18 +117,18 @@ rule roh_group_plots:
         "../scripts/roh_plots.R"
 
 
-rule plot_roh_froh_map:
+rule plot_froh_map:
     input:
-        unpack(_roh_froh_map_inputs),
+        unpack(_froh_map_inputs),
     output:
-        pdf = "results/{project}/roh/plots/{project}.roh_froh_map.pdf",
-        rds = "results/{project}/roh/plots/{project}.roh_froh_map.rds"
+        pdf = "results/{project}/roh/plots/{project}.froh_map.pdf",
+        rds = "results/{project}/roh/plots/{project}.froh_map.rds"
     params:
-        lambda wildcards: _roh_froh_map_params(wildcards)
+        lambda wildcards: _froh_map_params(wildcards)
     log:
-        "logs/{project}/plot_roh_froh_map.log"
+        "logs/{project}/plot_froh_map.log"
     benchmark:
-        "benchmarks/{project}/plot_roh_froh_map.txt"
+        "benchmarks/{project}/plot_froh_map.txt"
     conda:
         "../envs/mapmixture.yaml"
     threads: 1
@@ -136,4 +136,4 @@ rule plot_roh_froh_map:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["roh"]["mem_mb"],
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["roh"]["runtime"]
     script:
-        "../scripts/plot_roh_froh_map.R"
+        "../scripts/plot_froh_map.R"

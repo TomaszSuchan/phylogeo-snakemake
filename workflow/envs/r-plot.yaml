@@ -6,6 +6,7 @@ dependencies:
   - r-tidyverse
   - r-pheatmap
   - r-gridextra
+  - r-patchwork
   - r-ggpattern
   - r-igraph
   - r-ggraph

@@ -160,6 +160,8 @@ rule plot_tess3_ggmap:
     output:
         pdf = "results/{project}/tess3/plots/{project}.tess3.K{k}.ggmap.pdf",
         rds = "results/{project}/tess3/plots/{project}.tess3.K{k}.ggmap.rds"
+    wildcard_constraints:
+        k = PLOT_K_WILDCARD_CONSTRAINT
     log:
         "logs/{project}/plot_tess3_ggmap.K{k}.log"
     params:
@@ -182,6 +184,8 @@ rule plot_tess3_interpolation:
         results_rds = rules.tess3_analysis.output.results_rds
     output:
         pdf = "results/{project}/tess3/plots/{project}.tess3.K{k}.interpolation.pdf"
+    wildcard_constraints:
+        k = PLOT_K_WILDCARD_CONSTRAINT
     log:
         "logs/{project}/plot_tess3_interpolation.K{k}.log"
     params:
@@ -209,6 +213,8 @@ rule mapmixture_tess3:
     output:
         plot = "results/{project}/tess3/plots/{project}.tess3.K{k}.map.pdf",
         plot_rds = "results/{project}/tess3/plots/{project}.tess3.K{k}.map.rds"
+    wildcard_constraints:
+        k = PLOT_K_WILDCARD_CONSTRAINT
     params:
         lambda wildcards: _mapmixture_map_rule_params(wildcards, "tess3", "tess3")
     log:
@@ -236,6 +242,8 @@ rule barplot_tess3:
     output:
         barplot = "results/{project}/tess3/plots/{project}.tess3.K{k}.barplot.pdf",
         barplot_rds = "results/{project}/tess3/plots/{project}.tess3.K{k}.barplot.rds"
+    wildcard_constraints:
+        k = PLOT_K_WILDCARD_CONSTRAINT
     params:
         lambda wildcards: _barplot_rule_params(wildcards, "tess3", "tess3")
     log:

@@ -115,6 +115,11 @@ parameters: &global_params
     height: 5                       # plot height in inches
     dpi: 300                        # dots per inch (resolution)
 
+  ## Multi-K ancestry map facet panels (structure, admixture, DAPC, etc.)
+  # Tile per-K map panels (K >= 2); ncol only — page size follows map_background.
+  map_facet_plot:
+    ncol: 2                         # columns in the map facet grid
+
   ## Shared map background parameters (used by all mapping functions)
   # This section is read by mapmixture/population_map/pixy/dapc and other map rules.
   map_boundary: null                # optional map boundary extent e.g. c(xmin=18.5, xmax=23.4, ymin=48.8, ymax=49.8)
@@ -502,7 +507,11 @@ parameters: &global_params
     width: 12            # plot width in inches
     height: 12           # plot height in inches
     dpi: 300             # plot dpi
-    neigbournet_colors: null  # optional manual palette
+    # Optional per-group colours for each color_by column (same pattern as roh.{group_col}.colors).
+    # Region:
+    #   colors:
+    #     North: "#E41A1C"
+    #     South: "#377EB8"
 
   ## fineRADstructure parameters
   # RADpainter/fineRADstructure coancestry and clustering.

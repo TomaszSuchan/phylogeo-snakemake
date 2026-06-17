@@ -152,6 +152,8 @@ rule mapmixture_alstructure:
     output:
         plot = "results/{project}/alstructure/plots/{project}.alstructure.K{k}.map.pdf",
         plot_rds = "results/{project}/alstructure/plots/{project}.alstructure.K{k}.map.rds"
+    wildcard_constraints:
+        k = PLOT_K_WILDCARD_CONSTRAINT
     params:
         lambda wildcards: _mapmixture_map_rule_params(wildcards, "alstructure", "alstructure")
     log:
@@ -179,6 +181,8 @@ rule barplot_alstructure:
     output:
         barplot = "results/{project}/alstructure/plots/{project}.alstructure.K{k}.barplot.pdf",
         barplot_rds = "results/{project}/alstructure/plots/{project}.alstructure.K{k}.barplot.rds"
+    wildcard_constraints:
+        k = PLOT_K_WILDCARD_CONSTRAINT
     params:
         lambda wildcards: _barplot_rule_params(wildcards, "alstructure", "alstructure")
     log:
