@@ -261,8 +261,17 @@ ggsave_pdf(
   dpi = dpi
 )
 
-# Save the ggplot object as RDS
-saveRDS(p, file = output_plot_rds)
+# Save a pre-rendered panel grob for facet assembly (avoids rebuilding spatial layers).
+panel_utils <- tryCatch({
+  script_dir <- dirname(normalizePath(snakemake@script))
+  file.path(script_dir, "plot_panel_utils.R")
+}, error = function(e) "workflow/scripts/plot_panel_utils.R")
+if (file.exists(panel_utils)) {
+  source(panel_utils)
+} else {
+  source("workflow/scripts/plot_panel_utils.R")
+}
+save_plot_panel_rds(p, output_plot_rds)
 
 message("\n=== COMPLETED SUCCESSFULLY ===\n")
 message(sprintf("Final map includes:\n"))

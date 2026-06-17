@@ -140,6 +140,8 @@ rule mapmixture_snmf:
     output:
         plot = "results/{project}/snmf/plots/{project}.snmf.K{k}.map.pdf",
         plot_rds = "results/{project}/snmf/plots/{project}.snmf.K{k}.map.rds"
+    wildcard_constraints:
+        k = PLOT_K_WILDCARD_CONSTRAINT
     params:
         lambda wildcards: _mapmixture_map_rule_params(wildcards, "snmf", "snmf")
     log:
@@ -167,6 +169,8 @@ rule barplot_snmf:
     output:
         barplot = "results/{project}/snmf/plots/{project}.snmf.K{k}.barplot.pdf",
         barplot_rds = "results/{project}/snmf/plots/{project}.snmf.K{k}.barplot.rds"
+    wildcard_constraints:
+        k = PLOT_K_WILDCARD_CONSTRAINT
     params:
         lambda wildcards: _barplot_rule_params(wildcards, "snmf", "snmf")
     log:

@@ -62,6 +62,8 @@ rule mapmixture_dapc:
     output:
         plot = "results/{project}/dapc/plots/{project}.dapc.K{k}.map.pdf",
         plot_rds = "results/{project}/dapc/plots/{project}.dapc.K{k}.map.rds"
+    wildcard_constraints:
+        k = PLOT_K_WILDCARD_CONSTRAINT
     params:
         lambda wildcards: _mapmixture_map_params(wildcards)
     log:

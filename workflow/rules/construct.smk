@@ -139,6 +139,8 @@ rule mapmixture_construct:
     output:
         plot = "results/{project}/construct/plots/{project}.construct.K{k}.map.pdf",
         plot_rds = "results/{project}/construct/plots/{project}.construct.K{k}.map.rds"
+    wildcard_constraints:
+        k = PLOT_K_WILDCARD_CONSTRAINT
     params:
         lambda wildcards: _mapmixture_map_rule_params(wildcards, "construct", "construct")
     log:
@@ -166,6 +168,8 @@ rule barplot_construct:
     output:
         barplot = "results/{project}/construct/plots/{project}.construct.K{k}.barplot.pdf",
         barplot_rds = "results/{project}/construct/plots/{project}.construct.K{k}.barplot.rds"
+    wildcard_constraints:
+        k = PLOT_K_WILDCARD_CONSTRAINT
     params:
         lambda wildcards: _barplot_rule_params(wildcards, "construct", "construct")
     log:

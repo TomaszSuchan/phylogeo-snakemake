@@ -19,6 +19,8 @@ rule mapmixture_structure:
     output:
         plot = "results/{project}/structure/plots/{project}.structure.K{k}.map.pdf",
         plot_rds = "results/{project}/structure/plots/{project}.structure.K{k}.map.rds"
+    wildcard_constraints:
+        k = PLOT_K_WILDCARD_CONSTRAINT
     params:
         lambda wildcards: _mapmixture_map_rule_params(wildcards, "structure", "structure")
     log:
@@ -39,6 +41,8 @@ rule mapmixture_faststructure:
     output:
         plot = "results/{project}/faststructure/plots/{project}.faststructure.K{k}.map.pdf",
         plot_rds = "results/{project}/faststructure/plots/{project}.faststructure.K{k}.map.rds"
+    wildcard_constraints:
+        k = PLOT_K_WILDCARD_CONSTRAINT
     params:
         lambda wildcards: _mapmixture_map_rule_params(wildcards, "faststructure", "faststructure")
     log:
@@ -59,6 +63,8 @@ rule mapmixture_admixture:
     output:
         plot = "results/{project}/admixture/plots/{project}.admixture.K{k}.map.pdf",
         plot_rds = "results/{project}/admixture/plots/{project}.admixture.K{k}.map.rds"
+    wildcard_constraints:
+        k = PLOT_K_WILDCARD_CONSTRAINT
     params:
         lambda wildcards: _mapmixture_map_rule_params(wildcards, "admixture", "admixture")
     log:
@@ -81,6 +87,8 @@ rule barplot_structure:
     output:
         barplot = "results/{project}/structure/plots/{project}.structure.K{k}.barplot.pdf",
         barplot_rds = "results/{project}/structure/plots/{project}.structure.K{k}.barplot.rds"
+    wildcard_constraints:
+        k = PLOT_K_WILDCARD_CONSTRAINT
     params:
         lambda wildcards: _barplot_rule_params(wildcards, "structure", "structure")
     log:
@@ -103,6 +111,8 @@ rule barplot_faststructure:
     output:
         barplot = "results/{project}/faststructure/plots/{project}.faststructure.K{k}.barplot.pdf",
         barplot_rds = "results/{project}/faststructure/plots/{project}.faststructure.K{k}.barplot.rds"
+    wildcard_constraints:
+        k = PLOT_K_WILDCARD_CONSTRAINT
     params:
         lambda wildcards: _barplot_rule_params(wildcards, "faststructure", "faststructure")
     log:
@@ -125,6 +135,8 @@ rule barplot_admixture:
     output:
         barplot = "results/{project}/admixture/plots/{project}.admixture.K{k}.barplot.pdf",
         barplot_rds = "results/{project}/admixture/plots/{project}.admixture.K{k}.barplot.rds"
+    wildcard_constraints:
+        k = PLOT_K_WILDCARD_CONSTRAINT
     params:
         lambda wildcards: _barplot_rule_params(wildcards, "admixture", "admixture")
     log:

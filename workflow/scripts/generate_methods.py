@@ -877,7 +877,7 @@ if analyses.get("neighbornet", False):
         f"Fast-NNT v0.2.5), using {nn_order} ordering and {nn_infer} split-weight "
         f"inference, with tips coloured by {color_str}. The network was built from "
         f"{pdist_clause}, and drawn from phangorn's planar split-graph coordinates "
-        f"(ggplot2), alongside phangorn's reference plot.networx rendering."
+        f"(tanggle::ggsplitnet), alongside phangorn's reference plot.networx rendering."
     )
 
 if dist_parts:

@@ -68,8 +68,8 @@ rule plot_neighbornet:
         "logs/{project}/plot_neighbornet_{color_by}.log"
     params:
         color_by=lambda wildcards: wildcards.color_by,
-        neighbornet_colors=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("neighbornet", {}).get(
-            "neigbournet_colors", None
+        group_colors=lambda wildcards: _neighbornet_group_setting(
+            wildcards.project, wildcards.color_by, "colors"
         ),
         width=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("neighbornet", {}).get("width", 12),
         height=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("neighbornet", {}).get("height", 12),
