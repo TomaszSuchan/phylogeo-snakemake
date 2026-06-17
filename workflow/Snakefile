@@ -430,7 +430,7 @@ def _pixy_pi_map_params(wildcards):
     }
 
 
-def _roh_froh_map_inputs(wildcards):
+def _froh_map_inputs(wildcards):
     """Mean F_ROH per Site map merges roh_per_ind with indpopdata Site coordinates."""
     inputs = {
         "per_ind": f"results/{wildcards.project}/roh/{wildcards.project}.roh_per_ind.txt",
@@ -535,8 +535,8 @@ def _roh_plot_paths(project, group_by_cols):
     return paths
 
 
-def _roh_froh_map_params(wildcards):
-    """Params for plot_roh_froh_map (map_background + roh map knobs)."""
+def _froh_map_params(wildcards):
+    """Params for plot_froh_map (map_background + roh map knobs)."""
     roh = config["projects"][wildcards.project]["parameters"].get("roh", {})
     return {
         **_map_bg_params(wildcards),
@@ -1405,8 +1405,8 @@ def get_all_targets():
             targets.extend(_roh_plot_paths(project, roh_groupings))
             if _has_popdata(params):
                 targets.extend([
-                    f"results/{project}/roh/plots/{project}.roh_froh_map.pdf",
-                    f"results/{project}/roh/plots/{project}.roh_froh_map.rds",
+                    f"results/{project}/roh/plots/{project}.froh_map.pdf",
+                    f"results/{project}/roh/plots/{project}.froh_map.rds",
                 ])
 
         # Genetic distance targets
