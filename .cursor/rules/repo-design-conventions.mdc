@@ -1,0 +1,26 @@
+---
+description: Design and coding conventions for phylogeo-snakemake
+alwaysApply: true
+---
+
+# Repository Design Conventions
+
+This is a modular Snakemake workflow for population genetics / phylogeography from ipyrad outputs. Preserve the existing workflow shape when adding features.
+
+- Keep orchestration in `workflow/Snakefile`: define shared helper functions there, include per-analysis rules from `workflow/rules/*.smk`, and add requested final outputs in `get_all_targets()` based on `config["projects"][project]["analyses"]`.
+- Put executable analysis steps in focused rule files under `workflow/rules/`; put reusable Python/R code in `workflow/scripts/`; put tool environments in `workflow/envs/`.
+- Treat `config/config.yaml` as the public interface. Global defaults live under top-level `parameters`; per-project overrides live under `projects.<project>.parameters`. Prefer extending this structure over hard-coding constants in rules or scripts.
+- Paths should follow the established layout: `results/{project}/<analysis>/...`, plots under `results/{project}/<analysis>/plots/`, logs under `logs/{project}/...`, and benchmarks under `benchmarks/{project}/...`.
+- Snakemake rules should normally declare named `input`, `output`, `params`, `log`, `benchmark`, `conda`, `threads`, and `resources` entries. Pull `threads`, `mem_mb`, and `runtime` from the project resource config when a rule can be expensive.
+- Use `temporary()` for intermediate files that are only needed to connect workflow stages; keep final user-facing tables, plots, RDS files, and indexes explicit.
+- Prefer `script:` for Python/R scripts that consume `snakemake.input`, `snakemake.output`, `snakemake.params`, and `snakemake.log`. Use `shell:` for short command-line tool invocations, redirecting stdout/stderr to the declared log.
+- **Prefer plain tool usage:** call upstream packages and CLIs in their documented, default way. Expose knobs through `config/config.yaml` and Snakemake `params`/`resources` instead of adding custom preprocessing, auto-tuned parameters, or wrapper logic in scripts. Keep custom code for workflow wiring (paths, logging, I/O, shared helpers)—not for reimplementing or working around what the tool already provides.
+- Python scripts should remain usable under Snakemake and, when simple, from the CLI as a fallback. R scripts should read Snakemake inputs/params explicitly, sink messages to the Snakemake log, and save both PDF outputs and `.rds` objects for plots when that is the local pattern.
+- For map-related analyses, reuse shared map configuration from `parameters.map_background` and helper code in `workflow/scripts/common_map_functions.R` instead of duplicating basemap, CRS, and coordinate handling logic.
+- Treat `indpopdata` as the main sample/population metadata table after generation. It must preserve `Site`, `Lat`, and `Lon` for maps, and optional metadata columns are used for grouping, coloring, labels, sorting, and stratified summaries.
+- Do not hard-code grouping or coloring columns such as `Region`. Read them from config fields like `pca_plot.color_by`, `pixy.group_by`, `pixy.arrange_by`, `relatedness_plot.color_by`, `neighbornet.color_by`, `mapmixture.population_labels`, or analysis-specific equivalents, and validate that requested columns exist in `indpopdata`.
+- When a config value names an `indpopdata` column, keep the exact spelling/case in filenames, wildcards, plot legends, and joins. Use `"none"` only where existing rules already use it as the explicit ungrouped/uncolored sentinel.
+- When adding an analysis, wire it all the way through: config defaults and analysis flag, helper functions if needed, rule file include, `get_all_targets()` outputs, scripts/envs, README or methods docs if user-facing behavior changes, and a dry-run check.
+- Validate workflow edits with Snakemake from the `snakemake` conda environment, e.g. `conda activate snakemake` before `snakemake -n --configfile config/config.yaml --use-conda`.
+- **Publication-ready figures:** workflow plots are intended for manuscripts, so omit figure titles and subtitles unless a script explicitly needs in-panel labels (e.g. faceted strip text). Map and structure plots should leave `map_background.plot_title` empty (default `""`); do not invent default titles in plotting scripts when config leaves the title blank.
+- **Choose-K / model-comparison plots:** use the shared Evanno-style ggplot helpers in `workflow/scripts/plot_choose_k_utils.R` and read `parameters.choose_k_plot` (`width`, `height`, `dpi`) via Snakemake rule params. Reference implementation: `plot_evanno.R`. Reuse `plot_choose_k_score.R` or `plot_choose_k_line()` for tess3r, ADMIXTURE CV, conStruct MAP log-posterior, and DAPC BIC plots. Do not borrow `map_background` width/height for these score plots—map dimensions are for geographic figures only.

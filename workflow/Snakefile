@@ -221,6 +221,49 @@ def _pixy_enabled_stats(project_params):
     return {"pi", "fst", "dxy"}
 
 
+def _pixy_metadata_table_path(project, params):
+    """Metadata table for counting pixy populations (indpopdata preferred, else popdata)."""
+    import os
+
+    indpopdata = f"results/{project}/indpopdata.txt"
+    if os.path.exists(indpopdata):
+        return indpopdata
+    popdata = params.get("popdata")
+    if popdata and popdata not in ("NULL", "") and os.path.exists(popdata):
+        return popdata
+    return None
+
+
+def _pixy_groupings_with_min_populations(project, params, min_pops=2):
+    """
+    Grouping columns with at least `min_pops` unique values for pairwise pixy stats.
+
+    FST and dXY require population pairs; groupings below the threshold are omitted
+    from fst/dxy targets. When metadata is unavailable at DAG build time, returns all
+    configured groupings and the pixy_fst/pixy_dxy rules skip at runtime.
+    """
+    import csv
+
+    groupings = _pixy_grouping_columns(params)
+    metadata_path = _pixy_metadata_table_path(project, params)
+    if metadata_path is None:
+        return groupings
+
+    with open(metadata_path, newline="") as handle:
+        reader = csv.DictReader(handle, delimiter="\t")
+        if not reader.fieldnames:
+            return groupings
+        rows = list(reader)
+
+    eligible = []
+    for col in groupings:
+        if col not in reader.fieldnames:
+            continue
+        unique_vals = {row[col].strip() for row in rows if row.get(col, "").strip()}
+        if len(unique_vals) >= min_pops:
+            eligible.append(col)
+    return eligible
+
 
 def _relatedness_color_by_columns(project_params):
     """Columns used as relatedness plot `{color_by}` wildcards."""
@@ -1082,6 +1125,9 @@ def get_all_targets():
         # Pixy: summaries, plot_pixy_* outputs (barplots, heatmaps, optional π map)
         if analyses.get("pixy", False):
             pixy_groupings = _pixy_grouping_columns(params)
+            pixy_pairwise_groupings = _pixy_groupings_with_min_populations(
+                project, params
+            )
             pixy_stats = _pixy_enabled_stats(params)
             if "pi" in pixy_stats:
                 targets.extend(
@@ -1115,7 +1161,7 @@ def get_all_targets():
                 targets.extend(
                     expand(
                         f"results/{project}/pixy/{project}.{{grouping}}.pixy_fst-summary.txt",
-                        grouping=pixy_groupings,
+                        grouping=pixy_pairwise_groupings,
                     )
                 )
                 targets.extend(
@@ -1125,7 +1171,7 @@ def get_all_targets():
                         + "/pixy/plots/"
                         + project
                         + ".{grouping}.pixy_fst_heatmap.pdf",
-                        grouping=pixy_groupings,
+                        grouping=pixy_pairwise_groupings,
                     )
                 )
                 targets.extend(
@@ -1135,14 +1181,14 @@ def get_all_targets():
                         + "/pixy/plots/"
                         + project
                         + ".{grouping}.pixy_fst_heatmap.rds",
-                        grouping=pixy_groupings,
+                        grouping=pixy_pairwise_groupings,
                     )
                 )
             if "dxy" in pixy_stats:
                 targets.extend(
                     expand(
                         f"results/{project}/pixy/{project}.{{grouping}}.pixy_dxy-summary.txt",
-                        grouping=pixy_groupings,
+                        grouping=pixy_pairwise_groupings,
                     )
                 )
                 targets.extend(
@@ -1152,7 +1198,7 @@ def get_all_targets():
                         + "/pixy/plots/"
                         + project
                         + ".{grouping}.pixy_dxy_heatmap.pdf",
-                        grouping=pixy_groupings,
+                        grouping=pixy_pairwise_groupings,
                     )
                 )
                 targets.extend(
@@ -1162,7 +1208,7 @@ def get_all_targets():
                         + "/pixy/plots/"
                         + project
                         + ".{grouping}.pixy_dxy_heatmap.rds",
-                        grouping=pixy_groupings,
+                        grouping=pixy_pairwise_groupings,
                     )
                 )
 
