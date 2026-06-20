@@ -121,7 +121,9 @@ rule plot_pca_colored:
         pc1 = lambda wildcards: wildcards.pc1,
         pc2 = lambda wildcards: wildcards.pc2,
         color_by = lambda wildcards: wildcards.color_by,
-        pca_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pca_colors", None),
+        group_colors = lambda wildcards: _pca_plot_group_setting(
+            wildcards.project, wildcards.color_by, "colors"
+        ),
         plot_type = "colored"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
@@ -201,7 +203,9 @@ rule plot_pca_facet_colored:
         color_by="(?!labeled|missing).*"
     params:
         color_by = lambda wildcards: wildcards.color_by,
-        pca_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pca_colors", None),
+        group_colors = lambda wildcards: _pca_plot_group_setting(
+            wildcards.project, wildcards.color_by, "colors"
+        ),
         pc_max = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pc_max", 2),
         plot_type = "colored"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -282,7 +286,9 @@ rule plot_pca_emu_colored:
         pc1 = lambda wildcards: wildcards.pc1,
         pc2 = lambda wildcards: wildcards.pc2,
         color_by = lambda wildcards: wildcards.color_by,
-        pca_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pca_colors", None),
+        group_colors = lambda wildcards: _pca_plot_group_setting(
+            wildcards.project, wildcards.color_by, "colors"
+        ),
         plot_type = "colored"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
@@ -362,7 +368,9 @@ rule plot_pca_emu_facet_colored:
         color_by="(?!labeled|missing).*"
     params:
         color_by = lambda wildcards: wildcards.color_by,
-        pca_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pca_colors", None),
+        group_colors = lambda wildcards: _pca_plot_group_setting(
+            wildcards.project, wildcards.color_by, "colors"
+        ),
         pc_max = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pc_max", 2),
         plot_type = "colored"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
@@ -443,7 +451,9 @@ rule plot_pca_miss_colored:
         pc1 = lambda wildcards: wildcards.pc1,
         pc2 = lambda wildcards: wildcards.pc2,
         color_by = lambda wildcards: wildcards.color_by,
-        pca_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pca_colors", None),
+        group_colors = lambda wildcards: _pca_plot_group_setting(
+            wildcards.project, wildcards.color_by, "colors"
+        ),
         plot_type = "colored"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
@@ -523,7 +533,9 @@ rule plot_pca_miss_facet_colored:
         color_by="(?!labeled|missing).*"
     params:
         color_by = lambda wildcards: wildcards.color_by,
-        pca_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pca_colors", None),
+        group_colors = lambda wildcards: _pca_plot_group_setting(
+            wildcards.project, wildcards.color_by, "colors"
+        ),
         pc_max = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pc_max", 2),
         plot_type = "colored"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]

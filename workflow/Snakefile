@@ -535,6 +535,15 @@ def _pixy_group_setting(project, group_col, key, default=None):
     return default
 
 
+def _pca_plot_group_setting(project, group_col, key, default=None):
+    """Read per-group PCA plot settings from pca_plot.{group_col}.{key}."""
+    pca_plot = config["projects"][project]["parameters"].get("pca_plot", {})
+    group_cfg = pca_plot.get(group_col)
+    if isinstance(group_cfg, dict):
+        return group_cfg.get(key, default)
+    return default
+
+
 def _roh_group_by_columns(wildcards):
     params = config["projects"][wildcards.project]["parameters"]
     return _roh_group_by_columns_from_params(params)
