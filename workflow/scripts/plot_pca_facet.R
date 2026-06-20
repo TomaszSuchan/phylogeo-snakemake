@@ -178,6 +178,8 @@ plot_pca_facet <- function(individuals, eigenvecs, eigenvals, popdata,
         plot_data <- plot_data[!empty_mask, ]
       }
 
+      plot_data[[color_col]] <- as.character(plot_data[[color_col]])
+
       # Determine colors to use
       colors <- group_fill_values(group_colors)
 
