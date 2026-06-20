@@ -178,10 +178,10 @@ plot_pca_facet <- function(individuals, eigenvecs, eigenvals, popdata,
         plot_data <- plot_data[!empty_mask, ]
       }
 
-      plot_data[[color_col]] <- as.character(plot_data[[color_col]])
-
-      # Determine colors to use
-      colors <- group_fill_values(group_colors)
+      color_is_numeric <- is.numeric(plot_data[[color_col]])
+      if (!color_is_numeric) {
+        plot_data[[color_col]] <- as.character(plot_data[[color_col]])
+      }
 
       p <- ggplot(plot_data, aes(x = PC_X, y = PC_Y, fill = .data[[color_col]])) +
         geom_point(size = 2, alpha = 0.7, pch = 21, color = "black") +
@@ -190,8 +190,14 @@ plot_pca_facet <- function(individuals, eigenvecs, eigenvals, popdata,
         theme_bw() +
         theme(legend.position = "right")
 
-      if (!is.null(colors)) {
-        p <- p + scale_fill_manual(values = colors)
+      if (color_is_numeric) {
+        message(sprintf("PCA plot: using continuous viridis scale for numeric '%s'", color_col))
+        p <- p + scale_fill_viridis_c(name = color_col, option = "D")
+      } else {
+        colors <- group_fill_values(group_colors)
+        if (!is.null(colors)) {
+          p <- p + scale_fill_manual(values = colors)
+        }
       }
     }
   }

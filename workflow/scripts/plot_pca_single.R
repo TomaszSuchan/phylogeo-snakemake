@@ -183,12 +183,9 @@ plot_pca <- function(individuals, eigenvecs, eigenvals, popdata,
         plot_df <- plot_df[!empty_mask, ]
       }
 
-      plot_df[[color_col]] <- as.character(plot_df[[color_col]])
-
-      # Determine colors to use
-      colors <- group_fill_values(group_colors)
-      if (is.null(colors)) {
-        message("PCA plot: No colors defined in config. Using default ggplot2 colors.")
+      color_is_numeric <- is.numeric(plot_df[[color_col]])
+      if (!color_is_numeric) {
+        plot_df[[color_col]] <- as.character(plot_df[[color_col]])
       }
 
       p <- ggplot(plot_df, aes(x = PC1, y = PC2, fill = .data[[color_col]])) +
@@ -200,9 +197,16 @@ plot_pca <- function(individuals, eigenvecs, eigenvals, popdata,
         ) +
         theme_bw()
 
-      # Add color scale if colors were defined
-      if (!is.null(colors)) {
-        p <- p + scale_fill_manual(values = colors)
+      if (color_is_numeric) {
+        message(sprintf("PCA plot: using continuous viridis scale for numeric '%s'", color_col))
+        p <- p + scale_fill_viridis_c(name = color_col, option = "D")
+      } else {
+        colors <- group_fill_values(group_colors)
+        if (is.null(colors)) {
+          message("PCA plot: No colors defined in config. Using default ggplot2 colors.")
+        } else {
+          p <- p + scale_fill_manual(values = colors)
+        }
       }
     }
   }

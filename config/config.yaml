@@ -399,8 +399,8 @@ parameters: &global_params
     pc_max: 4  # maximum PC axis number - will generate all combinations up to this value
                # e.g., pc_max=4 generates: 1/2, 2/3, 3/4, 1/3, 2/4, 1/4
     color_by: ["Region"]  # columns in indpopdata to color points by (must match your column names!)
-    # Optional per-group colours for each color_by column (same pattern as roh.{group_col}.colors).
-    # Omit a column block for default ggplot colours.
+    # Numeric columns (e.g. Lon, Lat) use a continuous viridis fill scale automatically.
+    # Categorical columns use optional per-group colours below (same pattern as roh.{group_col}.colors).
     # Region:
     #   colors:
     #     North: "#E41A1C"
