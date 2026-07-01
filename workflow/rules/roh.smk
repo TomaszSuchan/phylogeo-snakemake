@@ -16,6 +16,7 @@ rule bcftools_roh:
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["roh"]["runtime"]
     shell:
         """
+        set -euo pipefail
         bcftools +fill-tags {input.vcf} -- -t AF | \
         bcftools roh --AF-dflt 0.5 -G 30 -Or -o {output.roh} &> {log}
         """

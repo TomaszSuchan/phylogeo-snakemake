@@ -82,6 +82,7 @@ rule sort_vcf:
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
     shell:
         """
+        set -euo pipefail
         vcf-sort {input.vcf} 2> {log} | bgzip -c > {output.vcf}
         """
 
