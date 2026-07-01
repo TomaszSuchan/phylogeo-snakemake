@@ -354,7 +354,12 @@ rule filter_related_individuals:
             if config["projects"][wildcards.project]["parameters"].get("relatedness_filtering", {}).get("enabled", False)
             else rules.create_samples_list_when_disabled.output.samples_to_keep
         ),
-        king_table_raw=rules.generate_king_table.output.king_table
+        # Only pull in the KING table (and its PLINK conversion) when filtering is enabled.
+        king_table_raw = lambda wildcards: (
+            rules.generate_king_table.output.king_table
+            if config["projects"][wildcards.project]["parameters"].get("relatedness_filtering", {}).get("enabled", False)
+            else []
+        )
     output:
         samples_to_keep="results/{project}/filtered_data/{project}.samples_to_keep.txt",
         king_table="results/{project}/filtered_data/{project}.king_table.tsv"
@@ -381,7 +386,7 @@ rule categorize_removed_individuals:
     log:
         "logs/{project}/categorize_removed_individuals.log"
     params:
-        enabled=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_filtering", {}).get("enabled", True),
+        enabled=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_filtering", {}).get("enabled", False),
         clone_threshold=0.354,  # duplicates/monozygotic twins
         first_degree_threshold=0.177,  # parents/siblings
         second_degree_threshold=0.0884  # half-siblings/grandparents
