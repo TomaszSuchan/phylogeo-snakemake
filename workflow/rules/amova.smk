@@ -12,7 +12,7 @@ rule amova:
     """
     input:
         vcf=lambda wildcards: get_filtered_vcf_output(wildcards),
-        popdata="results/{project}/indpopdata.txt"
+        popdata=rules.generate_popdata.output.indpopdata
     output:
         amova="results/{project}/amova/{project}.amova_results.txt",
         plot="results/{project}/amova/plots/{project}.amova_variance_components.pdf",

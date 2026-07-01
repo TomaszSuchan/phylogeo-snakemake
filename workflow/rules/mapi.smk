@@ -5,7 +5,7 @@ rule mapi_analysis:
     permutation tests to generate spatial grid results and significance tails.
     """
     input:
-        euclidean_dist="results/{project}/gen_dist/{project}.euclidean_distance.tsv",
+        euclidean_dist=rules.euclidean_distance.output.dist,
         indpopdata=rules.generate_popdata.output.indpopdata,
     output:
         mapi_gpkg="results/{project}/mapi/{project}.mapi_results.gpkg",
@@ -38,9 +38,9 @@ rule mapi_plot:
     Can be re-run with different parameters without re-computing MAPI analysis.
     """
     input:
-        mapi_gpkg="results/{project}/mapi/{project}.mapi_results.gpkg",
-        upper_tails_gpkg="results/{project}/mapi/{project}.mapi_upper_tails.gpkg",
-        lower_tails_gpkg="results/{project}/mapi/{project}.mapi_lower_tails.gpkg",
+        mapi_gpkg=rules.mapi_analysis.output.mapi_gpkg,
+        upper_tails_gpkg=rules.mapi_analysis.output.upper_tails_gpkg,
+        lower_tails_gpkg=rules.mapi_analysis.output.lower_tails_gpkg,
         indpopdata=rules.generate_popdata.output.indpopdata,
     output:
         mapi_plot="results/{project}/mapi/plots/{project}.mapi_euclidean.pdf",

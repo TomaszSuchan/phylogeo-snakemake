@@ -72,9 +72,9 @@ rule pcaone:
 # Rule to run PCAone for each miss data threshold
 rule pcaone_miss:
     input:
-        bed = "results/{project}/filtered_data/{project}.biallelic_snps_thinned_miss{miss}.bed",
-        bim = "results/{project}/filtered_data/{project}.biallelic_snps_thinned_miss{miss}.bim",
-        fam = "results/{project}/filtered_data/{project}.biallelic_snps_thinned_miss{miss}.fam"
+        bed = rules.missing_vcf_to_plink.output.bed,
+        bim = rules.missing_vcf_to_plink.output.bim,
+        fam = rules.missing_vcf_to_plink.output.fam
     output:
         eigenvectors = "results/{project}/pcaone_miss{miss}/{project}.PCA_miss{miss}.eigvecs",
         eigenvectors2 = "results/{project}/pcaone_miss{miss}/{project}.PCA_miss{miss}.eigvecs2",
@@ -439,7 +439,7 @@ rule plot_pca_miss_colored:
         eigvecs=rules.pcaone_miss.output.eigenvectors2,
         eigvals=rules.pcaone_miss.output.eigenvalues,
         indpopdata=rules.generate_popdata.output.indpopdata,
-        indmiss="results/{project}/stats_vcf/thinned/{project}.biallelic_snps_thinned_miss{miss}.imiss"
+        indmiss=rules.calculate_missing_indv_miss.output.imiss
     output:
         pdf="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-{color_by}.pdf",
         rds="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-{color_by}.rds"
@@ -471,7 +471,7 @@ rule plot_pca_miss_labeled:
         eigvecs=rules.pcaone_miss.output.eigenvectors2,
         eigvals=rules.pcaone_miss.output.eigenvalues,
         indpopdata=rules.generate_popdata.output.indpopdata,
-        indmiss="results/{project}/stats_vcf/thinned/{project}.biallelic_snps_thinned_miss{miss}.imiss"
+        indmiss=rules.calculate_missing_indv_miss.output.imiss
     output:
         pdf="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-labeled.pdf",
         rds="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-labeled.rds"
@@ -497,7 +497,7 @@ rule plot_pca_miss_missing:
         eigvecs=rules.pcaone_miss.output.eigenvectors2,
         eigvals=rules.pcaone_miss.output.eigenvalues,
         indpopdata=rules.generate_popdata.output.indpopdata,
-        indmiss="results/{project}/stats_vcf/thinned/{project}.biallelic_snps_thinned_miss{miss}.imiss"
+        indmiss=rules.calculate_missing_indv_miss.output.imiss
     output:
         pdf="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-missing.pdf",
         rds="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-PC{pc1}_PC{pc2}-missing.rds"
@@ -523,7 +523,7 @@ rule plot_pca_miss_facet_colored:
         eigvecs=rules.pcaone_miss.output.eigenvectors2,
         eigvals=rules.pcaone_miss.output.eigenvalues,
         indpopdata=rules.generate_popdata.output.indpopdata,
-        indmiss="results/{project}/stats_vcf/thinned/{project}.biallelic_snps_thinned_miss{miss}.imiss"
+        indmiss=rules.calculate_missing_indv_miss.output.imiss
     output:
         pdf="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-{color_by}.pdf",
         rds="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-{color_by}.rds"
@@ -554,7 +554,7 @@ rule plot_pca_miss_facet_labeled:
         eigvecs=rules.pcaone_miss.output.eigenvectors2,
         eigvals=rules.pcaone_miss.output.eigenvalues,
         indpopdata=rules.generate_popdata.output.indpopdata,
-        indmiss="results/{project}/stats_vcf/thinned/{project}.biallelic_snps_thinned_miss{miss}.imiss"
+        indmiss=rules.calculate_missing_indv_miss.output.imiss
     output:
         pdf="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-labeled.pdf",
         rds="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-labeled.rds"
@@ -579,7 +579,7 @@ rule plot_pca_miss_facet_missing:
         eigvecs=rules.pcaone_miss.output.eigenvectors2,
         eigvals=rules.pcaone_miss.output.eigenvalues,
         indpopdata=rules.generate_popdata.output.indpopdata,
-        indmiss="results/{project}/stats_vcf/thinned/{project}.biallelic_snps_thinned_miss{miss}.imiss"
+        indmiss=rules.calculate_missing_indv_miss.output.imiss
     output:
         pdf="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-missing.pdf",
         rds="results/{project}/pcaone_miss{miss}/plots/{project}.PCA_miss{miss}-facet-missing.rds"
