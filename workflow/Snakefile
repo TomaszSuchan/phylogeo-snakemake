@@ -654,6 +654,7 @@ include: "rules/vcfstats.smk"
 include: "rules/faststructure.smk"
 include: "rules/admixture.smk"
 include: "rules/pcaone.smk"
+include: "rules/emu-pca.smk"
 include: "rules/vcf2pcacluster.smk"
 include: "rules/relatedness.smk"
 include: "rules/pixy.smk"
@@ -989,6 +990,42 @@ def get_all_targets():
                 f"results/{project}/pcaone/plots/{project}.PCA-facet-labeled.rds",
                 f"results/{project}/pcaone/plots/{project}.PCA-facet-missing.pdf",
                 f"results/{project}/pcaone/plots/{project}.PCA-facet-missing.rds"
+            ])
+
+        # EMU PCA targets (standalone EMU for low-coverage/uncertain genotypes)
+        if analyses.get("emupca", False):
+            targets.extend([
+                f"results/{project}/emupca/{project}.emupca.eigvecs",
+                f"results/{project}/emupca/{project}.emupca.eigvals"
+            ])
+            # Always add missing data calculation target (used by EMU PCA plot rules)
+            targets.append(f"results/{project}/stats_vcf/thinned/{project}.biallelic_snps.imiss")
+            # Add plot targets for each PC combination and color grouping
+            for pc1, pc2 in pca_combinations:
+                for color_by in PCA_groupings:
+                    # Request colored plots (uses color_by)
+                    targets.extend([
+                        f"results/{project}/emupca/plots/{project}.emupca-PC{pc1}_PC{pc2}-{color_by}.pdf",
+                        f"results/{project}/emupca/plots/{project}.emupca-PC{pc1}_PC{pc2}-{color_by}.rds"
+                    ])
+                # Add labeled and missing plots once per PC combination (no color_by)
+                targets.extend([
+                    f"results/{project}/emupca/plots/{project}.emupca-PC{pc1}_PC{pc2}-labeled.pdf",
+                    f"results/{project}/emupca/plots/{project}.emupca-PC{pc1}_PC{pc2}-labeled.rds",
+                    f"results/{project}/emupca/plots/{project}.emupca-PC{pc1}_PC{pc2}-missing.pdf",
+                    f"results/{project}/emupca/plots/{project}.emupca-PC{pc1}_PC{pc2}-missing.rds"
+                ])
+            # Add facet plots (all PC combinations in one plot)
+            for color_by in PCA_groupings:
+                targets.extend([
+                    f"results/{project}/emupca/plots/{project}.emupca-facet-{color_by}.pdf",
+                    f"results/{project}/emupca/plots/{project}.emupca-facet-{color_by}.rds"
+                ])
+            targets.extend([
+                f"results/{project}/emupca/plots/{project}.emupca-facet-labeled.pdf",
+                f"results/{project}/emupca/plots/{project}.emupca-facet-labeled.rds",
+                f"results/{project}/emupca/plots/{project}.emupca-facet-missing.pdf",
+                f"results/{project}/emupca/plots/{project}.emupca-facet-missing.rds"
             ])
 
         # PCAone targets (EMU)
