@@ -135,4 +135,3 @@ rule fineradstructure_all:
         popavg_pdf = rules.fineradstructure_plot.output.popavg_pdf,
         labeled_pdf = rules.fineradstructure_plot.output.labeled_pdf,
         rds = rules.fineradstructure_plot.output.rds,
-    default_target: True
