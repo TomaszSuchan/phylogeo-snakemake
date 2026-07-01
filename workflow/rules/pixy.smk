@@ -142,9 +142,15 @@ rule pixy_fst:
     shell:
         """
         mkdir -p {params.output_folder}
-        pixy --stats fst --vcf {input.vcf} --populations {input.popmap} \
-             --n_cores {threads} --window_size {params.window_size} \
-             --output_folder {params.output_folder} --output_prefix {params.output_prefix} &> {log}
+        n_pops=$(awk -F'\t' 'NF>=2 && $2!="" {{p[$2]=1}} END {{print length(p)+0}}' {input.popmap})
+        if [ "$n_pops" -lt 2 ]; then
+            echo "Skipping pixy fst for grouping {wildcards.grouping}: only $n_pops population(s) (fst requires >= 2)" >> {log}
+            printf 'pop1\tpop2\tchromosome\twindow_pos_1\twindow_pos_2\tavg_wc_fst\tno_snps\n' > {output.fst}
+        else
+            pixy --stats fst --vcf {input.vcf} --populations {input.popmap} \
+                 --n_cores {threads} --window_size {params.window_size} \
+                 --output_folder {params.output_folder} --output_prefix {params.output_prefix} &> {log}
+        fi
         """
 
 
@@ -172,9 +178,15 @@ rule pixy_dxy:
     shell:
         """
         mkdir -p {params.output_folder}
-        pixy --stats dxy --vcf {input.vcf} --populations {input.popmap} \
-             --n_cores {threads} --window_size {params.window_size} \
-             --output_folder {params.output_folder} --output_prefix {params.output_prefix} &> {log}
+        n_pops=$(awk -F'\t' 'NF>=2 && $2!="" {{p[$2]=1}} END {{print length(p)+0}}' {input.popmap})
+        if [ "$n_pops" -lt 2 ]; then
+            echo "Skipping pixy dxy for grouping {wildcards.grouping}: only $n_pops population(s) (dxy requires >= 2)" >> {log}
+            printf 'pop1\tpop2\tchromosome\twindow_pos_1\twindow_pos_2\tavg_dxy\tno_sites\n' > {output.dxy}
+        else
+            pixy --stats dxy --vcf {input.vcf} --populations {input.popmap} \
+                 --n_cores {threads} --window_size {params.window_size} \
+                 --output_folder {params.output_folder} --output_prefix {params.output_prefix} &> {log}
+        fi
         """
 
 

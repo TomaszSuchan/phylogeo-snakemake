@@ -32,6 +32,16 @@ if (file.exists(ggsave_utils)) {
   source("workflow/scripts/plot_ggsave_utils.R")
 }
 
+group_utils <- tryCatch(
+  file.path(dirname(normalizePath(snakemake@script)), "plot_group_utils.R"),
+  error = function(e) "workflow/scripts/plot_group_utils.R"
+)
+if (file.exists(group_utils)) {
+  source(group_utils)
+} else {
+  source("workflow/scripts/plot_group_utils.R")
+}
+
 # Debug: working directory
 message("Working directory: ", getwd())
 
@@ -46,7 +56,7 @@ print(snakemake@params)
 # Enhanced PCA plotting function
 plot_pca <- function(individuals, eigenvecs, eigenvals, popdata,
                      indmiss = NULL, color_by_name = NULL, pc1 = 1, pc2 = 2,
-                     pca_colors = NULL, plot_type = "colored") {
+                     group_colors = NULL, plot_type = "colored") {
 
   # Create data frame with PC scores
   pca_df <- data.frame(
@@ -173,24 +183,9 @@ plot_pca <- function(individuals, eigenvecs, eigenvals, popdata,
         plot_df <- plot_df[!empty_mask, ]
       }
 
-      # Determine colors to use
-      n_categories <- length(unique(plot_df[[color_col]]))
-
-      if (!is.null(pca_colors) && length(pca_colors) > 0) {
-        # Use colors from config
-        if (n_categories > length(pca_colors)) {
-          # More categories than colors - interpolate using colorRampPalette
-          message(sprintf("PCA plot: %d categories but only %d colors defined. Interpolating additional colors.",
-                         n_categories, length(pca_colors)))
-          colors <- colorRampPalette(pca_colors)(n_categories)
-        } else {
-          # Use subset of defined colors
-          colors <- pca_colors[1:n_categories]
-        }
-      } else {
-        # Fallback to default ggplot2 colors if no colors provided
-        message("PCA plot: No colors defined in config. Using default ggplot2 colors.")
-        colors <- NULL
+      color_is_numeric <- is.numeric(plot_df[[color_col]])
+      if (!color_is_numeric) {
+        plot_df[[color_col]] <- as.character(plot_df[[color_col]])
       }
 
       p <- ggplot(plot_df, aes(x = PC1, y = PC2, fill = .data[[color_col]])) +
@@ -202,9 +197,16 @@ plot_pca <- function(individuals, eigenvecs, eigenvals, popdata,
         ) +
         theme_bw()
 
-      # Add color scale if colors were defined
-      if (!is.null(colors)) {
-        p <- p + scale_fill_manual(values = colors)
+      if (color_is_numeric) {
+        message(sprintf("PCA plot: using continuous viridis scale for numeric '%s'", color_col))
+        p <- p + scale_fill_viridis_c(name = color_col, option = "D")
+      } else {
+        colors <- group_fill_values(group_colors)
+        if (is.null(colors)) {
+          message("PCA plot: No colors defined in config. Using default ggplot2 colors.")
+        } else {
+          p <- p + scale_fill_manual(values = colors)
+        }
       }
     }
   }
@@ -226,18 +228,15 @@ pc1 <- as.numeric(snakemake@params[["pc1"]])
 pc2 <- as.numeric(snakemake@params[["pc2"]])
 plot_type <- as.character(snakemake@params[["plot_type"]])
 
-# Get color_by and pca_colors only for colored plots
+# Get color_by and group_colors only for colored plots
 color_by_name <- NULL
-pca_colors <- NULL
+group_colors <- NULL
 if (plot_type == "colored") {
   if ("color_by" %in% names(snakemake@params)) {
     color_by_name <- as.character(snakemake@params[["color_by"]])
   }
-  if ("pca_colors" %in% names(snakemake@params)) {
-    pca_colors <- snakemake@params[["pca_colors"]]
-    if (!is.null(pca_colors)) {
-      pca_colors <- unlist(pca_colors)
-    }
+  if ("group_colors" %in% names(snakemake@params)) {
+    group_colors <- snakemake@params[["group_colors"]]
   }
 }
 
@@ -248,8 +247,8 @@ message("plot_type = ", plot_type)
 if (!is.null(color_by_name)) {
   message("color_by_name = ", color_by_name)
 }
-if (!is.null(pca_colors)) {
-  message("pca_colors = ", paste(pca_colors, collapse = ", "))
+if (!is.null(group_colors)) {
+  message("group_colors configured for PCA plot")
 }
 
 # Read input data
@@ -293,7 +292,7 @@ plt_pca <- plot_pca(
   color_by_name = color_by_name,
   pc1 = pc1,
   pc2 = pc2,
-  pca_colors = pca_colors,
+  group_colors = group_colors,
   plot_type = plot_type
 )
 

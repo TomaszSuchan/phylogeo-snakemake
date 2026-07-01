@@ -1,0 +1,8 @@
+---
+description: 
+alwaysApply: true
+---
+
+# Snakemake CLI
+
+On this machine, `snakemake` is not guaranteed to be on the default shell `PATH`. It is available in a **conda environment named `snakemake`** (e.g. `conda activate snakemake` before running `snakemake -n`, lint, or DAG checks). Workflow rule execution still uses per-rule conda envs via `--use-conda`.

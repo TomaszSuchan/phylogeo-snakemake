@@ -32,6 +32,16 @@ if (file.exists(ggsave_utils)) {
   source("workflow/scripts/plot_ggsave_utils.R")
 }
 
+group_utils <- tryCatch(
+  file.path(dirname(normalizePath(snakemake@script)), "plot_group_utils.R"),
+  error = function(e) "workflow/scripts/plot_group_utils.R"
+)
+if (file.exists(group_utils)) {
+  source(group_utils)
+} else {
+  source("workflow/scripts/plot_group_utils.R")
+}
+
 # Debug: working directory
 message("Working directory: ", getwd())
 
@@ -59,7 +69,7 @@ get_pca_combinations <- function(pc_max) {
 # PCA facet plotting function using facet_wrap
 plot_pca_facet <- function(individuals, eigenvecs, eigenvals, popdata,
                            indmiss = NULL, color_by_name = NULL, pc_max = 2,
-                           pca_colors = NULL, plot_type = "colored") {
+                           group_colors = NULL, plot_type = "colored") {
 
   # Generate all PC combinations
   pc_combinations <- get_pca_combinations(pc_max)
@@ -168,17 +178,9 @@ plot_pca_facet <- function(individuals, eigenvecs, eigenvals, popdata,
         plot_data <- plot_data[!empty_mask, ]
       }
 
-      # Determine colors to use
-      n_categories <- length(unique(plot_data[[color_col]]))
-
-      if (!is.null(pca_colors) && length(pca_colors) > 0) {
-        if (n_categories > length(pca_colors)) {
-          colors <- colorRampPalette(pca_colors)(n_categories)
-        } else {
-          colors <- pca_colors[1:n_categories]
-        }
-      } else {
-        colors <- NULL
+      color_is_numeric <- is.numeric(plot_data[[color_col]])
+      if (!color_is_numeric) {
+        plot_data[[color_col]] <- as.character(plot_data[[color_col]])
       }
 
       p <- ggplot(plot_data, aes(x = PC_X, y = PC_Y, fill = .data[[color_col]])) +
@@ -188,8 +190,14 @@ plot_pca_facet <- function(individuals, eigenvecs, eigenvals, popdata,
         theme_bw() +
         theme(legend.position = "right")
 
-      if (!is.null(colors)) {
-        p <- p + scale_fill_manual(values = colors)
+      if (color_is_numeric) {
+        message(sprintf("PCA plot: using continuous viridis scale for numeric '%s'", color_col))
+        p <- p + scale_fill_viridis_c(name = color_col, option = "D")
+      } else {
+        colors <- group_fill_values(group_colors)
+        if (!is.null(colors)) {
+          p <- p + scale_fill_manual(values = colors)
+        }
       }
     }
   }
@@ -210,18 +218,15 @@ output_rds   <- snakemake@output[["rds"]]
 pc_max <- as.numeric(snakemake@params[["pc_max"]])
 plot_type <- as.character(snakemake@params[["plot_type"]])
 
-# Get color_by and pca_colors only for colored plots
+# Get color_by and group_colors only for colored plots
 color_by_name <- NULL
-pca_colors <- NULL
+group_colors <- NULL
 if (plot_type == "colored") {
   if ("color_by" %in% names(snakemake@params)) {
     color_by_name <- as.character(snakemake@params[["color_by"]])
   }
-  if ("pca_colors" %in% names(snakemake@params)) {
-    pca_colors <- snakemake@params[["pca_colors"]]
-    if (!is.null(pca_colors)) {
-      pca_colors <- unlist(pca_colors)
-    }
+  if ("group_colors" %in% names(snakemake@params)) {
+    group_colors <- snakemake@params[["group_colors"]]
   }
 }
 
@@ -231,8 +236,8 @@ message("plot_type = ", plot_type)
 if (!is.null(color_by_name)) {
   message("color_by_name = ", color_by_name)
 }
-if (!is.null(pca_colors)) {
-  message("pca_colors = ", paste(pca_colors, collapse = ", "))
+if (!is.null(group_colors)) {
+  message("group_colors configured for PCA facet plot")
 }
 
 # Read input data
@@ -266,7 +271,7 @@ plt_pca_facet <- plot_pca_facet(
   indmiss = indmiss,
   color_by_name = color_by_name,
   pc_max = pc_max,
-  pca_colors = pca_colors,
+  group_colors = group_colors,
   plot_type = plot_type
 )
 
