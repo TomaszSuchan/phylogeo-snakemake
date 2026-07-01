@@ -32,7 +32,7 @@ rule vcf2pcacluster:
         runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["vcf2pcacluster"]["runtime"]
     shell:
         """
-        test -x {VCF2PCACLUSTER} || {{ echo "ERROR: VCF2PCACluster not found at {VCF2PCACLUSTER}" >&2; exit 1; }}
+        command -v VCF2PCACluster >/dev/null 2>&1 || {{ echo "ERROR: VCF2PCACluster not found on PATH; install it from https://github.com/hewm2008/VCF2PCACluster" >&2; exit 1; }}
         VCF2PCACluster -InVCF {input.vcf} \
         -OutPut {params.output_prefix} \
         -Threads {threads} \
