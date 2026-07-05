@@ -162,7 +162,7 @@ rule barplot_construct:
     Draw conStruct layer-proportion barplots with the shared mapmixture script.
     """
     input:
-        qmatrix = rules.construct_qmatrix.output.qmatrix,
+        qmatrix = "results/{project}/construct/aligned/{project}.construct.K{k}.Qmatrix.aligned.txt",
         indpopdata = rules.generate_popdata.output.indpopdata,
         install = rules.install_mapmixture.output,
     output:

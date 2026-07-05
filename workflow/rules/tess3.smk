@@ -236,7 +236,7 @@ rule barplot_tess3:
     Draw tess3r ancestry barplots with the shared mapmixture barplot script.
     """
     input:
-        qmatrix = rules.tess3_analysis.output.qmatrix,
+        qmatrix = "results/{project}/tess3/aligned/{project}.tess3.K{k}.Qmatrix.aligned.txt",
         indpopdata = rules.generate_popdata.output.indpopdata,
         install = rules.install_mapmixture.output,
     output:
