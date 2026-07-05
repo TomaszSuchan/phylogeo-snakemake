@@ -608,6 +608,19 @@ def _pca_plot_group_setting(project, group_col, key, default=None):
     return default
 
 
+def _fineradstructure_plot_setting(project, col, key, default=None):
+    """Read per-column fineRADstructure plot settings from fineradstructure.plot.{col}.{key}."""
+    plot_cfg = (
+        config["projects"][project]["parameters"]
+        .get("fineradstructure", {})
+        .get("plot", {})
+    )
+    col_cfg = plot_cfg.get(col)
+    if isinstance(col_cfg, dict):
+        return col_cfg.get(key, default)
+    return default
+
+
 def _roh_group_by_columns(wildcards):
     params = config["projects"][wildcards.project]["parameters"]
     return _roh_group_by_columns_from_params(params)
