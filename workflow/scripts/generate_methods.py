@@ -12,6 +12,10 @@ Sources used (all filled in automatically):
 The text is intentionally explicit and explains what each method does, so
 that it can be pasted into a manuscript Methods section and trimmed down as
 needed. Best-K values are NOT written to the methods (they are results).
+
+Config path notation (shared with README.md): cite settings as dot paths into
+config.yaml, e.g. parameters.tess3.ploidy or projects.MyProject.samples.
+Use config_path() when a config key needs to be named in generated prose.
 """
 
 import glob
@@ -21,6 +25,13 @@ import textwrap
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
+
+def config_path(*parts, project=None):
+    """Return a README-style dot path into config.yaml."""
+    key = ".".join(str(part) for part in parts)
+    if project is not None:
+        return f"projects.{project}.{key}"
+    return f"parameters.{key}"
 
 def parse_mainparams(path):
     """Return {KEY: value} from a STRUCTURE mainparams file."""
