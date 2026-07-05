@@ -1,6 +1,7 @@
 channels:
   - conda-forge
   - bioconda
+# methods_version: tess3r=1.1.0
 dependencies:
   - r-base
   - r-vcfr

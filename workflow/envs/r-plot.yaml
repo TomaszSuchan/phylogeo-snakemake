@@ -1,7 +1,7 @@
 channels:
   - conda-forge
 dependencies:
-  - r-base
+  - r-base=4.5.3
   - r-ggplot2>=4.0
   - r-tidyverse
   - r-pheatmap

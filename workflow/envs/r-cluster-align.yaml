@@ -3,4 +3,4 @@ channels:
   - bioconda
 dependencies:
   - r-base
-  - r-clue
+  - r-clue=0.3.68

@@ -4,7 +4,7 @@ channels:
 dependencies:
   # sNMF is provided by the LEA Bioconductor package (Frichot & Francois 2015);
   # unlike tess3r it is on bioconda, so no source-install rule is required.
-  - bioconductor-lea
+  - bioconductor-lea=3.22.0
   - r-base
   - r-vcfr
   - r-ggplot2

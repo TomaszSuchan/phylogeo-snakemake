@@ -7,7 +7,8 @@ Sources used (all filled in automatically):
   - data/mainparams             – STRUCTURE BURNIN / NUMREPS
   - vcf_stats.txt               – variant count, RAD-loci count, sample count
   - depth_summary.txt (filtered and biallelic) – sequencing depth summaries
-  - workflow/envs/*.yaml        – software versions
+  - workflow/envs/*.yaml        – software versions (pinned conda deps and
+                                  # methods_version: comments for GitHub/CRAN pkgs)
 
 The text is intentionally explicit and explains what each method does, so
 that it can be pasted into a manuscript Methods section and trimmed down as
@@ -126,6 +127,8 @@ def parse_versions(envs_dir):
         - plink=1.90b6.12
         - r-pophelper=2.3.1
         - python>=3.9          (skipped – no pinned version)
+    Also reads metadata comments for GitHub/CRAN packages not on conda:
+        # methods_version: tess3r=1.1.0
     """
     versions = {}
     for yf in sorted(glob.glob(os.path.join(envs_dir, "*.yaml"))):
@@ -134,6 +137,15 @@ def parse_versions(envs_dir):
                 in_deps = False
                 for line in fh:
                     stripped = line.strip()
+                    m_meta = re.match(
+                        r'^#\s*methods_version:\s*([\w\-\.]+)=([^\s#]+)', stripped
+                    )
+                    if m_meta:
+                        name = m_meta.group(1).lower()
+                        ver  = m_meta.group(2)
+                        if name not in versions:
+                            versions[name] = ver
+                        continue
                     if stripped == "dependencies:":
                         in_deps = True
                         continue
@@ -156,6 +168,14 @@ def parse_versions(envs_dir):
 def v(versions, key, fallback="[VERSION]"):
     """Look up a software version, return fallback string if not found."""
     return versions.get(key.lower(), fallback)
+
+
+def vn(versions, key, fallback="[VERSION]"):
+    """Return a normalised version string with v prefix, e.g. 'v2.1.0'."""
+    raw = versions.get(key.lower())
+    if not raw:
+        return fallback
+    return "v" + raw.replace("_", ".")
 
 
 def k_str(k_list):
@@ -228,8 +248,8 @@ if rel_on:
         f"create spurious genetic clusters and bias allele-frequency estimates. "
         f"To identify and remove such individuals, pairwise kinship was therefore "
         f"estimated prior to SNP filtering using the KING-robust estimator "
-        f"(Manichaikul et al. 2010) as implemented in PLINK 2 version "
-        f"{v(versions,'plink2')} (Chang et al. 2015), computed from biallelic "
+        f"(Manichaikul et al. 2010) as implemented in PLINK 2 {vn(versions,'plink2')} "
+        f"(Chang et al. 2015), computed from biallelic "
         f"variants with a minor allele count (MAC) of at least {mac_thr}. "
         f"The KING-robust coefficient estimates kinship directly from genotype "
         f"counts and is robust to population structure. Starting from the most "
@@ -252,8 +272,8 @@ else:
         ", with no minimum minor allele frequency (MAF) threshold applied"
     )
 filt_parts.append(
-    f"SNP genotypes called by ipyrad were then filtered with bcftools version "
-    f"{v(versions,'bcftools')} (Danecek et al. 2021). Specifically, {miss_clause}"
+    f"SNP genotypes called by ipyrad were then filtered with bcftools "
+    f"{vn(versions,'bcftools')} (Danecek et al. 2021). Specifically, {miss_clause}"
     f"variant sites were restricted to biallelic single-nucleotide polymorphisms "
     f"(i.e. sites with exactly two alleles, as required by most downstream "
     f"population-genetic software) with a minor allele count greater than one "
@@ -285,7 +305,7 @@ elif thinning_strat == "ld_pruning":
     filt_parts.append(
         f"Because linked SNPs violate the assumption of marker independence made "
         f"by clustering and ordination methods, the data were pruned for linkage "
-        f"disequilibrium (LD) using PLINK version {v(versions,'plink')} "
+        f"disequilibrium (LD) using PLINK {vn(versions,'plink')} "
         f"(Chang et al. 2015). LD pruning was performed in a sliding window of "
         f"{ld_win} SNPs advanced {ld_step} SNPs at a time, recursively removing one "
         f"SNP from each pair whose squared correlation (r2) exceeded {ld_r2} until "
@@ -363,7 +383,7 @@ filt_parts.append(
 
 filt_parts.append(
     f"Sequencing depth was summarised with vcftools "
-    f"version {v(versions,'vcftools')} (Danecek et al. 2011), using --depth to "
+    f"{vn(versions,'vcftools')} (Danecek et al. 2011), using --depth to "
     f"estimate mean read depth per individual and --site-mean-depth to estimate "
     f"mean read depth per SNP. In the all-SNP dataset, {_fmt_depth_triplet(depth_filtered)}. "
     f"In the biallelic SNP dataset, {_fmt_depth_triplet(depth_biallelic)}."
@@ -391,8 +411,8 @@ if analyses.get("structure", False):
     numreps = mainparams.get("NUMREPS", "200000")
     reps    = p.get("structure", {}).get("replicates", 10)
     struct_parts.append(
-        f"Bayesian model-based clustering was performed with STRUCTURE version "
-        f"{v(versions,'structure')} (Pritchard et al. 2000) on the {dataset_label} "
+        f"Bayesian model-based clustering was performed with STRUCTURE "
+        f"{vn(versions,'structure')} (Pritchard et al. 2000) on the {dataset_label} "
         f"({n_snps} SNPs, {n_samples} individuals). STRUCTURE assigns individuals "
         f"probabilistically to a predefined number of genetic clusters (K) by "
         f"seeking cluster allele frequencies and individual membership proportions "
@@ -407,7 +427,7 @@ if analyses.get("structure", False):
         f"discarded to allow convergence, followed by {int(numreps):,} iterations "
         f"from which parameters were estimated. Replicate runs at each K were "
         f"aligned to correct for label switching using the FullSearch algorithm in "
-        f"the pophelper R package version {v(versions,'r-pophelper')} (Francis 2017). "
+        f"the pophelper R package {vn(versions,'r-pophelper')} (Francis 2017). "
         f"The number of clusters best supported by the data was assessed with the "
         f"delta-K method of Evanno et al. (2005), which identifies the K at which "
         f"the second-order rate of change in the log-likelihood is greatest."
@@ -417,8 +437,8 @@ if analyses.get("faststructure", False):
     tol   = p.get("faststructure", {}).get("tol",   "10e-6")
     prior = p.get("faststructure", {}).get("prior", "simple")
     struct_parts.append(
-        f"Ancestry proportions were estimated with fastStructure version "
-        f"{v(versions,'faststructure')} (Raj et al. 2014) on the {dataset_label} "
+        f"Ancestry proportions were estimated with fastStructure "
+        f"{vn(versions,'faststructure')} (Raj et al. 2014) on the {dataset_label} "
         f"({n_snps} SNPs, {n_samples} individuals). fastStructure fits the same "
         f"admixture model as STRUCTURE but replaces MCMC sampling with a much "
         f"faster variational Bayesian approximation, making it practical for large "
@@ -433,7 +453,7 @@ if analyses.get("faststructure", False):
 if analyses.get("admixture", False):
     struct_parts.append(
         f"Ancestry proportions were estimated by maximum likelihood with ADMIXTURE "
-        f"version {v(versions,'admixture')} "
+        f"{vn(versions,'admixture')} "
         f"(Alexander et al. 2009) on the {dataset_label} ({n_snps} SNPs, "
         f"{n_samples} individuals). ADMIXTURE uses the same admixture likelihood as "
         f"STRUCTURE but maximises it numerically rather than sampling from the "
@@ -466,7 +486,7 @@ if analyses.get("tess3", False):
         score_desc = "cross-entropy across replicate runs"
     struct_parts.append(
         f"Spatial ancestry coefficients were estimated with tess3r "
-        f"(Caye et al. 2016) on the {dataset_label} ({n_snps} SNPs, "
+        f"{vn(versions,'tess3r')} (Caye et al. 2016) on the {dataset_label} ({n_snps} SNPs, "
         f"{n_samples} individuals), using sample coordinates from the population "
         f"metadata. Genotypes were converted from VCF GT fields to alternate-allele "
         f"dosage matrices before analysis. tess3r fits a geographically "
@@ -497,7 +517,7 @@ if analyses.get("snmf", False):
         f"As a fast complement to the model-based clustering above, ancestry "
         f"proportions were also estimated with sparse non-negative matrix "
         f"factorisation as implemented in sNMF (Frichot et al. 2014) in the LEA R "
-        f"package (Frichot & François 2015), on the {dataset_label} ({n_snps} SNPs, "
+        f"package {vn(versions,'bioconductor-lea')} (Frichot & François 2015), on the {dataset_label} ({n_snps} SNPs, "
         f"{n_samples} individuals). Genotypes were converted from VCF GT fields to "
         f"alternate-allele dosages (0–{ploidy}, missing genotypes retained and "
         f"handled natively by sNMF). sNMF estimates individual ancestry coefficients "
@@ -523,7 +543,7 @@ if analyses.get("alstructure", False):
     a_order  = ap.get("order_method", "ave_admixture")
     struct_parts.append(
         f"Ancestry proportions were additionally estimated with ALStructure "
-        f"(Cabreros & Storey 2019), a likelihood-free estimator of the same PSD "
+        f"{vn(versions,'alstructure')} (Cabreros & Storey 2019), a likelihood-free estimator of the same PSD "
         f"admixture model, on the {dataset_label} ({n_snps} SNPs, {n_samples} "
         f"individuals). Genotypes were converted from VCF GT fields to "
         f"alternate-allele dosages (0–{a_ploidy}); missing genotypes were "
@@ -554,7 +574,7 @@ if analyses.get("evaladmix", False):
         methods_str = ", ".join(eval_methods)
         struct_parts.append(
             f"The adequacy of the inferred ancestry models was assessed with "
-            f"evalAdmix (Gompert et al. 2014) for {methods_str}. evalAdmix "
+            f"evalAdmix (Garcia-Erill & Albrechtsen 2020) for {methods_str}. evalAdmix "
             f"compares the residual correlation structure of genotypes not "
             f"explained by the fitted Q and P matrices against that expected "
             f"under the model, helping to identify misspecified K values or "
@@ -570,7 +590,7 @@ if analyses.get("dapc", False):
     k_tested_da = k_str(dapc_ks)
     struct_parts.append(
         f"Discriminant Analysis of Principal Components (DAPC; Jombart et al. 2010), "
-        f"implemented in the R package adegenet, was performed on the {dataset_label} "
+        f"implemented in the adegenet R package {vn(versions,'r-adegenet')}, was performed on the {dataset_label} "
         f"({n_snps} SNPs, {n_samples} individuals). DAPC is a multivariate approach "
         f"that makes no assumptions about Hardy-Weinberg or linkage equilibrium: it "
         f"first transforms the genotypes with a principal component analysis to remove "
@@ -590,7 +610,7 @@ if analyses.get("spca", False):
     nfnega = sp.get("nfnega", 2)
     struct_parts.append(
         f"Spatial principal component analysis (sPCA; Jombart et al. 2008), "
-        f"implemented in the R package adegenet, was performed on the {dataset_label} "
+        f"implemented in the adegenet R package {vn(versions,'r-adegenet')}, was performed on the {dataset_label} "
         f"({n_snps} SNPs, {n_samples} individuals) using sample coordinates from "
         f"the population metadata. sPCA constructs Moran's eigenvector maps from "
         f"geographic positions and finds axes that explain genetic variation while "
@@ -663,7 +683,7 @@ if analyses.get("treemix", False):
 
     struct_parts.append(
         f"Historical relationships among populations were inferred with "
-        f"OrientAGraph version {v(versions,'orientagraph')} (Molloy et al. 2021), "
+        f"OrientAGraph {vn(versions,'orientagraph')} (Molloy et al. 2021), "
         f"which augments the TreeMix framework (Pickrell & Pritchard 2012), from "
         f"the {dataset_label} ({n_snps} SNPs, {n_samples} individuals). Individuals "
         f"were grouped into populations using the '{pop_col}' column of "
@@ -679,8 +699,8 @@ if analyses.get("treemix", False):
         f"bootstrap resampling was "
         f"{f'enabled for selected migration-edge counts m = {bootstrap_edges_str} with {bootstrap_reps} independent replicate(s) per m' if bootstrap_enabled else 'not enabled for the default maximum-likelihood graph fit'}. "
         f"The inferred graph and observed-minus-model covariance residuals were "
-        f"plotted. Migration-edge support was summarized with OptM version "
-        f"{v(versions,'r-optm')} using the {optm_method} method across "
+        f"plotted. Migration-edge support was summarized with OptM "
+        f"{vn(versions,'r-optm')} using the {optm_method} method across "
         f"{optm_reps} independent run(s) per migration-edge count. OptM estimates "
         f"the most useful value of m from the second-order rate of change in "
         f"log-likelihood (delta-m), which prioritizes migration edges that improve "
@@ -693,7 +713,7 @@ if uses_mapmixture_ancestry:
     struct_parts.append(
         f"Before visualisation, genetic clusters were aligned to correct for label "
         f"switching by optimal linear-sum assignment (the Hungarian algorithm, as "
-        f"implemented in the clue R package version {v(versions,'r-clue')}) of the "
+        f"implemented in the clue R package {vn(versions,'r-clue')}) of the "
         f"cluster columns of the ancestry matrices. Within each method, clusters "
         f"were matched progressively between successive values of K, so that a "
         f"cluster persisting across K retains its position while a newly split "
@@ -701,7 +721,8 @@ if uses_mapmixture_ancestry:
         f"to a common reference method (ADMIXTURE where available) at each K. This "
         f"gives each genetic cluster a consistent colour across K values, across "
         f"methods, and across plots. Ancestry coefficients were then visualised as "
-        f"barplots and pie-chart maps using the mapmixture R package (Jenkins 2024)."
+        f"barplots and pie-chart maps using the mapmixture R package "
+        f"{vn(versions,'mapmixture')} (Jenkins 2024)."
     )
 
 if struct_parts:
@@ -727,8 +748,8 @@ if analyses.get("pcaone", False):
         f"genetic variation, projecting individuals onto orthogonal axes that "
         f"successively capture the largest fractions of allele-frequency variance "
         f"and typically separating individuals by ancestry along the leading axes. "
-        f"PCA was performed with PCAone version {v(versions,'pcaone')} "
-        f"(Zhang & Meisner 2023) on the {dataset_label} ({n_snps} SNPs, "
+        f"PCA was performed with PCAone {vn(versions,'pcaone')} "
+        f"(Li, Meisner & Albrechtsen 2023) on the {dataset_label} ({n_snps} SNPs, "
         f"{n_samples} individuals), extracting the {n_pc} leading principal "
         f"components via {svd_desc}."
     )
@@ -743,8 +764,8 @@ if analyses.get("pcaone_emu", False):
     )
     pca_parts.append(
         f"Because missing genotypes can distort principal components, PCA was also "
-        f"run in EMU mode (Meisner et al. 2021) within PCAone version "
-        f"{v(versions,'pcaone')}, which uses an expectation-maximisation algorithm "
+        f"run in EMU mode (Meisner et al. 2021) within PCAone "
+        f"{vn(versions,'pcaone')}, which uses an expectation-maximisation algorithm "
         f"to model missing data while estimating the {n_pc} leading principal "
         f"components.{compare_clause}"
     )
@@ -764,7 +785,7 @@ if analyses.get("pcoa", False):
     pca_parts.append(
         f"Principal coordinates analysis (PCoA), the distance-based analogue of "
         f"PCA, was performed on the pairwise genetic distance matrices described "
-        f"below using the cmdscale function in R, embedding individuals in a "
+        f"below using the cmdscale function in R {vn(versions,'r-base')}, embedding individuals in a "
         f"low-dimensional space that preserves their pairwise genetic distances as "
         f"faithfully as possible."
     )
@@ -792,7 +813,7 @@ if analyses.get("pixy", False):
     verb = "was" if len(stats) == 1 else "were"
     div_parts.append(
         f"Within- and between-population genetic diversity was quantified with "
-        f"pixy version {v(versions,'pixy')} (Korunes & Samuk 2021), which estimates "
+        f"pixy {vn(versions,'pixy')} (Korunes & Samuk 2021), which estimates "
         f"{stats_str}. pixy computes these statistics directly from the all-sites "
         f"dataset, counting both variable and invariant positions so that missing "
         f"data do not bias per-site estimates. Statistics {verb} calculated in "
@@ -810,7 +831,7 @@ if analyses.get("genome_scan", False):
     w_dxy  = gs.get("window_size_dxy", 1_000_000)
     div_parts.append(
         f"Genome-wide scans of differentiation between {pop1} and {pop2} were "
-        f"performed with pixy version {v(versions,'pixy')} on an invariant-site "
+        f"performed with pixy {vn(versions,'pixy')} on an invariant-site "
         f"VCF reconstructed from the original ipyrad loci file, retaining only "
         f"individuals assigned to the two focal groups. Sliding-window "
         f"estimates of F_ST (window size {w_fst:,} bp), nucleotide diversity "
@@ -934,7 +955,7 @@ for iq_key, label in [("iqtree",        ""),
         gt = p.get("trimal", {}).get("gt", 0.95)
         trimal_clause = (
             f" Prior to tree inference, poorly aligned and gap-rich columns were "
-            f"removed with trimAl version {v(versions,'trimal')} "
+            f"removed with trimAl {vn(versions,'trimal')} "
             f"(Capella-Gutierrez et al. 2009) using a gap threshold of {gt}, which "
             f"discards alignment columns present in fewer than {100*gt:.0f}% of "
             f"individuals."
@@ -942,8 +963,8 @@ for iq_key, label in [("iqtree",        ""),
 
     phy_parts.append(
         f"A maximum-likelihood phylogeny{label} was inferred from the concatenated "
-        f"RAD-seq sequence alignment exported by ipyrad using IQ-TREE 2 version "
-        f"{v(versions,'iqtree')} (Minh et al. 2020) under {model_clause}.{trimal_clause} "
+        f"RAD-seq sequence alignment exported by ipyrad using IQ-TREE 2 "
+        f"{vn(versions,'iqtree')} (Minh et al. 2020) under {model_clause}.{trimal_clause} "
         f"The tree maximising the likelihood of the alignment under this model was "
         f"retained, and branch support was estimated from {boots:,} ultrafast "
         f"bootstrap replicates (Hoang et al. 2018), a resampling procedure that "
@@ -970,7 +991,7 @@ if analyses.get("njtree", False):
     phy_parts.append(
         f"A neighbour-joining phylogeny was inferred from the concatenated "
         f"RAD-seq sequence alignment exported by ipyrad (PHYLIP format) using "
-        f"RapidNJ version {v(versions, 'rapidnj')} (Simonsen et al. 2008). "
+        f"RapidNJ {vn(versions, 'rapidnj')} (Simonsen et al. 2008). "
         f"Pairwise distances were computed under {dist_name}, and the tree was "
         f"reconstructed with the neighbour-joining algorithm. {boot_clause} "
         f"The tree was displayed unrooted."
@@ -983,7 +1004,6 @@ if analyses.get("fineradstructure", False):
     bi  = cl.get("burnin",          1000000)
     th  = cl.get("thinning",        1000)
     mct = fr.get("tree", {}).get("mcmc_iterations", 10000)
-    frs_ver = v(versions, "fineradstructure")
     # f_missing is the only variant filter that touches the fineRADstructure input
     # (a site-level missingness filter; it removes gappy loci, not rare alleles).
     frs_missing_clause = (
@@ -994,7 +1014,7 @@ if analyses.get("fineradstructure", False):
     )
     phy_parts.append(
         f"Fine-scale population structure was additionally inferred from shared "
-        f"co-ancestry with fineRADstructure version {frs_ver} (Malinsky et al. "
+        f"co-ancestry with fineRADstructure {vn(versions, 'fineradstructure')} (Malinsky et al. "
         f"2018), a method tailored to RAD-seq data that exploits the haplotype "
         f"(phase) information available within each RAD locus and is sensitive to "
         f"recent shared ancestry. Because this co-ancestry signal is carried "
@@ -1029,12 +1049,12 @@ if analyses.get("relatedness", False):
         f"from the {dataset_label} using four complementary estimators, so that "
         f"conclusions did not depend on the assumptions of any single method: "
         f"(i) the Ajk genomic relatedness statistic of Yang et al. (2010), computed "
-        f"with vcftools version {v(versions,'vcftools')} (Danecek et al. 2011) "
+        f"with vcftools {vn(versions,'vcftools')} (Danecek et al. 2011) "
         f"using --relatedness; "
         f"(ii) the kinship coefficient of Manichaikul et al. (2010), which is more "
         f"robust to population structure, computed with vcftools --relatedness2; "
-        f"(iii) the identity-by-descent proportion (PI_HAT) from PLINK version "
-        f"{v(versions,'plink')} --genome; and "
+        f"(iii) the identity-by-descent proportion (PI_HAT) from PLINK "
+        f"{vn(versions,'plink')} --genome; and "
         f"(iv) the KING-robust kinship coefficient from PLINK 2 "
         f"--make-king-table (Manichaikul et al. 2010). Together these statistics "
         f"identify duplicate samples, close relatives, and broader patterns of "
@@ -1048,7 +1068,7 @@ if analyses.get("roh", False):
         f"Runs of homozygosity (ROH) - long stretches of consecutive homozygous "
         f"genotypes that arise when an individual inherits identical haplotypes "
         f"from both parents and therefore signal recent inbreeding - were detected "
-        f"with the roh model of bcftools version {v(versions,'bcftools')} "
+        f"with the roh model of bcftools {vn(versions,'bcftools')} "
         f"(Danecek et al. 2021). Because ROH detection relies on the density of "
         f"consecutive genotypes along each locus, ROH were called from the variant "
         f"set after sample subsetting, relatedness filtering, and any per-site "
@@ -1079,7 +1099,7 @@ if analyses.get("mapi", False):
     halfwidth = mp.get("grid_halfwidth")
     alpha     = mp.get("alpha",           0.05)
     crs_proj  = mp.get("crs_projected",   "EPSG:8857")
-    mapi_ver  = v(versions, "r-mapi")
+    mapi_ver  = vn(versions, "r-mapi")
     if halfwidth is None:
         grid_desc = (
             "a hexagonal grid with cell half-width auto-estimated from sample "
@@ -1091,7 +1111,7 @@ if analyses.get("mapi", False):
         "Spatial genetic structure",
         f"Geographic patterns in genetic differentiation were mapped with MAPI "
         f"(Mapping Averaged Pairwise Information; Piry et al. 2016) as implemented "
-        f"in the R package mapi version {mapi_ver}. MAPI overlays a hexagonal grid "
+        f"in the R package mapi {mapi_ver}. MAPI overlays a hexagonal grid "
         f"on the study area and, for every pair of individuals, attributes their "
         f"pairwise genetic distance to all grid cells intersected by an ellipse "
         f"joining their locations; averaging these contributions per cell yields a "
@@ -1119,97 +1139,115 @@ refs["plink"] = (
     "of larger and richer datasets. *GigaScience*, 4, 7. "
     "https://doi.org/10.1186/s13742-015-0047-8"
 )
+refs["vcftools"] = (
+    "Danecek, P. et al. (2011). The variant call format and VCFtools. "
+    "*Bioinformatics*, 27, 2156–2158. "
+    "https://doi.org/10.1093/bioinformatics/btr330"
+)
+if rel_on:
+    refs["manichaikul"] = (
+        "Manichaikul, A. et al. (2010). Robust relationship inference in genome-wide "
+        "association studies. *Bioinformatics*, 26, 2867–2873. "
+        "https://doi.org/10.1093/bioinformatics/btq559"
+    )
 
 if analyses.get("structure", False):
     refs["structure"] = (
         "Pritchard, J.K., Stephens, M. & Donnelly, P. (2000). Inference of "
         "population structure using multilocus genotype data. *Genetics*, 155, "
-        "945–959."
+        "945–959. https://doi.org/10.1093/genetics/155.2.945"
     )
     refs["pophelper"] = (
         "Francis, R.M. (2017). pophelper: an R package and web app to analyse and "
-        "visualise population structure. *Molecular Ecology Resources*, 17, 27–32."
+        "visualise population structure. *Molecular Ecology Resources*, 17, 27–32. "
+        "https://doi.org/10.1111/1755-0998.12509"
     )
     refs["evanno"] = (
         "Evanno, G., Regnaut, S. & Goudet, J. (2005). Detecting the number of "
         "clusters using STRUCTURE: a simulation study. *Molecular Ecology*, 14, "
-        "2611–2620."
+        "2611–2620. https://doi.org/10.1111/j.1365-294x.2005.02553.x"
     )
 
 if analyses.get("faststructure", False):
     refs["faststructure"] = (
         "Raj, A., Stephens, M. & Pritchard, J.K. (2014). fastSTRUCTURE: variational "
         "inference of population structure in large SNP datasets. *Genetics*, 197, "
-        "573–589."
+        "573–589. https://doi.org/10.1534/genetics.114.164350"
     )
 
 if analyses.get("admixture", False):
     refs["admixture"] = (
         "Alexander, D.H., Novembre, J. & Lange, K. (2009). Fast model-based "
         "estimation of ancestry in unrelated individuals. *Genome Research*, 19, "
-        "1655–1664."
+        "1655–1664. https://doi.org/10.1101/gr.094052.109"
     )
 
 if analyses.get("tess3", False):
     refs["tess3"] = (
         "Caye, K., Deist, T.M., Martins, H., Michel, O. & François, O. (2016). "
         "TESS3: fast inference of spatial population structure and genome scans "
-        "for selection. *Molecular Ecology Resources*, 16, 540–548."
+        "for selection. *Molecular Ecology Resources*, 16, 540–548. "
+        "https://doi.org/10.1111/1755-0998.12471"
     )
 
 if analyses.get("snmf", False):
     refs["snmf"] = (
         "Frichot, E., Mathieu, F., Trouillon, T., Bouchard, G. & François, O. "
         "(2014). Fast and efficient estimation of individual ancestry "
-        "coefficients. *Genetics*, 196, 973–983."
+        "coefficients. *Genetics*, 196, 973–983. "
+        "https://doi.org/10.1534/genetics.113.160572"
     )
     refs["lea"] = (
         "Frichot, E. & François, O. (2015). LEA: an R package for landscape and "
         "ecological association studies. *Methods in Ecology and Evolution*, 6, "
-        "925–929."
+        "925–929. https://doi.org/10.1111/2041-210x.12382"
     )
     refs["crossentropy"] = (
         "Alexander, D.H. & Lange, K. (2011). Enhancements to the ADMIXTURE "
         "algorithm for individual ancestry estimation. *BMC Bioinformatics*, "
-        "12, 246."
+        "12, 246. https://doi.org/10.1186/1471-2105-12-246"
     )
 
 if analyses.get("alstructure", False):
     refs["alstructure"] = (
         "Cabreros, I. & Storey, J.D. (2019). A likelihood-free estimator of "
         "population structure bridging admixture models and principal components "
-        "analysis. *Genetics*, 212, 1009–1029."
+        "analysis. *Genetics*, 212, 1009–1029. "
+        "https://doi.org/10.1534/genetics.119.302159"
     )
     refs["estimate_d"] = (
         "Leek, J.T. (2011). Asymptotic conditional singular value decomposition "
-        "for high-dimensional genomic data. *Biometrics*, 67, 344–352."
+        "for high-dimensional genomic data. *Biometrics*, 67, 344–352. "
+        "https://doi.org/10.1111/j.1541-0420.2010.01455.x"
     )
 
 if analyses.get("evaladmix", False):
     refs["evaladmix"] = (
-        "Gompert, Z., Buerkle, C.A. & Parchman, T.L. (2014). Genomic evidence "
-        "for speciation and gene flow between Timema cristinae stick insects. "
-        "*Molecular Ecology*, 23, 1483–1499."
+        "Garcia-Erill, G. & Albrechtsen, A. (2020). Evaluation of model fit of inferred "
+        "admixture proportions. *Molecular Ecology Resources*, 20, 936–949. "
+        "https://doi.org/10.1111/1755-0998.13171"
     )
 
 if analyses.get("dapc", False):
     refs["dapc"] = (
         "Jombart, T., Devillard, S. & Balloux, F. (2010). Discriminant analysis of "
         "principal components: a new method for the analysis of genetically structured "
-        "populations. *BMC Genetics*, 11, 94."
+        "populations. *BMC Genetics*, 11, 94. "
+        "https://doi.org/10.1186/1471-2156-11-94"
     )
 
 if analyses.get("spca", False):
     refs["spca"] = (
         "Jombart, T., Devillard, S., Dufour, A.B. & Pontier, D. (2008). Revealing "
         "cryptic spatial patterns in genetic variability by a new multivariate method. "
-        "*BMC Genetics*, 9, 461."
+        "*Heredity*, 101, 92–103. https://doi.org/10.1038/hdy.2008.34"
     )
 
 if analyses.get("construct", False):
     refs["construct"] = (
         "Bradburd, G.S., Coop, G.M. & Ralph, P.L. (2018). Inferring continuous and "
-        "discrete population genetic structure across space. *Genetics*, 210, 33–52."
+        "discrete population genetic structure across space. *Genetics*, 210, 33–52. "
+        "https://doi.org/10.1534/genetics.118.301333"
     )
 
 if uses_mapmixture_ancestry:
@@ -1230,7 +1268,7 @@ if analyses.get("treemix", False):
     refs["treemix"] = (
         "Pickrell, J.K. & Pritchard, J.K. (2012). Inference of population splits "
         "and mixtures from genome-wide allele frequency data. *PLOS Genetics*, "
-        "8, e1002967."
+        "8, e1002967. https://doi.org/10.1371/journal.pgen.1002967"
     )
     refs["optm"] = (
         "Fitak, R.R. (2021). OptM: estimating the optimal number of migration edges "
@@ -1240,8 +1278,9 @@ if analyses.get("treemix", False):
 
 if analyses.get("pcaone", False) or analyses.get("pcaone_emu", False):
     refs["pcaone"] = (
-        "Zhang, C. & Meisner, J. (2023). Fast and accurate out-of-core PCA framework "
-        "for large biobank data. *Genome Research*, 33, 1599–1608."
+        "Li, Z., Meisner, J. & Albrechtsen, A. (2023). Fast and accurate out-of-core "
+        "PCA framework for large biobank data. *Genome Research*, 33, 1599–1608. "
+        "https://doi.org/10.1101/gr.277525.122"
     )
 
 if analyses.get("pcaone_emu", False) or analyses.get("emupca", False):
@@ -1256,33 +1295,37 @@ if analyses.get("pixy", False):
     refs["pixy"] = (
         "Korunes, K.L. & Samuk, K. (2021). pixy: Unbiased estimation of nucleotide "
         "diversity and divergence in the presence of missing data. "
-        "*Molecular Ecology Resources*, 21, 1359–1368."
+        "*Molecular Ecology Resources*, 21, 1359–1368. "
+        "https://doi.org/10.1111/1755-0998.13326"
     )
 
 if analyses.get("amova", False):
     refs["amova"] = (
         "Excoffier, L., Smouse, P.E. & Quattro, J.M. (1992). Analysis of molecular "
         "variance inferred from metric distances among DNA haplotypes. "
-        "*Genetics*, 131, 479–491."
+        "*Genetics*, 131, 479–491. https://doi.org/10.1093/genetics/131.2.479"
     )
     refs["poppr"] = (
         "Kamvar, Z.N., Tabima, J.F. & Grünwald, N.J. (2014). Poppr: an R "
         "package for genetic analysis of populations with clonal, partially clonal, "
-        "and/or sexual reproduction. *PeerJ*, 2, e281."
+        "and/or sexual reproduction. *PeerJ*, 2, e281. "
+        "https://doi.org/10.7717/peerj.281"
     )
 
 if analyses.get("gen_dist", False):
     refs["kosman"] = (
         "Kosman, E. & Leonard, K.J. (2005). Similarity coefficients for molecular "
         "markers in studies of genetic relationships between individuals. "
-        "*Molecular Ecology*, 14, 415–424."
+        "*Molecular Ecology*, 14, 415–424. "
+        "https://doi.org/10.1111/j.1365-294x.2005.02416.x"
     )
 
 if analyses.get("neighbornet", False):
     refs["neighbornet"] = (
         "Bryant, D. & Moulton, V. (2004). Neighbor-net: An agglomerative method "
         "for the construction of phylogenetic networks. "
-        "*Molecular Biology and Evolution*, 21(2), 255–265."
+        "*Molecular Biology and Evolution*, 21(2), 255–265. "
+        "https://doi.org/10.1093/molbev/msh018"
     )
     refs["fastnntr"] = (
         "Newell, R. J. P., & McMaster, E. S. (2025). Fast-NNT: Fast NeighbourNet "
@@ -1291,28 +1334,32 @@ if analyses.get("neighbornet", False):
     )
     refs["phangorn"] = (
         "Schliep, K.P. (2011). phangorn: phylogenetic analysis in R. "
-        "*Bioinformatics*, 27, 592–593."
+        "*Bioinformatics*, 27, 592–593. https://doi.org/10.1093/bioinformatics/btq706"
     )
 
 if any(analyses.get(k, False) for k in ("iqtree", "iqtree_trimal", "iqtree_robust")):
     refs["iqtree"] = (
         "Minh, B.Q. et al. (2020). IQ-TREE 2: new models and methods for "
-        "phylogenetic inference. *Molecular Biology and Evolution*, 37, 1530–1534."
+        "phylogenetic inference. *Molecular Biology and Evolution*, 37, 1530–1534. "
+        "https://doi.org/10.1093/molbev/msaa015"
     )
     refs["modelfinder"] = (
         "Kalyaanamoorthy, S. et al. (2017). ModelFinder: fast model selection for "
-        "accurate phylogenetic estimates. *Nature Methods*, 14, 587–589."
+        "accurate phylogenetic estimates. *Nature Methods*, 14, 587–589. "
+        "https://doi.org/10.1038/nmeth.4285"
     )
     refs["ufboot"] = (
         "Hoang, D.T. et al. (2018). UFBoot2: improving the ultrafast bootstrap "
-        "approximation. *Molecular Biology and Evolution*, 35, 518–522."
+        "approximation. *Molecular Biology and Evolution*, 35, 518–522. "
+        "https://doi.org/10.1093/molbev/msx281"
     )
 
 if analyses.get("iqtree_trimal", False):
     refs["trimal"] = (
         "Capella-Gutiérrez, S., Silla-Martínez, J.M. & Gabaldón, T. (2009). "
         "trimAl: a tool for automated alignment trimming in large-scale phylogenetic "
-        "studies. *Bioinformatics*, 25, 1972–1973."
+        "studies. *Bioinformatics*, 25, 1972–1973. "
+        "https://doi.org/10.1093/bioinformatics/btp348"
     )
 
 if analyses.get("njtree", False):
@@ -1326,32 +1373,26 @@ if analyses.get("fineradstructure", False):
     refs["fineradstructure"] = (
         "Malinsky, M. et al. (2018). RADpainter and fineRADstructure: population "
         "inference from RADseq data. *Molecular Biology and Evolution*, 35, "
-        "1284–1290."
+        "1284–1290. https://doi.org/10.1093/molbev/msy023"
     )
     refs["finestructure"] = (
         "Lawson, D.J. et al. (2012). Inference of population structure using dense "
-        "haplotype data. *PLOS Genetics*, 8, e1002453."
+        "haplotype data. *PLOS Genetics*, 8, e1002453. "
+        "https://doi.org/10.1371/journal.pgen.1002453"
     )
 
 if analyses.get("relatedness", False):
     refs["yang2010"] = (
         "Yang, J. et al. (2010). Common SNPs explain a large proportion of the "
-        "heritability for human height. *Nature Genetics*, 42, 565–569."
-    )
-    refs["manichaikul"] = (
-        "Manichaikul, A. et al. (2010). Robust relationship inference in genome-wide "
-        "association studies. *Bioinformatics*, 26, 2867–2873."
-    )
-    refs["vcftools"] = (
-        "Danecek, P. et al. (2011). The variant call format and VCFtools. "
-        "*Bioinformatics*, 27, 2156–2158."
+        "heritability for human height. *Nature Genetics*, 42, 565–569. "
+        "https://doi.org/10.1038/ng.608"
     )
 
 if analyses.get("mapi", False):
     refs["mapi"] = (
         "Piry, S. et al. (2016). Mapping Averaged Pairwise Information (MAPI): a new "
         "exploratory tool to uncover spatial structure. *Methods in Ecology and "
-        "Evolution*, 7, 1463–1475."
+        "Evolution*, 7, 1463–1475. https://doi.org/10.1111/2041-210x.12616"
     )
 
 

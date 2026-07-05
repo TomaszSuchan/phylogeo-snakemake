@@ -1,6 +1,7 @@
 channels:
   - conda-forge
   - bioconda
+# methods_version: mapmixture=1.2.0
 dependencies:
   # elevatr and mapmixture are CRAN-only; install_mapmixture installs them via install.packages().
   - r-base
