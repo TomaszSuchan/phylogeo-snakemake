@@ -163,7 +163,7 @@ rule barplot_snmf:
     Draw sNMF ancestry barplots with the shared mapmixture barplot script.
     """
     input:
-        qmatrix = rules.snmf_analysis.output.qmatrix,
+        qmatrix = "results/{project}/snmf/aligned/{project}.snmf.K{k}.Qmatrix.aligned.txt",
         indpopdata = rules.generate_popdata.output.indpopdata,
         install = rules.install_mapmixture.output,
     output:

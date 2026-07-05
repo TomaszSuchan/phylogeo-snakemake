@@ -175,7 +175,7 @@ rule barplot_alstructure:
     Draw ALStructure ancestry barplots with the shared mapmixture barplot script.
     """
     input:
-        qmatrix = rules.alstructure_analysis.output.qmatrix,
+        qmatrix = "results/{project}/alstructure/aligned/{project}.alstructure.K{k}.Qmatrix.aligned.txt",
         indpopdata = rules.generate_popdata.output.indpopdata,
         install = rules.install_mapmixture.output,
     output:

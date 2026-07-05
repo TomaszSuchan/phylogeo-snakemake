@@ -35,7 +35,7 @@ params <- snakemake_rule_params()
 pdf(NULL)
 
 # Snakemake inputs/outputs
-dapc_results_rds <- snakemake@input[["dapc_results"]]
+qmatrix_file <- snakemake@input[["qmatrix"]]
 indpopdata_file <- snakemake@input[["indpopdata"]]
 output_plot <- snakemake@output[["plot"]]
 output_plot_rds <- snakemake@output[["plot_rds"]]
@@ -89,29 +89,15 @@ legend <- as.logical(params[["legend"]])
 
 use_elevation_bg <- isTRUE(params[["use_elevation_bg"]])
 
-# Read DAPC results
-message("\n=== READING DAPC RESULTS ===\n")
-dapc_results <- readRDS(dapc_results_rds)
-membership_probs <- dapc_results$membership_probs
-k <- dapc_results$k  # Get K from results
-
-message(sprintf("DAPC results file: %s\n", dapc_results_rds))
-message(sprintf("K (number of clusters): %d\n", k))
-message(sprintf("Membership probabilities dimensions: %d individuals x %d clusters\n", 
-            nrow(membership_probs), ncol(membership_probs) - 1))  # -1 for Ind column
-
-# Extract Q matrix (membership probabilities) - exclude the Ind column
-qmatrix <- membership_probs[, !colnames(membership_probs) %in% "Ind"]
+# Read aligned Q matrix (headerless membership probabilities; columns are
+# cluster-aligned across K and to the reference method).
+message("\n=== READING ALIGNED Q MATRIX ===\n")
+qmatrix <- read.table(qmatrix_file, header = FALSE, sep = "")
 n_individuals <- nrow(qmatrix)
 n_clusters <- ncol(qmatrix)
-
+k <- n_clusters
+message(sprintf("Q matrix file: %s\n", qmatrix_file))
 message(sprintf("Q matrix dimensions: %d individuals x %d clusters\n", n_individuals, n_clusters))
-
-# Verify k matches number of clusters
-if (k != n_clusters) {
-  warning(sprintf("K (%d) does not match number of clusters in membership probabilities (%d). Using %d clusters.\n",
-                  k, n_clusters, n_clusters))
-}
 
 # Get color palette from config - subset first n_clusters colors
 message(sprintf("\n=== SETTING UP COLOR PALETTE ===\n"))
@@ -127,23 +113,25 @@ message(sprintf("indpopdata file: %s\n", indpopdata_file))
 message(sprintf("indpopdata dimensions: %d rows x %d columns\n", nrow(indpopdata), ncol(indpopdata)))
 message(sprintf("Columns: %s\n", paste(colnames(indpopdata), collapse = ", ")))
 
-# Match membership probabilities with Site assignments from indpopdata
+# Use indpopdata row order (filtered VCF sample order) to label the Q matrix rows,
+# matching how the other ancestry map scripts align individuals to metadata.
 message("\n=== MATCHING INDIVIDUALS ===\n")
-site_assignments <- indpopdata %>%
-  select(Ind, Site) %>%
+sample_data <- indpopdata %>%
   distinct(Ind, .keep_all = TRUE)
-
-qmatrix_with_data <- merge(membership_probs, site_assignments, by = "Ind", all.x = TRUE)
-
-if (any(is.na(qmatrix_with_data$Site))) {
-  n_missing_site <- sum(is.na(qmatrix_with_data$Site))
-  warning(sprintf("%d individuals do not have Site assignments and will be excluded\n", n_missing_site))
-  qmatrix_with_data <- qmatrix_with_data[!is.na(qmatrix_with_data$Site), ]
+if (nrow(sample_data) > nrow(qmatrix)) {
+  sample_data <- sample_data[1:nrow(qmatrix), ]
+}
+if (nrow(qmatrix) != nrow(sample_data)) {
+  stop(sprintf(
+    "FATAL: Q matrix has %d individuals but indpopdata has %d usable rows",
+    nrow(qmatrix), nrow(sample_data)
+  ))
 }
 
-cluster_cols <- colnames(qmatrix)
-qmatrix_with_data <- qmatrix_with_data[, c("Site", "Ind", cluster_cols)]
-colnames(qmatrix_with_data)[3:ncol(qmatrix_with_data)] <- paste0("Cluster", 1:n_clusters)
+qmatrix_with_data <- cbind(sample_data$Site, sample_data$Ind, qmatrix)
+colnames(qmatrix_with_data)[1] <- "Site"
+colnames(qmatrix_with_data)[2] <- "Ind"
+colnames(qmatrix_with_data) <- gsub("V", "Cluster", colnames(qmatrix_with_data))
 
 message(sprintf("qmatrix_with_data dimensions: %d rows x %d columns\n",
             nrow(qmatrix_with_data), ncol(qmatrix_with_data)))

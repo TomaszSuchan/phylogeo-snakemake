@@ -680,8 +680,17 @@ if analyses.get("treemix", False):
 
 if uses_mapmixture_ancestry:
     struct_parts.append(
-        f"Ancestry coefficients were visualised as barplots and pie-chart maps "
-        f"using the mapmixture R package (Jenkins 2024)."
+        f"Before visualisation, genetic clusters were aligned to correct for label "
+        f"switching by optimal linear-sum assignment (the Hungarian algorithm, as "
+        f"implemented in the clue R package version {v(versions,'r-clue')}) of the "
+        f"cluster columns of the ancestry matrices. Within each method, clusters "
+        f"were matched progressively between successive values of K, so that a "
+        f"cluster persisting across K retains its position while a newly split "
+        f"cluster is assigned a new one; clusters were then anchored across methods "
+        f"to a common reference method (ADMIXTURE where available) at each K. This "
+        f"gives each genetic cluster a consistent colour across K values, across "
+        f"methods, and across plots. Ancestry coefficients were then visualised as "
+        f"barplots and pie-chart maps using the mapmixture R package (Jenkins 2024)."
     )
 
 if struct_parts:

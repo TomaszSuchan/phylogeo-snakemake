@@ -79,7 +79,7 @@ def _map_background_inputs(wildcards):
 
 def _structure_map_inputs(wildcards):
     inputs = {
-        "qmatrix": f"results/{wildcards.project}/structure/{wildcards.project}.structure.K{wildcards.k}.Qmatrix.txt",
+        "qmatrix": _ancestry_aligned_q("structure", wildcards.project, wildcards.k),
         "indpopdata": f"results/{wildcards.project}/indpopdata.txt",
         "install": ".snakemake/mapmixture_installed",
     }
@@ -89,7 +89,7 @@ def _structure_map_inputs(wildcards):
 
 def _faststructure_map_inputs(wildcards):
     inputs = {
-        "qmatrix": f"results/{wildcards.project}/faststructure/{wildcards.project}.faststructure.{wildcards.k}.meanQ",
+        "qmatrix": _ancestry_aligned_q("faststructure", wildcards.project, wildcards.k),
         "indpopdata": f"results/{wildcards.project}/indpopdata.txt",
         "install": ".snakemake/mapmixture_installed",
     }
@@ -99,7 +99,7 @@ def _faststructure_map_inputs(wildcards):
 
 def _admixture_map_inputs(wildcards):
     inputs = {
-        "qmatrix": f"results/{wildcards.project}/admixture/{wildcards.project}.biallelic_snps_thinned.{wildcards.k}.Q",
+        "qmatrix": _ancestry_aligned_q("admixture", wildcards.project, wildcards.k),
         "indpopdata": f"results/{wildcards.project}/indpopdata.txt",
         "install": ".snakemake/mapmixture_installed",
     }
@@ -109,7 +109,7 @@ def _admixture_map_inputs(wildcards):
 
 def _tess3_map_inputs(wildcards):
     inputs = {
-        "qmatrix": f"results/{wildcards.project}/tess3/{wildcards.project}.tess3.K{wildcards.k}.Qmatrix.txt",
+        "qmatrix": _ancestry_aligned_q("tess3", wildcards.project, wildcards.k),
         "indpopdata": f"results/{wildcards.project}/indpopdata.txt",
         "install": ".snakemake/mapmixture_installed",
     }
@@ -119,7 +119,7 @@ def _tess3_map_inputs(wildcards):
 
 def _snmf_map_inputs(wildcards):
     inputs = {
-        "qmatrix": f"results/{wildcards.project}/snmf/{wildcards.project}.snmf.K{wildcards.k}.Qmatrix.txt",
+        "qmatrix": _ancestry_aligned_q("snmf", wildcards.project, wildcards.k),
         "indpopdata": f"results/{wildcards.project}/indpopdata.txt",
         "install": ".snakemake/mapmixture_installed",
     }
@@ -129,7 +129,7 @@ def _snmf_map_inputs(wildcards):
 
 def _alstructure_map_inputs(wildcards):
     inputs = {
-        "qmatrix": f"results/{wildcards.project}/alstructure/{wildcards.project}.alstructure.K{wildcards.k}.Qmatrix.txt",
+        "qmatrix": _ancestry_aligned_q("alstructure", wildcards.project, wildcards.k),
         "indpopdata": f"results/{wildcards.project}/indpopdata.txt",
         "install": ".snakemake/mapmixture_installed",
     }
@@ -149,7 +149,7 @@ def _tess3_ggmap_inputs(wildcards):
 
 def _construct_map_inputs(wildcards):
     inputs = {
-        "qmatrix": f"results/{wildcards.project}/construct/{wildcards.project}.construct.K{wildcards.k}.Qmatrix.txt",
+        "qmatrix": _ancestry_aligned_q("construct", wildcards.project, wildcards.k),
         "indpopdata": f"results/{wildcards.project}/indpopdata.txt",
         "install": ".snakemake/mapmixture_installed",
     }
@@ -159,7 +159,7 @@ def _construct_map_inputs(wildcards):
 
 def _dapc_map_inputs(wildcards):
     inputs = {
-        "dapc_results": f"results/{wildcards.project}/dapc/{wildcards.project}.dapc.K{wildcards.k}.results.rds",
+        "qmatrix": _ancestry_aligned_q("dapc", wildcards.project, wildcards.k),
         "indpopdata": f"results/{wildcards.project}/indpopdata.txt",
         "install": ".snakemake/mapmixture_installed",
     }
@@ -406,6 +406,70 @@ PLOT_K_WILDCARD_CONSTRAINT = r"(?:[2-9]|[1-9]\d+)"
 def _plot_k_values(k_values):
     """K values for ancestry visualisation outputs (maps, barplots; K >= 2 only)."""
     return [k for k in k_values if int(k) >= 2]
+
+
+# Structure-like (ancestry Q-matrix) methods, in reference-fallback priority order.
+# DAPC is last because its "clusters" are k-means groups and it is the weakest anchor.
+ANCESTRY_METHODS = [
+    "structure", "faststructure", "admixture", "snmf",
+    "tess3", "alstructure", "construct", "dapc",
+]
+
+# Raw per-K Q-matrix path produced by each method (fed to the cluster aligner).
+_ANCESTRY_RAW_Q = {
+    "structure": "results/{project}/structure/{project}.structure.K{k}.Qmatrix.txt",
+    "faststructure": "results/{project}/faststructure/{project}.faststructure.{k}.meanQ",
+    "admixture": "results/{project}/admixture/{project}.biallelic_snps_thinned.{k}.Q",
+    "snmf": "results/{project}/snmf/{project}.snmf.K{k}.Qmatrix.txt",
+    "tess3": "results/{project}/tess3/{project}.tess3.K{k}.Qmatrix.txt",
+    "alstructure": "results/{project}/alstructure/{project}.alstructure.K{k}.Qmatrix.txt",
+    "construct": "results/{project}/construct/{project}.construct.K{k}.Qmatrix.txt",
+    "dapc": "results/{project}/dapc/{project}.dapc.K{k}.membership_probs.txt",
+}
+
+
+def _ancestry_raw_q(method, project, k):
+    return _ANCESTRY_RAW_Q[method].format(project=project, k=k)
+
+
+def _ancestry_aligned_q(method, project, k):
+    """Column-aligned Q matrix (headerless numeric) written by the cluster aligner."""
+    return (
+        f"results/{project}/{method}/aligned/"
+        f"{project}.{method}.K{k}.Qmatrix.aligned.txt"
+    )
+
+
+def _ancestry_align_kvals(project):
+    """K values the aligner runs over (K >= 2, shared across all ancestry methods)."""
+    return _plot_k_values(config["projects"][project]["parameters"]["k_values"])
+
+
+def _ancestry_reference_method(project):
+    """Method whose cluster order anchors the others: ADMIXTURE if enabled, else the
+    first enabled ancestry method (DAPC last)."""
+    analyses = config["projects"][project].get("analyses", {})
+    if analyses.get("admixture", False):
+        return "admixture"
+    for method in ANCESTRY_METHODS:
+        if analyses.get(method, False):
+            return method
+    return None
+
+
+def _align_inputs(wildcards):
+    """Raw Q matrices for the target method (all K) plus, when the method is not the
+    reference, the reference method's aligned Q matrices (all K) used as the anchor."""
+    project = wildcards.project
+    method = wildcards.method
+    kvals = _ancestry_align_kvals(project)
+    inputs = {"raw": [_ancestry_raw_q(method, project, k) for k in kvals]}
+    reference = _ancestry_reference_method(project)
+    if reference is not None and reference != method:
+        inputs["reference"] = [
+            _ancestry_aligned_q(reference, project, k) for k in kvals
+        ]
+    return inputs
 
 
 def _facet_k_values(wildcards):
@@ -712,6 +776,7 @@ include: "rules/relatedness.smk"
 include: "rules/pixy.smk"
 include: "rules/structure.smk"
 include: "rules/iqtree.smk"
+include: "rules/align_clusters.smk"
 include: "rules/mapmixture.smk"
 include: "rules/map_facet.smk"
 include: "rules/population_map.smk"

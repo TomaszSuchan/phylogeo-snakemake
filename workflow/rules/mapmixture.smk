@@ -81,7 +81,7 @@ rule mapmixture_admixture:
 # Rule to generate structure barplots from STRUCTURE results
 rule barplot_structure:
     input:
-        qmatrix = "results/{project}/structure/{project}.structure.K{k}.Qmatrix.txt",
+        qmatrix = "results/{project}/structure/aligned/{project}.structure.K{k}.Qmatrix.aligned.txt",
         indpopdata = rules.generate_popdata.output.indpopdata,
         install = rules.install_mapmixture.output,
     output:
@@ -105,7 +105,7 @@ rule barplot_structure:
 # Rule to generate structure barplots from fastStructure results
 rule barplot_faststructure:
     input:
-        qmatrix = "results/{project}/faststructure/{project}.faststructure.{k}.meanQ",
+        qmatrix = "results/{project}/faststructure/aligned/{project}.faststructure.K{k}.Qmatrix.aligned.txt",
         indpopdata = rules.generate_popdata.output.indpopdata,
         install = rules.install_mapmixture.output,
     output:
@@ -129,7 +129,7 @@ rule barplot_faststructure:
 # Rule to generate structure barplots from ADMIXTURE results
 rule barplot_admixture:
     input:
-        qmatrix = "results/{project}/admixture/{project}.biallelic_snps_thinned.{k}.Q",
+        qmatrix = "results/{project}/admixture/aligned/{project}.admixture.K{k}.Qmatrix.aligned.txt",
         indpopdata = rules.generate_popdata.output.indpopdata,
         install = rules.install_mapmixture.output,
     output:
