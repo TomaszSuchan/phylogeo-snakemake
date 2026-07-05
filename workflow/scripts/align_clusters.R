@@ -184,6 +184,8 @@ run_from_snakemake <- function(snakemake) {
               method, target_k,
               if (is.null(ref_by_k)) "no" else "matched to", out_file))
   cat(sprintf("  column order applied: %s\n", paste(perm, collapse = ", ")))
+  flush.console()
+  quit(save = "no", status = 0)
 }
 
 # Only run when Snakemake injects the `snakemake` object; sourcing the file for tests

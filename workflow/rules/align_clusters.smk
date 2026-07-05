@@ -29,9 +29,9 @@ rule align_ancestry_clusters:
         "logs/{project}/align_clusters.{method}.K{k}.log"
     conda:
         "../envs/r-cluster-align.yaml"
-    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    threads: 1
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
-        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default-long"]["runtime"]
     script:
         "../scripts/align_clusters.R"

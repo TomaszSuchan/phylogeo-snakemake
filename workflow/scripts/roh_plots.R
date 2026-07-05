@@ -114,7 +114,8 @@ plot_group_boxplots <- function(col, fill_values = NULL, sort_by = NULL) {
 
   plot_data <- apply_group_levels(per_ind, col, sort_by)
   n_groups <- length(level_order)
-  plot_width <- min(50, max(8, n_groups * 0.8))
+  # ggplot2 rejects width/height >= 50 inches; cap below that limit.
+  plot_width <- min(49, max(8, n_groups * 0.8))
 
   if (!is.null(fill_values) && length(fill_values) > 0) {
     cat("Using configured fill colors for", col, "\n")
