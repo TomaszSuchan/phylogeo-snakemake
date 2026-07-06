@@ -203,6 +203,18 @@ parameters: &global_params
     min.segment.length: 0.5      # minimum length of leader line segment (in map units)
     segment.color: "black"      # color of leader lines
     segment.size: 0.2            # line width of leader lines
+    map_outline: true
+    color_by: ["Region"]
+    color_point_size: 2
+    # Categorical columns use optional per-group colours below (same pattern as roh.{group_col}.colors).
+    # Region:
+    #   colors:
+    #     North: "#E41A1C"
+    #     South: "#377EB8"
+    # Site:
+    #   colors:
+    #     SiteA: "#4DAF4A"
+    #     SiteB: "#984EA3"
 
   ## MAPI parameters
   # Spatial MAPI maps highlight areas where genetic distances are unusually high or low.

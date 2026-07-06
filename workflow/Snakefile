@@ -707,6 +707,25 @@ def _population_map_params(wildcards):
     }
 
 
+def _population_map_group_params(wildcards):
+    """Params for plot_population_map_by_group (map_background + grouped map knobs)."""
+    pm = config["projects"][wildcards.project]["parameters"]["population_map"]
+    group_col = wildcards.group_col
+    return {
+        **_map_bg_params(wildcards),
+        "group_col": group_col,
+        "group_colors": _population_map_group_setting(
+            wildcards.project, group_col, "colors"
+        ),
+        "group_sort_by": _population_map_group_setting(
+            wildcards.project, group_col, "sort_by"
+        ),
+        "point_shape": pm.get("point_shape", 19),
+        "color_point_size": pm.get("color_point_size", 2),
+        "map_outline": pm.get("map_outline", True),
+    }
+
+
 def _spca_map_rule_params(wildcards):
     """Params for spca_score_map (map_background + sPCA map knobs)."""
     spca_map = config["projects"][wildcards.project]["parameters"].get("spca_map", {})
@@ -1682,6 +1701,20 @@ def get_all_targets():
                 f"results/{project}/stats_samples/plots/{project}.population_map.pdf",
                 f"results/{project}/stats_samples/plots/{project}.population_map.rds"
             ])
+            pop_map_color_by = _population_map_color_by_columns_from_params(params)
+            if pop_map_color_by:
+                targets.extend(
+                    expand(
+                        f"results/{project}/stats_samples/plots/{project}.population_map_by_{{group_col}}.pdf",
+                        group_col=pop_map_color_by,
+                    )
+                )
+                targets.extend(
+                    expand(
+                        f"results/{project}/stats_samples/plots/{project}.population_map_by_{{group_col}}.rds",
+                        group_col=pop_map_color_by,
+                    )
+                )
 
         # fineRADstructure targets
         if analyses.get("fineradstructure", False):
