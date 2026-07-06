@@ -98,3 +98,26 @@ rule plot_population_map:
     script:
         "../scripts/plot_population_map.R"
 
+
+# Population map with points colored by an indpopdata column (legend, no site labels).
+rule plot_population_map_by_group:
+    input:
+        unpack(_population_map_inputs),
+    output:
+        plot = "results/{project}/stats_samples/plots/{project}.population_map_by_{group_col}.pdf",
+        plot_rds = "results/{project}/stats_samples/plots/{project}.population_map_by_{group_col}.rds"
+    params:
+        lambda wildcards: _population_map_group_params(wildcards)
+    log:
+        "logs/{project}/plot_population_map_by_{group_col}.log"
+    benchmark:
+        "benchmarks/{project}/plot_population_map_by_{group_col}.txt"
+    conda:
+        "../envs/mapmixture.yaml"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    script:
+        "../scripts/plot_population_map_grouped.R"
+
