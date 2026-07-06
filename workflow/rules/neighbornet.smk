@@ -74,6 +74,7 @@ rule plot_neighbornet:
         width=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("neighbornet", {}).get("width", 12),
         height=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("neighbornet", {}).get("height", 12),
         dpi=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("neighbornet", {}).get("dpi", 300),
+        linewidth=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("neighbornet", {}).get("linewidth", 0.5),
     conda:
         "../envs/neighbornet.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]

@@ -505,6 +505,7 @@ parameters: &global_params
     width: 12            # plot width in inches
     height: 12           # plot height in inches
     dpi: 300             # plot dpi
+    linewidth: 0.5       # split-network edge width (ggplot/tanggle units; phangorn scaled to match)
     # Optional per-group colours for each color_by column (same pattern as roh.{group_col}.colors).
     # Region:
     #   colors:
