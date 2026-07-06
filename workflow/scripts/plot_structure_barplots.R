@@ -269,7 +269,20 @@ ggsave_pdf(
   dpi = dpi
 )
 
-# Save barplot ggplot object as RDS
+# Save barplot ggplot object as RDS (facet script reads panel layout attributes).
+bottom_margin_pt <- ifelse(
+  site_labels_angle >= 45,
+  max(30, site_labels_size * 5),
+  5
+)
+top_margin_pt <- 5
+site_label_height_in <- bottom_margin_pt / 72
+bar_height_in <- height - (bottom_margin_pt + top_margin_pt) / 72
+attr(structure_barplot, "panel_width") <- width
+attr(structure_barplot, "panel_height") <- height
+attr(structure_barplot, "panel_bottom_margin_pt") <- bottom_margin_pt
+attr(structure_barplot, "panel_bar_height_in") <- bar_height_in
+attr(structure_barplot, "panel_site_label_height_in") <- site_label_height_in
 saveRDS(structure_barplot, file = output_barplot_rds)
 
 cat("Successfully created structure barplot\n")

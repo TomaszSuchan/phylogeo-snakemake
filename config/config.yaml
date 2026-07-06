@@ -120,6 +120,13 @@ parameters: &global_params
   map_facet_plot:
     ncol: 2                         # columns in the map facet grid
 
+  ## Multi-K ancestry barplot facet panels (structure, admixture, sNMF, etc.)
+  # Stack per-K barplot panels (K >= 2) in one column; panel size comes from each barplot RDS.
+  barplot_facet_plot:
+    label_width: 0.4                # inches for the left-hand K label column
+    panel_gap: 8                     # vertical gap between stacked bar rows (points)
+    legend_pad: 0.4                  # extra inches on the right for the cluster color key
+
   ## Shared map background parameters (used by all mapping functions)
   # This section is read by mapmixture/population_map/pixy/dapc and other map rules.
   map_boundary: null                # optional map boundary extent e.g. c(xmin=18.5, xmax=23.4, ymin=48.8, ymax=49.8)
