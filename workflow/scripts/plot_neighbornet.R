@@ -47,7 +47,14 @@ color_by <- as.character(snakemake@params[["color_by"]])
 plot_width <- as.numeric(snakemake@params[["width"]])
 plot_height <- as.numeric(snakemake@params[["height"]])
 plot_dpi <- as.numeric(snakemake@params[["dpi"]])
+edge_linewidth <- as.numeric(snakemake@params[["linewidth"]])
 group_colors_param <- snakemake@params[["group_colors"]]
+
+if (!is.finite(edge_linewidth) || edge_linewidth <= 0) {
+  stop("Configured neighbornet linewidth must be a positive number.")
+}
+# phangorn plot.networx defaults to edge.width = 3; ggsplitnet/ggplot defaults to ~0.5.
+phangorn_edge_width <- edge_linewidth * 6
 
 cat("Reading NeighborNet object:", net_file, "\n")
 net <- readRDS(net_file)
@@ -101,6 +108,8 @@ n_groups <- length(levels(tip_data$group))
 cat("Number of tips:", ntip, "\n")
 cat("Coloring tips by:", color_by, "\n")
 cat("Groups:", paste(levels(tip_data$group), collapse = ", "), "\n")
+cat("Edge linewidth (ggplot):", edge_linewidth, "\n")
+cat("Edge width (phangorn):", phangorn_edge_width, "\n")
 
 palette_vals <- group_fill_values(group_colors_param)
 if (is.null(palette_vals) && !is.null(group_colors_param)) {
@@ -120,7 +129,7 @@ tip_label_size <- if (ntip > 120) 1.4 else if (ntip > 60) 1.8 else 2.2
 expand_frac <- if (ntip > 120) 0.18 else if (ntip > 60) 0.14 else 0.10
 
 build_plot <- function(show_tip_labels) {
-  p <- ggsplitnet(net) %<+% tip_data +
+  p <- ggsplitnet(net, linewidth = edge_linewidth) %<+% tip_data +
     theme_tree() +
     ggexpand(expand_frac) +
     ggexpand(expand_frac, direction = -1)
@@ -177,9 +186,29 @@ tip_cols <- if (!is.null(palette_vals)) {
   rep("black", ntip)
 }
 
+# fastnntr stores tip.label in distance-matrix order but adds a translate
+# table mapping display slots to tip nodes. phangorn's plot.networx places
+# tip.label[i] at translate$node[i], so labels/colors must follow that order.
+net_phangorn <- net
+tip_cols_phangorn <- tip_cols
+if (!is.null(net_phangorn$translate) && "node" %in% names(net_phangorn$translate)) {
+  reorder_idx <- net_phangorn$translate$node
+  if (length(reorder_idx) == ntip) {
+    net_phangorn$tip.label <- net_phangorn$tip.label[reorder_idx]
+    tip_cols_phangorn <- tip_cols_phangorn[reorder_idx]
+  }
+}
+
 pdf(output_pdf_phangorn, width = plot_width, height = plot_height)
 plotted <- tryCatch({
-  plot(net, type = "2D", show.tip.label = TRUE, tip.color = tip_cols, cex = 0.6)
+  plot(
+    net_phangorn,
+    type = "2D",
+    show.tip.label = TRUE,
+    tip.color = tip_cols_phangorn,
+    edge.width = phangorn_edge_width,
+    cex = 0.6
+  )
   TRUE
 }, error = function(e) {
   message("plot.networx with tip.color failed (", conditionMessage(e),
@@ -187,7 +216,13 @@ plotted <- tryCatch({
   FALSE
 })
 if (!isTRUE(plotted)) {
-  plot(net, type = "2D", show.tip.label = TRUE, cex = 0.6)
+  plot(
+    net_phangorn,
+    type = "2D",
+    show.tip.label = TRUE,
+    edge.width = phangorn_edge_width,
+    cex = 0.6
+  )
 }
 dev.off()
 
