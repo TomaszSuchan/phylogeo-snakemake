@@ -866,6 +866,60 @@ def _treemix_bootstrap_enabled_from_params(params):
     return bool(_treemix_bootstrap_config_from_params(params).get("enabled", False))
 
 
+def _gone2_pop_safe(label):
+    import re
+    s = re.sub(r"[^\w.\-]+", "_", str(label).strip())
+    return (s[:120] or "group")
+
+
+def _gone2_pop_wildcards(project, params):
+    """Population wildcards for gone2 rules and get_all_targets()."""
+    import csv
+    import os
+
+    populations_path = f"results/{project}/gone2/{project}.gone2_populations.tsv"
+    if os.path.exists(populations_path):
+        with open(populations_path, newline="") as handle:
+            return [row["pop"] for row in csv.DictReader(handle, delimiter="\t")]
+
+    indpopdata_path = f"results/{project}/indpopdata.txt"
+    if not os.path.exists(indpopdata_path):
+        return []
+
+    gone2_cfg = params.get("gone2", {})
+    pop_col = gone2_cfg.get("population_column", "Site")
+    min_individuals = int(gone2_cfg.get("min_individuals", 10))
+
+    with open(indpopdata_path, newline="") as handle:
+        reader = csv.DictReader(handle, delimiter="\t")
+        if pop_col not in (reader.fieldnames or []):
+            return []
+        counts = {}
+        for row in reader:
+            label = (row.get(pop_col) or "").strip()
+            if not label:
+                continue
+            counts[label] = counts.get(label, 0) + 1
+
+    return [
+        _gone2_pop_safe(label)
+        for label, n in counts.items()
+        if n >= min_individuals
+    ]
+
+
+def _gone2_summary_inputs(wildcards):
+    project = wildcards.project
+    params = config["projects"][project]["parameters"]
+    inputs = {
+        "populations": f"results/{project}/gone2/{project}.gone2_populations.tsv",
+    }
+    for pop in _gone2_pop_wildcards(project, params):
+        inputs[f"ne_{pop}"] = f"results/{project}/gone2/vcf/{project}.{pop}_GONE2_Ne"
+        inputs[f"plot_{pop}"] = f"results/{project}/gone2/plots/{project}.{pop}.gone2_ne.pdf"
+    return inputs
+
+
 # Include rule files
 include: "rules/preprocessing.smk"
 include: "rules/preprocessing_ld_pruning.smk"
@@ -905,6 +959,7 @@ include: "rules/roh.smk"
 include: "rules/iqtree_trimal.smk"
 include: "rules/njtree.smk"
 include: "rules/orientagraph.smk"
+include: "rules/gone2.smk"
 include: "rules/methods.smk"
 
 def get_all_targets():
@@ -1865,6 +1920,17 @@ def get_all_targets():
                     f"results/{project}/treemix/plots/{project}.treemix.bootstrap_likelihoods.pdf",
                     f"results/{project}/treemix/plots/{project}.treemix.bootstrap_likelihoods.rds",
                 ])
+
+        if analyses.get("gone2", False):
+            gone2_pops = _gone2_pop_wildcards(project, params)
+            targets.append(f"results/{project}/gone2/{project}.gone2_summary.tsv")
+            targets.extend(
+                expand(
+                    f"results/{project}/gone2/plots/{project}.{{pop}}.gone2_ne.pdf",
+                    project=project,
+                    pop=gone2_pops,
+                )
+            )
 
         # conStruct targets
         if analyses.get("construct", False):

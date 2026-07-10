@@ -588,6 +588,20 @@ parameters: &global_params
       dpi: 300                      # plot resolution
       migration_arrow_length: 0.15  # arrow head size for migration edges (TreeMix default 0.05)
 
+  ## GONE2 parameters
+  # Historical Ne from linkage disequilibrium; one run per indpopdata population level.
+  gone2:
+    population_column: "Site"              # indpopdata column defining populations
+    recombination_rate_cM_per_Mb: 2.5        # gone2 -r (constant cM/Mb; no .map file)
+    f_missing: 1.0                         # per-pop locus filter; 1.0 disables missingness filtering
+    mac_threshold: 1                         # per-pop MAC > threshold after subsetting
+    min_individuals: 10
+    min_snps: 1000
+    plot:
+      width: 8
+      height: 5
+      dpi: 300
+
   ## Trimal parameters for alignment trimming before phylogenetic inference
   # trimAl removes gappy alignment sites before optional IQ-TREE inference.
   trimal:
@@ -732,6 +746,10 @@ parameters: &global_params
       threads: 8
       mem_mb: 16000
       runtime: 240
+    gone2:
+      threads: 8
+      mem_mb: 16000
+      runtime: 480
     emupca:
       threads: 12
       mem_mb: 8000
@@ -777,6 +795,7 @@ projects:
       construct: false        # Spatial population structure model with conStruct.
       dapc: false             # Discriminant analysis of principal components clustering.
       spca: false              # Spatial PCA combining genetic variance and spatial autocorrelation.
+      gone2: false             # Historical Ne trajectories from linkage disequilibrium (GONE2).
     parameters:
       <<: *global_params
       popmap: "data/popmap.txt"
