@@ -433,6 +433,41 @@ parameters: &global_params
     color_by: ["none"]          # columns in indpopdata used to color network nodes; "none" disables node coloring
     plot_all: false             # when true, include unrelated individuals as isolated nodes in network plots
     relatedness_colors: null   # optional custom palette for relatedness network plots
+
+  # Shared population stratification for vcftools, PLINK --genome, and R related.
+  # Not used by KING or PC-Relate (full-sample estimators).
+  relatedness_stratum:
+    population_column: "Site"   # indpopdata column defining within-population analyses
+
+  # R related package (COANCESTRY wrapper; Pew et al. 2015). Stratification from
+  # relatedness_stratum. Keys are coancestry() argument names; output columns use
+  # Title case (e.g. Quellergt, Trioml). Values: 0 = off, 1 = point estimate,
+  # 2 = point estimate + 95% CI (bootstrap). Likelihood estimators (trioml,
+  # dyadml) are slower than moment estimators.
+  #
+  # The relatedness module also runs estimators outside this block: Yang Ajk
+  # (vcftools --relatedness), Manichaikul (vcftools --relatedness2), PLINK PI_HAT,
+  # KING-robust (plink2), and PC-Relate (GENESIS). For comparative guidance on
+  # genome-based estimators in conservation breeding, see Hauser et al. (2021)
+  # bioRxiv 10.1101/2021.07.08.451704 — Rxy and TrioML (below) ranked among the
+  # most pedigree-correlated in that study; KING-robust and KGD were less consistent.
+  related:
+    estimators:
+      quellergt: 1   # Rxy — Queller–Goodnight moment estimator (Queller & Goodnight 1989)
+      wang: 0        # Wang (2002) moment estimator
+      lynchli: 0     # Lynch–Li moment estimator (Lynch & Li 1993)
+      lynchrd: 0     # Lynch–Ritland Rδ moment estimator (Lynch & Ritland 1999)
+      ritland: 0     # Ritland (1996) moment estimator
+      trioml: 0      # TrioML — Wang triadic maximum-likelihood (Wang 2007, 2011)
+      dyadml: 0      # DyadML — dyadic maximum-likelihood (Milligan 2003)
+
+  # PC-Relate (GENESIS): PC-AiR-adjusted kinship on the full sample.
+  pcrelate:
+    n_pcs: 2                    # ancestry PCs from PC-AiR passed to PC-Relate
+    ld_r2: 0.2                  # LD pruning threshold before PC-AiR / PC-Relate
+    ld_window: 500              # LD pruning window (SNPs)
+    maf: 0.01                   # MAF filter for LD pruning
+    return_ibd_probs: true      # include k0/k1/k2 IBD probabilities in output table
   
   ## VCF2PCACluster parameters
   # PCA/clustering with VCF2PCACluster internal SNP filters.
@@ -748,6 +783,14 @@ parameters: &global_params
       runtime: 240
     gone2:
       threads: 8
+      mem_mb: 16000
+      runtime: 480
+    related:
+      threads: 1
+      mem_mb: 16000
+      runtime: 240
+    pcrelate:
+      threads: 4
       mem_mb: 16000
       runtime: 480
     emupca:

@@ -1046,17 +1046,22 @@ rel_parts = []
 if analyses.get("relatedness", False):
     rel_parts.append(
         f"Pairwise relatedness among the {n_samples} individuals was estimated "
-        f"from the {dataset_label} using four complementary estimators, so that "
+        f"from the {dataset_label} using six complementary estimators, so that "
         f"conclusions did not depend on the assumptions of any single method: "
         f"(i) the Ajk genomic relatedness statistic of Yang et al. (2010), computed "
         f"with vcftools {vn(versions,'vcftools')} (Danecek et al. 2011) "
-        f"using --relatedness; "
-        f"(ii) the kinship coefficient of Manichaikul et al. (2010), which is more "
-        f"robust to population structure, computed with vcftools --relatedness2; "
+        f"using --relatedness within each population stratum defined from indpopdata; "
+        f"(ii) the kinship coefficient of Manichaikul et al. (2010), computed with "
+        f"vcftools --relatedness2 within each stratum; "
         f"(iii) the identity-by-descent proportion (PI_HAT) from PLINK "
-        f"{vn(versions,'plink')} --genome; and "
+        f"{vn(versions,'plink')} --genome within each stratum; "
         f"(iv) the KING-robust kinship coefficient from PLINK 2 "
-        f"--make-king-table (Manichaikul et al. 2010). Together these statistics "
+        f"--make-king-table (Manichaikul et al. 2010) on the full sample; "
+        f"(v) the Queller and Goodnight (1989) moment estimator "
+        f"\\(R_{{xy}}\\) from the R related package (Wang 2011), calculated "
+        f"within each population stratum; and (vi) PC-Relate kinship and IBD "
+        f"probabilities from GENESIS (Conomos et al. 2015), run on the full sample "
+        f"with PC-AiR ancestry adjustment for population structure. Together these "
         f"identify duplicate samples, close relatives, and broader patterns of "
         f"background relatedness."
     )
@@ -1386,6 +1391,21 @@ if analyses.get("relatedness", False):
         "Yang, J. et al. (2010). Common SNPs explain a large proportion of the "
         "heritability for human height. *Nature Genetics*, 42, 565–569. "
         "https://doi.org/10.1038/ng.608"
+    )
+    refs["queller1989"] = (
+        "Queller, D.C. & Goodnight, K.F. (1989). Estimating relatedness using "
+        "genetic markers. *Evolution*, 43, 258–275. "
+        "https://doi.org/10.2307/2409206"
+    )
+    refs["wang2011related"] = (
+        "Wang, J. (2011). COANCESTRY: a program for simulating, estimating and "
+        "analysing relatedness and inbreeding coefficients. *Molecular Ecology "
+        "Resources*, 11, 141–145. https://doi.org/10.1111/j.1755-0998.2010.02885.x"
+    )
+    refs["genesis2015"] = (
+        "Conomos, M.P. et al. (2015). Model-free estimation of recent genetic "
+        "relatedness. *American Journal of Human Genetics*, 98, 127–148. "
+        "https://doi.org/10.1016/j.ajhg.2015.11.022"
     )
 
 if analyses.get("mapi", False):

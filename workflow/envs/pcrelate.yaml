@@ -1,0 +1,9 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - r-base
+  - bioconductor-genesis
+  - bioconductor-seqarray
+  - bioconductor-snprelate
+  - bcftools
