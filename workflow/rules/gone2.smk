@@ -60,16 +60,16 @@ rule gone2_subset_vcf:
         vcf=rules.select_biallelic_snps.output.biallelic_vcf,
         samples=rules.gone2_prepare_samples.output.samples_dir,
     output:
-        vcf="results/{project}/gone2/vcf/{project}.{pop}.vcf",
+        vcf="results/{project}/gone2/vcf/{project}.{stratum}.vcf",
     params:
-        samples_file=lambda wildcards: f"results/{wildcards.project}/gone2/samples/{wildcards.project}.{wildcards.pop}.samples.txt",
+        samples_file=lambda wildcards: f"results/{wildcards.project}/gone2/samples/{wildcards.project}.{wildcards.stratum}.samples.txt",
         f_missing=lambda wildcards: config["projects"][wildcards.project]["parameters"]["gone2"].get("f_missing", 1.0),
         mac_threshold=lambda wildcards: config["projects"][wildcards.project]["parameters"]["gone2"].get("mac_threshold", 1),
         min_snps=lambda wildcards: config["projects"][wildcards.project]["parameters"]["gone2"].get("min_snps", 1000),
     log:
-        "logs/{project}/gone2_subset_vcf.{pop}.log"
+        "logs/{project}/gone2_subset_vcf.{stratum}.log"
     benchmark:
-        "benchmarks/{project}/gone2_subset_vcf_{pop}.txt"
+        "benchmarks/{project}/gone2_subset_vcf_{stratum}.txt"
     conda:
         "../envs/bcftools.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"],
@@ -97,14 +97,14 @@ rule gone2_run:
         install=rules.gone2_install.output.sentinel,
         vcf=rules.gone2_subset_vcf.output.vcf,
     output:
-        ne="results/{project}/gone2/vcf/{project}.{pop}_GONE2_Ne",
+        ne="results/{project}/gone2/vcf/{project}.{stratum}_GONE2_Ne",
     params:
         gone2_bin=".snakemake/gone2/gone2",
         recombination_rate=lambda wildcards: config["projects"][wildcards.project]["parameters"]["gone2"].get("recombination_rate_cM_per_Mb", 2.5),
     log:
-        "logs/{project}/gone2_run.{pop}.log"
+        "logs/{project}/gone2_run.{stratum}.log"
     benchmark:
-        "benchmarks/{project}/gone2_run_{pop}.txt"
+        "benchmarks/{project}/gone2_run_{stratum}.txt"
     conda:
         "../envs/gone2.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["gone2"]["threads"],
@@ -124,16 +124,16 @@ rule gone2_plot_ne:
     input:
         ne=rules.gone2_run.output.ne,
     output:
-        pdf="results/{project}/gone2/plots/{project}.{pop}.gone2_ne.pdf",
-        rds="results/{project}/gone2/plots/{project}.{pop}.gone2_ne.rds",
+        pdf="results/{project}/gone2/plots/{project}.{stratum}.gone2_ne.pdf",
+        rds="results/{project}/gone2/plots/{project}.{stratum}.gone2_ne.rds",
     params:
         width=lambda wildcards: config["projects"][wildcards.project]["parameters"]["gone2"].get("plot", {}).get("width", 8),
         height=lambda wildcards: config["projects"][wildcards.project]["parameters"]["gone2"].get("plot", {}).get("height", 5),
         dpi=lambda wildcards: config["projects"][wildcards.project]["parameters"]["gone2"].get("plot", {}).get("dpi", 300),
     log:
-        "logs/{project}/gone2_plot_ne.{pop}.log"
+        "logs/{project}/gone2_plot_ne.{stratum}.log"
     benchmark:
-        "benchmarks/{project}/gone2_plot_ne_{pop}.txt"
+        "benchmarks/{project}/gone2_plot_ne_{stratum}.txt"
     conda:
         "../envs/r-plot.yaml"
     threads: 1
