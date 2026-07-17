@@ -2018,26 +2018,26 @@ def get_all_targets():
             ])
             targets.extend(
                 expand(
-                    f"results/{project}/treemix/{project}.treemix.m{m}.llik",
+                    f"results/{project}/treemix/{project}.treemix.m{{m}}.llik",
                     m=treemix_migrations,
                 )
             )
             targets.extend(
                 expand(
-                    f"results/{project}/treemix/{project}.treemix.m{m}.treeout.gz",
+                    f"results/{project}/treemix/{project}.treemix.m{{m}}.treeout.gz",
                     m=treemix_migrations,
                 )
             )
             targets.extend(
                 expand(
-                    f"results/{project}/treemix/plots/{project}.treemix.m{m}.{plot_type}.pdf",
+                    f"results/{project}/treemix/plots/{project}.treemix.m{{m}}.{{plot_type}}.pdf",
                     m=treemix_migrations,
                     plot_type=["graph", "residuals"],
                 )
             )
             targets.extend(
                 expand(
-                    f"results/{project}/treemix/plots/{project}.treemix.m{m}.{plot_type}.rds",
+                    f"results/{project}/treemix/plots/{project}.treemix.m{{m}}.{{plot_type}}.rds",
                     m=treemix_migrations,
                     plot_type=["graph", "residuals"],
                 )
