@@ -50,7 +50,6 @@ plot_obj <- ggplot2::ggplot(summary, ggplot2::aes(migration_edges, final_log_lik
   ggplot2::geom_point(size = 2) +
   ggplot2::scale_x_continuous(breaks = summary$migration_edges) +
   ggplot2::labs(
-    title = "OrientAGraph / TreeMix-compatible model likelihoods",
     x = "Migration edges (m)",
     y = "Final log likelihood"
   ) +

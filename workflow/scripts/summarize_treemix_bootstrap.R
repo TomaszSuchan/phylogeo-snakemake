@@ -215,7 +215,6 @@ plot_obj <- ggplot2::ggplot(
   ggplot2::geom_boxplot(outlier.shape = NA, width = 0.5) +
   ggplot2::geom_jitter(width = 0.12, height = 0, size = 1.5, alpha = 0.7) +
   ggplot2::labs(
-    title = "TreeMix / OrientAGraph bootstrap likelihoods",
     x = "Requested migration edges (m)",
     y = "Final log likelihood"
   ) +

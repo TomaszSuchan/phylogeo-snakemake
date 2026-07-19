@@ -116,7 +116,6 @@ if (!is.null(optm_result)) {
     OptM::plot_optM(optm_result, method = method),
     error = function(e) {
       plot.new()
-      title("OptM plot failed")
       text(0.5, 0.5, conditionMessage(e), cex = 0.8)
       cat("OptM plot failed:", conditionMessage(e), "\n")
     }
@@ -165,8 +164,6 @@ if (!is.null(optm_result)) {
     ggplot2::geom_point(size = 2) +
     ggplot2::scale_x_continuous(breaks = summary$migration_edges) +
     ggplot2::labs(
-      title = "OptM fallback: final log likelihoods",
-      subtitle = paste0("Delta-m unavailable; requested m=", requested_text, ", achieved m=", achieved_text),
       x = "Migration edges (m)",
       y = "Final log likelihood"
     ) +

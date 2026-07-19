@@ -42,12 +42,10 @@ dir.create(dirname(snakemake@output[["graph_pdf"]]), recursive = TRUE, showWarni
 
 grDevices::pdf(snakemake@output[["graph_pdf"]], width = plot_width, height = plot_height)
 tree_result <- plot_tree(stem, cex = 0.8, arrow = migration_arrow_length)
-title(sprintf("TreeMix graph, m = %s", m_value))
 grDevices::dev.off()
 
 grDevices::pdf(snakemake@output[["residual_pdf"]], width = plot_width, height = plot_height)
 residual_result <- plot_resid(stem = stem, pop_order = pop_order, cex = 0.8)
-title(sprintf("TreeMix residuals, m = %s", m_value))
 grDevices::dev.off()
 
 saveRDS(
