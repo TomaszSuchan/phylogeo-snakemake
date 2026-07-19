@@ -4,5 +4,7 @@ channels:
 dependencies:
   - r-base
   - r-vcfr
-  - bcftools
+  - r-ggplot2
   - r-remotes
+  - bcftools
+  - compilers

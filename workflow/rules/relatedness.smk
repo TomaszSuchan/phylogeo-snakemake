@@ -9,7 +9,8 @@ rule install_related:
     shell:
         r"""
         set -euo pipefail
-        Rscript --vanilla -e 'lib <- .libPaths()[1]; unlink(list.files(lib, pattern="^00LOCK-", full.names=TRUE), recursive=TRUE, force=TRUE); if (!requireNamespace("related", quietly=TRUE)) install.packages("related", repos="https://cloud.r-project.org"); if (!requireNamespace("related", quietly=TRUE)) stop("Failed to install related package")' >> {log} 2>&1
+        mkdir -p "$(dirname {log})"
+        Rscript --vanilla -e 'lib <- .libPaths()[1]; unlink(list.files(lib, pattern="^00LOCK-", full.names=TRUE), recursive=TRUE, force=TRUE); if (!requireNamespace("related", quietly=TRUE, lib.loc=lib)) remotes::install_url("https://github.com/timothyfrasier/related/raw/master/related_1.0.tar.gz", upgrade="never", dependencies=TRUE, build_vignettes=FALSE, lib=lib); if (!requireNamespace("related", quietly=TRUE, lib.loc=lib)) stop("Failed to install related package")' >> {log} 2>&1
         """
 
 

@@ -64,6 +64,32 @@ for (j in seq_along(inds)) {
   }
 }
 
+count_observed_alleles <- function(locus_idx) {
+  vals <- gmat[, c(2L * locus_idx - 1L, 2L * locus_idx)]
+  vals <- vals[vals > 0L]
+  length(unique(vals))
+}
+
+observed_alleles <- vapply(seq_len(nloci), count_observed_alleles, integer(1))
+keep_loci <- observed_alleles > 0L
+dropped_loci <- sum(!keep_loci)
+if (dropped_loci > 0L) {
+  cat(
+    "Dropping", dropped_loci, "all-missing loci before coancestry",
+    "(related requires 1-127 observed alleles per locus)\n"
+  )
+}
+if (!any(keep_loci)) {
+  stop(
+    "No informative loci remain for coancestry in population subset ",
+    snakemake@wildcards[["stratum"]]
+  )
+}
+kept_cols <- as.vector(rbind(2L * which(keep_loci) - 1L, 2L * which(keep_loci)))
+gmat <- gmat[, kept_cols, drop = FALSE]
+nloci <- sum(keep_loci)
+cat("Retained loci:", nloci, "\n")
+
 gdata <- data.frame(ID = inds, gmat, check.names = FALSE, stringsAsFactors = FALSE)
 colnames(gdata)[1] <- "ID"
 
