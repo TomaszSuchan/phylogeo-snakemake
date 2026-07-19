@@ -15,6 +15,7 @@ rule gone2_install:
     shell:
         r"""
         set -euo pipefail
+        mkdir -p "$(dirname {log})"
         INSTALL_DIR="{params.install_dir}"
         mkdir -p "$INSTALL_DIR"
         if [ ! -x "$INSTALL_DIR/gone2" ]; then
@@ -72,10 +73,10 @@ rule gone2_subset_vcf:
         "benchmarks/{project}/gone2_subset_vcf_{stratum}.txt"
     conda:
         "../envs/bcftools.yaml"
-    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"],
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("gone2", {}).get("threads", config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]),
     resources:
-        mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["gone2"]["mem_mb"],
-        runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["gone2"]["runtime"],
+        mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("gone2", {}).get("mem_mb", config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"]),
+        runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("gone2", {}).get("runtime", config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]),
     shell:
         r"""
         set -euo pipefail
@@ -107,10 +108,10 @@ rule gone2_run:
         "benchmarks/{project}/gone2_run_{stratum}.txt"
     conda:
         "../envs/gone2.yaml"
-    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["gone2"]["threads"],
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("gone2", {}).get("threads", config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]),
     resources:
-        mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["gone2"]["mem_mb"],
-        runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["gone2"]["runtime"],
+        mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("gone2", {}).get("mem_mb", config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"]),
+        runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("gone2", {}).get("runtime", config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]),
     shell:
         r"""
         set -euo pipefail
