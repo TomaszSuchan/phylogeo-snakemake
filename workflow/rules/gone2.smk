@@ -180,7 +180,6 @@ rule gone2_plot_ne:
     params:
         width=lambda wildcards: _fig_cm_to_in(config["projects"][wildcards.project]["parameters"]["gone2"].get("plot", {}).get("width"), 20.32),
         height=lambda wildcards: _fig_cm_to_in(config["projects"][wildcards.project]["parameters"]["gone2"].get("plot", {}).get("height"), 12.7),
-        dpi=lambda wildcards: config["projects"][wildcards.project]["parameters"]["gone2"].get("plot", {}).get("dpi", 300),
     log:
         "logs/{project}/gone2_plot_ne.{stratum}.log"
     benchmark:

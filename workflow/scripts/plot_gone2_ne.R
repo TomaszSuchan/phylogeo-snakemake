@@ -26,7 +26,6 @@ suppressPackageStartupMessages({
 ne_file <- snakemake@input[["ne"]]
 width <- as.numeric(snakemake@params[["width"]])
 height <- as.numeric(snakemake@params[["height"]])
-dpi <- as.numeric(snakemake@params[["dpi"]])
 
 lines <- readLines(ne_file, warn = FALSE)
 data_lines <- lines[!grepl("^#", lines)]
@@ -54,5 +53,5 @@ p <- ggplot(ne_df, aes(x = .data$generation, y = .data$ne)) +
   labs(x = "Generations ago", y = expression(N[e])) +
   theme_bw(base_size = 11)
 
-ggsave_pdf(snakemake@output[["pdf"]], plot = p, width = width, height = height, dpi = dpi)
+ggsave_pdf(snakemake@output[["pdf"]], plot = p, width = width, height = height)
 saveRDS(p, snakemake@output[["rds"]])

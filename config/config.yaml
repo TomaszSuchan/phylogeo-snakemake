@@ -639,7 +639,6 @@ parameters: &global_params
     plot:
       width: 20.32                    # plot width in cm
       height: 12.7                     # plot height in cm
-      dpi: 300
 
   ## Trimal parameters for alignment trimming before phylogenetic inference
   # trimAl removes gappy alignment sites before optional IQ-TREE inference.
