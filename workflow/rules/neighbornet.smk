@@ -75,6 +75,8 @@ rule plot_neighbornet:
         height=lambda wildcards: _fig_cm_to_in(config["projects"][wildcards.project]["parameters"].get("neighbornet", {}).get("height"), 30.48),
         dpi=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("neighbornet", {}).get("dpi", 300),
         linewidth=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("neighbornet", {}).get("linewidth", 0.5),
+        tip_label_size=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("neighbornet", {}).get("tip_label_size", 2.2),
+        legend_size=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("neighbornet", {}).get("legend_size", 10),
     conda:
         "../envs/neighbornet.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]

@@ -639,6 +639,57 @@ def _roh_group_setting(project, group_col, key, default=None):
     return default
 
 
+def _roh_setting(project, key, default=None):
+    """Read top-level ROH plot settings from parameters.roh.{key}."""
+    return config["projects"][project]["parameters"].get("roh", {}).get(key, default)
+
+
+def _roh_plot_style_params(wildcards):
+    """Shared width/height (cm→in) and font/point sizes for ROH summary/group plots."""
+    project = wildcards.project
+    return {
+        "width": _fig_cm_to_in(_roh_setting(project, "width"), 20.32),
+        "height": _fig_cm_to_in(_roh_setting(project, "height"), 15.24),
+        "axis_title_size": _roh_setting(project, "axis_title_size", 10),
+        "axis_text_size": _roh_setting(project, "axis_text_size", 8),
+        "point_size": _roh_setting(project, "point_size", 3),
+    }
+
+
+def _pixy_setting(project, key, default=None):
+    """Read top-level pixy plot settings from parameters.pixy.{key}."""
+    return config["projects"][project]["parameters"].get("pixy", {}).get(key, default)
+
+
+def _pixy_plot_style_params(wildcards):
+    """Shared width/height (cm→in) and font/point sizes for pixy barplots/heatmaps."""
+    project = wildcards.project
+    return {
+        "width": _fig_cm_to_in(_pixy_setting(project, "width"), 20.32),
+        "height": _fig_cm_to_in(_pixy_setting(project, "height"), 15.24),
+        "axis_title_size": _pixy_setting(project, "axis_title_size", 10),
+        "axis_text_size": _pixy_setting(project, "axis_text_size", 8),
+        "point_size": _pixy_setting(project, "point_size", 3),
+    }
+
+
+def _genome_scan_setting(project, key, default=None):
+    """Read top-level genome_scan plot settings from parameters.genome_scan.{key}."""
+    return config["projects"][project]["parameters"].get("genome_scan", {}).get(key, default)
+
+
+def _genome_scan_plot_style_params(wildcards):
+    """Shared width/height (cm→in) and font/point sizes for genome-scan plots."""
+    project = wildcards.project
+    return {
+        "width": _fig_cm_to_in(_genome_scan_setting(project, "width"), 30.48),
+        "height": _fig_cm_to_in(_genome_scan_setting(project, "height"), 25.4),
+        "axis_title_size": _genome_scan_setting(project, "axis_title_size", 10),
+        "axis_text_size": _genome_scan_setting(project, "axis_text_size", 8),
+        "point_size": _genome_scan_setting(project, "point_size", 0.5),
+    }
+
+
 def _neighbornet_group_setting(project, group_col, key, default=None):
     """Read per-group NeighborNet settings from neighbornet.{group_col}.{key}, with legacy fallbacks."""
     nn = config["projects"][project]["parameters"].get("neighbornet", {})
@@ -894,12 +945,12 @@ def _gone2_pop_safe(label):
     return (s[:120] or "group")
 
 
-def _gone2_pop_wildcards(project, params):
-    """Population wildcards for gone2 rules and get_all_targets()."""
+def _gone2_currentne2_common_pop_wildcards(project, params):
+    """Population wildcards for shared LD-Ne prep (GONE2 / currentNe2)."""
     import csv
     import os
 
-    populations_path = f"results/{project}/gone2/{project}.gone2_populations.tsv"
+    populations_path = f"results/{project}/gone2_currentne2_common/{project}.gone2_currentne2_common_populations.tsv"
     if os.path.exists(populations_path):
         with open(populations_path, newline="") as handle:
             return [row["pop"] for row in csv.DictReader(handle, delimiter="\t")]
@@ -908,9 +959,9 @@ def _gone2_pop_wildcards(project, params):
     if not os.path.exists(indpopdata_path):
         return []
 
-    gone2_cfg = params.get("gone2", {})
-    pop_col = gone2_cfg.get("population_column", "Site")
-    min_individuals = int(gone2_cfg.get("min_individuals", 10))
+    gone2_currentne2_common_cfg = params.get("gone2_currentne2_common", {})
+    pop_col = gone2_currentne2_common_cfg.get("population_column", "Site")
+    min_individuals = int(gone2_currentne2_common_cfg.get("min_individuals", 10))
 
     with open(indpopdata_path, newline="") as handle:
         reader = csv.DictReader(handle, delimiter="\t")
@@ -930,15 +981,84 @@ def _gone2_pop_wildcards(project, params):
     ]
 
 
+def _gone2_currentne2_common_group_setting(project, group_col, key, default=None):
+    """Read per-group settings from gone2_currentne2_common.{group_col}.{key}."""
+    gone2_currentne2_common = config["projects"][project]["parameters"].get("gone2_currentne2_common", {})
+    group_cfg = gone2_currentne2_common.get(group_col)
+    if isinstance(group_cfg, dict):
+        return group_cfg.get(key, default)
+    return default
+
+
+def _gone2_n_seeds(project):
+    """Number of independent GONE2 stochastic seeds (-S)."""
+    return int(
+        config["projects"][project]["parameters"].get("gone2", {}).get("n_seeds", 100)
+    )
+
+
+def _gone2_seed_ne_inputs(wildcards):
+    """Per-seed GONE2 Ne files for one population stratum."""
+    n_seeds = _gone2_n_seeds(wildcards.project)
+    return expand(
+        "results/{project}/gone2/seeds/{project}.{stratum}.seed{seed}_GONE2_Ne",
+        project=wildcards.project,
+        stratum=wildcards.stratum,
+        seed=range(1, n_seeds + 1),
+    )
+
+
+def _gone2_ne_inputs(wildcards):
+    """Named mean/summary/seed inputs for combined GONE2 plotting / summary."""
+    project = wildcards.project
+    params = config["projects"][project]["parameters"]
+    inputs = {}
+    for pop in _gone2_currentne2_common_pop_wildcards(project, params):
+        inputs[f"ne_{pop}"] = f"results/{project}/gone2/{project}.{pop}_GONE2_Ne"
+        inputs[f"summary_{pop}"] = (
+            f"results/{project}/gone2/{project}.{pop}_GONE2_Ne_summary.tsv"
+        )
+        inputs[f"seeds_{pop}"] = (
+            f"results/{project}/gone2/{project}.{pop}_GONE2_Ne_seeds.tsv"
+        )
+    return inputs
+
+
 def _gone2_summary_inputs(wildcards):
     project = wildcards.project
     params = config["projects"][project]["parameters"]
     inputs = {
-        "populations": f"results/{project}/gone2/{project}.gone2_populations.tsv",
+        "populations": f"results/{project}/gone2_currentne2_common/{project}.gone2_currentne2_common_populations.tsv",
+        "combined_plot": f"results/{project}/gone2/plots/{project}.gone2_ne_combined.pdf",
     }
-    for pop in _gone2_pop_wildcards(project, params):
-        inputs[f"ne_{pop}"] = f"results/{project}/gone2/vcf/{project}.{pop}_GONE2_Ne"
+    inputs.update(_gone2_ne_inputs(wildcards))
+    for pop in _gone2_currentne2_common_pop_wildcards(project, params):
         inputs[f"plot_{pop}"] = f"results/{project}/gone2/plots/{project}.{pop}.gone2_ne.pdf"
+    return inputs
+
+
+def _currentne2_ne_inputs(wildcards):
+    """Named output-file inputs for combined currentNe2 plotting / summary."""
+    project = wildcards.project
+    params = config["projects"][project]["parameters"]
+    return {
+        f"ne_{pop}": f"results/{project}/currentne2/{project}.{pop}_currentNe2_OUTPUT.txt"
+        for pop in _gone2_currentne2_common_pop_wildcards(project, params)
+    }
+
+
+def _currentne2_summary_inputs(wildcards):
+    project = wildcards.project
+    params = config["projects"][project]["parameters"]
+    inputs = {
+        "populations": f"results/{project}/gone2_currentne2_common/{project}.gone2_currentne2_common_populations.tsv",
+        "combined_plot": f"results/{project}/currentne2/plots/{project}.currentne2_ne_combined.pdf",
+    }
+    inputs.update(_currentne2_ne_inputs(wildcards))
+    for pop in _gone2_currentne2_common_pop_wildcards(project, params):
+        inputs[f"plot_{pop}"] = (
+            f"results/{project}/currentne2/plots/{project}.{pop}.currentne2_ne.pdf"
+        )
     return inputs
 
 
@@ -1085,7 +1205,9 @@ include: "rules/roh.smk"
 include: "rules/iqtree_trimal.smk"
 include: "rules/njtree.smk"
 include: "rules/orientagraph.smk"
+include: "rules/gone2_currentne2_common.smk"
 include: "rules/gone2.smk"
+include: "rules/currentne2.smk"
 include: "rules/methods.smk"
 
 def get_all_targets():
@@ -2075,13 +2197,28 @@ def get_all_targets():
                 ])
 
         if analyses.get("gone2", False):
-            gone2_pops = _gone2_pop_wildcards(project, params)
+            gone2_currentne2_common_pops = _gone2_currentne2_common_pop_wildcards(project, params)
             targets.append(f"results/{project}/gone2/{project}.gone2_summary.tsv")
+            targets.append(f"results/{project}/gone2/plots/{project}.gone2_ne_combined.pdf")
             targets.extend(
                 expand(
                     f"results/{project}/gone2/plots/{project}.{{stratum}}.gone2_ne.pdf",
                     project=project,
-                    stratum=gone2_pops,
+                    stratum=gone2_currentne2_common_pops,
+                )
+            )
+
+        if analyses.get("currentne2", False):
+            gone2_currentne2_common_pops = _gone2_currentne2_common_pop_wildcards(project, params)
+            targets.append(f"results/{project}/currentne2/{project}.currentne2_summary.tsv")
+            targets.append(
+                f"results/{project}/currentne2/plots/{project}.currentne2_ne_combined.pdf"
+            )
+            targets.extend(
+                expand(
+                    f"results/{project}/currentne2/plots/{project}.{{stratum}}.currentne2_ne.pdf",
+                    project=project,
+                    stratum=gone2_currentne2_common_pops,
                 )
             )
 

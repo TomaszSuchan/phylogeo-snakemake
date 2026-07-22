@@ -263,6 +263,11 @@ rule plot_pixy_fst_heatmap:
     output:
         pdf = "results/{project}/pixy/plots/{project}.{grouping}.pixy_fst_heatmap.pdf",
         rds = "results/{project}/pixy/plots/{project}.{grouping}.pixy_fst_heatmap.rds"
+    params:
+        width = lambda wildcards: _pixy_plot_style_params(wildcards)["width"],
+        height = lambda wildcards: _pixy_plot_style_params(wildcards)["height"],
+        axis_title_size = lambda wildcards: _pixy_plot_style_params(wildcards)["axis_title_size"],
+        axis_text_size = lambda wildcards: _pixy_plot_style_params(wildcards)["axis_text_size"],
     log:
         "logs/{project}/plot_pixy_fst_heatmap.{grouping}.log"
     benchmark:
@@ -283,6 +288,11 @@ rule plot_pixy_dxy_heatmap:
     output:
         pdf = "results/{project}/pixy/plots/{project}.{grouping}.pixy_dxy_heatmap.pdf",
         rds = "results/{project}/pixy/plots/{project}.{grouping}.pixy_dxy_heatmap.rds"
+    params:
+        width = lambda wildcards: _pixy_plot_style_params(wildcards)["width"],
+        height = lambda wildcards: _pixy_plot_style_params(wildcards)["height"],
+        axis_title_size = lambda wildcards: _pixy_plot_style_params(wildcards)["axis_title_size"],
+        axis_text_size = lambda wildcards: _pixy_plot_style_params(wildcards)["axis_text_size"],
     log:
         "logs/{project}/plot_pixy_dxy_heatmap.{grouping}.log"
     benchmark:
@@ -314,6 +324,11 @@ rule plot_pixy_pi_barplot:
         population_sort_by = lambda wildcards: _pixy_group_setting(
             wildcards.project, wildcards.grouping, "sort_by"
         ),
+        width = lambda wildcards: _pixy_plot_style_params(wildcards)["width"],
+        height = lambda wildcards: _pixy_plot_style_params(wildcards)["height"],
+        axis_title_size = lambda wildcards: _pixy_plot_style_params(wildcards)["axis_title_size"],
+        axis_text_size = lambda wildcards: _pixy_plot_style_params(wildcards)["axis_text_size"],
+        point_size = lambda wildcards: _pixy_plot_style_params(wildcards)["point_size"],
     conda:
         "../envs/r-plot.yaml"
     threads: 1

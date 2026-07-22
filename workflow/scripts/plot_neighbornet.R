@@ -48,13 +48,24 @@ plot_width <- as.numeric(snakemake@params[["width"]])
 plot_height <- as.numeric(snakemake@params[["height"]])
 plot_dpi <- as.numeric(snakemake@params[["dpi"]])
 edge_linewidth <- as.numeric(snakemake@params[["linewidth"]])
+tip_label_size <- as.numeric(snakemake@params[["tip_label_size"]])
+legend_size <- as.numeric(snakemake@params[["legend_size"]])
 group_colors_param <- snakemake@params[["group_colors"]]
 
 if (!is.finite(edge_linewidth) || edge_linewidth <= 0) {
   stop("Configured neighbornet linewidth must be a positive number.")
 }
+if (!is.finite(tip_label_size) || tip_label_size <= 0) {
+  stop("Configured neighbornet tip_label_size must be a positive number.")
+}
+if (!is.finite(legend_size) || legend_size <= 0) {
+  stop("Configured neighbornet legend_size must be a positive number.")
+}
+
 # phangorn plot.networx defaults to edge.width = 3; ggsplitnet/ggplot defaults to ~0.5.
 phangorn_edge_width <- edge_linewidth * 6
+# Map ggplot tip-label size (mm) to a sensible base-R cex.
+phangorn_cex <- tip_label_size / 3.5
 
 cat("Reading NeighborNet object:", net_file, "\n")
 net <- readRDS(net_file)
@@ -110,6 +121,9 @@ cat("Coloring tips by:", color_by, "\n")
 cat("Groups:", paste(levels(tip_data$group), collapse = ", "), "\n")
 cat("Edge linewidth (ggplot):", edge_linewidth, "\n")
 cat("Edge width (phangorn):", phangorn_edge_width, "\n")
+cat("Tip label size (ggplot mm):", tip_label_size, "\n")
+cat("Legend size (pt):", legend_size, "\n")
+cat("Tip cex (phangorn):", phangorn_cex, "\n")
 
 palette_vals <- group_fill_values(group_colors_param)
 if (is.null(palette_vals) && !is.null(group_colors_param)) {
@@ -125,7 +139,6 @@ if (is.null(palette_vals) && !is.null(group_colors_param)) {
   }
 }
 
-tip_label_size <- if (ntip > 120) 1.4 else if (ntip > 60) 1.8 else 2.2
 expand_frac <- if (ntip > 120) 0.18 else if (ntip > 60) 0.14 else 0.10
 
 build_plot <- function(show_tip_labels) {
@@ -135,13 +148,25 @@ build_plot <- function(show_tip_labels) {
     ggexpand(expand_frac, direction = -1)
 
   if (show_tip_labels) {
+    # geom_tiplab2 adds two text layers (left/right hemispheres); both feed the
+    # colour legend and can duplicate key glyphs (seen for "Tatry (...)" levels).
+    # Draw the legend from tip points only.
     p <- p +
+      geom_tippoint(
+        mapping = aes(color = group),
+        size = 1.5
+      ) +
       geom_tiplab2(
         mapping = aes(color = group),
-        size = tip_label_size
+        size = tip_label_size,
+        show.legend = FALSE
       ) +
       labs(color = color_by) +
-      theme(legend.position = "right")
+      theme(
+        legend.position = "right",
+        legend.title = element_text(size = legend_size),
+        legend.text = element_text(size = legend_size * 0.9)
+      )
   } else {
     p <- p + theme(legend.position = "none")
   }
@@ -207,7 +232,7 @@ plotted <- tryCatch({
     show.tip.label = TRUE,
     tip.color = tip_cols_phangorn,
     edge.width = phangorn_edge_width,
-    cex = 0.6
+    cex = phangorn_cex
   )
   TRUE
 }, error = function(e) {
@@ -221,7 +246,7 @@ if (!isTRUE(plotted)) {
     type = "2D",
     show.tip.label = TRUE,
     edge.width = phangorn_edge_width,
-    cex = 0.6
+    cex = phangorn_cex
   )
 }
 dev.off()

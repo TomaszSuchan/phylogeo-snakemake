@@ -18,6 +18,14 @@ sink(log_file, type = "message")
 fst_summary_file <- snakemake@input[["fst_summary"]]
 output_pdf <- snakemake@output[["pdf"]]
 output_rds <- snakemake@output[["rds"]]
+plot_width <- as.numeric(snakemake@params[["width"]])
+plot_height <- as.numeric(snakemake@params[["height"]])
+axis_title_size <- as.numeric(snakemake@params[["axis_title_size"]])
+axis_text_size <- as.numeric(snakemake@params[["axis_text_size"]])
+if (is.na(plot_width)) plot_width <- 12
+if (is.na(plot_height)) plot_height <- 10
+if (is.na(axis_title_size)) axis_title_size <- 10
+if (is.na(axis_text_size)) axis_text_size <- 8
 
 message("\n=== READING FST SUMMARY ===\n")
 fst_df <- read.table(fst_summary_file, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
@@ -72,8 +80,8 @@ p <- pheatmap::pheatmap(
   cluster_cols = hc,
   display_numbers = TRUE,
   number_format = "%.3f",
-  fontsize = 10,
-  fontsize_number = 8,
+  fontsize = axis_title_size,
+  fontsize_number = axis_text_size,
   color = colorRampPalette(c("white", "yellow", "orange", "red"))(100),
   main = "",
   silent = FALSE
@@ -85,7 +93,7 @@ message(sprintf("Output PDF: %s\n", output_pdf))
 message(sprintf("Output RDS: %s\n", output_rds))
 
 dir.create(dirname(output_pdf), recursive = TRUE, showWarnings = FALSE)
-pdf(output_pdf, width = 12, height = 10)
+pdf(output_pdf, width = plot_width, height = plot_height)
 grid::grid.draw(p$gtable)
 dev.off()
 

@@ -1,6 +1,7 @@
 channels:
   - conda-forge
   - bioconda
+  - r
 # methods_version: tess3r=1.1.0
 dependencies:
   - r-base
@@ -11,6 +12,7 @@ dependencies:
   - r-rcolorbrewer
   - r-remotes
   - r-tidyverse
+  - r-tidyterra
   - r-sf
   - r-terra
   - r-ggspatial

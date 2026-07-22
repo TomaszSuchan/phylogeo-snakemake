@@ -221,6 +221,9 @@ plot_pca <- function(individuals, eigenvecs, eigenvals, popdata,
     }
   }
 
+  # Keep PC axes on the same geometric scale (unit length equal on x and y).
+  p <- p + coord_fixed(ratio = 1)
+
   return(p)
 }
 
@@ -240,9 +243,13 @@ plot_type <- as.character(snakemake@params[["plot_type"]])
 point_size <- as.numeric(snakemake@params[["point_size"]])
 axis_title_size <- as.numeric(snakemake@params[["axis_title_size"]])
 axis_text_size <- as.numeric(snakemake@params[["axis_text_size"]])
+plot_width <- as.numeric(snakemake@params[["width"]])
+plot_height <- as.numeric(snakemake@params[["height"]])
 if (is.na(point_size)) point_size <- 3
 if (is.na(axis_title_size)) axis_title_size <- 10
 if (is.na(axis_text_size)) axis_text_size <- 8
+if (is.na(plot_width)) plot_width <- 6
+if (is.na(plot_height)) plot_height <- 5
 
 # Get color_by and group_colors only for colored plots
 color_by_name <- NULL
@@ -263,6 +270,8 @@ message("plot_type = ", plot_type)
 message("point_size = ", point_size)
 message("axis_title_size = ", axis_title_size)
 message("axis_text_size = ", axis_text_size)
+message("width = ", plot_width)
+message("height = ", plot_height)
 if (!is.null(color_by_name)) {
   message("color_by_name = ", color_by_name)
 }
@@ -323,7 +332,7 @@ message("Generated PCA plot object: ", class(plt_pca))
 
 # Save PDF
 dir.create(dirname(output_pdf), recursive = TRUE, showWarnings = FALSE)
-ggsave_pdf(output_pdf, plt_pca, width = 6, height = 5, dpi = 300)
+ggsave_pdf(output_pdf, plt_pca, width = plot_width, height = plot_height, dpi = 300)
 message("PDF saved to ", output_pdf)
 
 # Save RDS (ggplot2 object)

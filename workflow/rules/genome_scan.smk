@@ -266,7 +266,12 @@ rule plot_genome_scan:
         rds = "results/{project}/genome_scan/plots/{project}.genome_scan_genome_plot.rds"
     params:
         pop1 = lambda wildcards: config["projects"][wildcards.project]["parameters"]["genome_scan"].get("pop1", ""),
-        pop2 = lambda wildcards: config["projects"][wildcards.project]["parameters"]["genome_scan"].get("pop2", "")
+        pop2 = lambda wildcards: config["projects"][wildcards.project]["parameters"]["genome_scan"].get("pop2", ""),
+        width = lambda wildcards: _genome_scan_plot_style_params(wildcards)["width"],
+        height = lambda wildcards: _genome_scan_plot_style_params(wildcards)["height"],
+        axis_title_size = lambda wildcards: _genome_scan_plot_style_params(wildcards)["axis_title_size"],
+        axis_text_size = lambda wildcards: _genome_scan_plot_style_params(wildcards)["axis_text_size"],
+        point_size = lambda wildcards: _genome_scan_plot_style_params(wildcards)["point_size"],
     log:
         "logs/{project}/plot_genome_scan.log"
     benchmark:

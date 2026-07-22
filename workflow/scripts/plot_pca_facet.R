@@ -212,6 +212,9 @@ plot_pca_facet <- function(individuals, eigenvecs, eigenvals, popdata,
     }
   }
 
+  # Keep PC axes on the same geometric scale (unit length equal on x and y).
+  p <- p + coord_fixed(ratio = 1)
+
   return(p)
 }
 
@@ -230,9 +233,13 @@ plot_type <- as.character(snakemake@params[["plot_type"]])
 point_size <- as.numeric(snakemake@params[["point_size"]])
 axis_title_size <- as.numeric(snakemake@params[["axis_title_size"]])
 axis_text_size <- as.numeric(snakemake@params[["axis_text_size"]])
+panel_width <- as.numeric(snakemake@params[["width"]])
+panel_height <- as.numeric(snakemake@params[["height"]])
 if (is.na(point_size)) point_size <- 3
 if (is.na(axis_title_size)) axis_title_size <- 10
 if (is.na(axis_text_size)) axis_text_size <- 8
+if (is.na(panel_width)) panel_width <- 6
+if (is.na(panel_height)) panel_height <- 5
 
 # Get color_by and group_colors only for colored plots
 color_by_name <- NULL
@@ -252,6 +259,8 @@ message("plot_type = ", plot_type)
 message("point_size = ", point_size)
 message("axis_title_size = ", axis_title_size)
 message("axis_text_size = ", axis_text_size)
+message("panel_width = ", panel_width)
+message("panel_height = ", panel_height)
 if (!is.null(color_by_name)) {
   message("color_by_name = ", color_by_name)
 }
@@ -300,12 +309,12 @@ plt_pca_facet <- plot_pca_facet(
 # Debug: check plot object
 message("Generated PCA facet plot object: ", class(plt_pca_facet))
 
-# Calculate dimensions based on number of plots
+# Calculate dimensions based on number of plots (config width/height = per panel)
 n_plots <- length(get_pca_combinations(pc_max))
 ncols <- ceiling(sqrt(n_plots))
 nrows <- ceiling(n_plots / ncols)
-plot_width <- ncols * 4
-plot_height <- nrows * 3.5
+plot_width <- ncols * panel_width
+plot_height <- nrows * panel_height
 
 # Save PDF
 dir.create(dirname(output_pdf), recursive = TRUE, showWarnings = FALSE)

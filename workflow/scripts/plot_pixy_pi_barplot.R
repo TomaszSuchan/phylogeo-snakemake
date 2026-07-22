@@ -40,6 +40,14 @@ output_rds <- snakemake@output[["rds"]]
 grouping_name <- as.character(snakemake@params[["grouping"]])
 group_colors <- group_fill_values(snakemake@params[["group_colors"]])
 population_sort_by <- snakemake@params[["population_sort_by"]]
+plot_width <- as.numeric(snakemake@params[["width"]])
+plot_height <- as.numeric(snakemake@params[["height"]])
+axis_title_size <- as.numeric(snakemake@params[["axis_title_size"]])
+axis_text_size <- as.numeric(snakemake@params[["axis_text_size"]])
+if (is.na(plot_width)) plot_width <- 8
+if (is.na(plot_height)) plot_height <- 6
+if (is.na(axis_title_size)) axis_title_size <- 10
+if (is.na(axis_text_size)) axis_text_size <- 8
 
 message("\n=== READING PI SUMMARY ===\n")
 pi_df <- read.table(pi_summary_file, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
@@ -92,7 +100,9 @@ p <- p +
   ) +
   theme_bw() +
   theme(
-    axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
+    axis.title = element_text(size = axis_title_size),
+    axis.text = element_text(size = axis_text_size),
+    axis.text.x = element_text(angle = 45, hjust = 1, size = axis_text_size),
     panel.grid.major.x = element_blank(),
     legend.position = "none"
   )
@@ -101,13 +111,13 @@ message("\n=== SAVING OUTPUT ===\n")
 message(sprintf("Output PDF: %s\n", output_pdf))
 message(sprintf("Output RDS: %s\n", output_rds))
 
-plot_width <- min(50, max(8, nrow(pi_df) * 0.3))
+out_width <- min(50, max(plot_width, nrow(pi_df) * 0.3))
 dir.create(dirname(output_pdf), recursive = TRUE, showWarnings = FALSE)
 ggsave_pdf(
   filename = output_pdf,
   plot = p,
-  width = plot_width,
-  height = 6,
+  width = out_width,
+  height = plot_height,
   dpi = 300
 )
 

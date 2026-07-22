@@ -41,6 +41,16 @@ output_pdf <- snakemake@output[["pdf"]]
 output_rds <- snakemake@output[["rds"]]
 pop1 <- snakemake@params[["pop1"]]
 pop2 <- snakemake@params[["pop2"]]
+plot_width <- as.numeric(snakemake@params[["width"]])
+plot_height <- as.numeric(snakemake@params[["height"]])
+axis_title_size <- as.numeric(snakemake@params[["axis_title_size"]])
+axis_text_size <- as.numeric(snakemake@params[["axis_text_size"]])
+point_size <- as.numeric(snakemake@params[["point_size"]])
+if (is.na(plot_width)) plot_width <- 12
+if (is.na(plot_height)) plot_height <- 10
+if (is.na(axis_title_size)) axis_title_size <- 10
+if (is.na(axis_text_size)) axis_text_size <- 8
+if (is.na(point_size)) point_size <- 0.5
 
 message("\n=== READING PIXY OUTPUT FILES ===\n")
 
@@ -154,9 +164,17 @@ chr_boundaries <- data.frame(
 # Create the plot
 message("\n=== CREATING PLOT ===\n")
 
+axis_theme <- theme(
+  plot.title = element_blank(),
+  axis.text.x = element_text(angle = 45, hjust = 1, size = axis_text_size),
+  axis.text.y = element_text(size = axis_text_size),
+  axis.title = element_text(size = axis_title_size),
+  panel.grid.minor = element_blank()
+)
+
 # Create three panels: FST, pi, dXY
 p1 <- ggplot(fst_plot, aes(x = cumulative_pos, y = fst)) +
-  geom_point(size = 0.5, alpha = 0.6, color = "black") +
+  geom_point(size = point_size, alpha = 0.6, color = "black") +
   geom_vline(xintercept = chr_boundaries$end[-nrow(chr_boundaries)], 
              linetype = "dashed", color = "gray60", linewidth = 0.3) +
   scale_x_continuous(
@@ -170,13 +188,7 @@ p1 <- ggplot(fst_plot, aes(x = cumulative_pos, y = fst)) +
     title = sprintf("FST between %s and %s", pop1, pop2)
   ) +
   theme_bw() +
-  theme(
-    plot.title = element_blank(),
-    axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
-    axis.text.y = element_text(size = 8),
-    axis.title = element_text(size = 9),
-    panel.grid.minor = element_blank()
-  )
+  axis_theme
 
 # Pi plot with both populations; lines continuous only within chromosomes
 p2 <- ggplot(
@@ -206,13 +218,9 @@ p2 <- ggplot(
     title = sprintf("Nucleotide diversity (π) in %s and %s", pop1, pop2)
   ) +
   theme_bw() +
+  axis_theme +
   theme(
-    plot.title = element_blank(),
-    axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
-    axis.text.y = element_text(size = 8),
-    axis.title = element_text(size = 9),
-    legend.position = "bottom",
-    panel.grid.minor = element_blank()
+    legend.position = "bottom"
   )
 
 # dXY plot; lines continuous only within chromosomes
@@ -231,21 +239,15 @@ p3 <- ggplot(dxy_plot, aes(x = cumulative_pos, y = avg_dxy, group = chromosome))
     title = sprintf("Absolute divergence (dXY) between %s and %s", pop1, pop2)
   ) +
   theme_bw() +
-  theme(
-    plot.title = element_blank(),
-    axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
-    axis.text.y = element_text(size = 8),
-    axis.title = element_text(size = 9),
-    panel.grid.minor = element_blank()
-  )
+  axis_theme
 
 # Extract legend from pi plot and place it in a separate row
 legend_grob <- g_legend(
   p2 +
     theme(
       legend.position = "bottom",
-      legend.title = element_text(size = 9),
-      legend.text = element_text(size = 8)
+      legend.title = element_text(size = axis_title_size),
+      legend.text = element_text(size = axis_text_size)
     )
 )
 
@@ -264,7 +266,7 @@ combined_plot <- grid.arrange(
 
 # Save plot
 message(sprintf("\nSaving plot to %s...", output_pdf))
-ggsave_pdf(output_pdf, combined_plot, width = 12, height = 10, dpi = 300)
+ggsave_pdf(output_pdf, combined_plot, width = plot_width, height = plot_height, dpi = 300)
 message("Plot saved successfully")
 
 # Save RDS

@@ -415,6 +415,8 @@ parameters: &global_params
     eig_out: 10   # number of principal components to output (EMU --eig-out)
   # PCA plot params:
   pca_plot:
+    width: 15.24             # single-plot width in cm (~6 in); facet panels use this per panel
+    height: 12.7             # single-plot height in cm (~5 in); facet panels use this per panel
     axis_title_size: 10
     axis_text_size: 8
     point_size: 3
@@ -491,6 +493,10 @@ parameters: &global_params
   ## Pixy parameters
   # Nucleotide diversity, FST, and dXY from variant and invariant sites.
   pixy:
+    width: 20.32             # barplot/heatmap width in cm (~8 in); barplots may widen with #pops
+    height: 15.24            # barplot/heatmap height in cm (~6 in)
+    axis_title_size: 10
+    axis_text_size: 8
     stats: ["pi"] # statistics to compute, options: pi, fst, dxy
     window_size: 10000  # size of the sliding window in bp
     bootstrap_replicates: 1000  # number of bootstrap replicates for confidence intervals
@@ -527,9 +533,13 @@ parameters: &global_params
   # G = 100/(2 × cM), assuming 1 cM/Mb: >5 Mb (<10 gen), 1-5 Mb (10-50 gen),
   # <1 Mb (>50 gen).
   roh:
+    width: 20.32             # summary/group plot width in cm (~8 in)
+    height: 15.24            # summary/group plot height in cm (~6 in)
+    axis_title_size: 10
+    axis_text_size: 8
     group_by: ["Site"]   # columns in indpopdata to summarize/compare ROH
     # Map-specific parameters for mean F_ROH per Site maps (when popdata coordinates exist)
-    point_size: 3        # size of points on F_ROH maps
+    point_size: 3        # size of points on F_ROH maps and ROH scatter/jitter points
     map_outline: true    # add point outlines (true/false, default: true)
     # Optional per-group settings for group boxplots (froh_by_{X}, nroh_by_{X}, *_classes).
     # One block per group_by column; omit a column for default grey boxplots and alphabetical order.
@@ -546,6 +556,11 @@ parameters: &global_params
   ## Genome scan parameters
   # Sliding-window FST, pi, and dXY between two metadata groups.
   genome_scan:
+    width: 30.48             # combined FST/π/dXY plot width in cm (~12 in)
+    height: 25.4             # combined plot height in cm (~10 in)
+    axis_title_size: 10
+    axis_text_size: 8
+    point_size: 0.5          # FST genome-scan point size
     population_column: "Region"   # indpopdata column used to define comparison groups
     pop1: ""                     # first population value from population_column
     pop2: ""                     # second population value from population_column
@@ -562,7 +577,9 @@ parameters: &global_params
     width: 30.48            # plot width in cm
     height: 30.48           # plot height in cm
     dpi: 300             # plot dpi
-    linewidth: 0.5       # split-network edge width (ggplot/tanggle units; phangorn scaled to match)
+    linewidth: 0.5       # split-network edge width (ggplot units; phangorn scaled to match)
+    tip_label_size: 2.2  # tip label font size (ggplot geom_text mm; phangorn cex = size/3.5)
+    legend_size: 10      # legend title size in pt (legend text is 0.9× this)
     # Optional per-group colours for each color_by column (same pattern as roh.{group_col}.colors).
     # Region:
     #   colors:
@@ -626,16 +643,35 @@ parameters: &global_params
       dpi: 300                      # plot resolution
       migration_arrow_length: 0.15  # arrow head size for migration edges (TreeMix default 0.05)
 
-  ## GONE2 parameters
-  # Historical Ne from linkage disequilibrium; one run per indpopdata population level.
-  gone2:
+  ## Shared LD-Ne prep (GONE2 + currentNe2)
+  # Per-population sample lists and filtered VCFs used by both tools.
+  gone2_currentne2_common:
     population_column: "Site"              # indpopdata column defining populations
-    recombination_rate_cM_per_Mb: 2.5        # gone2 -r (constant cM/Mb; no .map file)
-    min_chromosome_cM: 20                    # drop chroms with SNP-span genetic length <= this (GONE2 requirement)
+    recombination_rate_cM_per_Mb: 2.5        # -r for both tools (constant cM/Mb)
+    min_chromosome_cM: 20                    # drop chroms with SNP-span genetic length <= this
     f_missing: 1.0                         # per-pop locus filter; 1.0 disables missingness filtering
     mac_threshold: 1                         # per-pop MAC > threshold after subsetting
     min_individuals: 10
     min_snps: 1000
+
+  ## GONE2 parameters
+  # Historical Ne trajectories; uses shared gone2_currentne2_common inputs.
+  gone2:
+    n_seeds: 100                       # independent stochastic runs (-S 1..n_seeds); mean ± SD reported
+    plot:
+      width: 20.32                    # plot width in cm
+      height: 12.7                     # plot height in cm
+      show_seed_trajectories: true     # faint individual seed lines on per-pop plots
+      combined_show_seed_trajectories: true  # faint seed lines on combined plot
+
+  ## currentNe2 parameters
+  # Contemporary Ne; uses shared gone2_currentne2_common inputs. Plot sizes + optional tool flags here.
+  currentne2:
+    # Optional currentne2 flags (omit / leave null for software defaults):
+    # k: null                              # -k; null = estimate full-sibs from data
+    # n_snps: null                         # -s SNP subsample
+    # metapopulation: false                # -x (two equal-sized subpopulations)
+    # genome_size_M: null                  # optional Genome_size_in_Morgans positional
     plot:
       width: 20.32                    # plot width in cm
       height: 12.7                     # plot height in cm
@@ -788,6 +824,14 @@ parameters: &global_params
       threads: 8
       mem_mb: 16000
       runtime: 480
+    currentne2:
+      threads: 8
+      mem_mb: 16000
+      runtime: 480
+    gone2_currentne2_common:
+      threads: 8
+      mem_mb: 16000
+      runtime: 480
     related:
       threads: 1
       mem_mb: 16000
@@ -842,6 +886,7 @@ projects:
       dapc: false             # Discriminant analysis of principal components clustering.
       spca: false              # Spatial PCA combining genetic variance and spatial autocorrelation.
       gone2: false             # Historical Ne trajectories from linkage disequilibrium (GONE2).
+      currentne2: false        # Contemporary Ne from linkage disequilibrium (currentNe2).
     parameters:
       <<: *global_params
       popmap: "data/popmap.txt"

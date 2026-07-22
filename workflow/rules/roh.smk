@@ -69,7 +69,12 @@ rule roh_plots:
         froh_vs_nroh="results/{project}/roh/plots/{project}.froh_vs_nroh.pdf",
         froh_vs_nroh_rds="results/{project}/roh/plots/{project}.froh_vs_nroh.rds"
     params:
-        group_col=None
+        group_col=None,
+        width=lambda wildcards: _roh_plot_style_params(wildcards)["width"],
+        height=lambda wildcards: _roh_plot_style_params(wildcards)["height"],
+        axis_title_size=lambda wildcards: _roh_plot_style_params(wildcards)["axis_title_size"],
+        axis_text_size=lambda wildcards: _roh_plot_style_params(wildcards)["axis_text_size"],
+        point_size=lambda wildcards: _roh_plot_style_params(wildcards)["point_size"],
     log:
         "logs/{project}/{project}.roh_plots.log"
     benchmark:
@@ -104,6 +109,11 @@ rule roh_group_plots:
         group_sort_by=lambda wildcards: _roh_group_setting(
             wildcards.project, wildcards.group_col, "sort_by"
         ),
+        width=lambda wildcards: _roh_plot_style_params(wildcards)["width"],
+        height=lambda wildcards: _roh_plot_style_params(wildcards)["height"],
+        axis_title_size=lambda wildcards: _roh_plot_style_params(wildcards)["axis_title_size"],
+        axis_text_size=lambda wildcards: _roh_plot_style_params(wildcards)["axis_text_size"],
+        point_size=lambda wildcards: _roh_plot_style_params(wildcards)["point_size"],
     log:
         "logs/{project}/roh_group_plots.{group_col}.log"
     benchmark:
