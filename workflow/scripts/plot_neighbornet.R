@@ -150,11 +150,12 @@ build_plot <- function(show_tip_labels) {
   if (show_tip_labels) {
     # geom_tiplab2 adds two text layers (left/right hemispheres); both feed the
     # colour legend and can duplicate key glyphs (seen for "Tatry (...)" levels).
-    # Draw the legend from tip points only.
+    # Invisible tip points feed the legend only; override.aes restores visible keys.
     p <- p +
       geom_tippoint(
         mapping = aes(color = group),
-        size = 1.5
+        size = 0,
+        alpha = 0
       ) +
       geom_tiplab2(
         mapping = aes(color = group),
@@ -162,6 +163,11 @@ build_plot <- function(show_tip_labels) {
         show.legend = FALSE
       ) +
       labs(color = color_by) +
+      guides(
+        color = guide_legend(
+          override.aes = list(size = 3, alpha = 1, stroke = 0, label = "")
+        )
+      ) +
       theme(
         legend.position = "right",
         legend.title = element_text(size = legend_size),
