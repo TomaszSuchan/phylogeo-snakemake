@@ -1096,36 +1096,75 @@ if rel_parts:
                      "\n\n".join(rel_parts)))
 
 
-# 7b. Demographic history (GONE2) ─────────────────────────────────────────────
+# 7b. Demographic history (GONE2 / currentNe2) ────────────────────────────────
+
+gone2_currentne2_common = p.get("gone2_currentne2_common", {})
+gone2_currentne2_common_pop = gone2_currentne2_common.get("population_column", "Site")
+gone2_currentne2_common_rate = gone2_currentne2_common.get("recombination_rate_cM_per_Mb", 2.5)
+gone2_currentne2_common_min_cm = gone2_currentne2_common.get("min_chromosome_cM", 20)
+gone2_currentne2_common_min_ind = gone2_currentne2_common.get("min_individuals", 10)
+gone2_currentne2_common_min_snps = gone2_currentne2_common.get("min_snps", 1000)
+gone2_currentne2_common_mac = gone2_currentne2_common.get("mac_threshold", 1)
+
+if analyses.get("gone2", False) or analyses.get("currentne2", False):
+    prep_text = (
+        f"For LD-based Ne analyses, genotypes were prepared once per population "
+        f"defined by the '{gone2_currentne2_common_pop}' column of the individual metadata, retaining "
+        f"populations with at least {gone2_currentne2_common_min_ind} individuals. For each population, "
+        f"biallelic SNPs were subset from the unthinned biallelic SNP VCF and "
+        f"filtered to sites with minor allele count greater than {gone2_currentne2_common_mac}. "
+        f"Chromosomes with SNP-span genetic length ≤ {gone2_currentne2_common_min_cm:g} cM under a "
+        f"constant recombination rate of {gone2_currentne2_common_rate:g} cM/Mb were excluded; "
+        f"retained and excluded chromosomes were recorded in per-population "
+        f"chromosome-filter tables. After filtering, populations with fewer than "
+        f"{gone2_currentne2_common_min_snps} SNPs were discarded. The same per-population VCFs were "
+        f"used as input to both GONE2 and currentNe2 when those analyses were enabled."
+    )
+else:
+    prep_text = None
 
 if analyses.get("gone2", False):
     g2 = p.get("gone2", {})
-    g2_pop = g2.get("population_column", "Site")
-    g2_rate = g2.get("recombination_rate_cM_per_Mb", 2.5)
-    g2_min_cm = g2.get("min_chromosome_cM", 20)
-    g2_min_ind = g2.get("min_individuals", 10)
-    g2_min_snps = g2.get("min_snps", 1000)
-    sections.append((
-        "Demographic history",
+    n_seeds = int(g2.get("n_seeds", 100))
+    gone2_text = (
         f"Recent effective population size (Ne) trajectories were estimated with "
         f"GONE2 (Santiago et al. 2025) from linkage disequilibrium as a function "
-        f"of genetic distance. Analyses were run separately for each population "
-        f"defined by the '{g2_pop}' column of the individual metadata, retaining "
-        f"populations with at least {g2_min_ind} individuals. For each population, "
-        f"biallelic SNPs were subset from the unthinned biallelic SNP VCF and "
-        f"filtered to sites with minor allele count greater than "
-        f"{g2.get('mac_threshold', 1)}. Because GONE2 requires every chromosome "
-        f"to span more than {g2_min_cm:g} cM, chromosomes with SNP-span genetic "
-        f"length ≤ {g2_min_cm:g} cM under a constant recombination rate of "
-        f"{g2_rate:g} cM/Mb were excluded before estimation; the retained and "
-        f"excluded chromosomes for each population were recorded in "
-        f"per-population chromosome-filter tables under the GONE2 results "
-        f"directory. After filtering, populations with fewer than {g2_min_snps} "
-        f"SNPs were discarded. GONE2 was then run with phased/diploid genotype "
-        f"coding (-g 0) and the same constant recombination rate "
-        f"(-r {g2_rate:g}), yielding backward-in-time Ne trajectories for each "
-        f"retained population."
+        f"of genetic distance, using the shared per-population VCFs described above. "
+        f"GONE2 was run with phased/diploid genotype coding (-g 0) and recombination "
+        f"rate -r {gone2_currentne2_common_rate:g}. To obtain robust estimates, each "
+        f"population analysis was repeated across {n_seeds} independent stochastic "
+        f"seeds (-S); reported trajectories are the mean Ne across seeds, with "
+        f"uncertainty summarized as ± 1 standard deviation (shaded ribbons), and "
+        f"individual seed trajectories shown as faint background lines."
+    )
+    sections.append((
+        "Demographic history",
+        f"{prep_text} {gone2_text}" if prep_text else gone2_text,
     ))
+    prep_text = None  # avoid repeating prep in currentNe2 section
+
+if analyses.get("currentne2", False):
+    c2 = p.get("currentne2", {})
+    c2_parts = []
+    if prep_text:
+        c2_parts.append(prep_text)
+    c2_parts.append(
+        f"Contemporary effective population size (Ne) was estimated with "
+        f"currentNe2 (Santiago et al. 2025) from linkage disequilibrium, using "
+        f"the shared per-population VCFs"
+        f"{' described above' if not prep_text else ''}. "
+        f"currentNe2 was run with recombination rate -r {gone2_currentne2_common_rate:g}, "
+        f"yielding a contemporary Ne point estimate with confidence intervals "
+        f"for each retained population."
+    )
+    if c2.get("metapopulation", False):
+        c2_parts.append(
+            "The metapopulation option (-x) was enabled to allow for two "
+            "equal-sized subpopulations."
+        )
+    if c2.get("k", None) is not None:
+        c2_parts.append(f"The full-sibling parameter was set to k={c2.get('k')}.")
+    sections.append(("Contemporary effective population size", " ".join(c2_parts)))
 
 
 # 8. Spatial genetics ─────────────────────────────────────────────────────────
@@ -1420,6 +1459,14 @@ if analyses.get("fineradstructure", False):
 
 if analyses.get("gone2", False):
     refs["gone2"] = (
+        "Santiago, E., Köpke, C. & Caballero, A. (2025). Accounting for population "
+        "structure and data quality in demographic inference with linkage "
+        "disequilibrium methods. *Nature Communications*, 16, 6054. "
+        "https://doi.org/10.1038/s41467-025-61378-w"
+    )
+
+if analyses.get("currentne2", False):
+    refs["currentne2"] = (
         "Santiago, E., Köpke, C. & Caballero, A. (2025). Accounting for population "
         "structure and data quality in demographic inference with linkage "
         "disequilibrium methods. *Nature Communications*, 16, 6054. "
