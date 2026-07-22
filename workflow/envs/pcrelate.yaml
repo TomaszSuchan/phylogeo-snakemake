@@ -5,5 +5,7 @@ dependencies:
   - r-base
   - bioconductor-genesis
   - bioconductor-seqarray
+  - bioconductor-seqvartools
   - bioconductor-snprelate
+  - bioconductor-biocparallel
   - bcftools

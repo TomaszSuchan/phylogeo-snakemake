@@ -91,7 +91,7 @@ parameters: &global_params
   # pcoa: Principal coordinates analysis from the Euclidean distance matrix.
   # neighbornet: Split network from p-distance genetic distances.
   # pixy: Nucleotide diversity, FST, and dXY from variant/invariant sites.
-  # relatedness: Pairwise kinship/IBD estimates and relatedness network plots.
+  # relatedness: Whole-sample (KING, PC-Relate) and within-population relatedness (+ network plots).
   # roh: Runs of homozygosity calls and group summaries.
   # amova: AMOVA variance partitioning across metadata strata.
   # mapi: Spatial MAPI maps of unusually high/low genetic distances.
@@ -824,7 +824,7 @@ projects:
       pcaone_emu: false       # PCAone EMU mode for PCA with missing genotype modelling.
       pcaone_miss: false      # PCAone sensitivity runs across missing-data thresholds.
       pixy: false             # Nucleotide diversity, FST, and dXY from variant/invariant sites.
-      relatedness: false      # Pairwise kinship/IBD estimates and relatedness network plots.
+      relatedness: false      # Whole-sample (KING, PC-Relate) and within-population relatedness (+ network plots).
       roh: false              # Runs of homozygosity calls and group summaries.
       amova: false            # AMOVA variance partitioning across metadata strata.
       genome_scan: false      # Sliding-window FST, pi, and dXY between two metadata groups.
@@ -884,7 +884,7 @@ projects:
   #
   #     # Diversity, relatedness, spatial, and phylogenetic analyses.
   #     pixy: true              # Nucleotide diversity, FST, and dXY from variant/invariant sites.
-  #     relatedness: true       # Pairwise kinship/IBD estimates and relatedness network plots.
+  #     relatedness: true       # Whole-sample (KING, PC-Relate) and within-population relatedness (+ network plots).
   #     roh: false              # Runs of homozygosity calls and group summaries.
   #     amova: true             # AMOVA variance partitioning across metadata strata.
   #     mapi: false             # Spatial MAPI maps of unusually high/low genetic distances.

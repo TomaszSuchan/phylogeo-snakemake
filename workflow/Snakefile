@@ -921,7 +921,7 @@ def _gone2_summary_inputs(wildcards):
 
 
 def _relatedness_stratum_column(params):
-    """indpopdata column used to stratify relatedness runs (except KING and PC-Relate)."""
+    """indpopdata column used to stratify relatedness_by_pop runs."""
     return params.get("relatedness_stratum", {}).get("population_column", "Site")
 
 
@@ -933,7 +933,7 @@ def _relatedness_population_label(project, pop_safe):
     import csv
     import os
 
-    populations_path = f"results/{project}/relatedness/{project}.populations.tsv"
+    populations_path = f"results/{project}/relatedness_by_pop/{project}.populations.tsv"
     if not os.path.exists(populations_path):
         return pop_safe
     with open(populations_path, newline="") as handle:
@@ -944,13 +944,13 @@ def _relatedness_population_label(project, pop_safe):
 
 
 def _relatedness_pop_wildcards(project, params):
-    """Population wildcards for stratified relatedness rules and targets."""
+    """Population wildcards for stratified relatedness_by_pop rules and targets."""
     import csv
     import os
 
     min_individuals = _RELATEDNESS_MIN_STRATUM_INDIVIDUALS
 
-    populations_path = f"results/{project}/relatedness/{project}.populations.tsv"
+    populations_path = f"results/{project}/relatedness_by_pop/{project}.populations.tsv"
     if os.path.exists(populations_path):
         with open(populations_path, newline="") as handle:
             rows = list(csv.DictReader(handle, delimiter="\t"))
@@ -983,19 +983,19 @@ def _relatedness_pop_wildcards(project, params):
     ]
 
 
-def _relatedness_network_plot_targets(project, color_by_list, plot_stems):
+def _relatedness_network_plot_targets(project, color_by_list, plot_stems, subdir="relatedness"):
   """PDF/RDS targets for relatedness network plots."""
   targets = []
   for stem in plot_stems:
     targets.extend(
       expand(
-        f"results/{project}/relatedness/plots/{project}.{stem}-{{color_by}}.pdf",
+        f"results/{project}/{subdir}/plots/{project}.{stem}-{{color_by}}.pdf",
         color_by=color_by_list,
       )
     )
     targets.extend(
       expand(
-        f"results/{project}/relatedness/plots/{project}.{stem}-{{color_by}}.rds",
+        f"results/{project}/{subdir}/plots/{project}.{stem}-{{color_by}}.rds",
         color_by=color_by_list,
       )
     )
@@ -1014,11 +1014,11 @@ def _relatedness_stratum_summary_inputs(wildcards, kind):
     if kind not in suffixes:
         raise ValueError(f"Unsupported relatedness summary kind: {kind}")
     inputs = {
-        "populations": f"results/{project}/relatedness/{project}.populations.tsv",
+        "populations": f"results/{project}/relatedness_by_pop/{project}.populations.tsv",
     }
     for stratum in _relatedness_pop_wildcards(project, params):
         inputs[f"stratum_{stratum}"] = (
-            f"results/{project}/relatedness/{project}.{stratum}{suffixes[kind]}"
+            f"results/{project}/relatedness_by_pop/{project}.{stratum}{suffixes[kind]}"
         )
     return inputs
 
@@ -1036,6 +1036,7 @@ include: "rules/pcaone.smk"
 include: "rules/emu-pca.smk"
 include: "rules/vcf2pcacluster.smk"
 include: "rules/relatedness.smk"
+include: "rules/relatedness_by_pop.smk"
 include: "rules/pixy.smk"
 include: "rules/structure.smk"
 include: "rules/iqtree.smk"
@@ -1599,7 +1600,7 @@ def get_all_targets():
                     )
                 )
 
-        # Relatedness targets
+        # Relatedness targets (whole-sample + within-population; both gated by relatedness)
         if analyses.get("relatedness", False):
             relatedness_color_by = _relatedness_color_by_columns(params)
             related_pops = _relatedness_pop_wildcards(project, params)
@@ -1607,45 +1608,45 @@ def get_all_targets():
                 f"results/{project}/relatedness/{project}.king",
                 f"results/{project}/relatedness/{project}.pcrelate_kinship.tsv",
             ])
-            if related_pops:
-                targets.extend([
-                    f"results/{project}/relatedness/{project}.relatedness_summary.tsv",
-                    f"results/{project}/relatedness/{project}.relatedness2_summary.tsv",
-                    f"results/{project}/relatedness/{project}.genome_summary.tsv",
-                    f"results/{project}/relatedness/{project}.related_coancestry_summary.tsv",
-                ])
-                targets.extend(
-                    expand(
-                        f"results/{project}/relatedness/{project}.{{stratum}}.relatedness",
-                        stratum=related_pops,
-                    )
-                )
-                targets.extend(
-                    expand(
-                        f"results/{project}/relatedness/{project}.{{stratum}}.relatedness2",
-                        stratum=related_pops,
-                    )
-                )
-                targets.extend(
-                    expand(
-                        f"results/{project}/relatedness/{project}.{{stratum}}.genome",
-                        stratum=related_pops,
-                    )
-                )
-                targets.extend(
-                    expand(
-                        f"results/{project}/relatedness/{project}.{{stratum}}.related_coancestry.tsv",
-                        stratum=related_pops,
-                    )
-                )
             targets.extend(
                 _relatedness_network_plot_targets(
                     project,
                     relatedness_color_by,
                     ["king_network", "pcrelate_network"],
+                    subdir="relatedness",
                 )
             )
             if related_pops:
+                targets.extend([
+                    f"results/{project}/relatedness_by_pop/{project}.relatedness_summary.tsv",
+                    f"results/{project}/relatedness_by_pop/{project}.relatedness2_summary.tsv",
+                    f"results/{project}/relatedness_by_pop/{project}.genome_summary.tsv",
+                    f"results/{project}/relatedness_by_pop/{project}.related_coancestry_summary.tsv",
+                ])
+                targets.extend(
+                    expand(
+                        f"results/{project}/relatedness_by_pop/{project}.{{stratum}}.relatedness",
+                        stratum=related_pops,
+                    )
+                )
+                targets.extend(
+                    expand(
+                        f"results/{project}/relatedness_by_pop/{project}.{{stratum}}.relatedness2",
+                        stratum=related_pops,
+                    )
+                )
+                targets.extend(
+                    expand(
+                        f"results/{project}/relatedness_by_pop/{project}.{{stratum}}.genome",
+                        stratum=related_pops,
+                    )
+                )
+                targets.extend(
+                    expand(
+                        f"results/{project}/relatedness_by_pop/{project}.{{stratum}}.related_coancestry.tsv",
+                        stratum=related_pops,
+                    )
+                )
                 targets.extend(
                     _relatedness_network_plot_targets(
                         project,
@@ -1656,6 +1657,7 @@ def get_all_targets():
                             "genome_network",
                             "coancestry_network",
                         ],
+                        subdir="relatedness_by_pop",
                     )
                 )
         
