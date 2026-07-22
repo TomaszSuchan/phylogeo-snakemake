@@ -226,7 +226,11 @@ p <- mapmixture_plot(
   basemap_border = basemap_border,
   basemap_border_col = basemap_border_col,
   basemap_border_lwd = basemap_border_lwd,
-  raster_is_elevation_dem = use_elevation_bg
+  raster_is_elevation_dem = use_elevation_bg,
+  elevation_style = params[["elevation_style"]],
+  width = width,
+  height = height,
+  dpi = dpi
 )
 
 # Remove legend if legend parameter is FALSE

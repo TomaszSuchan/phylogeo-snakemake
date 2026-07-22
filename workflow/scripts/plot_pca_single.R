@@ -56,7 +56,8 @@ print(snakemake@params)
 # Enhanced PCA plotting function
 plot_pca <- function(individuals, eigenvecs, eigenvals, popdata,
                      indmiss = NULL, color_by_name = NULL, pc1 = 1, pc2 = 2,
-                     group_colors = NULL, plot_type = "colored") {
+                     group_colors = NULL, plot_type = "colored",
+                     point_size = 3, axis_title_size = 10, axis_text_size = 8) {
 
   # Create data frame with PC scores
   pca_df <- data.frame(
@@ -68,18 +69,24 @@ plot_pca <- function(individuals, eigenvecs, eigenvals, popdata,
   # Calculate variance explained
   var_exp <- eigenvals / sum(eigenvals) * 100
 
+  axis_theme <- theme(
+    axis.title = element_text(size = axis_title_size),
+    axis.text = element_text(size = axis_text_size)
+  )
+
   # Generate plot based on plot_type
   if (plot_type == "labeled") {
     # Labels only: gray points + sample labels, no colors
     message("Generating labeled plot (gray points + sample names)")
     p <- ggplot(pca_df, aes(x = PC1, y = PC2)) +
-      geom_point(size = 3, alpha = 0.7, pch = 21, fill = "gray80", color = "black") +
+      geom_point(size = point_size, alpha = 0.7, pch = 21, fill = "gray80", color = "black") +
       geom_text(aes(label = Ind), size = 1.5, check_overlap = FALSE) +
       labs(
         x = sprintf("PC%d (%.1f%%)", pc1, var_exp[pc1]),
         y = sprintf("PC%d (%.1f%%)", pc2, var_exp[pc2])
       ) +
-      theme_bw()
+      theme_bw() +
+      axis_theme
 
   } else if (plot_type == "missing") {
     # Color by missing data rate
@@ -97,7 +104,7 @@ plot_pca <- function(individuals, eigenvecs, eigenvals, popdata,
     }
 
     p <- ggplot(plot_df, aes(x = PC1, y = PC2, fill = F_MISS)) +
-      geom_point(size = 3, alpha = 0.7, pch = 21, color = "black") +
+      geom_point(size = point_size, alpha = 0.7, pch = 21, color = "black") +
       scale_fill_distiller(
         name = "Missing Data",
         labels = scales::percent,
@@ -109,7 +116,8 @@ plot_pca <- function(individuals, eigenvecs, eigenvals, popdata,
         y = sprintf("PC%d (%.1f%%)", pc2, var_exp[pc2])
       ) +
       theme_bw() +
-      theme(legend.position = "right")
+      theme(legend.position = "right") +
+      axis_theme
 
   } else {
     # Colored by population/metadata
@@ -120,12 +128,13 @@ plot_pca <- function(individuals, eigenvecs, eigenvals, popdata,
       # No coloring - just gray points
       message("No color_by specified - plotting with gray points only")
       p <- ggplot(pca_df, aes(x = PC1, y = PC2)) +
-        geom_point(size = 3, alpha = 0.7, pch = 21, fill = "gray80", color = "black") +
+        geom_point(size = point_size, alpha = 0.7, pch = 21, fill = "gray80", color = "black") +
         labs(
           x = sprintf("PC%d (%.1f%%)", pc1, var_exp[pc1]),
           y = sprintf("PC%d (%.1f%%)", pc2, var_exp[pc2])
         ) +
-        theme_bw()
+        theme_bw() +
+        axis_theme
     } else {
       # Original categorical coloring by population metadata
       ind_col <- colnames(popdata)[1]
@@ -189,13 +198,14 @@ plot_pca <- function(individuals, eigenvecs, eigenvals, popdata,
       }
 
       p <- ggplot(plot_df, aes(x = PC1, y = PC2, fill = .data[[color_col]])) +
-        geom_point(size = 3, alpha = 0.7, pch = 21, color = "black") +
+        geom_point(size = point_size, alpha = 0.7, pch = 21, color = "black") +
         labs(
           x = sprintf("PC%d (%.1f%%)", pc1, var_exp[pc1]),
           y = sprintf("PC%d (%.1f%%)", pc2, var_exp[pc2]),
           fill = color_col
         ) +
-        theme_bw()
+        theme_bw() +
+        axis_theme
 
       if (color_is_numeric) {
         message(sprintf("PCA plot: using continuous viridis scale for numeric '%s'", color_col))
@@ -227,6 +237,12 @@ output_rds   <- snakemake@output[["rds"]]
 pc1 <- as.numeric(snakemake@params[["pc1"]])
 pc2 <- as.numeric(snakemake@params[["pc2"]])
 plot_type <- as.character(snakemake@params[["plot_type"]])
+point_size <- as.numeric(snakemake@params[["point_size"]])
+axis_title_size <- as.numeric(snakemake@params[["axis_title_size"]])
+axis_text_size <- as.numeric(snakemake@params[["axis_text_size"]])
+if (is.na(point_size)) point_size <- 3
+if (is.na(axis_title_size)) axis_title_size <- 10
+if (is.na(axis_text_size)) axis_text_size <- 8
 
 # Get color_by and group_colors only for colored plots
 color_by_name <- NULL
@@ -244,6 +260,9 @@ if (plot_type == "colored") {
 message("pc1 = ", pc1)
 message("pc2 = ", pc2)
 message("plot_type = ", plot_type)
+message("point_size = ", point_size)
+message("axis_title_size = ", axis_title_size)
+message("axis_text_size = ", axis_text_size)
 if (!is.null(color_by_name)) {
   message("color_by_name = ", color_by_name)
 }
@@ -293,7 +312,10 @@ plt_pca <- plot_pca(
   pc1 = pc1,
   pc2 = pc2,
   group_colors = group_colors,
-  plot_type = plot_type
+  plot_type = plot_type,
+  point_size = point_size,
+  axis_title_size = axis_title_size,
+  axis_text_size = axis_text_size
 )
 
 # Debug: check plot object

@@ -145,6 +145,9 @@ map_params <- list(
 )
 map_params$basemap <- resolve_map_basemap(use_elevation_bg, snakemake@input, basemap)
 map_params$raster_is_elevation_dem <- isTRUE(use_elevation_bg)
+map_params$elevation_style <- params[["elevation_style"]]
+map_params$width <- as.numeric(params[["width"]])
+map_params$dpi <- as.numeric(params[["dpi"]])
 
 results <- readRDS(results_rds)
 tess3_obj <- results$tess3

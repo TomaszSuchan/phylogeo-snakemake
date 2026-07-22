@@ -124,7 +124,10 @@ rule plot_pca_colored:
         group_colors = lambda wildcards: _pca_plot_group_setting(
             wildcards.project, wildcards.color_by, "colors"
         ),
-        plot_type = "colored"
+        plot_type = "colored",
+        axis_title_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_title_size", 10),
+        axis_text_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_text_size", 8),
+        point_size = lambda wildcards: _pca_plot_setting(wildcards.project, "point_size", 3),
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
@@ -150,7 +153,10 @@ rule plot_pca_labeled:
     params:
         pc1 = lambda wildcards: wildcards.pc1,
         pc2 = lambda wildcards: wildcards.pc2,
-        plot_type = "labeled"
+        plot_type = "labeled",
+        axis_title_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_title_size", 10),
+        axis_text_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_text_size", 8),
+        point_size = lambda wildcards: _pca_plot_setting(wildcards.project, "point_size", 3),
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
@@ -176,7 +182,10 @@ rule plot_pca_missing:
     params:
         pc1 = lambda wildcards: wildcards.pc1,
         pc2 = lambda wildcards: wildcards.pc2,
-        plot_type = "missing"
+        plot_type = "missing",
+        axis_title_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_title_size", 10),
+        axis_text_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_text_size", 8),
+        point_size = lambda wildcards: _pca_plot_setting(wildcards.project, "point_size", 3),
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
@@ -207,7 +216,10 @@ rule plot_pca_facet_colored:
             wildcards.project, wildcards.color_by, "colors"
         ),
         pc_max = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pc_max", 2),
-        plot_type = "colored"
+        plot_type = "colored",
+        axis_title_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_title_size", 10),
+        axis_text_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_text_size", 8),
+        point_size = lambda wildcards: _pca_plot_setting(wildcards.project, "point_size", 3),
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
@@ -232,7 +244,10 @@ rule plot_pca_facet_labeled:
         "logs/{project}/plot_pca_facet_labeled.log"
     params:
         pc_max = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pc_max", 2),
-        plot_type = "labeled"
+        plot_type = "labeled",
+        axis_title_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_title_size", 10),
+        axis_text_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_text_size", 8),
+        point_size = lambda wildcards: _pca_plot_setting(wildcards.project, "point_size", 3),
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
@@ -257,7 +272,10 @@ rule plot_pca_facet_missing:
         "logs/{project}/plot_pca_facet_missing.log"
     params:
         pc_max = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pc_max", 2),
-        plot_type = "missing"
+        plot_type = "missing",
+        axis_title_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_title_size", 10),
+        axis_text_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_text_size", 8),
+        point_size = lambda wildcards: _pca_plot_setting(wildcards.project, "point_size", 3),
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
@@ -289,7 +307,10 @@ rule plot_pca_emu_colored:
         group_colors = lambda wildcards: _pca_plot_group_setting(
             wildcards.project, wildcards.color_by, "colors"
         ),
-        plot_type = "colored"
+        plot_type = "colored",
+        axis_title_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_title_size", 10),
+        axis_text_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_text_size", 8),
+        point_size = lambda wildcards: _pca_plot_setting(wildcards.project, "point_size", 3),
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
@@ -315,7 +336,10 @@ rule plot_pca_emu_labeled:
     params:
         pc1 = lambda wildcards: wildcards.pc1,
         pc2 = lambda wildcards: wildcards.pc2,
-        plot_type = "labeled"
+        plot_type = "labeled",
+        axis_title_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_title_size", 10),
+        axis_text_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_text_size", 8),
+        point_size = lambda wildcards: _pca_plot_setting(wildcards.project, "point_size", 3),
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
@@ -341,7 +365,10 @@ rule plot_pca_emu_missing:
     params:
         pc1 = lambda wildcards: wildcards.pc1,
         pc2 = lambda wildcards: wildcards.pc2,
-        plot_type = "missing"
+        plot_type = "missing",
+        axis_title_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_title_size", 10),
+        axis_text_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_text_size", 8),
+        point_size = lambda wildcards: _pca_plot_setting(wildcards.project, "point_size", 3),
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
@@ -372,7 +399,10 @@ rule plot_pca_emu_facet_colored:
             wildcards.project, wildcards.color_by, "colors"
         ),
         pc_max = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pc_max", 2),
-        plot_type = "colored"
+        plot_type = "colored",
+        axis_title_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_title_size", 10),
+        axis_text_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_text_size", 8),
+        point_size = lambda wildcards: _pca_plot_setting(wildcards.project, "point_size", 3),
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
@@ -397,7 +427,10 @@ rule plot_pca_emu_facet_labeled:
         "logs/{project}/plot_pca_emu_facet_labeled.log"
     params:
         pc_max = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pc_max", 2),
-        plot_type = "labeled"
+        plot_type = "labeled",
+        axis_title_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_title_size", 10),
+        axis_text_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_text_size", 8),
+        point_size = lambda wildcards: _pca_plot_setting(wildcards.project, "point_size", 3),
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
@@ -422,7 +455,10 @@ rule plot_pca_emu_facet_missing:
         "logs/{project}/plot_pca_emu_facet_missing.log"
     params:
         pc_max = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pc_max", 2),
-        plot_type = "missing"
+        plot_type = "missing",
+        axis_title_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_title_size", 10),
+        axis_text_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_text_size", 8),
+        point_size = lambda wildcards: _pca_plot_setting(wildcards.project, "point_size", 3),
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
@@ -454,7 +490,10 @@ rule plot_pca_miss_colored:
         group_colors = lambda wildcards: _pca_plot_group_setting(
             wildcards.project, wildcards.color_by, "colors"
         ),
-        plot_type = "colored"
+        plot_type = "colored",
+        axis_title_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_title_size", 10),
+        axis_text_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_text_size", 8),
+        point_size = lambda wildcards: _pca_plot_setting(wildcards.project, "point_size", 3),
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
@@ -480,7 +519,10 @@ rule plot_pca_miss_labeled:
     params:
         pc1 = lambda wildcards: wildcards.pc1,
         pc2 = lambda wildcards: wildcards.pc2,
-        plot_type = "labeled"
+        plot_type = "labeled",
+        axis_title_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_title_size", 10),
+        axis_text_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_text_size", 8),
+        point_size = lambda wildcards: _pca_plot_setting(wildcards.project, "point_size", 3),
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
@@ -506,7 +548,10 @@ rule plot_pca_miss_missing:
     params:
         pc1 = lambda wildcards: wildcards.pc1,
         pc2 = lambda wildcards: wildcards.pc2,
-        plot_type = "missing"
+        plot_type = "missing",
+        axis_title_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_title_size", 10),
+        axis_text_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_text_size", 8),
+        point_size = lambda wildcards: _pca_plot_setting(wildcards.project, "point_size", 3),
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
@@ -537,7 +582,10 @@ rule plot_pca_miss_facet_colored:
             wildcards.project, wildcards.color_by, "colors"
         ),
         pc_max = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pc_max", 2),
-        plot_type = "colored"
+        plot_type = "colored",
+        axis_title_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_title_size", 10),
+        axis_text_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_text_size", 8),
+        point_size = lambda wildcards: _pca_plot_setting(wildcards.project, "point_size", 3),
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
@@ -562,7 +610,10 @@ rule plot_pca_miss_facet_labeled:
         "logs/{project}/plot_pca_miss{miss}_facet_labeled.log"
     params:
         pc_max = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pc_max", 2),
-        plot_type = "labeled"
+        plot_type = "labeled",
+        axis_title_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_title_size", 10),
+        axis_text_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_text_size", 8),
+        point_size = lambda wildcards: _pca_plot_setting(wildcards.project, "point_size", 3),
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
@@ -587,7 +638,10 @@ rule plot_pca_miss_facet_missing:
         "logs/{project}/plot_pca_miss{miss}_facet_missing.log"
     params:
         pc_max = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pc_max", 2),
-        plot_type = "missing"
+        plot_type = "missing",
+        axis_title_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_title_size", 10),
+        axis_text_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_text_size", 8),
+        point_size = lambda wildcards: _pca_plot_setting(wildcards.project, "point_size", 3),
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],

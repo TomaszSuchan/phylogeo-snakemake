@@ -59,6 +59,72 @@ coerce_indpopdata_lat_lon <- function(df) {
   df
 }
 
+#' Auto-aggregate DEM to figure width×dpi (metric CRS). Leaves original rast untouched.
+#' @noRd
+dem_auto_aggregate <- function(dem, plot_width_inches, plot_dpi) {
+  plot_width_inches <- as.numeric(plot_width_inches)
+  plot_dpi <- as.numeric(plot_dpi)
+  if (!is.finite(plot_width_inches) || plot_width_inches <= 0 ||
+      !is.finite(plot_dpi) || plot_dpi <= 0) {
+    return(dem)
+  }
+  extent_width_meters <- as.numeric(terra::xmax(dem) - terra::xmin(dem))
+  native_res_meters <- as.numeric(terra::res(dem)[1])
+  if (!is.finite(extent_width_meters) || extent_width_meters <= 0 ||
+      !is.finite(native_res_meters) || native_res_meters <= 0) {
+    return(dem)
+  }
+  target_res <- extent_width_meters / (plot_width_inches * plot_dpi)
+  fact <- max(1L, as.integer(round(target_res / native_res_meters)))
+  if (fact > 1L) {
+    return(terra::aggregate(dem, fact = fact, fun = "mean"))
+  }
+  dem
+}
+
+#' Gaussian smooth via focalMat (terra has no im_smooth here).
+#' @noRd
+dem_gauss_smooth <- function(dem, sigma = 1.5) {
+  sigma <- as.numeric(sigma)
+  if (!is.finite(sigma) || sigma <= 0) {
+    return(dem)
+  }
+  w <- terra::focalMat(dem, d = sigma * mean(terra::res(dem)), type = "Gauss")
+  terra::focal(dem, w = w, fun = "sum", na.policy = "omit", na.rm = TRUE)
+}
+
+#' DEM + NW hillshade with soft AO for hypso overlay (tidyterra wiki-2.0).
+#' @noRd
+dem_hypso_layers <- function(
+    dem,
+    plot_width_inches,
+    plot_dpi,
+    smooth_sigma = 3,
+    z_factor = 2
+) {
+  elev <- dem_gauss_smooth(
+    dem_auto_aggregate(dem, plot_width_inches, plot_dpi),
+    sigma = smooth_sigma
+  )
+  dem_z <- elev * as.numeric(z_factor)
+  slope <- terra::terrain(dem_z, "slope", unit = "radians")
+  aspect <- terra::terrain(dem_z, "aspect", unit = "radians")
+  hs <- terra::shade(slope, aspect, angle = 45, direction = 315)
+  win <- max(11L, as.integer(round(as.numeric(plot_width_inches) * as.numeric(plot_dpi) / 250)))
+  if (win %% 2L == 0L) win <- win + 1L
+  ao <- elev - terra::focal(elev, w = win, fun = "mean", na.policy = "omit", na.rm = TRUE)
+  ao_n <- (ao - terra::global(ao, "min", na.rm = TRUE)[[1]]) /
+    (terra::global(ao, "max", na.rm = TRUE)[[1]] - terra::global(ao, "min", na.rm = TRUE)[[1]])
+  hs <- hs * (0.70 + 0.30 * ao_n)
+  qs <- as.numeric(terra::global(hs, fun = quantile, probs = c(0.02, 0.98), na.rm = TRUE))
+  if (is.finite(qs[[1]]) && is.finite(qs[[2]]) && qs[[2]] > qs[[1]]) {
+    hs <- 0.15 + 0.75 * terra::clamp((hs - qs[[1]]) / (qs[[2]] - qs[[1]]), 0, 1)
+  }
+  names(elev) <- "elevation"
+  names(hs) <- "hillshade"
+  list(elev = elev, hillshade = hs)
+}
+
 #' Build mapmixture-style ggplot with a terra raster basemap.
 #' mapmixture::mapmixture adds geom_point + scale_fill_manual for the cluster legend;
 #' that clashes with ggspatial::layer_spatial raster (continuous fill) in ggplot2 >= 3.5.
@@ -107,17 +173,45 @@ coerce_indpopdata_lat_lon <- function(df) {
     r <- terra::subset(r, 1:3)
     suppressWarnings(tryCatch(terra::RGB(r) <- 1:3, error = function(e) NULL))
   }
-  # Greys only for elevatr single-band DEM; never for Natural Earth / other imagery.
-  plt <- ggplot2::ggplot() + ggspatial::layer_spatial(r)
-  use_grey_dem_scale <- isTRUE(params$raster_is_elevation_dem) && terra::nlyr(r) == 1L
-  if (isTRUE(use_grey_dem_scale)) {
-    plt <- plt +
-      ggplot2::scale_fill_distiller(
-        palette = "Greys",
-        na.value = params$sea_colour,
-        direction = 1,
-        guide = "none"
-      )
+  # Elevation DEM styles: hypso | grey. Downsample in memory only.
+  if (isTRUE(params$raster_is_elevation_dem) && terra::nlyr(r) == 1L) {
+    style <- as.character(params$elevation_style %||% "grey")
+    width_in <- as.numeric(params$width %||% 6)
+    dpi <- as.numeric(params$dpi %||% 300)
+    sea <- params$sea_colour %||% "#deebf7"
+    if (identical(style, "hypso")) {
+      layers <- dem_hypso_layers(r, width_in, dpi)
+      mm <- terra::minmax(layers$elev)
+      lims <- c(floor(as.numeric(mm[1, 1]) / 100) * 100,
+                ceiling(as.numeric(mm[2, 1]) / 100) * 100)
+      plt <- ggplot2::ggplot() +
+        tidyterra::geom_spatraster(data = layers$hillshade, maxcell = Inf) +
+        ggplot2::scale_fill_gradientn(
+          colours = grDevices::hcl.colors(1000, "Grays"),
+          na.value = NA,
+          guide = "none"
+        ) +
+        ggnewscale::new_scale_fill() +
+        tidyterra::geom_spatraster(data = layers$elev, maxcell = Inf) +
+        tidyterra::scale_fill_hypso_tint_c(
+          palette = "wiki-2.0",
+          limits = lims,
+          alpha = 0.45,
+          na.value = sea,
+          guide = "none"
+        )
+    } else {
+      plt <- ggplot2::ggplot() +
+        ggspatial::layer_spatial(dem_auto_aggregate(r, width_in, dpi)) +
+        ggplot2::scale_fill_distiller(
+          palette = "Greys",
+          na.value = sea,
+          direction = 1,
+          guide = "none"
+        )
+    }
+  } else {
+    plt <- ggplot2::ggplot() + ggspatial::layer_spatial(r)
   }
   plt <- plt +
     ggplot2::coord_sf(
@@ -220,7 +314,11 @@ mapmixture_plot <- function(
     basemap_border = TRUE,
     basemap_border_col = "black",
     basemap_border_lwd = 0.1,
-    raster_is_elevation_dem = FALSE
+    raster_is_elevation_dem = FALSE,
+    elevation_style = "grey",
+    width = 6,
+    height = 4,
+    dpi = 300
 ) {
   if (inherits(basemap, "SpatRaster")) {
     params <- list(
@@ -240,7 +338,11 @@ mapmixture_plot <- function(
       pie_border = pie_border,
       pie_border_col = pie_border_col,
       pie_opacity = pie_opacity,
-      raster_is_elevation_dem = raster_is_elevation_dem
+      raster_is_elevation_dem = raster_is_elevation_dem,
+      elevation_style = elevation_style,
+      width = width,
+      height = height,
+      dpi = dpi
     )
     return(.mapmixture_raster_plot(
       admixture_df,
@@ -635,6 +737,7 @@ extract_map_params <- function(snakemake_params) {
     basemap_border = as.logical(snakemake_params[["basemap_border"]]),
     basemap_border_col = snakemake_params[["basemap_border_col"]],
     basemap_border_lwd = as.numeric(snakemake_params[["basemap_border_lwd"]]),
+    elevation_style = snakemake_params[["elevation_style"]] %||% "grey",
     point_size = as.numeric(snakemake_params[["point_size"]]),
     point_color = snakemake_params[["point_color"]],
     point_shape = as.numeric(snakemake_params[["point_shape"]]),

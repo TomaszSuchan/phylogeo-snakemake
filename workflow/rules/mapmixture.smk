@@ -8,7 +8,7 @@ rule install_mapmixture:
         "../envs/mapmixture.yaml"
     shell:
         """
-        Rscript -e 'lib <- .libPaths()[1]; options(repos="https://cloud.r-project.org/"); pkgs <- c("mapmixture", "elevatr"); for (p in pkgs) if (!requireNamespace(p, quietly=TRUE, lib.loc=lib)) install.packages(p, lib=lib); missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly=TRUE, lib.loc=lib)]; if (length(missing)) stop("Failed to install required R packages: ", paste(missing, collapse=", "))'
+        Rscript -e 'lib <- .libPaths()[1]; options(repos="https://cloud.r-project.org/"); pkgs <- c("mapmixture", "elevatr", "tidyterra", "ggnewscale"); for (p in pkgs) if (!requireNamespace(p, quietly=TRUE, lib.loc=lib)) install.packages(p, lib=lib); missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly=TRUE, lib.loc=lib)]; if (length(missing)) stop("Failed to install required R packages: ", paste(missing, collapse=", "))'
         """
 
 

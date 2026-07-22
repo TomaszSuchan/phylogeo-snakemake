@@ -338,6 +338,7 @@ def _map_bg_params(wildcards):
         "basemap_border_col": bg.get("basemap_border_col", "black"),
         "basemap_border_lwd": bg.get("basemap_border_lwd", 0.1),
         "use_elevation_bg": _use_elevation_bg(wildcards),
+        "elevation_style": bg.get("elevation_style", "grey"),
     }
 
 
@@ -654,6 +655,11 @@ def _pca_plot_group_setting(project, group_col, key, default=None):
     if isinstance(group_cfg, dict):
         return group_cfg.get(key, default)
     return default
+
+
+def _pca_plot_setting(project, key, default=None):
+    """Read top-level PCA/PCoA plot settings from parameters.pca_plot.{key}."""
+    return config["projects"][project]["parameters"].get("pca_plot", {}).get(key, default)
 
 
 def _fineradstructure_plot_setting(project, col, key, default=None):

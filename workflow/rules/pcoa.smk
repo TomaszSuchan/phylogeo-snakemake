@@ -64,7 +64,10 @@ rule plot_pcoa_colored:
         group_colors = lambda wildcards: _pca_plot_group_setting(
             wildcards.project, wildcards.color_by, "colors"
         ),
-        plot_type = "colored"
+        plot_type = "colored",
+        axis_title_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_title_size", 10),
+        axis_text_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_text_size", 8),
+        point_size = lambda wildcards: _pca_plot_setting(wildcards.project, "point_size", 3),
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
@@ -94,7 +97,10 @@ rule plot_pcoa_labeled:
     params:
         pc1 = lambda wildcards: wildcards.pc1,
         pc2 = lambda wildcards: wildcards.pc2,
-        plot_type = "labeled"
+        plot_type = "labeled",
+        axis_title_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_title_size", 10),
+        axis_text_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_text_size", 8),
+        point_size = lambda wildcards: _pca_plot_setting(wildcards.project, "point_size", 3),
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
@@ -124,7 +130,10 @@ rule plot_pcoa_missing:
     params:
         pc1 = lambda wildcards: wildcards.pc1,
         pc2 = lambda wildcards: wildcards.pc2,
-        plot_type = "missing"
+        plot_type = "missing",
+        axis_title_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_title_size", 10),
+        axis_text_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_text_size", 8),
+        point_size = lambda wildcards: _pca_plot_setting(wildcards.project, "point_size", 3),
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
@@ -158,7 +167,10 @@ rule plot_pcoa_facet_colored:
             wildcards.project, wildcards.color_by, "colors"
         ),
         pc_max = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pc_max", 2),
-        plot_type = "colored"
+        plot_type = "colored",
+        axis_title_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_title_size", 10),
+        axis_text_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_text_size", 8),
+        point_size = lambda wildcards: _pca_plot_setting(wildcards.project, "point_size", 3),
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
@@ -187,7 +199,10 @@ rule plot_pcoa_facet_labeled:
         distance="euclidean|kosman|avgsquared"
     params:
         pc_max = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pc_max", 2),
-        plot_type = "labeled"
+        plot_type = "labeled",
+        axis_title_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_title_size", 10),
+        axis_text_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_text_size", 8),
+        point_size = lambda wildcards: _pca_plot_setting(wildcards.project, "point_size", 3),
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
@@ -216,7 +231,10 @@ rule plot_pcoa_facet_missing:
         distance="euclidean|kosman|avgsquared"
     params:
         pc_max = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pca_plot", {}).get("pc_max", 2),
-        plot_type = "missing"
+        plot_type = "missing",
+        axis_title_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_title_size", 10),
+        axis_text_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_text_size", 8),
+        point_size = lambda wildcards: _pca_plot_setting(wildcards.project, "point_size", 3),
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],

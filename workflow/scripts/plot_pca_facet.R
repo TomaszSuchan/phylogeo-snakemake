@@ -69,7 +69,8 @@ get_pca_combinations <- function(pc_max) {
 # PCA facet plotting function using facet_wrap
 plot_pca_facet <- function(individuals, eigenvecs, eigenvals, popdata,
                            indmiss = NULL, color_by_name = NULL, pc_max = 2,
-                           group_colors = NULL, plot_type = "colored") {
+                           group_colors = NULL, plot_type = "colored",
+                           point_size = 3, axis_title_size = 10, axis_text_size = 8) {
 
   # Generate all PC combinations
   pc_combinations <- get_pca_combinations(pc_max)
@@ -110,15 +111,21 @@ plot_pca_facet <- function(individuals, eigenvecs, eigenvals, popdata,
   plot_data$PC_X_full <- factor(plot_data$PC_X_full, levels = unique(plot_data$PC_X_full))
   plot_data$PC_Y_full <- factor(plot_data$PC_Y_full, levels = unique(plot_data$PC_Y_full))
 
+  axis_theme <- theme(
+    axis.title = element_text(size = axis_title_size),
+    axis.text = element_text(size = axis_text_size)
+  )
+
   # Generate plot based on plot_type
   if (plot_type == "labeled") {
     # Labels only: gray points + sample labels, no colors
     p <- ggplot(plot_data, aes(x = PC_X, y = PC_Y)) +
-      geom_point(size = 2, alpha = 0.7, pch = 21, fill = "gray80", color = "black") +
+      geom_point(size = point_size, alpha = 0.7, pch = 21, fill = "gray80", color = "black") +
       geom_text(aes(label = Ind), size = 1, check_overlap = FALSE) +
       facet_grid(PC_Y_full ~ PC_X_full, scales = "free") +
       labs(x = NULL, y = NULL) +
-      theme_bw()
+      theme_bw() +
+      axis_theme
 
   } else if (plot_type == "missing") {
     # Color by missing data rate
@@ -130,7 +137,7 @@ plot_pca_facet <- function(individuals, eigenvecs, eigenvals, popdata,
                        by.x = "Ind", by.y = "INDV", all.x = TRUE)
 
     p <- ggplot(plot_data, aes(x = PC_X, y = PC_Y, fill = F_MISS)) +
-      geom_point(size = 2, alpha = 0.7, pch = 21, color = "black") +
+      geom_point(size = point_size, alpha = 0.7, pch = 21, color = "black") +
       scale_fill_distiller(
         name = "Missing Data",
         labels = scales::percent,
@@ -140,17 +147,19 @@ plot_pca_facet <- function(individuals, eigenvecs, eigenvals, popdata,
       facet_grid(PC_Y_full ~ PC_X_full, scales = "free") +
       labs(x = NULL, y = NULL) +
       theme_bw() +
-      theme(legend.position = "right")
+      theme(legend.position = "right") +
+      axis_theme
 
   } else {
     # Colored by population/metadata
     if (is.null(color_by_name) || color_by_name == "" || color_by_name == "none") {
       # No coloring - just gray points
       p <- ggplot(plot_data, aes(x = PC_X, y = PC_Y)) +
-        geom_point(size = 2, alpha = 0.7, pch = 21, fill = "gray80", color = "black") +
+        geom_point(size = point_size, alpha = 0.7, pch = 21, fill = "gray80", color = "black") +
         facet_grid(PC_Y_full ~ PC_X_full, scales = "free") +
         labs(x = NULL, y = NULL) +
-        theme_bw()
+        theme_bw() +
+        axis_theme
     } else {
       # Categorical coloring by population metadata
       ind_col <- colnames(popdata)[1]
@@ -184,11 +193,12 @@ plot_pca_facet <- function(individuals, eigenvecs, eigenvals, popdata,
       }
 
       p <- ggplot(plot_data, aes(x = PC_X, y = PC_Y, fill = .data[[color_col]])) +
-        geom_point(size = 2, alpha = 0.7, pch = 21, color = "black") +
+        geom_point(size = point_size, alpha = 0.7, pch = 21, color = "black") +
         facet_grid(PC_Y_full ~ PC_X_full, scales = "free") +
         labs(x = NULL, y = NULL, fill = color_col) +
         theme_bw() +
-        theme(legend.position = "right")
+        theme(legend.position = "right") +
+        axis_theme
 
       if (color_is_numeric) {
         message(sprintf("PCA plot: using continuous viridis scale for numeric '%s'", color_col))
@@ -217,6 +227,12 @@ output_rds   <- snakemake@output[["rds"]]
 # Read parameters
 pc_max <- as.numeric(snakemake@params[["pc_max"]])
 plot_type <- as.character(snakemake@params[["plot_type"]])
+point_size <- as.numeric(snakemake@params[["point_size"]])
+axis_title_size <- as.numeric(snakemake@params[["axis_title_size"]])
+axis_text_size <- as.numeric(snakemake@params[["axis_text_size"]])
+if (is.na(point_size)) point_size <- 3
+if (is.na(axis_title_size)) axis_title_size <- 10
+if (is.na(axis_text_size)) axis_text_size <- 8
 
 # Get color_by and group_colors only for colored plots
 color_by_name <- NULL
@@ -233,6 +249,9 @@ if (plot_type == "colored") {
 # Debug: check param values
 message("pc_max = ", pc_max)
 message("plot_type = ", plot_type)
+message("point_size = ", point_size)
+message("axis_title_size = ", axis_title_size)
+message("axis_text_size = ", axis_text_size)
 if (!is.null(color_by_name)) {
   message("color_by_name = ", color_by_name)
 }
@@ -272,7 +291,10 @@ plt_pca_facet <- plot_pca_facet(
   color_by_name = color_by_name,
   pc_max = pc_max,
   group_colors = group_colors,
-  plot_type = plot_type
+  plot_type = plot_type,
+  point_size = point_size,
+  axis_title_size = axis_title_size,
+  axis_text_size = axis_text_size
 )
 
 # Debug: check plot object
