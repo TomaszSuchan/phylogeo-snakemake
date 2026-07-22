@@ -6,7 +6,9 @@
 suppressPackageStartupMessages({
   library(GENESIS)
   library(SeqArray)
+  library(SeqVarTools)
   library(SNPRelate)
+  library(BiocParallel)
 })
 
 log_file <- file(snakemake@log[[1]], open = "wt")
@@ -42,12 +44,14 @@ if (nsamp < 2L) {
 }
 
 set.seed(100)
-cat("LD pruning (r2 <=", ld_r2, ", window =", ld_window, ")\n")
+cat("LD pruning (r2 <=", ld_r2, ", slide.max.n =", ld_window, ")\n")
+# Contig-named RAD/WGS scaffolds are not human autosomes; keep all chromosomes.
 snpset <- snpgdsLDpruning(
   gds,
   ld.threshold = ld_r2,
-  window.size = ld_window,
+  slide.max.n = ld_window,
   maf = maf,
+  autosome.only = FALSE,
   verbose = FALSE
 )
 snps.use <- unlist(snpset, use.names = FALSE)
@@ -57,8 +61,16 @@ if (length(snps.use) < 50L) {
 }
 
 cat("Computing KING kinship matrix for PC-AiR\n")
-king <- snpgdsIBDKING(gds, snp.id = snps.use, verbose = FALSE)
-kingMat <- snpKIN2kinship(king$kinship)
+king <- snpgdsIBDKING(
+  gds,
+  snp.id = snps.use,
+  autosome.only = FALSE,
+  verbose = FALSE
+)
+kingMat <- king$kinship
+dimnames(kingMat) <- list(king$sample.id, king$sample.id)
+# KING leaves a variant filter on the GDS; clear it before PC-AiR.
+seqResetFilter(gds, verbose = FALSE)
 
 seqData <- SeqVarData(gds)
 cat("Running PC-AiR\n")
@@ -67,6 +79,8 @@ pcair_res <- pcair(
   kinobj = kingMat,
   divobj = kingMat,
   snp.include = snps.use,
+  # Passed through to snpgdsPCA; contig scaffolds are not human autosomes.
+  autosome.only = FALSE,
   verbose = FALSE
 )
 
@@ -85,21 +99,33 @@ if (length(training.set) < 2L) {
   )
 }
 
-seqData <- SeqVarBlockIterator(seqData, variant.include = snps.use, verbose = FALSE)
+seqSetFilter(seqData, variant.id = snps.use, verbose = FALSE)
+seqData <- SeqVarBlockIterator(seqData, verbose = FALSE)
 cat("Running PC-Relate\n")
 pcrel <- pcrelate(
   seqData,
   pcs = pcair_res$vectors[, seq_len(npcs), drop = FALSE],
   training.set = training.set,
-  scaleKinship = TRUE,
+  scale = "overall",
+  ibd.probs = return_ibd_probs,
+  BPPARAM = SerialParam(),
   verbose = FALSE
 )
 
-kin <- as.data.frame(pcrel$kinBwtn, stringsAsFactors = FALSE)
+# GENESIS renamed kinBwtn -> kinBtwn; support both.
+kin_slot <- if (!is.null(pcrel$kinBtwn)) {
+  pcrel$kinBtwn
+} else {
+  pcrel$kinBwtn
+}
+kin <- as.data.frame(kin_slot, stringsAsFactors = FALSE)
+if (nrow(kin) < 1L) {
+  stop("PC-Relate returned no pairwise kinship estimates")
+}
 if (!return_ibd_probs) {
   keep_cols <- intersect(
     colnames(kin),
-    c("ID1", "ID2", "kin", "k0", "k1", "k2")
+    c("ID1", "ID2", "kin")
   )
   kin <- kin[, keep_cols, drop = FALSE]
 }
