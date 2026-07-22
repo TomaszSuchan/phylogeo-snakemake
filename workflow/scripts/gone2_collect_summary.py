@@ -26,6 +26,7 @@ for _, row in pop_df.iterrows():
         ne_path = legacy[0] if legacy else ne_path
     d2 = list(vcf_dir.glob(f"{project}.{pop}_GONE2_d2"))
     stats = list(vcf_dir.glob(f"{project}.{pop}_GONE2_STATS"))
+    chrom_filter = vcf_dir / f"{project}.{pop}.gone2_chrom_filter.tsv"
     rows.append(
         {
             "population": row["population"],
@@ -35,6 +36,7 @@ for _, row in pop_df.iterrows():
             "ne_file": str(ne_path) if ne_path.is_file() else "",
             "d2_file": str(d2[0]) if d2 else "",
             "stats_file": str(stats[0]) if stats else "",
+            "chrom_filter_file": str(chrom_filter) if chrom_filter.is_file() else "",
             "status": "ok" if ne_path.is_file() else "missing_ne_output",
         }
     )

@@ -628,6 +628,7 @@ parameters: &global_params
   gone2:
     population_column: "Site"              # indpopdata column defining populations
     recombination_rate_cM_per_Mb: 2.5        # gone2 -r (constant cM/Mb; no .map file)
+    min_chromosome_cM: 20                    # drop chroms with SNP-span genetic length <= this (GONE2 requirement)
     f_missing: 1.0                         # per-pop locus filter; 1.0 disables missingness filtering
     mac_threshold: 1                         # per-pop MAC > threshold after subsetting
     min_individuals: 10

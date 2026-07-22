@@ -27,7 +27,9 @@ rule gone2_install:
             else
                 make gone >> {log} 2>&1
             fi
-            cp gone2 "$INSTALL_DIR/gone2"
+            test -x gone2 || {{ echo "ERROR: gone2 binary was not built" >> {log}; exit 1; }}
+            cp -f gone2 "$INSTALL_DIR/gone2"
+            chmod +x "$INSTALL_DIR/gone2"
         fi
         touch {output.sentinel}
         """
@@ -62,11 +64,15 @@ rule gone2_subset_vcf:
         samples=rules.gone2_prepare_samples.output.samples_dir,
     output:
         vcf="results/{project}/gone2/vcf/{project}.{stratum}.vcf",
+        chrom_filter="results/{project}/gone2/vcf/{project}.{stratum}.gone2_chrom_filter.tsv",
     params:
         samples_file=lambda wildcards: f"results/{wildcards.project}/gone2/samples/{wildcards.project}.{wildcards.stratum}.samples.txt",
         f_missing=lambda wildcards: config["projects"][wildcards.project]["parameters"]["gone2"].get("f_missing", 1.0),
         mac_threshold=lambda wildcards: config["projects"][wildcards.project]["parameters"]["gone2"].get("mac_threshold", 1),
         min_snps=lambda wildcards: config["projects"][wildcards.project]["parameters"]["gone2"].get("min_snps", 1000),
+        recombination_rate=lambda wildcards: config["projects"][wildcards.project]["parameters"]["gone2"].get("recombination_rate_cM_per_Mb", 2.5),
+        # GONE2 hard-fails if any chromosome span is <= 20 cM.
+        min_chromosome_cM=lambda wildcards: config["projects"][wildcards.project]["parameters"]["gone2"].get("min_chromosome_cM", 20),
     log:
         "logs/{project}/gone2_subset_vcf.{stratum}.log"
     benchmark:
@@ -80,11 +86,54 @@ rule gone2_subset_vcf:
     shell:
         r"""
         set -euo pipefail
+        mkdir -p "$(dirname {log})" "$(dirname {output.vcf})"
+        # -r requires bgzip + index; write compressed temp and index before region subset.
+        TMP_VCF="$(mktemp "${{TMPDIR:-/tmp}}/gone2_subset.XXXXXX.vcf.gz")"
+        KEEP_LIST="$(mktemp "${{TMPDIR:-/tmp}}/gone2_keep.XXXXXX.txt")"
+        trap 'rm -f "$TMP_VCF" "$TMP_VCF.tbi" "$TMP_VCF.csi" "$KEEP_LIST"' EXIT
+
         bcftools view -S {params.samples_file} -Ou {input.vcf} \
         | bcftools filter -e 'F_MISSING > {params.f_missing}' -Ou - \
         | bcftools +fill-tags - -Ou -- -t AC,AN,AF \
         | bcftools view -i 'MAC > {params.mac_threshold}' -Ou - \
-        | bcftools view -Ov -o {output.vcf} &> {log}
+        | bcftools view -Oz -o "$TMP_VCF" > {log} 2>&1
+        bcftools index --csi "$TMP_VCF" >> {log} 2>&1
+
+        # Drop chromosomes with SNP-span genetic length <= min_chromosome_cM (GONE2 requirement).
+        bcftools query -f '%CHROM\t%POS\n' "$TMP_VCF" \
+        | awk -v rate={params.recombination_rate} -v mincm={params.min_chromosome_cM} \
+            -v report={output.chrom_filter:q} -v keep="$KEEP_LIST" '
+            BEGIN {{
+                OFS = "\t"
+                print "chrom", "n_snps", "min_pos", "max_pos", "span_bp", "span_cM", \
+                      "recombination_rate_cM_per_Mb", "min_chromosome_cM", "status" > report
+            }}
+            {{
+                c = $1; p = $2 + 0
+                if (!(c in min) || p < min[c]) min[c] = p
+                if (!(c in max) || p > max[c]) max[c] = p
+                n[c]++
+            }}
+            END {{
+                for (c in n) {{
+                    span = max[c] - min[c]
+                    if (span < 0) span = 0
+                    cm = span / 1e6 * rate
+                    status = (cm > mincm) ? "KEEP" : "DROP"
+                    print c, n[c], min[c], max[c], span, cm, rate, mincm, status >> report
+                    if (status == "KEEP") print c >> keep
+                }}
+            }}'
+
+        echo "GONE2 chromosome filter written to {output.chrom_filter}" >> {log}
+        if [ ! -s "$KEEP_LIST" ]; then
+            echo "ERROR: no chromosomes longer than {params.min_chromosome_cM} cM at {params.recombination_rate} cM/Mb" >> {log}
+            exit 1
+        fi
+        REGIONS="$(paste -sd, "$KEEP_LIST")"
+        echo "Keeping chromosomes: $REGIONS" >> {log}
+        bcftools view -r "$REGIONS" -Ov -o {output.vcf} "$TMP_VCF" >> {log} 2>&1
+
         NSNPS=$(grep -vc '^#' {output.vcf} || true)
         if [ "$NSNPS" -lt {params.min_snps} ]; then
             echo "ERROR: only $NSNPS SNPs after filtering (min_snps={params.min_snps})" >> {log}
@@ -92,15 +141,18 @@ rule gone2_subset_vcf:
         fi
         """
 
-
 rule gone2_run:
     input:
         install=rules.gone2_install.output.sentinel,
         vcf=rules.gone2_subset_vcf.output.vcf,
+        # Forces re-subset when chrom filtering was added after existing VCFs.
+        chrom_filter=rules.gone2_subset_vcf.output.chrom_filter,
     output:
         ne="results/{project}/gone2/vcf/{project}.{stratum}_GONE2_Ne",
     params:
         gone2_bin=".snakemake/gone2/gone2",
+        # GONE2 appends _GONE2_Ne to -o; keep stem aligned with output path.
+        out_stem=lambda wildcards, output: str(output.ne).removesuffix("_GONE2_Ne"),
         recombination_rate=lambda wildcards: config["projects"][wildcards.project]["parameters"]["gone2"].get("recombination_rate_cM_per_Mb", 2.5),
     log:
         "logs/{project}/gone2_run.{stratum}.log"
@@ -113,11 +165,9 @@ rule gone2_run:
         mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("gone2", {}).get("mem_mb", config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"]),
         runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("gone2", {}).get("runtime", config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]),
     shell:
-        r"""
-        set -euo pipefail
-        cd "$(dirname {input.vcf})"
-        {params.gone2_bin} -g 0 -r {params.recombination_rate} -t {threads} "$(basename {input.vcf})" >> {log} 2>&1
-        test -f {output.ne} || {{ echo "ERROR: GONE2 Ne output not found: {output.ne}" >> {log}; exit 1; }}
+        """
+        {params.gone2_bin} -g 0 -r {params.recombination_rate} -t {threads} \
+            -o {params.out_stem} {input.vcf} > {log} 2>&1
         """
 
 
