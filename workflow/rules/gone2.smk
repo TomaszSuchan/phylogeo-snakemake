@@ -178,8 +178,8 @@ rule gone2_plot_ne:
         pdf="results/{project}/gone2/plots/{project}.{stratum}.gone2_ne.pdf",
         rds="results/{project}/gone2/plots/{project}.{stratum}.gone2_ne.rds",
     params:
-        width=lambda wildcards: config["projects"][wildcards.project]["parameters"]["gone2"].get("plot", {}).get("width", 8),
-        height=lambda wildcards: config["projects"][wildcards.project]["parameters"]["gone2"].get("plot", {}).get("height", 5),
+        width=lambda wildcards: _fig_cm_to_in(config["projects"][wildcards.project]["parameters"]["gone2"].get("plot", {}).get("width"), 20.32),
+        height=lambda wildcards: _fig_cm_to_in(config["projects"][wildcards.project]["parameters"]["gone2"].get("plot", {}).get("height"), 12.7),
         dpi=lambda wildcards: config["projects"][wildcards.project]["parameters"]["gone2"].get("plot", {}).get("dpi", 300),
     log:
         "logs/{project}/gone2_plot_ne.{stratum}.log"

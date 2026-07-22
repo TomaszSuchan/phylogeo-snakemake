@@ -111,8 +111,8 @@ parameters: &global_params
   ## Shared choose-K plot parameters (Evanno-style model-comparison figures)
   # Used by STRUCTURE Evanno, ADMIXTURE CV, tess3r CV, conStruct choose-K, and DAPC BIC plots.
   choose_k_plot:
-    width: 10                       # plot width in inches
-    height: 5                       # plot height in inches
+    width: 25.4                       # plot width in cm
+    height: 12.7                      # plot height in cm
     dpi: 300                        # dots per inch (resolution)
 
   ## Multi-K ancestry map facet panels (structure, admixture, DAPC, etc.)
@@ -123,18 +123,18 @@ parameters: &global_params
   ## Multi-K ancestry barplot facet panels (structure, admixture, sNMF, etc.)
   # Stack per-K barplot panels (K >= 2) in one column; panel size comes from each barplot RDS.
   barplot_facet_plot:
-    label_width: 0.4                # inches for the left-hand K label column
+    label_width: 1.016              # cm for the left-hand K label column
     panel_gap: 8                     # vertical gap between stacked bar rows (points)
-    legend_pad: 0.4                  # extra inches on the right for the cluster color key
+    legend_pad: 1.016               # extra cm on the right for the cluster color key
 
   ## Shared map background parameters (used by all mapping functions)
   # This section is read by mapmixture/population_map/pixy/dapc and other map rules.
   map_boundary: null                # optional map boundary extent e.g. c(xmin=18.5, xmax=23.4, ymin=48.8, ymax=49.8)
 
   map_background:
-    width: 10                       # plot width in inches
-    height: 8                       # plot height in inches
-    dpi: 300                        # dots per inch; also sets tess3r ggtess3Q interpolation grid (rx=width*dpi/10, ry=height*dpi/10)
+    width: 25.4                       # plot width in cm
+    height: 20.32                     # plot height in cm
+    dpi: 300                        # dots per inch; tess3r grid uses plot size in inches (width_cm/2.54 * dpi/10)
     crs: 4326                       # coordinate reference system (4326 = WGS84 lat/lon)
     basemap: null                   # background style (e.g. null, ne1, gray_earth, elevation)
     land_colour: "#d9d9d9"          # color for land masses
@@ -559,8 +559,8 @@ parameters: &global_params
     color_by: ["Region"]   # columns in indpopdata used to color tips
     ordering_method: "closest-pair"  # multiway | closest-pair (SplitsTree6-style: multiway)
     inference_method: "active-set"     # active-set | cg (SplitsTree4-style: cg)
-    width: 12            # plot width in inches
-    height: 12           # plot height in inches
+    width: 30.48            # plot width in cm
+    height: 30.48           # plot height in cm
     dpi: 300             # plot dpi
     linewidth: 0.5       # split-network edge width (ggplot/tanggle units; phangorn scaled to match)
     # Optional per-group colours for each color_by column (same pattern as roh.{group_col}.colors).
@@ -619,10 +619,10 @@ parameters: &global_params
       method: "Evanno"              # OptM method for choosing migration edges: Evanno, linear, or SiZer
       replicates: 5                 # independent OrientAGraph runs per m for OptM; use 10+ for final analyses
     plot:
-      width: 10                     # graph/residual plot width in inches
-      height: 7                     # graph/residual plot height in inches
-      likelihood_width: 7           # likelihood plot width in inches
-      likelihood_height: 5          # likelihood plot height in inches
+      width: 25.4                     # graph/residual plot width in cm
+      height: 17.78                   # graph/residual plot height in cm
+      likelihood_width: 17.78         # likelihood plot width in cm
+      likelihood_height: 12.7         # likelihood plot height in cm
       dpi: 300                      # plot resolution
       migration_arrow_length: 0.15  # arrow head size for migration edges (TreeMix default 0.05)
 
@@ -637,8 +637,8 @@ parameters: &global_params
     min_individuals: 10
     min_snps: 1000
     plot:
-      width: 8
-      height: 5
+      width: 20.32                    # plot width in cm
+      height: 12.7                     # plot height in cm
       dpi: 300
 
   ## Trimal parameters for alignment trimming before phylogenetic inference

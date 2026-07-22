@@ -59,8 +59,8 @@ rule cache_map_elevation:
     params:
         boundary=lambda w: config["projects"][w.project]["parameters"].get("map_boundary", "NULL"),
         crs=lambda w: config["projects"][w.project]["parameters"]["map_background"].get("crs", 4326),
-        width=lambda w: config["projects"][w.project]["parameters"]["map_background"].get("width", 10),
-        height=lambda w: config["projects"][w.project]["parameters"]["map_background"].get("height", 8),
+        width=lambda w: _fig_cm_to_in(config["projects"][w.project]["parameters"]["map_background"].get("width"), 25.4),
+        height=lambda w: _fig_cm_to_in(config["projects"][w.project]["parameters"]["map_background"].get("height"), 20.32),
         dpi=lambda w: config["projects"][w.project]["parameters"]["map_background"].get("dpi", 300),
         elevatr_z=lambda w: config["projects"][w.project]["parameters"]["map_background"].get("elevatr_z"),
     log:

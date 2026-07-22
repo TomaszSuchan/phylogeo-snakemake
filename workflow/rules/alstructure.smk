@@ -99,8 +99,8 @@ rule plot_alstructure_eigenvalues:
         "logs/{project}/plot_alstructure_eigenvalues.log"
     params:
         ylab = "Latent-subspace eigenvalue",
-        width = lambda wildcards: _choose_k_plot_param(wildcards, "width", 10),
-        height = lambda wildcards: _choose_k_plot_param(wildcards, "height", 5),
+        width = lambda wildcards: _choose_k_plot_param(wildcards, "width", 25.4),
+        height = lambda wildcards: _choose_k_plot_param(wildcards, "height", 12.7),
         dpi = lambda wildcards: _choose_k_plot_param(wildcards, "dpi", 300)
     conda:
         "../envs/alstructure.yaml"

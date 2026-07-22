@@ -101,8 +101,8 @@ rule plot_tess3_cv:
     params:
         crossvalid = lambda wildcards: _tess3_params(wildcards).get("crossvalid", False),
         crossentropy = lambda wildcards: _tess3_params(wildcards).get("crossentropy", False),
-        width = lambda wildcards: _choose_k_plot_param(wildcards, "width", 10),
-        height = lambda wildcards: _choose_k_plot_param(wildcards, "height", 5),
+        width = lambda wildcards: _choose_k_plot_param(wildcards, "width", 25.4),
+        height = lambda wildcards: _choose_k_plot_param(wildcards, "height", 12.7),
         dpi = lambda wildcards: _choose_k_plot_param(wildcards, "dpi", 300)
     conda:
         "../envs/tess3.yaml"

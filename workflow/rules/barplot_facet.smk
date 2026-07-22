@@ -6,9 +6,9 @@ def _barplot_facet_plot_params(wildcards, method_label):
     facet = config["projects"][wildcards.project]["parameters"]["barplot_facet_plot"]
     return {
         "method_label": method_label,
-        "label_width": facet["label_width"],
+        "label_width": _fig_cm_to_in(facet["label_width"]),
         "panel_gap": facet["panel_gap"],
-        "legend_pad": facet.get("legend_pad", 0.4),
+        "legend_pad": _fig_cm_to_in(facet.get("legend_pad"), 1.016),
         "flip_axis": mm.get("flip_axis", False),
     }
 

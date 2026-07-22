@@ -25,9 +25,25 @@ def _spca_nfnega_from_params(params):
     return int(params.get("spca", {}).get("nfnega", 2))
 
 
+# Figure width/height in config.yaml are centimetres. R ggsave and DEM math use inches.
+_CM_PER_INCH = 2.54
+
+
+def _fig_cm_to_in(value_cm, default_cm=None):
+    """Convert a config figure size (cm) to inches for plotting scripts."""
+    if value_cm is None:
+        if default_cm is None:
+            raise ValueError("figure size (cm) is missing and no default was provided")
+        value_cm = default_cm
+    return float(value_cm) / _CM_PER_INCH
+
+
 def _choose_k_plot_param(wildcards, key, default):
-    """Width, height, or dpi for Evanno-style choose-K score plots."""
-    return config["projects"][wildcards.project]["parameters"].get("choose_k_plot", {}).get(key, default)
+    """Width/height (cm in config → inches) or dpi for choose-K score plots."""
+    raw = config["projects"][wildcards.project]["parameters"].get("choose_k_plot", {}).get(key, default)
+    if key in ("width", "height"):
+        return float(raw) / _CM_PER_INCH
+    return raw
 
 
 def get_pca_combinations(pc_max):
@@ -316,8 +332,8 @@ def _map_bg_params(wildcards):
     bg = config["projects"][wildcards.project]["parameters"]["map_background"]
     params = config["projects"][wildcards.project]["parameters"]
     return {
-        "width": bg.get("width", 10),
-        "height": bg.get("height", 8),
+        "width": _fig_cm_to_in(bg.get("width"), 25.4),
+        "height": _fig_cm_to_in(bg.get("height"), 20.32),
         "dpi": bg.get("dpi", 300),
         "boundary": params.get("map_boundary", "NULL"),
         "crs": bg.get("crs", 4326),
@@ -365,8 +381,8 @@ def _barplot_params(wildcards):
     bg = config["projects"][wildcards.project]["parameters"]["map_background"]
     mm = config["projects"][wildcards.project]["parameters"]["mapmixture"]
     return {
-        "width": bg.get("width", 10),
-        "height": bg.get("height", 6),
+        "width": _fig_cm_to_in(bg.get("width"), 25.4),
+        "height": _fig_cm_to_in(bg.get("height"), 15.24),
         "dpi": bg.get("dpi", 300),
         "site_dividers": mm.get("site_dividers", True),
         "divider_width": mm.get("divider_width", 0.4),
@@ -824,8 +840,8 @@ def _spca_map_rule_params(wildcards):
 def _tess3_map_resolution(wildcards):
     """plot.tess3Q/ggtess3Q interpolation grid c(rx, ry) from map_background size."""
     bg = config["projects"][wildcards.project]["parameters"]["map_background"]
-    width = float(bg.get("width", 10))
-    height = float(bg.get("height", 8))
+    width = _fig_cm_to_in(bg.get("width"), 25.4)
+    height = _fig_cm_to_in(bg.get("height"), 20.32)
     dpi = float(bg.get("dpi", 300))
     # 30 cells per inch of plot extent (dpi/10); matches legacy [300, 300] at 10×10 in, 300 dpi
     scale = dpi / 10.0

@@ -336,8 +336,8 @@ rule treemix_bootstrap_summary:
         pdf="results/{project}/treemix/plots/{project}.treemix.bootstrap_likelihoods.pdf",
         rds="results/{project}/treemix/plots/{project}.treemix.bootstrap_likelihoods.rds"
     params:
-        width=lambda wildcards: _treemix_params(wildcards).get("plot", {}).get("likelihood_width", 7),
-        height=lambda wildcards: _treemix_params(wildcards).get("plot", {}).get("likelihood_height", 5),
+        width=lambda wildcards: _fig_cm_to_in(_treemix_params(wildcards).get("plot", {}).get("likelihood_width"), 17.78),
+        height=lambda wildcards: _fig_cm_to_in(_treemix_params(wildcards).get("plot", {}).get("likelihood_height"), 12.7),
         dpi=lambda wildcards: _treemix_params(wildcards).get("plot", {}).get("dpi", 300)
     log:
         "logs/{project}/treemix_bootstrap_summary.log"
@@ -372,8 +372,8 @@ rule plot_treemix:
         residual_rds="results/{project}/treemix/plots/{project}.treemix.m{m}.residuals.rds"
     params:
         m=lambda wildcards: wildcards.m,
-        width=lambda wildcards: _treemix_params(wildcards).get("plot", {}).get("width", 10),
-        height=lambda wildcards: _treemix_params(wildcards).get("plot", {}).get("height", 7),
+        width=lambda wildcards: _fig_cm_to_in(_treemix_params(wildcards).get("plot", {}).get("width"), 25.4),
+        height=lambda wildcards: _fig_cm_to_in(_treemix_params(wildcards).get("plot", {}).get("height"), 17.78),
         dpi=lambda wildcards: _treemix_params(wildcards).get("plot", {}).get("dpi", 300),
         migration_arrow_length=lambda wildcards: _treemix_params(wildcards).get("plot", {}).get("migration_arrow_length", 0.15)
     log:
@@ -400,8 +400,8 @@ rule plot_treemix_likelihood:
         pdf="results/{project}/treemix/plots/{project}.treemix.likelihoods.pdf",
         rds="results/{project}/treemix/plots/{project}.treemix.likelihoods.rds"
     params:
-        width=lambda wildcards: _treemix_params(wildcards).get("plot", {}).get("likelihood_width", 7),
-        height=lambda wildcards: _treemix_params(wildcards).get("plot", {}).get("likelihood_height", 5),
+        width=lambda wildcards: _fig_cm_to_in(_treemix_params(wildcards).get("plot", {}).get("likelihood_width"), 17.78),
+        height=lambda wildcards: _fig_cm_to_in(_treemix_params(wildcards).get("plot", {}).get("likelihood_height"), 12.7),
         dpi=lambda wildcards: _treemix_params(wildcards).get("plot", {}).get("dpi", 300)
     log:
         "logs/{project}/plot_treemix_likelihood.log"
@@ -448,8 +448,8 @@ rule plot_treemix_optm:
     params:
         folder="results/{project}/treemix/optm_runs",
         method=lambda wildcards: _treemix_params(wildcards).get("optm", {}).get("method", "Evanno"),
-        width=lambda wildcards: _treemix_params(wildcards).get("plot", {}).get("likelihood_width", 7),
-        height=lambda wildcards: _treemix_params(wildcards).get("plot", {}).get("likelihood_height", 5),
+        width=lambda wildcards: _fig_cm_to_in(_treemix_params(wildcards).get("plot", {}).get("likelihood_width"), 17.78),
+        height=lambda wildcards: _fig_cm_to_in(_treemix_params(wildcards).get("plot", {}).get("likelihood_height"), 12.7),
         dpi=lambda wildcards: _treemix_params(wildcards).get("plot", {}).get("dpi", 300)
     log:
         "logs/{project}/plot_treemix_optm.log"

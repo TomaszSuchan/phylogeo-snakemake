@@ -123,8 +123,8 @@ rule plot_evanno:
     log:
         "logs/{project}/plot_evanno.log"
     params:
-        width = lambda wildcards: _choose_k_plot_param(wildcards, "width", 10),
-        height = lambda wildcards: _choose_k_plot_param(wildcards, "height", 5),
+        width = lambda wildcards: _choose_k_plot_param(wildcards, "width", 25.4),
+        height = lambda wildcards: _choose_k_plot_param(wildcards, "height", 12.7),
         dpi = lambda wildcards: _choose_k_plot_param(wildcards, "dpi", 300)
     conda:
         "../envs/r-pophelper.yaml"

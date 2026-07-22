@@ -57,8 +57,8 @@ rule mapi_plot:
         runtime=10,
     params:
         fill_var=lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapi"].get("fill_var", "avg_value"),
-        width=lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("width", 10),
-        height=lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("height", 8),
+        width=lambda wildcards: _fig_cm_to_in(config["projects"][wildcards.project]["parameters"]["map_background"].get("width"), 25.4),
+        height=lambda wildcards: _fig_cm_to_in(config["projects"][wildcards.project]["parameters"]["map_background"].get("height"), 20.32),
         dpi=lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("dpi", 300),
         boundary=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("map_boundary", "NULL"),
         crs_plot=lambda wildcards: config["projects"][wildcards.project]["parameters"]["map_background"].get("crs", 4326),

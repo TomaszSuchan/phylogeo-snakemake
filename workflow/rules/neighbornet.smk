@@ -71,8 +71,8 @@ rule plot_neighbornet:
         group_colors=lambda wildcards: _neighbornet_group_setting(
             wildcards.project, wildcards.color_by, "colors"
         ),
-        width=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("neighbornet", {}).get("width", 12),
-        height=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("neighbornet", {}).get("height", 12),
+        width=lambda wildcards: _fig_cm_to_in(config["projects"][wildcards.project]["parameters"].get("neighbornet", {}).get("width"), 30.48),
+        height=lambda wildcards: _fig_cm_to_in(config["projects"][wildcards.project]["parameters"].get("neighbornet", {}).get("height"), 30.48),
         dpi=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("neighbornet", {}).get("dpi", 300),
         linewidth=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("neighbornet", {}).get("linewidth", 0.5),
     conda:

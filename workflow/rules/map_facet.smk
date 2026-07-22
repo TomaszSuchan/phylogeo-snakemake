@@ -8,8 +8,8 @@ def _map_facet_plot_params(wildcards, method_label):
     return {
         "method_label": method_label,
         "ncol": facet.get("ncol", 2),
-        "panel_width": bg.get("width", 10),
-        "panel_height": bg.get("height", 8),
+        "panel_width": _fig_cm_to_in(bg.get("width"), 25.4),
+        "panel_height": _fig_cm_to_in(bg.get("height"), 20.32),
     }
 
 
