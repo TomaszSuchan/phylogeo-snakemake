@@ -4,3 +4,5 @@ channels:
 dependencies:
  - pixy=2.1.0
  - htslib=1.22
+ # dask 2023.x (pulled by scikit-allel) still imports numpy.compat, removed in NumPy 2
+ - numpy>=1.24,<2
