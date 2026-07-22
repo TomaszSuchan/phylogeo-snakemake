@@ -49,10 +49,11 @@ sys.stderr = sys.stdout
 with populations_path.open(newline="") as handle:
     populations = list(csv.DictReader(handle, delimiter="\t"))
 
+results_dir = populations_path.parent  # results/{project}/relatedness_by_pop
 frames = []
 for row in populations:
     stratum = row["pop"]
-    path = Path(f"results/{project}/relatedness/{project}.{stratum}{cfg['suffix']}")
+    path = results_dir / f"{project}.{stratum}{cfg['suffix']}"
     if not path.exists():
         print(f"WARNING: missing {path}")
         continue
