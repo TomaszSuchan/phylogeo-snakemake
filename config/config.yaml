@@ -539,7 +539,7 @@ parameters: &global_params
     axis_text_size: 8
     group_by: ["Site"]   # columns in indpopdata to summarize/compare ROH
     # Map-specific parameters for mean F_ROH per Site maps (when popdata coordinates exist)
-    point_size: 3        # size of points on F_ROH maps and ROH scatter/jitter points
+    point_size: 1        # size of points on F_ROH maps and ROH scatter/jitter points
     map_outline: true    # add point outlines (true/false, default: true)
     # Optional per-group settings for group boxplots (froh_by_{X}, nroh_by_{X}, *_classes).
     # One block per group_by column; omit a column for default grey boxplots and alphabetical order.
