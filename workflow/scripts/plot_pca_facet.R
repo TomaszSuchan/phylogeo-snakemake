@@ -212,8 +212,39 @@ plot_pca_facet <- function(individuals, eigenvecs, eigenvals, popdata,
     }
   }
 
-  # Keep PC axes on the same geometric scale (unit length equal on x and y).
-  p <- p + coord_fixed(ratio = 1)
+  # Equal unit length on x/y without coord_fixed (incompatible with facet free scales):
+  # expand each panel so x and y spans match, then force square panels.
+  equal_limits_dummy <- function(data) {
+    keys <- interaction(data$PC_X_full, data$PC_Y_full, drop = TRUE, sep = "\r")
+    pieces <- split(seq_len(nrow(data)), keys)
+    rows <- lapply(pieces, function(idx) {
+      xr <- range(data$PC_X[idx], na.rm = TRUE)
+      yr <- range(data$PC_Y[idx], na.rm = TRUE)
+      half <- max(diff(xr), diff(yr), 1e-8) / 2 * 1.05
+      xmid <- mean(xr)
+      ymid <- mean(yr)
+      data.frame(
+        PC_X = c(xmid - half, xmid + half),
+        PC_Y = c(ymid - half, ymid + half),
+        PC_X_full = data$PC_X_full[idx[1]],
+        PC_Y_full = data$PC_Y_full[idx[1]],
+        stringsAsFactors = FALSE
+      )
+    })
+    dummy <- do.call(rbind, rows)
+    rownames(dummy) <- NULL
+    dummy$PC_X_full <- factor(dummy$PC_X_full, levels = levels(data$PC_X_full))
+    dummy$PC_Y_full <- factor(dummy$PC_Y_full, levels = levels(data$PC_Y_full))
+    dummy
+  }
+
+  p <- p +
+    geom_blank(
+      data = equal_limits_dummy(plot_data),
+      aes(x = PC_X, y = PC_Y),
+      inherit.aes = FALSE
+    ) +
+    theme(aspect.ratio = 1)
 
   return(p)
 }
