@@ -497,7 +497,7 @@ parameters: &global_params
     height: 15.24            # barplot/heatmap height in cm (~6 in)
     axis_title_size: 10
     axis_text_size: 8
-    stats: ["pi"] # statistics to compute, options: pi, fst, dxy
+    stats: ["pi"] # statistics to compute, options: pi, fst, dxy, watterson_theta, tajima_d
     window_size: 10000  # size of the sliding window in bp
     bootstrap_replicates: 1000  # number of bootstrap replicates for confidence intervals
     group_by: ["Region", "Region2"]  # columns in indpopdata/popdata defining hierarchical groupings for pixy
@@ -988,7 +988,7 @@ projects:
   #       population_sort_by: "Region"
   #       site_order: null
   #     pixy:
-  #       stats: ["pi", "fst", "dxy"]
+  #       stats: ["pi", "fst", "dxy", "watterson_theta", "tajima_d"]
   #       window_size: 10000
   #       bootstrap_replicates: 1000
   #       group_by: ["Site", "Region"]

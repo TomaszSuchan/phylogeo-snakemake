@@ -237,6 +237,12 @@ def _pixy_enabled_stats(project_params):
     return {"pi", "fst", "dxy"}
 
 
+def _pixy_has_diversity_panel_stats(project_params):
+    """True when pi, watterson_theta, and tajima_d are all requested (combined panel)."""
+    stats = _pixy_enabled_stats(project_params)
+    return {"pi", "watterson_theta", "tajima_d"}.issubset(stats)
+
+
 def _pixy_metadata_table_path(project, params):
     """Metadata table for counting pixy populations (indpopdata preferred, else popdata)."""
     import os

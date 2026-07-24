@@ -93,9 +93,9 @@ dem_gauss_smooth <- function(dem, sigma = 1.5) {
   terra::focal(dem, w = w, fun = "sum", na.policy = "omit", na.rm = TRUE)
 }
 
-#' DEM + NW hillshade with soft AO for hypso overlay (tidyterra wiki-2.0).
+#' DEM + NW hillshade with soft AO (shared by hypso and grey styles).
 #' @noRd
-dem_hypso_layers <- function(
+dem_shade_layers <- function(
     dem,
     plot_width_inches,
     plot_dpi,
@@ -124,6 +124,9 @@ dem_hypso_layers <- function(
   names(hs) <- "hillshade"
   list(elev = elev, hillshade = hs)
 }
+
+# Back-compat alias
+dem_hypso_layers <- dem_shade_layers
 
 #' Build mapmixture-style ggplot with a terra raster basemap.
 #' mapmixture::mapmixture adds geom_point + scale_fill_manual for the cluster legend;
@@ -179,8 +182,8 @@ dem_hypso_layers <- function(
     width_in <- as.numeric(params$width %||% 6)
     dpi <- as.numeric(params$dpi %||% 300)
     sea <- params$sea_colour %||% "#deebf7"
+    layers <- dem_shade_layers(r, width_in, dpi)
     if (identical(style, "hypso")) {
-      layers <- dem_hypso_layers(r, width_in, dpi)
       mm <- terra::minmax(layers$elev)
       lims <- c(floor(as.numeric(mm[1, 1]) / 100) * 100,
                 ceiling(as.numeric(mm[2, 1]) / 100) * 100)
@@ -201,12 +204,23 @@ dem_hypso_layers <- function(
           guide = "none"
         )
     } else {
+      # grey: same hillshade + AO + greyscale elev tint (mirrors hypso layering)
+      grey_cols <- grDevices::adjustcolor(
+        grDevices::hcl.colors(256, "Grays"),
+        alpha.f = 0.45
+      )
       plt <- ggplot2::ggplot() +
-        ggspatial::layer_spatial(dem_auto_aggregate(r, width_in, dpi)) +
-        ggplot2::scale_fill_distiller(
-          palette = "Greys",
+        tidyterra::geom_spatraster(data = layers$hillshade, maxcell = Inf) +
+        ggplot2::scale_fill_gradientn(
+          colours = grDevices::hcl.colors(1000, "Grays"),
+          na.value = NA,
+          guide = "none"
+        ) +
+        ggnewscale::new_scale_fill() +
+        tidyterra::geom_spatraster(data = layers$elev, maxcell = Inf) +
+        ggplot2::scale_fill_gradientn(
+          colours = grey_cols,
           na.value = sea,
-          direction = 1,
           guide = "none"
         )
     }

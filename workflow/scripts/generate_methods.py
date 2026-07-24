@@ -808,18 +808,60 @@ if analyses.get("pixy", False):
                           "pairwise differences per site within populations)",
                    "fst": "Fst (the proportion of total genetic variance due to "
                           "differences between populations)",
-                   "dxy": "Dxy (absolute nucleotide divergence between populations)"}
-    stats_str = ", ".join(STAT_LABELS.get(s, s) for s in stats)
+                   "dxy": "Dxy (absolute nucleotide divergence between populations)",
+                   "watterson_theta": "Watterson's theta (a segregating-site "
+                                      "estimator of the population mutation rate)",
+                   "tajima_d": "Tajima's D (the standardised contrast between pi "
+                               "and Watterson's theta)"}
+    labels = [STAT_LABELS.get(s, s) for s in stats]
+    if len(labels) == 1:
+        stats_str = labels[0]
+    elif len(labels) == 2:
+        stats_str = f"{labels[0]} and {labels[1]}"
+    else:
+        stats_str = ", ".join(labels[:-1]) + f", and {labels[-1]}"
     verb = "was" if len(stats) == 1 else "were"
+    uses_theta_or_d = any(s in ("watterson_theta", "tajima_d") for s in stats)
+    bailey_cite = (
+        " Watterson's theta and Tajima's D used the missing-data-aware estimators "
+        "of Bailey, Stevison & Samuk (2025)."
+        if uses_theta_or_d else ""
+    )
+    if uses_theta_or_d:
+        agg_text = (
+            f"Genome-wide summaries were obtained by aggregating window components "
+            f"rather than averaging per-window summary statistics: for pi and Dxy "
+            f"the site-weighted mean of window estimates; for Fst the SNP-weighted "
+            f"mean; for Watterson's theta the ratio of summed raw theta to summed "
+            f"sites; and for Tajima's D by summing raw pi and raw Watterson "
+            f"components and recomputing the denominator from "
+            f"--tajima_components segregating-site counts (Bailey et al. 2025). "
+            f"Uncertainty was quantified by bootstrap resampling of windows with "
+            f"replacement ({nboot:,} replicates) and recomputing each aggregated "
+            f"statistic; 95% confidence intervals were the 2.5th and 97.5th "
+            f"percentiles of that bootstrap distribution. These intervals "
+            f"therefore reflect sampling variation across genomic windows rather "
+            f"than uncertainty arising from the finite number of individuals."
+        )
+    else:
+        agg_text = (
+            f"For each population (or population pair), genome-wide summaries "
+            f"were obtained as the weighted mean of window estimates (weights = "
+            f"number of scored sites for pi/Dxy, or number of SNPs for Fst). "
+            f"Uncertainty in these genome-wide means was quantified by bootstrap "
+            f"resampling of windows with replacement ({nboot:,} replicates); 95% "
+            f"confidence intervals were taken as the 2.5th and 97.5th percentiles "
+            f"of the bootstrap distribution of the weighted mean. These intervals "
+            f"therefore reflect sampling variation across genomic windows rather "
+            f"than uncertainty arising from the finite number of individuals."
+        )
     div_parts.append(
         f"Within- and between-population genetic diversity was quantified with "
         f"pixy {vn(versions,'pixy')} (Korunes & Samuk 2021), which estimates "
-        f"{stats_str}. pixy computes these statistics directly from the all-sites "
-        f"dataset, counting both variable and invariant positions so that missing "
-        f"data do not bias per-site estimates. Statistics {verb} calculated in "
-        f"non-overlapping windows of {win:,} bp, and population-level point "
-        f"estimates with 95% confidence intervals were obtained by bootstrapping "
-        f"across windows ({nboot:,} replicates)."
+        f"{stats_str}.{bailey_cite} pixy computes these statistics directly from "
+        f"the all-sites dataset, counting both variable and invariant positions "
+        f"so that missing data do not bias per-site estimates. Statistics {verb} "
+        f"calculated in non-overlapping windows of {win:,} bp. {agg_text}"
     )
 
 if analyses.get("genome_scan", False):
@@ -1374,6 +1416,22 @@ if analyses.get("pixy", False):
         "*Molecular Ecology Resources*, 21, 1359–1368. "
         "https://doi.org/10.1111/1755-0998.13326"
     )
+    raw_pixy_stats = p.get("pixy", {}).get("stats", ["pi"])
+    if isinstance(raw_pixy_stats, str):
+        pixy_stats = {
+            t.lower() for t in raw_pixy_stats.replace(",", " ").split() if t.strip()
+        }
+    else:
+        pixy_stats = {
+            str(s).strip().lower() for s in (raw_pixy_stats or []) if str(s).strip()
+        }
+    if pixy_stats & {"watterson_theta", "tajima_d"}:
+        refs["bailey_pixy"] = (
+            "Bailey, N., Stevison, L. & Samuk, K. (2025). Correcting for bias in "
+            "estimates of θw and Tajima's D from missing data in next-generation "
+            "sequencing. *Molecular Ecology Resources*, e14104. "
+            "https://doi.org/10.1111/1755-0998.14104"
+        )
 
 if analyses.get("amova", False):
     refs["amova"] = (

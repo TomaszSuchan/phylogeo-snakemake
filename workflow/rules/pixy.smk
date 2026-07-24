@@ -191,6 +191,66 @@ rule pixy_dxy:
         """
 
 
+rule pixy_watterson_theta:
+    input:
+        vcf = rules.prepare_invariant_vcf_gz.output.vcf,
+        vcf_index = rules.prepare_invariant_vcf_gz_index.output.index,
+        popmap = rules.generate_pixy_popmap.output.popmap
+    output:
+        watterson_theta = "results/{project}/pixy/{project}.{grouping}.pixy_watterson_theta.txt"
+    log:
+        "logs/{project}/pixy_watterson_theta.{grouping}.log"
+    benchmark:
+        "benchmarks/{project}/pixy_watterson_theta.{grouping}.txt"
+    params:
+        window_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("window_size", 10000),
+        output_folder = "results/{project}/pixy/",
+        output_prefix = "{project}.{grouping}.pixy"
+    conda:
+        "../envs/pixy.yaml"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["pixy"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["pixy"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["pixy"]["runtime"]
+    shell:
+        """
+        mkdir -p {params.output_folder}
+        pixy --stats watterson_theta --vcf {input.vcf} --populations {input.popmap} \
+             --n_cores {threads} --window_size {params.window_size} \
+             --output_folder {params.output_folder} --output_prefix {params.output_prefix} &> {log}
+        """
+
+
+rule pixy_tajima_d:
+    input:
+        vcf = rules.prepare_invariant_vcf_gz.output.vcf,
+        vcf_index = rules.prepare_invariant_vcf_gz_index.output.index,
+        popmap = rules.generate_pixy_popmap.output.popmap
+    output:
+        tajima_d = "results/{project}/pixy/{project}.{grouping}.pixy_tajima_d.txt"
+    log:
+        "logs/{project}/pixy_tajima_d.{grouping}.log"
+    benchmark:
+        "benchmarks/{project}/pixy_tajima_d.{grouping}.txt"
+    params:
+        window_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("window_size", 10000),
+        output_folder = "results/{project}/pixy/",
+        output_prefix = "{project}.{grouping}.pixy"
+    conda:
+        "../envs/pixy.yaml"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["pixy"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["pixy"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["pixy"]["runtime"]
+    shell:
+        """
+        mkdir -p {params.output_folder}
+        pixy --stats tajima_d --tajima_components --vcf {input.vcf} --populations {input.popmap} \
+             --n_cores {threads} --window_size {params.window_size} \
+             --output_folder {params.output_folder} --output_prefix {params.output_prefix} &> {log}
+        """
+
+
 rule pixy_pi_summary:
     input:
         pi = rules.pixy_pi.output.pi
@@ -256,6 +316,50 @@ rule pixy_dxy_summary:
     script:
         "../scripts/pixy_summary.py"
 
+
+rule pixy_watterson_theta_summary:
+    input:
+        watterson_theta = rules.pixy_watterson_theta.output.watterson_theta
+    output:
+        watterson_theta = "results/{project}/pixy/{project}.{grouping}.pixy_watterson_theta-summary.txt"
+    log:
+        "logs/{project}/pixy_watterson_theta_summary.{grouping}.log"
+    benchmark:
+        "benchmarks/{project}/pixy_watterson_theta_summary.{grouping}.txt"
+    params:
+        stat = "watterson_theta",
+        bootstrap_replicates = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("bootstrap_replicates", 1000)
+    conda:
+        "../envs/python.yaml"
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["pixy_summary"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["pixy_summary"]["runtime"]
+    script:
+        "../scripts/pixy_summary.py"
+
+
+rule pixy_tajima_d_summary:
+    input:
+        tajima_d = rules.pixy_tajima_d.output.tajima_d
+    output:
+        tajima_d = "results/{project}/pixy/{project}.{grouping}.pixy_tajima_d-summary.txt"
+    log:
+        "logs/{project}/pixy_tajima_d_summary.{grouping}.log"
+    benchmark:
+        "benchmarks/{project}/pixy_tajima_d_summary.{grouping}.txt"
+    params:
+        stat = "tajima_d",
+        bootstrap_replicates = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("bootstrap_replicates", 1000)
+    conda:
+        "../envs/python.yaml"
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["pixy_summary"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["pixy_summary"]["runtime"]
+    script:
+        "../scripts/pixy_summary.py"
+
 # Rule to plot FST heatmap with dendrogram
 rule plot_pixy_fst_heatmap:
     input:
@@ -309,13 +413,114 @@ rule plot_pixy_dxy_heatmap:
 # Rule to plot Pi barplot with confidence intervals (one plot per group_by column)
 rule plot_pixy_pi_barplot:
     input:
-        pi_summary = "results/{project}/pixy/{project}.{grouping}.pixy_pi-summary.txt",
+        summary = "results/{project}/pixy/{project}.{grouping}.pixy_pi-summary.txt",
         popdata = rules.generate_popdata.output.indpopdata
     output:
         pdf = "results/{project}/pixy/plots/{project}.{grouping}.pixy_pi.pdf",
         rds = "results/{project}/pixy/plots/{project}.{grouping}.pixy_pi.rds"
     log:
         "logs/{project}/plot_pixy_pi_barplot_{grouping}.log"
+    params:
+        stat = "pi",
+        grouping = lambda wildcards: wildcards.grouping,
+        group_colors = lambda wildcards: _pixy_group_setting(
+            wildcards.project, wildcards.grouping, "colors"
+        ),
+        population_sort_by = lambda wildcards: _pixy_group_setting(
+            wildcards.project, wildcards.grouping, "sort_by"
+        ),
+        width = lambda wildcards: _pixy_plot_style_params(wildcards)["width"],
+        height = lambda wildcards: _pixy_plot_style_params(wildcards)["height"],
+        axis_title_size = lambda wildcards: _pixy_plot_style_params(wildcards)["axis_title_size"],
+        axis_text_size = lambda wildcards: _pixy_plot_style_params(wildcards)["axis_text_size"],
+    conda:
+        "../envs/r-plot.yaml"
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    script:
+        "../scripts/plot_pixy_summary_barplot.R"
+
+
+rule plot_pixy_watterson_theta_barplot:
+    input:
+        summary = "results/{project}/pixy/{project}.{grouping}.pixy_watterson_theta-summary.txt",
+        popdata = rules.generate_popdata.output.indpopdata
+    output:
+        pdf = "results/{project}/pixy/plots/{project}.{grouping}.pixy_watterson_theta.pdf",
+        rds = "results/{project}/pixy/plots/{project}.{grouping}.pixy_watterson_theta.rds"
+    log:
+        "logs/{project}/plot_pixy_watterson_theta_barplot_{grouping}.log"
+    params:
+        stat = "watterson_theta",
+        grouping = lambda wildcards: wildcards.grouping,
+        group_colors = lambda wildcards: _pixy_group_setting(
+            wildcards.project, wildcards.grouping, "colors"
+        ),
+        population_sort_by = lambda wildcards: _pixy_group_setting(
+            wildcards.project, wildcards.grouping, "sort_by"
+        ),
+        width = lambda wildcards: _pixy_plot_style_params(wildcards)["width"],
+        height = lambda wildcards: _pixy_plot_style_params(wildcards)["height"],
+        axis_title_size = lambda wildcards: _pixy_plot_style_params(wildcards)["axis_title_size"],
+        axis_text_size = lambda wildcards: _pixy_plot_style_params(wildcards)["axis_text_size"],
+    conda:
+        "../envs/r-plot.yaml"
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    script:
+        "../scripts/plot_pixy_summary_barplot.R"
+
+
+rule plot_pixy_tajima_d_barplot:
+    input:
+        summary = "results/{project}/pixy/{project}.{grouping}.pixy_tajima_d-summary.txt",
+        popdata = rules.generate_popdata.output.indpopdata
+    output:
+        pdf = "results/{project}/pixy/plots/{project}.{grouping}.pixy_tajima_d.pdf",
+        rds = "results/{project}/pixy/plots/{project}.{grouping}.pixy_tajima_d.rds"
+    log:
+        "logs/{project}/plot_pixy_tajima_d_barplot_{grouping}.log"
+    params:
+        stat = "tajima_d",
+        grouping = lambda wildcards: wildcards.grouping,
+        group_colors = lambda wildcards: _pixy_group_setting(
+            wildcards.project, wildcards.grouping, "colors"
+        ),
+        population_sort_by = lambda wildcards: _pixy_group_setting(
+            wildcards.project, wildcards.grouping, "sort_by"
+        ),
+        width = lambda wildcards: _pixy_plot_style_params(wildcards)["width"],
+        height = lambda wildcards: _pixy_plot_style_params(wildcards)["height"],
+        axis_title_size = lambda wildcards: _pixy_plot_style_params(wildcards)["axis_title_size"],
+        axis_text_size = lambda wildcards: _pixy_plot_style_params(wildcards)["axis_text_size"],
+    conda:
+        "../envs/r-plot.yaml"
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    script:
+        "../scripts/plot_pixy_summary_barplot.R"
+
+
+rule plot_pixy_diversity_combined:
+    """
+    Stacked panels of pi, Watterson's theta, and Tajima's D (ROH classes-style facet).
+    """
+    input:
+        pi_summary = "results/{project}/pixy/{project}.{grouping}.pixy_pi-summary.txt",
+        watterson_theta_summary = "results/{project}/pixy/{project}.{grouping}.pixy_watterson_theta-summary.txt",
+        tajima_d_summary = "results/{project}/pixy/{project}.{grouping}.pixy_tajima_d-summary.txt",
+        popdata = rules.generate_popdata.output.indpopdata
+    output:
+        pdf = "results/{project}/pixy/plots/{project}.{grouping}.pixy_diversity_combined.pdf",
+        rds = "results/{project}/pixy/plots/{project}.{grouping}.pixy_diversity_combined.rds"
+    log:
+        "logs/{project}/plot_pixy_diversity_combined_{grouping}.log"
     params:
         grouping = lambda wildcards: wildcards.grouping,
         group_colors = lambda wildcards: _pixy_group_setting(
@@ -328,7 +533,6 @@ rule plot_pixy_pi_barplot:
         height = lambda wildcards: _pixy_plot_style_params(wildcards)["height"],
         axis_title_size = lambda wildcards: _pixy_plot_style_params(wildcards)["axis_title_size"],
         axis_text_size = lambda wildcards: _pixy_plot_style_params(wildcards)["axis_text_size"],
-        point_size = lambda wildcards: _pixy_plot_style_params(wildcards)["point_size"],
     conda:
         "../envs/r-plot.yaml"
     threads: 1
@@ -336,7 +540,7 @@ rule plot_pixy_pi_barplot:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
     script:
-        "../scripts/plot_pixy_pi_barplot.R"
+        "../scripts/plot_pixy_diversity_combined.R"
 
 # Rule to plot Pi on map
 rule plot_pixy_pi_map:
