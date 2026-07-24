@@ -73,18 +73,24 @@ p <- p +
     colour = NA
   ) +
   geom_line(linewidth = 0.9, colour = "#2166AC") +
-  scale_y_log10() +
-  scale_x_log10() +
   labs(
     x = "Generations ago",
-    y = expression(N[e]),
-    subtitle = "Thick line = mean across seeds; ribbon = ±1 SD; faint lines = individual seeds"
+    y = expression(N[e])
   ) +
   theme_bw(base_size = 11)
 
-if (!show_seeds) {
-  p <- p + labs(subtitle = "Thick line = mean across seeds; ribbon = ±1 SD")
-}
+p_log <- p + scale_y_log10() + scale_x_log10()
+p_linear <- p
+p_xlinear_ylog <- p + scale_y_log10()
 
-ggsave_pdf(snakemake@output[["pdf"]], plot = p, width = width, height = height)
-saveRDS(p, snakemake@output[["rds"]])
+ggsave_pdf(snakemake@output[["pdf"]], plot = p_log, width = width, height = height)
+saveRDS(p_log, snakemake@output[["rds"]])
+ggsave_pdf(snakemake@output[["pdf_linear"]], plot = p_linear, width = width, height = height)
+saveRDS(p_linear, snakemake@output[["rds_linear"]])
+ggsave_pdf(snakemake@output[["pdf_xlinear_ylog"]], plot = p_xlinear_ylog, width = width, height = height)
+saveRDS(p_xlinear_ylog, snakemake@output[["rds_xlinear_ylog"]])
+message(
+  "Wrote ", snakemake@output[["pdf"]], ", ",
+  snakemake@output[["pdf_linear"]], ", and ",
+  snakemake@output[["pdf_xlinear_ylog"]]
+)

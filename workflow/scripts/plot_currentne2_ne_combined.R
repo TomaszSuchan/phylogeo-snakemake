@@ -35,6 +35,8 @@ legend_title <- as.character(snakemake@params[["legend_title"]])
 if (is.na(legend_title) || !nzchar(legend_title)) {
   legend_title <- "Population"
 }
+y_log10 <- isTRUE(as.logical(snakemake@params[["y_log10"]]))
+if (length(y_log10) == 0 || is.na(y_log10)) y_log10 <- TRUE
 
 pop_df <- read.delim(
   populations_file,
@@ -52,31 +54,32 @@ parse_currentne2 <- function(path, population) {
     stop("Missing currentNe2 output: ", path)
   }
   lines <- readLines(path, warn = FALSE)
-  get_after <- function(pattern) {
-    idx <- grep(pattern, lines, perl = TRUE)
+  get_after <- function(pattern, lines_use = lines) {
+    idx <- grep(pattern, lines_use, perl = TRUE)
     if (length(idx) == 0) return(NA_real_)
     for (i in idx) {
-      if (i >= length(lines)) next
-      val <- suppressWarnings(as.numeric(trimws(lines[[i + 1]])))
+      if (i >= length(lines_use)) next
+      val <- suppressWarnings(as.numeric(trimws(lines_use[[i + 1]])))
       if (is.finite(val)) return(val)
     }
     NA_real_
   }
   wg_start <- grep("integration over the whole genome", lines, fixed = TRUE)
   bc_start <- grep("LD between chromosomes", lines, fixed = TRUE)
+  block <- lines
   if (length(wg_start) > 0) {
     end <- if (length(bc_start) > 0 && bc_start[1] > wg_start[1]) bc_start[1] - 1 else length(lines)
-    lines <- lines[wg_start[1]:end]
+    block <- lines[wg_start[1]:end]
   } else if (length(bc_start) > 0) {
-    lines <- lines[bc_start[1]:length(lines)]
+    block <- lines[bc_start[1]:length(lines)]
   }
   out <- data.frame(
     population = population,
-    ne = get_after("^# Ne point estimate:"),
-    ci50_low = get_after("^# Lower limit of 50% CI:"),
-    ci50_high = get_after("^# Upper (bound|limit) of 50% CI:"),
-    ci90_low = get_after("^# Lower limit of 90% CI:"),
-    ci90_high = get_after("^# Upper limit of 90% CI:"),
+    ne = get_after("^# Ne point estimate:", block),
+    ci50_low = get_after("^# Lower limit of 50% CI:", block),
+    ci50_high = get_after("^# Upper (bound|limit) of 50% CI:", block),
+    ci90_low = get_after("^# Lower limit of 90% CI:", block),
+    ci90_high = get_after("^# Upper limit of 90% CI:", block),
     stringsAsFactors = FALSE
   )
   if (!is.finite(out$ne[1])) {
@@ -98,32 +101,53 @@ ne_df <- do.call(rbind, ne_list)
 
 levels_order <- group_levels(ne_df, "population", group_sort_by(group_sort_by_param))
 ne_df$population <- factor(ne_df$population, levels = levels_order)
+ne_df$ci50_low[!is.finite(ne_df$ci50_low)] <- ne_df$ne[!is.finite(ne_df$ci50_low)]
+ne_df$ci50_high[!is.finite(ne_df$ci50_high)] <- ne_df$ne[!is.finite(ne_df$ci50_high)]
+ne_df$ci90_low[!is.finite(ne_df$ci90_low)] <- ne_df$ne[!is.finite(ne_df$ci90_low)]
+ne_df$ci90_high[!is.finite(ne_df$ci90_high)] <- ne_df$ne[!is.finite(ne_df$ci90_high)]
 
 palette_vals <- group_fill_values(group_colors_param)
 
-p <- ggplot(ne_df, aes(x = .data$population, y = .data$ne, colour = .data$population)) +
+p <- ggplot(ne_df, aes(x = .data$population, y = .data$ne, fill = .data$population)) +
+  # Outer whiskers: 90% CI (thinner)
   geom_errorbar(
-    aes(ymin = .data$ci90_low, ymax = .data$ci90_high),
-    width = 0.2,
-    linewidth = 0.6,
+    aes(ymin = .data$ci90_low, ymax = .data$ci90_high, colour = .data$population),
+    width = 0.18,
+    linewidth = 0.45,
     na.rm = TRUE
   ) +
-  geom_point(size = 2.8) +
-  scale_y_log10() +
+  # Inner whiskers: 50% CI (normal)
+  geom_errorbar(
+    aes(ymin = .data$ci50_low, ymax = .data$ci50_high, colour = .data$population),
+    width = 0.12,
+    linewidth = 0.85,
+    na.rm = TRUE
+  ) +
+  geom_point(
+    shape = 21,
+    size = 3.2,
+    colour = "black",
+    stroke = 0.35
+  ) +
   labs(
     x = legend_title,
-    y = expression(N[e]),
-    colour = legend_title,
-    subtitle = "Points = Ne point estimate; error bars = 90% CI"
+    y = expression(N[e])
   ) +
   theme_bw(base_size = 11) +
   theme(
-    legend.position = "right",
-    axis.text.x = element_text(angle = 35, hjust = 1)
+    legend.position = "none",
+    axis.text.x = element_text(angle = 35, hjust = 1),
+    panel.grid.minor = element_blank()
   )
 
+if (y_log10) {
+  p <- p + scale_y_log10()
+}
+
 if (!is.null(palette_vals)) {
-  p <- p + scale_colour_manual(values = palette_vals, drop = FALSE)
+  p <- p +
+    scale_fill_manual(values = palette_vals, drop = FALSE) +
+    scale_colour_manual(values = palette_vals, drop = FALSE)
 }
 
 ggsave_pdf(snakemake@output[["pdf"]], plot = p, width = width, height = height)

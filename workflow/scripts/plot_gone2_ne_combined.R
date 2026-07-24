@@ -118,18 +118,11 @@ if (show_seeds) {
 p <- p +
   geom_ribbon(aes(ymin = .data$ymin, ymax = .data$ymax), alpha = 0.2, colour = NA) +
   geom_line(linewidth = 0.8) +
-  scale_y_log10() +
-  scale_x_log10() +
   labs(
     x = "Generations ago",
     y = expression(N[e]),
     colour = legend_title,
-    fill = legend_title,
-    subtitle = if (show_seeds) {
-      "Thick lines = mean across seeds; ribbons = ±1 SD; faint lines = individual seeds"
-    } else {
-      "Thick lines = mean across seeds; ribbons = ±1 SD"
-    }
+    fill = legend_title
   ) +
   theme_bw(base_size = 11) +
   theme(legend.position = "right")
@@ -140,6 +133,18 @@ if (!is.null(palette_vals)) {
     scale_fill_manual(values = palette_vals, drop = FALSE)
 }
 
-ggsave_pdf(snakemake@output[["pdf"]], plot = p, width = width, height = height)
-saveRDS(p, snakemake@output[["rds"]])
-message("Wrote ", snakemake@output[["pdf"]])
+p_log <- p + scale_y_log10() + scale_x_log10()
+p_linear <- p
+p_xlinear_ylog <- p + scale_y_log10()
+
+ggsave_pdf(snakemake@output[["pdf"]], plot = p_log, width = width, height = height)
+saveRDS(p_log, snakemake@output[["rds"]])
+ggsave_pdf(snakemake@output[["pdf_linear"]], plot = p_linear, width = width, height = height)
+saveRDS(p_linear, snakemake@output[["rds_linear"]])
+ggsave_pdf(snakemake@output[["pdf_xlinear_ylog"]], plot = p_xlinear_ylog, width = width, height = height)
+saveRDS(p_xlinear_ylog, snakemake@output[["rds_xlinear_ylog"]])
+message(
+  "Wrote ", snakemake@output[["pdf"]], ", ",
+  snakemake@output[["pdf_linear"]], ", and ",
+  snakemake@output[["pdf_xlinear_ylog"]]
+)

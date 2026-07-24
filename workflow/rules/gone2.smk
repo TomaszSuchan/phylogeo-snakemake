@@ -100,6 +100,10 @@ rule gone2_plot_ne:
     output:
         pdf="results/{project}/gone2/plots/{project}.{stratum}.gone2_ne.pdf",
         rds="results/{project}/gone2/plots/{project}.{stratum}.gone2_ne.rds",
+        pdf_linear="results/{project}/gone2/plots/{project}.{stratum}.gone2_ne_linear.pdf",
+        rds_linear="results/{project}/gone2/plots/{project}.{stratum}.gone2_ne_linear.rds",
+        pdf_xlinear_ylog="results/{project}/gone2/plots/{project}.{stratum}.gone2_ne_xlinear_ylog.pdf",
+        rds_xlinear_ylog="results/{project}/gone2/plots/{project}.{stratum}.gone2_ne_xlinear_ylog.rds",
     params:
         width=lambda wildcards: _fig_cm_to_in(config["projects"][wildcards.project]["parameters"]["gone2"].get("plot", {}).get("width"), 20.32),
         height=lambda wildcards: _fig_cm_to_in(config["projects"][wildcards.project]["parameters"]["gone2"].get("plot", {}).get("height"), 12.7),
@@ -125,6 +129,10 @@ rule gone2_plot_ne_combined:
     output:
         pdf="results/{project}/gone2/plots/{project}.gone2_ne_combined.pdf",
         rds="results/{project}/gone2/plots/{project}.gone2_ne_combined.rds",
+        pdf_linear="results/{project}/gone2/plots/{project}.gone2_ne_combined_linear.pdf",
+        rds_linear="results/{project}/gone2/plots/{project}.gone2_ne_combined_linear.rds",
+        pdf_xlinear_ylog="results/{project}/gone2/plots/{project}.gone2_ne_combined_xlinear_ylog.pdf",
+        rds_xlinear_ylog="results/{project}/gone2/plots/{project}.gone2_ne_combined_xlinear_ylog.rds",
     params:
         out_dir=lambda wildcards: f"results/{wildcards.project}/gone2",
         width=lambda wildcards: _fig_cm_to_in(

@@ -227,7 +227,7 @@ def _pixy_grouping_columns(project_params):
 
 
 def _pixy_enabled_stats(project_params):
-    """Which pixy statistics are requested (`pi`, `fst`, `dxy`)."""
+    """Which pixy statistics are requested (`pi`, `fst`, `dxy`, `watterson_theta`, `tajima_d`)."""
     pixy_cfg = project_params.get("pixy", {})
     stats = pixy_cfg.get("stats", "pi fst dxy")
     if isinstance(stats, list):
@@ -1061,10 +1061,6 @@ def _currentne2_summary_inputs(wildcards):
         "combined_plot": f"results/{project}/currentne2/plots/{project}.currentne2_ne_combined.pdf",
     }
     inputs.update(_currentne2_ne_inputs(wildcards))
-    for pop in _gone2_currentne2_common_pop_wildcards(project, params):
-        inputs[f"plot_{pop}"] = (
-            f"results/{project}/currentne2/plots/{project}.{pop}.currentne2_ne.pdf"
-        )
     return inputs
 
 
@@ -1695,6 +1691,57 @@ def get_all_targets():
                                 f"results/{project}/pixy/plots/{project}.pixy_pi_map.rds",
                             ]
                         )
+            if "watterson_theta" in pixy_stats:
+                targets.extend(
+                    expand(
+                        f"results/{project}/pixy/{project}.{{grouping}}.pixy_watterson_theta-summary.txt",
+                        grouping=pixy_groupings,
+                    )
+                )
+                targets.extend(
+                    expand(
+                        f"results/{project}/pixy/plots/{project}.{{grouping}}.pixy_watterson_theta.pdf",
+                        grouping=pixy_groupings,
+                    )
+                )
+                targets.extend(
+                    expand(
+                        f"results/{project}/pixy/plots/{project}.{{grouping}}.pixy_watterson_theta.rds",
+                        grouping=pixy_groupings,
+                    )
+                )
+            if "tajima_d" in pixy_stats:
+                targets.extend(
+                    expand(
+                        f"results/{project}/pixy/{project}.{{grouping}}.pixy_tajima_d-summary.txt",
+                        grouping=pixy_groupings,
+                    )
+                )
+                targets.extend(
+                    expand(
+                        f"results/{project}/pixy/plots/{project}.{{grouping}}.pixy_tajima_d.pdf",
+                        grouping=pixy_groupings,
+                    )
+                )
+                targets.extend(
+                    expand(
+                        f"results/{project}/pixy/plots/{project}.{{grouping}}.pixy_tajima_d.rds",
+                        grouping=pixy_groupings,
+                    )
+                )
+            if _pixy_has_diversity_panel_stats(params):
+                targets.extend(
+                    expand(
+                        f"results/{project}/pixy/plots/{project}.{{grouping}}.pixy_diversity_combined.pdf",
+                        grouping=pixy_groupings,
+                    )
+                )
+                targets.extend(
+                    expand(
+                        f"results/{project}/pixy/plots/{project}.{{grouping}}.pixy_diversity_combined.rds",
+                        grouping=pixy_groupings,
+                    )
+                )
             if "fst" in pixy_stats:
                 targets.extend(
                     expand(
@@ -2215,17 +2262,9 @@ def get_all_targets():
             )
 
         if analyses.get("currentne2", False):
-            gone2_currentne2_common_pops = _gone2_currentne2_common_pop_wildcards(project, params)
             targets.append(f"results/{project}/currentne2/{project}.currentne2_summary.tsv")
             targets.append(
                 f"results/{project}/currentne2/plots/{project}.currentne2_ne_combined.pdf"
-            )
-            targets.extend(
-                expand(
-                    f"results/{project}/currentne2/plots/{project}.{{stratum}}.currentne2_ne.pdf",
-                    project=project,
-                    stratum=gone2_currentne2_common_pops,
-                )
             )
 
         # conStruct targets

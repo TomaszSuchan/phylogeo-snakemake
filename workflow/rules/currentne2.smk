@@ -80,29 +80,6 @@ rule currentne2_run:
         """
 
 
-rule currentne2_plot_ne:
-    input:
-        output=rules.currentne2_run.output.result,
-    output:
-        pdf="results/{project}/currentne2/plots/{project}.{stratum}.currentne2_ne.pdf",
-        rds="results/{project}/currentne2/plots/{project}.{stratum}.currentne2_ne.rds",
-    params:
-        width=lambda wildcards: _fig_cm_to_in(config["projects"][wildcards.project]["parameters"]["currentne2"].get("plot", {}).get("width"), 20.32),
-        height=lambda wildcards: _fig_cm_to_in(config["projects"][wildcards.project]["parameters"]["currentne2"].get("plot", {}).get("height"), 12.7),
-    log:
-        "logs/{project}/currentne2_plot_ne.{stratum}.log"
-    benchmark:
-        "benchmarks/{project}/currentne2_plot_ne_{stratum}.txt"
-    conda:
-        "../envs/r-plot.yaml"
-    threads: 1
-    resources:
-        mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
-        runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"],
-    script:
-        "../scripts/plot_currentne2_ne.R"
-
-
 rule currentne2_plot_ne_combined:
     input:
         unpack(_currentne2_ne_inputs),
@@ -139,6 +116,7 @@ rule currentne2_plot_ne_combined:
             config["projects"][wildcards.project]["parameters"]["gone2_currentne2_common"].get("population_column", "Site"),
             "sort_by",
         ),
+        y_log10=lambda wildcards: config["projects"][wildcards.project]["parameters"]["currentne2"].get("plot", {}).get("y_log10", True),
     log:
         "logs/{project}/currentne2_plot_ne_combined.log"
     benchmark:
