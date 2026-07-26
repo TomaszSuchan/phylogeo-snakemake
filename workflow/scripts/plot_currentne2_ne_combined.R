@@ -15,10 +15,13 @@ script_dir <- tryCatch(
 )
 ggsave_utils <- file.path(script_dir, "plot_ggsave_utils.R")
 group_utils <- file.path(script_dir, "plot_group_utils.R")
+currentne2_utils <- file.path(script_dir, "currentne2_parse_utils.R")
 if (!file.exists(ggsave_utils)) ggsave_utils <- "workflow/scripts/plot_ggsave_utils.R"
 if (!file.exists(group_utils)) group_utils <- "workflow/scripts/plot_group_utils.R"
+if (!file.exists(currentne2_utils)) currentne2_utils <- "workflow/scripts/currentne2_parse_utils.R"
 source(ggsave_utils)
 source(group_utils)
+source(currentne2_utils)
 
 suppressPackageStartupMessages({
   library(ggplot2)
@@ -47,45 +50,6 @@ pop_df <- read.delim(
 )
 if (!all(c("population", "pop") %in% names(pop_df))) {
   stop("populations file must contain columns 'population' and 'pop'")
-}
-
-parse_currentne2 <- function(path, population) {
-  if (!file.exists(path)) {
-    stop("Missing currentNe2 output: ", path)
-  }
-  lines <- readLines(path, warn = FALSE)
-  get_after <- function(pattern, lines_use = lines) {
-    idx <- grep(pattern, lines_use, perl = TRUE)
-    if (length(idx) == 0) return(NA_real_)
-    for (i in idx) {
-      if (i >= length(lines_use)) next
-      val <- suppressWarnings(as.numeric(trimws(lines_use[[i + 1]])))
-      if (is.finite(val)) return(val)
-    }
-    NA_real_
-  }
-  wg_start <- grep("integration over the whole genome", lines, fixed = TRUE)
-  bc_start <- grep("LD between chromosomes", lines, fixed = TRUE)
-  block <- lines
-  if (length(wg_start) > 0) {
-    end <- if (length(bc_start) > 0 && bc_start[1] > wg_start[1]) bc_start[1] - 1 else length(lines)
-    block <- lines[wg_start[1]:end]
-  } else if (length(bc_start) > 0) {
-    block <- lines[bc_start[1]:length(lines)]
-  }
-  out <- data.frame(
-    population = population,
-    ne = get_after("^# Ne point estimate:", block),
-    ci50_low = get_after("^# Lower limit of 50% CI:", block),
-    ci50_high = get_after("^# Upper (bound|limit) of 50% CI:", block),
-    ci90_low = get_after("^# Lower limit of 90% CI:", block),
-    ci90_high = get_after("^# Upper limit of 90% CI:", block),
-    stringsAsFactors = FALSE
-  )
-  if (!is.finite(out$ne[1])) {
-    stop("Could not parse Ne point estimate from ", path)
-  }
-  out
 }
 
 ne_list <- lapply(seq_len(nrow(pop_df)), function(i) {

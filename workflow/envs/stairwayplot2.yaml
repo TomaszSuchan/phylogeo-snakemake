@@ -1,0 +1,9 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - openjdk >=17,<22
+  - python >=3.10
+  - pandas
+  - curl
+  - unzip

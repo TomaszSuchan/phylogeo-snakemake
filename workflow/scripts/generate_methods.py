@@ -259,9 +259,18 @@ if rel_on:
         f"(e.g. half-siblings, avuncular or grandparent-grandchild pairs)."
     )
 
-miss_clause = (f"sites with more than {100*f_missing:.0f}% missing genotype calls "
+miss_clause = (f"Sites with more than {100*f_missing:.0f}% missing genotype calls "
                f"across individuals were excluded to limit the influence of "
-               f"poorly sequenced loci, and " if f_missing < 1.0 else "")
+               f"poorly sequenced loci."
+               if f_missing < 1.0 else
+               "No per-site missingness filter was applied.")
+
+# Filtering steps that define the all-SNP dataset, listed only when enabled.
+_all_snp_steps = (["sample"]
+                  + (["relatedness"] if rel_on else [])
+                  + (["missingness"] if f_missing < 1.0 else []))
+all_snp_filters = (" and ".join([", ".join(_all_snp_steps[:-1]), _all_snp_steps[-1]])
+                   if len(_all_snp_steps) > 1 else _all_snp_steps[0])
 if maf > 0:
     maf_clause = (
         f", and a minimum minor allele frequency (MAF) of {maf:g} was imposed "
@@ -273,11 +282,15 @@ else:
     )
 filt_parts.append(
     f"SNP genotypes called by ipyrad were then filtered with bcftools "
-    f"{vn(versions,'bcftools')} (Danecek et al. 2021). Specifically, {miss_clause}"
-    f"variant sites were restricted to biallelic single-nucleotide polymorphisms "
-    f"(i.e. sites with exactly two alleles, as required by most downstream "
-    f"population-genetic software) with a minor allele count greater than one "
-    f"(MAC > 1){maf_clause}. Removing singletons (MAC = 1) discards variants seen "
+    f"{vn(versions,'bcftools')} (Danecek et al. 2021). {miss_clause} The variant "
+    f"set at this stage — every site passing {all_snp_filters} filtering, "
+    f"including singletons and multiallelic SNPs — is referred to throughout as "
+    f"the **all-SNP dataset**. "
+    f"From it, variant sites were restricted to biallelic single-nucleotide "
+    f"polymorphisms (i.e. sites with exactly two alleles, as required by most "
+    f"downstream population-genetic software) with a minor allele count greater "
+    f"than one (MAC > 1){maf_clause}, giving the **biallelic SNP dataset**. "
+    f"Removing singletons (MAC = 1) discards variants seen "
     f"in only a single allele copy, which carry little information for "
     f"population-level inference and are disproportionately likely to represent "
     f"sequencing or genotyping error."
@@ -296,16 +309,17 @@ if thinning_strat == "thinning":
         f"length of a sequencing read and share the same underlying genealogy, so "
         f"they are strongly physically linked and are not statistically "
         f"independent. Because methods such as STRUCTURE, ADMIXTURE and PCA assume "
-        f"that markers are effectively unlinked, the data were thinned to a single "
-        f"SNP per RAD locus by retaining, within each locus, {thin_desc}. "
+        f"that markers are effectively unlinked, the biallelic SNP dataset was "
+        f"thinned to a single SNP per RAD locus by retaining, within each locus, "
+        f"{thin_desc}. "
         f"This produced the **unlinked biallelic SNP dataset**, which was used for "
         f"all analyses that assume linkage equilibrium."
     )
 elif thinning_strat == "ld_pruning":
     filt_parts.append(
         f"Because linked SNPs violate the assumption of marker independence made "
-        f"by clustering and ordination methods, the data were pruned for linkage "
-        f"disequilibrium (LD) using PLINK {vn(versions,'plink')} "
+        f"by clustering and ordination methods, the biallelic SNP dataset was "
+        f"pruned for linkage disequilibrium (LD) using PLINK {vn(versions,'plink')} "
         f"(Chang et al. 2015). LD pruning was performed in a sliding window of "
         f"{ld_win} SNPs advanced {ld_step} SNPs at a time, recursively removing one "
         f"SNP from each pair whose squared correlation (r2) exceeded {ld_r2} until "
@@ -320,17 +334,23 @@ else:
         f"retained as the **all-biallelic SNP dataset** ({n_samples} individuals)."
     )
 
-if analyses.get("pixy", False):
+if (analyses.get("pixy", False) or analyses.get("genome_scan", False)
+        or analyses.get("stairwayplot2", False)):
+    all_sites_users = []
+    if analyses.get("pixy", False) or analyses.get("genome_scan", False):
+        all_sites_users.append("pixy (Korunes & Samuk 2021)")
+    if analyses.get("stairwayplot2", False):
+        all_sites_users.append("site-frequency-spectrum construction")
     filt_parts.append(
-        f"Estimators of nucleotide diversity and absolute divergence require "
-        f"information on invariant (monomorphic) as well as variable sites, because "
-        f"excluding invariant sites inflates per-site diversity estimates. A "
-        f"separate **all-sites dataset**, containing both variable and invariant "
-        f"positions, was therefore reconstructed directly from the ipyrad .loci "
-        f"output using a custom Python script. This dataset was deliberately not "
-        f"subjected to MAF or MAC filtering, as such filters would remove the "
-        f"invariant and rare sites that pixy (Korunes & Samuk 2021) requires for "
-        f"unbiased estimation."
+        f"Estimators of nucleotide diversity, absolute divergence and the site "
+        f"frequency spectrum require information on invariant (monomorphic) as "
+        f"well as variable sites, because excluding invariant sites inflates "
+        f"per-site estimates. A separate **all-sites dataset**, containing both "
+        f"variable and invariant positions, was therefore reconstructed directly "
+        f"from the ipyrad .loci output using a custom Python script. This dataset "
+        f"was deliberately not subjected to MAF or MAC filtering, as such filters "
+        f"would remove the invariant and rare sites that "
+        f"{' and '.join(all_sites_users)} require for unbiased estimation."
     )
 
 # Dataset summary: SNP/site counts and mean per-individual missingness per dataset.
@@ -364,13 +384,13 @@ def _fmt_depth_triplet(depth):
 
 
 ds_clauses = [
-    f"an all-SNP dataset (all variant sites passing sample, relatedness and "
-    f"missingness filtering; {_fmt_int(vcf_stats_filtered.get('variants', '[NA]'))} SNPs; "
+    f"the **all-SNP dataset** (all variant sites passing {all_snp_filters} "
+    f"filtering; {_fmt_int(vcf_stats_filtered.get('variants', '[NA]'))} SNPs; "
     f"mean per-individual missingness {_fmt_pct(imiss_filtered)})",
-    f"a biallelic SNP dataset ({_biallelic_filter_label(maf)}; "
+    f"the **biallelic SNP dataset** ({_biallelic_filter_label(maf)}; "
     f"{_fmt_int(vcf_stats_biallelic.get('variants', '[NA]'))} SNPs; "
     f"{_fmt_pct(imiss_biallelic)})",
-    f"the {dataset_label} used for most analyses "
+    f"the **{dataset_label}** used for most analyses "
     f"({_biallelic_filter_label(maf)}; {_fmt_int(n_snps)} SNPs across "
     f"{_fmt_int(n_loci)} RAD loci; {_fmt_pct(imiss_thinned)})",
 ]
@@ -873,9 +893,8 @@ if analyses.get("genome_scan", False):
     w_dxy  = gs.get("window_size_dxy", 1_000_000)
     div_parts.append(
         f"Genome-wide scans of differentiation between {pop1} and {pop2} were "
-        f"performed with pixy {vn(versions,'pixy')} on an invariant-site "
-        f"VCF reconstructed from the original ipyrad loci file, retaining only "
-        f"individuals assigned to the two focal groups. Sliding-window "
+        f"performed with pixy {vn(versions,'pixy')} on the all-sites dataset, "
+        f"retaining only individuals assigned to the two focal groups. Sliding-window "
         f"estimates of F_ST (window size {w_fst:,} bp), nucleotide diversity "
         f"pi (window size {w_pi:,} bp), and absolute divergence Dxy "
         f"(window size {w_dxy:,} bp) were plotted along the genome to "
@@ -913,7 +932,7 @@ if analyses.get("gen_dist", False):
         f"of any population model, four complementary pairwise genetic distance "
         f"matrices were computed with custom Python scripts. Because distance-based "
         f"methods do not assume that markers are unlinked, three dosage-based "
-        f"distances were calculated from the full (un-thinned) biallelic SNP dataset "
+        f"distances were calculated from the biallelic SNP dataset "
         f"({n_snps_biallelic} SNPs, {n_samples} individuals), read from PLINK binary "
         f"files via the bed-reader library: "
         f"(i) the Kosman-Leonard distance (Kosman & Leonard 2005), a distance "
@@ -925,11 +944,11 @@ if analyses.get("gen_dist", False):
         f"(iii) the average squared genotype difference (the bed2diffs formulation "
         f"used by EEMS), which underlies several landscape-genetic methods. "
         f"In addition, (iv) a pairwise p-distance was computed from the "
-        f"**missingness-filtered variant dataset** ({_fmt_int(vcf_stats_filtered.get('variants', '[NA]'))} "
-        f"variant sites, {n_samples} individuals) — the same VCF stage used by "
-        f"fineRADstructure, before biallelic/MAC/MAF and thinning filters — as the "
-        f"pairwise mean of |g_i - g_j| / 2 over biallelic variant sites scored in "
-        f"both individuals (multiallelic sites excluded)."
+        f"all-SNP dataset ({_fmt_int(vcf_stats_filtered.get('variants', '[NA]'))} "
+        f"variant sites, {n_samples} individuals) — the same dataset used by "
+        f"fineRADstructure, i.e. before the biallelic, MAC/MAF and thinning "
+        f"filters — as the pairwise mean of |g_i - g_j| / 2 over biallelic variant "
+        f"sites scored in both individuals (multiallelic sites excluded)."
     )
 
 if analyses.get("neighbornet", False):
@@ -945,10 +964,10 @@ if analyses.get("neighbornet", False):
     else:
         pdist_clause = (
             f"a pairwise p-distance matrix, computed with a custom Python script "
-            f"from the missingness-filtered variant dataset "
+            f"from the all-SNP dataset "
             f"({_fmt_int(vcf_stats_filtered.get('variants', '[NA]'))} variant sites, "
-            f"{n_samples} individuals) — the same VCF stage used by fineRADstructure, "
-            f"before biallelic/MAC/MAF and thinning filters — as the pairwise mean of "
+            f"{n_samples} individuals) — the same dataset used by fineRADstructure, "
+            f"i.e. before the biallelic, MAC/MAF and thinning filters — as the pairwise mean of "
             f"|g_i - g_j| / 2 over biallelic variant sites scored in both individuals "
             f"(multiallelic sites excluded)"
         )
@@ -1049,10 +1068,10 @@ if analyses.get("fineradstructure", False):
     # f_missing is the only variant filter that touches the fineRADstructure input
     # (a site-level missingness filter; it removes gappy loci, not rare alleles).
     frs_missing_clause = (
-        f"after removing sites with more than {100*f_missing:.0f}% missing "
-        f"genotype calls"
+        f", whose only variant filter is the removal of sites with more than "
+        f"{100*f_missing:.0f}% missing genotype calls"
         if f_missing < 1.0
-        else "without any missingness filtering"
+        else ""
     )
     phy_parts.append(
         f"Fine-scale population structure was additionally inferred from shared "
@@ -1061,11 +1080,11 @@ if analyses.get("fineradstructure", False):
         f"(phase) information available within each RAD locus and is sensitive to "
         f"recent shared ancestry. Because this co-ancestry signal is carried "
         f"disproportionately by rare alleles, fineRADstructure was run on the "
-        f"variant set obtained {frs_missing_clause}, retaining all remaining SNPs "
-        f"(including singletons and multiallelic sites) without the minor allele "
-        f"count, minor allele frequency, or one-SNP-per-locus thinning filters "
-        f"applied to the other analyses, since those filters would remove the "
-        f"variants most informative for recent co-ancestry. "
+        f"all-SNP dataset{frs_missing_clause}, so that all SNPs (including "
+        f"singletons and multiallelic sites) were retained without the minor "
+        f"allele count, minor allele frequency, or one-SNP-per-locus thinning "
+        f"filters applied to the other analyses, since those filters would remove "
+        f"the variants most informative for recent co-ancestry. "
         f"RADpainter first summarised, for every pair of "
         f"individuals, the extent to which they share their most closely related "
         f"haplotypes, producing a pairwise co-ancestry matrix ({n_samples} "
@@ -1117,9 +1136,8 @@ if analyses.get("roh", False):
         f"from both parents and therefore signal recent inbreeding - were detected "
         f"with the roh model of bcftools {vn(versions,'bcftools')} "
         f"(Danecek et al. 2021). Because ROH detection relies on the density of "
-        f"consecutive genotypes along each locus, ROH were called from the variant "
-        f"set after sample subsetting, relatedness filtering, and any per-site "
-        f"missingness filtering, but before the biallelic, minor-allele-count, and "
+        f"consecutive genotypes along each locus, ROH were called from the all-SNP "
+        f"dataset, i.e. before the biallelic, minor-allele-count, and "
         f"one-SNP-per-locus thinning filters applied to the other analyses, since "
         f"thinning to one SNP per RAD locus would remove the consecutive sites that "
         f"ROH calling requires. The number and total length "
@@ -1153,8 +1171,12 @@ if analyses.get("gone2", False) or analyses.get("currentne2", False):
         f"For LD-based Ne analyses, genotypes were prepared once per population "
         f"defined by the '{gone2_currentne2_common_pop}' column of the individual metadata, retaining "
         f"populations with at least {gone2_currentne2_common_min_ind} individuals. For each population, "
-        f"biallelic SNPs were subset from the unthinned biallelic SNP VCF and "
-        f"filtered to sites with minor allele count greater than {gone2_currentne2_common_mac}. "
+        f"genotypes were subset from the biallelic SNP dataset — the un-thinned "
+        f"set, because LD-based estimators require the physically linked SNPs that "
+        f"one-SNP-per-locus thinning removes — and re-filtered within the "
+        f"population to sites with minor allele count greater than "
+        f"{gone2_currentne2_common_mac}, since rare variants inflate LD estimates "
+        f"and hence bias Ne downwards. "
         f"Chromosomes with SNP-span genetic length ≤ {gone2_currentne2_common_min_cm:g} cM under a "
         f"constant recombination rate of {gone2_currentne2_common_rate:g} cM/Mb were excluded; "
         f"retained and excluded chromosomes were recorded in per-population "
@@ -1207,6 +1229,44 @@ if analyses.get("currentne2", False):
     if c2.get("k", None) is not None:
         c2_parts.append(f"The full-sibling parameter was set to k={c2.get('k')}.")
     sections.append(("Contemporary effective population size", " ".join(c2_parts)))
+
+
+# 7c. Stairway Plot 2 (folded SFS) ────────────────────────────────────────────
+
+if analyses.get("stairwayplot2", False):
+    sp = p.get("stairwayplot2", {})
+    sfs = p.get("easysfs", {})
+    sp_pop = sfs.get("population_column", "Site")
+    sp_min_ind = int(sfs.get("min_individuals", 10))
+    sp_ninput = int(sp.get("ninput", 200))
+    sp_mu = sp.get("mu", "[MU]")
+    sp_gen = sp.get("year_per_generation", "[GEN_TIME]")
+    sp_excl = bool(sp.get("exclude_singletons", False))
+    excl_txt = (
+        " Singletons were excluded from the estimation."
+        if sp_excl
+        else ""
+    )
+    sections.append((
+        "Demographic history (SFS)",
+        f"Longer-term effective population size trajectories were inferred with "
+        f"Stairway Plot 2 (Liu & Fu 2020) from the folded site frequency spectrum, "
+        f"without specifying a parametric demographic model a priori. Analyses were "
+        f"run separately for each population defined by the '{sp_pop}' column of the "
+        f"individual metadata (populations with fewer than {sp_min_ind} individuals "
+        f"excluded). Folded SFSs were constructed with easySFS (Overcast) from the "
+        f"all-sites dataset, restricted per population to biallelic SNPs but "
+        f"deliberately not subjected to the MAC or MAF filters used for the "
+        f"biallelic SNP dataset, because discarding rare variants would truncate "
+        f"the low-frequency bins that carry most of the demographic signal. Each "
+        f"population was down-projected to account for missing data, and the "
+        f"monomorphic bin was set from the number of callable sites (variant plus "
+        f"invariant) counted in the same individuals. Stairway Plot 2 was run with "
+        f"{sp_ninput} training subsamples, mutation rate μ = {sp_mu} per site per "
+        f"generation, and generation time = {sp_gen} years.{excl_txt} Reported "
+        f"trajectories are the median Ne with 75% and 95% pseudo-confidence "
+        f"intervals across subsamples."
+    ))
 
 
 # 8. Spatial genetics ─────────────────────────────────────────────────────────
@@ -1529,6 +1589,23 @@ if analyses.get("currentne2", False):
         "structure and data quality in demographic inference with linkage "
         "disequilibrium methods. *Nature Communications*, 16, 6054. "
         "https://doi.org/10.1038/s41467-025-61378-w"
+    )
+
+if analyses.get("stairwayplot2", False):
+    refs["stairwayplot2"] = (
+        "Liu, X. & Fu, Y.-X. (2020). Stairway Plot 2: demographic history inference "
+        "with folded SNP frequency spectra. *Genome Biology*, 21, 280. "
+        "https://doi.org/10.1186/s13059-020-02196-9"
+    )
+    refs["easysfs"] = (
+        "Overcast, I. easySFS: a tool for the effective selection of population size "
+        "projection for construction of the site frequency spectrum. "
+        "https://github.com/isaacovercast/easySFS"
+    )
+    refs["gutenkunst2009"] = (
+        "Gutenkunst, R.N. et al. (2009). Inferring the joint demographic history of "
+        "multiple populations from multidimensional SNP data. *PLOS Genetics*, 5, "
+        "e1000695. https://doi.org/10.1371/journal.pgen.1000695"
     )
 
 if analyses.get("relatedness", False):

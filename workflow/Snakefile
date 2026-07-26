@@ -945,29 +945,28 @@ def _treemix_bootstrap_enabled_from_params(params):
     return bool(_treemix_bootstrap_config_from_params(params).get("enabled", False))
 
 
-def _gone2_pop_safe(label):
+def _pop_safe(label):
     import re
     s = re.sub(r"[^\w.\-]+", "_", str(label).strip())
     return (s[:120] or "group")
 
 
-def _gone2_currentne2_common_pop_wildcards(project, params):
-    """Population wildcards for shared LD-Ne prep (GONE2 / currentNe2)."""
+def _pop_wildcards(project, params, cfg_key):
+    """Population wildcards for modules grouping by <cfg_key>.population_column.
+
+    Mirrors the grouping the corresponding prepare_samples script applies, so that
+    targets can be expanded before that script has run.
+    """
     import csv
     import os
-
-    populations_path = f"results/{project}/gone2_currentne2_common/{project}.gone2_currentne2_common_populations.tsv"
-    if os.path.exists(populations_path):
-        with open(populations_path, newline="") as handle:
-            return [row["pop"] for row in csv.DictReader(handle, delimiter="\t")]
 
     indpopdata_path = f"results/{project}/indpopdata.txt"
     if not os.path.exists(indpopdata_path):
         return []
 
-    gone2_currentne2_common_cfg = params.get("gone2_currentne2_common", {})
-    pop_col = gone2_currentne2_common_cfg.get("population_column", "Site")
-    min_individuals = int(gone2_currentne2_common_cfg.get("min_individuals", 10))
+    cfg = params.get(cfg_key, {})
+    pop_col = cfg.get("population_column", "Site")
+    min_individuals = int(cfg.get("min_individuals", 10))
 
     with open(indpopdata_path, newline="") as handle:
         reader = csv.DictReader(handle, delimiter="\t")
@@ -980,11 +979,7 @@ def _gone2_currentne2_common_pop_wildcards(project, params):
                 continue
             counts[label] = counts.get(label, 0) + 1
 
-    return [
-        _gone2_pop_safe(label)
-        for label, n in counts.items()
-        if n >= min_individuals
-    ]
+    return [_pop_safe(label) for label, n in counts.items() if n >= min_individuals]
 
 
 def _gone2_currentne2_common_group_setting(project, group_col, key, default=None):
@@ -1003,6 +998,43 @@ def _gone2_n_seeds(project):
     )
 
 
+def _easysfs_group_setting(project, group_col, key, default=None):
+    """Read per-group settings from easysfs.{group_col}.{key}."""
+    sp = config["projects"][project]["parameters"].get("easysfs", {})
+    group_cfg = sp.get(group_col)
+    if isinstance(group_cfg, dict):
+        return group_cfg.get(key, default)
+    return default
+
+
+def _stairwayplot2_pops(project):
+    return _pop_wildcards(project, config["projects"][project]["parameters"], "easysfs")
+
+
+def _stairwayplot2_ne_files(project):
+    """Per-population Ne trajectory tables."""
+    return [
+        f"results/{project}/stairwayplot2/{project}.{pop}.ne.tsv"
+        for pop in _stairwayplot2_pops(project)
+    ]
+
+
+def _stairwayplot2_summary_inputs(wildcards):
+    project = wildcards.project
+    pops = _stairwayplot2_pops(project)
+    return {
+        "stats": [
+            f"results/{project}/stairwayplot2/{project}.{pop}.sfs_stats.tsv" for pop in pops
+        ],
+        "ne": _stairwayplot2_ne_files(project),
+        "plots": [
+            f"results/{project}/stairwayplot2/plots/{project}.{pop}.stairwayplot2_ne.pdf"
+            for pop in pops
+        ],
+        "combined_plot": f"results/{project}/stairwayplot2/plots/{project}.stairwayplot2_ne_combined.pdf",
+    }
+
+
 def _gone2_seed_ne_inputs(wildcards):
     """Per-seed GONE2 Ne files for one population stratum."""
     n_seeds = _gone2_n_seeds(wildcards.project)
@@ -1019,7 +1051,7 @@ def _gone2_ne_inputs(wildcards):
     project = wildcards.project
     params = config["projects"][project]["parameters"]
     inputs = {}
-    for pop in _gone2_currentne2_common_pop_wildcards(project, params):
+    for pop in _pop_wildcards(project, params, "gone2_currentne2_common"):
         inputs[f"ne_{pop}"] = f"results/{project}/gone2/{project}.{pop}_GONE2_Ne"
         inputs[f"summary_{pop}"] = (
             f"results/{project}/gone2/{project}.{pop}_GONE2_Ne_summary.tsv"
@@ -1038,7 +1070,7 @@ def _gone2_summary_inputs(wildcards):
         "combined_plot": f"results/{project}/gone2/plots/{project}.gone2_ne_combined.pdf",
     }
     inputs.update(_gone2_ne_inputs(wildcards))
-    for pop in _gone2_currentne2_common_pop_wildcards(project, params):
+    for pop in _pop_wildcards(project, params, "gone2_currentne2_common"):
         inputs[f"plot_{pop}"] = f"results/{project}/gone2/plots/{project}.{pop}.gone2_ne.pdf"
     return inputs
 
@@ -1049,7 +1081,7 @@ def _currentne2_ne_inputs(wildcards):
     params = config["projects"][project]["parameters"]
     return {
         f"ne_{pop}": f"results/{project}/currentne2/{project}.{pop}_currentNe2_OUTPUT.txt"
-        for pop in _gone2_currentne2_common_pop_wildcards(project, params)
+        for pop in _pop_wildcards(project, params, "gone2_currentne2_common")
     }
 
 
@@ -1061,6 +1093,38 @@ def _currentne2_summary_inputs(wildcards):
         "combined_plot": f"results/{project}/currentne2/plots/{project}.currentne2_ne_combined.pdf",
     }
     inputs.update(_currentne2_ne_inputs(wildcards))
+    return inputs
+
+
+def _ne_comparison_pops(project):
+    """Populations estimated by both GONE2 and Stairway Plot 2, in GONE2 order."""
+    params = config["projects"][project]["parameters"]
+    stairwayplot2_pops = set(_stairwayplot2_pops(project))
+    return [
+        pop
+        for pop in _pop_wildcards(project, params, "gone2_currentne2_common")
+        if pop in stairwayplot2_pops
+    ]
+
+
+def _ne_comparison_inputs(wildcards):
+    """Per-method Ne tables for the cross-method comparison figure, in matching order."""
+    project = wildcards.project
+    pops = _ne_comparison_pops(project)
+    inputs = {
+        "populations": f"results/{project}/gone2_currentne2_common/{project}.gone2_currentne2_common_populations.tsv",
+        "gone2": [
+            f"results/{project}/gone2/{project}.{pop}_GONE2_Ne_summary.tsv" for pop in pops
+        ],
+        "stairwayplot2": [
+            f"results/{project}/stairwayplot2/{project}.{pop}.ne.tsv" for pop in pops
+        ],
+    }
+    if config["projects"][project].get("analyses", {}).get("currentne2", False):
+        inputs["currentne2"] = [
+            f"results/{project}/currentne2/{project}.{pop}_currentNe2_OUTPUT.txt"
+            for pop in pops
+        ]
     return inputs
 
 
@@ -1121,7 +1185,7 @@ def _relatedness_pop_wildcards(project, params):
             counts[label] = counts.get(label, 0) + 1
 
     return [
-        _gone2_pop_safe(label)
+        _pop_safe(label)
         for label, n in counts.items()
         if n >= min_individuals
     ]
@@ -1210,6 +1274,9 @@ include: "rules/orientagraph.smk"
 include: "rules/gone2_currentne2_common.smk"
 include: "rules/gone2.smk"
 include: "rules/currentne2.smk"
+include: "rules/easysfs.smk"
+include: "rules/stairwayplot2.smk"
+include: "rules/ne_comparison.smk"
 include: "rules/methods.smk"
 
 def get_all_targets():
@@ -2250,7 +2317,7 @@ def get_all_targets():
                 ])
 
         if analyses.get("gone2", False):
-            gone2_currentne2_common_pops = _gone2_currentne2_common_pop_wildcards(project, params)
+            gone2_currentne2_common_pops = _pop_wildcards(project, params, "gone2_currentne2_common")
             targets.append(f"results/{project}/gone2/{project}.gone2_summary.tsv")
             targets.append(f"results/{project}/gone2/plots/{project}.gone2_ne_combined.pdf")
             targets.extend(
@@ -2266,6 +2333,28 @@ def get_all_targets():
             targets.append(
                 f"results/{project}/currentne2/plots/{project}.currentne2_ne_combined.pdf"
             )
+
+        if analyses.get("stairwayplot2", False):
+            stairwayplot2_pops = _pop_wildcards(project, params, "easysfs")
+            targets.append(
+                f"results/{project}/stairwayplot2/{project}.stairwayplot2_summary.tsv"
+            )
+            targets.append(
+                f"results/{project}/stairwayplot2/plots/{project}.stairwayplot2_ne_combined.pdf"
+            )
+            targets.extend(
+                expand(
+                    f"results/{project}/stairwayplot2/plots/{project}.{{stratum}}.stairwayplot2_ne.pdf",
+                    project=project,
+                    stratum=stairwayplot2_pops,
+                )
+            )
+
+        if analyses.get("gone2", False) and analyses.get("stairwayplot2", False):
+            if _ne_comparison_pops(project):
+                targets.append(
+                    f"results/{project}/ne_comparison/plots/{project}.ne_comparison.pdf"
+                )
 
         # conStruct targets
         if analyses.get("construct", False):
