@@ -721,6 +721,40 @@ def _pixy_group_setting(project, group_col, key, default=None):
     return default
 
 
+def _hierfstat_grouping_columns(project_params):
+    """Columns used as hierfstat `{grouping}` wildcards (and in result filenames)."""
+    gb = project_params.get("hierfstat", {}).get("group_by")
+    if isinstance(gb, list) and gb:
+        return [str(x) for x in gb if x and str(x) != "none"]
+    if isinstance(gb, str) and gb and gb != "none":
+        return [gb]
+    return ["Site"]
+
+
+def _hierfstat_setting(project, key, default=None):
+    """Read top-level hierfstat settings from parameters.hierfstat.{key}."""
+    return config["projects"][project]["parameters"].get("hierfstat", {}).get(key, default)
+
+
+def _hierfstat_plot_style_params(wildcards):
+    """Shared width/height (cm→in) and font sizes for hierfstat barplots."""
+    project = wildcards.project
+    return {
+        "width": _fig_cm_to_in(_hierfstat_setting(project, "width"), 20.32),
+        "height": _fig_cm_to_in(_hierfstat_setting(project, "height"), 15.24),
+        "axis_title_size": _hierfstat_setting(project, "axis_title_size", 10),
+        "axis_text_size": _hierfstat_setting(project, "axis_text_size", 8),
+    }
+
+
+def _hierfstat_group_setting(project, group_col, key, default=None):
+    """Read per-group hierfstat settings from hierfstat.{group_col}.{key}."""
+    group_cfg = config["projects"][project]["parameters"].get("hierfstat", {}).get(group_col)
+    if isinstance(group_cfg, dict):
+        return group_cfg.get(key, default)
+    return default
+
+
 def _pca_plot_group_setting(project, group_col, key, default=None):
     """Read per-group PCA plot settings from pca_plot.{group_col}.{key}."""
     pca_plot = config["projects"][project]["parameters"].get("pca_plot", {})
@@ -1246,6 +1280,7 @@ include: "rules/vcf2pcacluster.smk"
 include: "rules/relatedness.smk"
 include: "rules/relatedness_by_pop.smk"
 include: "rules/pixy.smk"
+include: "rules/hierfstat.smk"
 include: "rules/structure.smk"
 include: "rules/iqtree.smk"
 include: "rules/align_clusters.smk"
@@ -1863,6 +1898,43 @@ def get_all_targets():
                         grouping=pixy_pairwise_groupings,
                     )
                 )
+
+        # hierfstat: population-specific Fst/Fis plus Ho/Hs table, per-stat and combined plots
+        if analyses.get("hierfstat", False):
+            hierfstat_groupings = _hierfstat_grouping_columns(params)
+            hierfstat_stats = ["Ho", "Hs", "Fis", "Fst"]
+            targets.extend(
+                expand(
+                    f"results/{project}/hierfstat/{project}.{{grouping}}.hierfstat_stats.tsv",
+                    grouping=hierfstat_groupings,
+                )
+            )
+            targets.extend(
+                expand(
+                    f"results/{project}/hierfstat/plots/{project}.{{grouping}}.hierfstat_{{stat}}.pdf",
+                    grouping=hierfstat_groupings,
+                    stat=hierfstat_stats,
+                )
+            )
+            targets.extend(
+                expand(
+                    f"results/{project}/hierfstat/plots/{project}.{{grouping}}.hierfstat_{{stat}}.rds",
+                    grouping=hierfstat_groupings,
+                    stat=hierfstat_stats,
+                )
+            )
+            targets.extend(
+                expand(
+                    f"results/{project}/hierfstat/plots/{project}.{{grouping}}.hierfstat_stats.pdf",
+                    grouping=hierfstat_groupings,
+                )
+            )
+            targets.extend(
+                expand(
+                    f"results/{project}/hierfstat/plots/{project}.{{grouping}}.hierfstat_stats.rds",
+                    grouping=hierfstat_groupings,
+                )
+            )
 
         # Relatedness targets (whole-sample + within-population; both gated by relatedness)
         if analyses.get("relatedness", False):

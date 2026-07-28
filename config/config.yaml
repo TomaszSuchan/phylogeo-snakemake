@@ -521,6 +521,25 @@ parameters: &global_params
     #   colors:
     #     MassifA: "#4DAF4A"
 
+  hierfstat:
+    width: 8
+    height: 6
+    axis_title_size: 10
+    axis_text_size: 8
+    group_by: ["Region", "Region2"]
+    min_individuals: 2
+    #Region:
+    #  sort_by:
+    #  colors:
+    #    'North': '#E41A1C'
+    #    'South': '#377EB8'
+    #Region2:
+    #  sort_by: ["Region"]
+    #  colors:
+    #    'North': '#E41A1C'
+    #    'South': '#377EB8'
+
+
   ## AMOVA parameters
   # AMOVA variance partitioning across metadata strata.
   amova:
@@ -764,6 +783,10 @@ parameters: &global_params
       threads: 1
       mem_mb: 8000
       runtime: 60
+    hierfstat:
+      threads: 1
+      mem_mb: 8000
+      runtime: 10
     iqtree:
       threads: 12
       mem_mb: 8000
