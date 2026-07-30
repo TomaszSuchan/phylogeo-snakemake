@@ -1,21 +1,21 @@
 #!/usr/bin/env Rscript
 
+# OptM computes Evanno / linear / SiZer stats; the PDF uses the shared
+# STRUCTURE Evanno-style ggplot helpers (plot_choose_k_utils.R).
+
 suppressPackageStartupMessages({
   library(ggplot2)
   library(OptM)
 })
 
-ggsave_utils <- tryCatch(
-  file.path(dirname(normalizePath(snakemake@script)), "plot_ggsave_utils.R"),
-  error = function(e) "workflow/scripts/plot_ggsave_utils.R"
-)
-if (file.exists(ggsave_utils)) {
-  source(ggsave_utils)
-} else {
-  source("workflow/scripts/plot_ggsave_utils.R")
-}
-
 pdf(NULL)
+
+script_dir <- tryCatch(
+  dirname(normalizePath(snakemake@script)),
+  error = function(e) "workflow/scripts"
+)
+source(file.path(script_dir, "plot_choose_k_utils.R"))
+plot_dims <- read_choose_k_plot_dims(snakemake@params)
 
 log_file <- file(snakemake@log[[1]], open = "wt")
 sink(log_file, type = "output")
@@ -84,11 +84,54 @@ fallback_summary <- function(summary_path) {
   summary[order(summary$migration_edges), ]
 }
 
+# Build STRUCTURE Evanno-style facets from OptM Evanno table: L(m) ± range and Δm.
+plot_optm_evanno_ggplot <- function(optm_df) {
+  needed <- c("m", "mean(Lm)", "min(Lm)", "max(Lm)", "Deltam")
+  missing <- setdiff(needed, names(optm_df))
+  if (length(missing) > 0) {
+    stop("OptM Evanno table missing columns: ", paste(missing, collapse = ", "))
+  }
+
+  lm_df <- data.frame(
+    m = optm_df[["m"]],
+    Parameter = "Lm",
+    Value = optm_df[["mean(Lm)"]],
+    Min = optm_df[["min(Lm)"]],
+    Max = optm_df[["max(Lm)"]],
+    stringsAsFactors = FALSE
+  )
+  delta_df <- data.frame(
+    m = optm_df[["m"]],
+    Parameter = "Deltam",
+    Value = optm_df[["Deltam"]],
+    Min = optm_df[["Deltam"]],
+    Max = optm_df[["Deltam"]],
+    stringsAsFactors = FALSE
+  )
+  plot_df <- rbind(lm_df, delta_df)
+  plot_df$Parameter <- factor(plot_df$Parameter, levels = c("Lm", "Deltam"))
+
+  facet_labels <- c(
+    Lm = "italic(L)(italic(m))~\"\u00B1 SD\"",
+    Deltam = "Delta*italic(m)"
+  )
+
+  ggplot2::ggplot(plot_df, ggplot2::aes(x = m, y = Value, ymin = Min, ymax = Max)) +
+    ggplot2::geom_line() +
+    ggplot2::geom_point() +
+    ggplot2::geom_errorbar(width = 0.3, linewidth = 0.3) +
+    ggplot2::scale_x_continuous(breaks = sort(unique(plot_df$m))) +
+    ggplot2::facet_wrap(
+      ~Parameter,
+      scales = "free",
+      labeller = ggplot2::as_labeller(facet_labels, default = ggplot2::label_parsed)
+    ) +
+    ggplot2::xlab("m") +
+    choose_k_plot_theme()
+}
+
 folder <- snakemake@params[["folder"]]
 method <- as.character(snakemake@params[["method"]])
-width <- as.numeric(snakemake@params[["width"]])
-height <- as.numeric(snakemake@params[["height"]])
-dpi <- as.numeric(snakemake@params[["dpi"]])
 
 dir.create(dirname(snakemake@output[["pdf"]]), recursive = TRUE, showWarnings = FALSE)
 dir.create(dirname(snakemake@output[["tsv"]]), recursive = TRUE, showWarnings = FALSE)
@@ -111,18 +154,28 @@ optm_result <- tryCatch(
 )
 
 if (!is.null(optm_result)) {
-  grDevices::pdf(snakemake@output[["pdf"]], width = width, height = height)
-  tryCatch(
-    OptM::plot_optM(optm_result, method = method),
-    error = function(e) {
-      plot.new()
-      text(0.5, 0.5, conditionMessage(e), cex = 0.8)
-      cat("OptM plot failed:", conditionMessage(e), "\n")
-    }
-  )
-  grDevices::dev.off()
+  if (identical(method, "Evanno") && is.data.frame(optm_result)) {
+    plot_obj <- plot_optm_evanno_ggplot(optm_result)
+    choose_k_ggsave(
+      filename = snakemake@output[["pdf"]],
+      plot = plot_obj,
+      width = plot_dims$width,
+      height = plot_dims$height,
+      dpi = plot_dims$dpi
+    )
+  } else {
+    # linear / SiZer: keep OptM's native plot
+    OptM::plot_optM(
+      optm_result,
+      method = method,
+      plot = FALSE,
+      pdf = snakemake@output[["pdf"]]
+    )
+    plot_obj <- NULL
+  }
   saveRDS(
     list(
+      plot = plot_obj,
       optm = optm_result,
       method = method,
       orientagraph = TRUE,
@@ -159,16 +212,23 @@ if (!is.null(optm_result)) {
     row.names = FALSE,
     quote = FALSE
   )
-  plot_obj <- ggplot2::ggplot(summary, ggplot2::aes(migration_edges, final_log_likelihood)) +
-    ggplot2::geom_line(linewidth = 0.5) +
-    ggplot2::geom_point(size = 2) +
-    ggplot2::scale_x_continuous(breaks = summary$migration_edges) +
-    ggplot2::labs(
-      x = "Migration edges (m)",
-      y = "Final log likelihood"
-    ) +
-    ggplot2::theme_minimal(base_size = 11)
-  ggsave_pdf(snakemake@output[["pdf"]], plot_obj, width = width, height = height, dpi = dpi)
+  plot_obj <- plot_choose_k_line(
+    data = data.frame(
+      m = summary$migration_edges,
+      Value = summary$final_log_likelihood
+    ),
+    x = "m",
+    y = "Value",
+    ylab = "Final log likelihood",
+    xlab = "m"
+  )
+  choose_k_ggsave(
+    filename = snakemake@output[["pdf"]],
+    plot = plot_obj,
+    width = plot_dims$width,
+    height = plot_dims$height,
+    dpi = plot_dims$dpi
+  )
   saveRDS(
     list(
       plot = plot_obj,

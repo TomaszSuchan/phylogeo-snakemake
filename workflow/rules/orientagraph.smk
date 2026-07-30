@@ -448,9 +448,9 @@ rule plot_treemix_optm:
     params:
         folder="results/{project}/treemix/optm_runs",
         method=lambda wildcards: _treemix_params(wildcards).get("optm", {}).get("method", "Evanno"),
-        width=lambda wildcards: _fig_cm_to_in(_treemix_params(wildcards).get("plot", {}).get("likelihood_width"), 17.78),
-        height=lambda wildcards: _fig_cm_to_in(_treemix_params(wildcards).get("plot", {}).get("likelihood_height"), 12.7),
-        dpi=lambda wildcards: _treemix_params(wildcards).get("plot", {}).get("dpi", 300)
+        width=lambda wildcards: _choose_k_plot_param(wildcards, "width", 25.4),
+        height=lambda wildcards: _choose_k_plot_param(wildcards, "height", 12.7),
+        dpi=lambda wildcards: _choose_k_plot_param(wildcards, "dpi", 300)
     log:
         "logs/{project}/plot_treemix_optm.log"
     benchmark:
