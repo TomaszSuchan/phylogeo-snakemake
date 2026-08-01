@@ -985,12 +985,56 @@ def _pop_safe(label):
     return (s[:120] or "group")
 
 
-def _pop_wildcards(project, params, cfg_key):
-    """Population wildcards for modules grouping by <cfg_key>.population_column.
+def _normalize_grouping_columns(value, default="Site"):
+    """Normalize group_by / population_column config to a list of column names."""
+    if isinstance(value, list):
+        cols = [str(x) for x in value if x not in (None, "", "null", "NULL")]
+        return cols if cols else [default]
+    if isinstance(value, str) and value not in ("", "null", "NULL"):
+        return [value]
+    return [default]
+
+
+def _gone2_currentne2_common_grouping_columns(params):
+    """Grouping columns for GONE2/currentNe2 (group_by, else legacy population_column)."""
+    cfg = params.get("gone2_currentne2_common", {})
+    if "group_by" in cfg and cfg["group_by"] not in (None, "", "null", "NULL"):
+        return _normalize_grouping_columns(cfg["group_by"], "Site")
+    return _normalize_grouping_columns(cfg.get("population_column", "Site"), "Site")
+
+
+def _stairwayplot2_grouping_columns(params):
+    """Grouping columns for Stairway Plot 2 / easySFS."""
+    easysfs = params.get("stairwayplot2", {}).get("easysfs", {})
+    if "group_by" in easysfs and easysfs["group_by"] not in (None, "", "null", "NULL"):
+        return _normalize_grouping_columns(easysfs["group_by"], "Site")
+    return _normalize_grouping_columns(easysfs.get("population_column", "Site"), "Site")
+
+
+def _ne_comparison_grouping_columns(params):
+    """Grouping columns shared by GONE2 and Stairway Plot 2 (for comparison plots)."""
+    gone2_cols = _gone2_currentne2_common_grouping_columns(params)
+    stair_cols = set(_stairwayplot2_grouping_columns(params))
+    return [c for c in gone2_cols if c in stair_cols]
+
+
+def _pop_wildcards(project, params, cfg_key, group_col=None):
+    """Population wildcards for one grouping column under <cfg_key>.
 
     Mirrors the grouping the corresponding prepare_samples script applies, so that
     targets can be expanded before that script has run.
     """
+    cfg = params.get(cfg_key, {})
+    if group_col is None:
+        if cfg_key == "gone2_currentne2_common":
+            group_col = _gone2_currentne2_common_grouping_columns(params)[0]
+        else:
+            group_col = _normalize_grouping_columns(cfg.get("population_column", "Site"), "Site")[0]
+    return _pop_wildcards_from_cfg(project, cfg, group_col=group_col)
+
+
+def _pop_wildcards_from_cfg(project, cfg, group_col=None):
+    """Population wildcards from an easysfs-style config mapping for one column."""
     import csv
     import os
 
@@ -998,17 +1042,23 @@ def _pop_wildcards(project, params, cfg_key):
     if not os.path.exists(indpopdata_path):
         return []
 
-    cfg = params.get(cfg_key, {})
-    pop_col = cfg.get("population_column", "Site")
+    if group_col is None:
+        if "group_by" in cfg and cfg["group_by"] not in (None, "", "null", "NULL"):
+            group_col = _normalize_grouping_columns(cfg["group_by"], "Site")[0]
+        else:
+            group_col = _normalize_grouping_columns(cfg.get("population_column", "Site"), "Site")[0]
+    if not isinstance(group_col, str):
+        raise ValueError(f"group_col must be a column name string, got {group_col!r}")
+
     min_individuals = int(cfg.get("min_individuals", 10))
 
     with open(indpopdata_path, newline="") as handle:
         reader = csv.DictReader(handle, delimiter="\t")
-        if pop_col not in (reader.fieldnames or []):
+        if group_col not in (reader.fieldnames or []):
             return []
         counts = {}
         for row in reader:
-            label = (row.get(pop_col) or "").strip()
+            label = (row.get(group_col) or "").strip()
             if not label:
                 continue
             counts[label] = counts.get(label, 0) + 1
@@ -1018,6 +1068,11 @@ def _pop_wildcards(project, params, cfg_key):
 
 def _gone2_currentne2_common_group_setting(project, group_col, key, default=None):
     """Read per-group settings from gone2_currentne2_common.{group_col}.{key}."""
+    if not isinstance(group_col, str):
+        raise ValueError(
+            "gone2_currentne2_common grouping column must be a string, "
+            f"got {group_col!r}"
+        )
     gone2_currentne2_common = config["projects"][project]["parameters"].get("gone2_currentne2_common", {})
     group_cfg = gone2_currentne2_common.get(group_col)
     if isinstance(group_cfg, dict):
@@ -1032,40 +1087,93 @@ def _gone2_n_seeds(project):
     )
 
 
-def _easysfs_group_setting(project, group_col, key, default=None):
-    """Read per-group settings from easysfs.{group_col}.{key}."""
-    sp = config["projects"][project]["parameters"].get("easysfs", {})
+def _stairwayplot2_easysfs_cfg(project):
+    """easySFS settings nested under parameters.stairwayplot2.easysfs."""
+    return (
+        config["projects"][project]["parameters"]
+        .get("stairwayplot2", {})
+        .get("easysfs", {})
+    )
+
+
+def _stairwayplot2_group_setting(project, group_col, key, default=None):
+    """Read per-group settings from stairwayplot2.{group_col}.{key} (plot styling)."""
+    if not isinstance(group_col, str):
+        raise ValueError(
+            "stairwayplot2 grouping column must be a string, "
+            f"got {group_col!r}"
+        )
+    sp = config["projects"][project]["parameters"].get("stairwayplot2", {})
     group_cfg = sp.get(group_col)
     if isinstance(group_cfg, dict):
         return group_cfg.get(key, default)
     return default
 
 
-def _stairwayplot2_pops(project):
-    return _pop_wildcards(project, config["projects"][project]["parameters"], "easysfs")
+def _stairwayplot2_pops(project, grouping=None):
+    params = config["projects"][project]["parameters"]
+    if grouping is None:
+        grouping = _stairwayplot2_grouping_columns(params)[0]
+    return _pop_wildcards_from_cfg(project, _stairwayplot2_easysfs_cfg(project), group_col=grouping)
 
 
-def _stairwayplot2_ne_files(project):
-    """Per-population Ne trajectory tables."""
+def _moments_cfg(project):
+    """Shared moments demes/model config under parameters.moments."""
+    return config["projects"][project]["parameters"].get("moments", {})
+
+
+def _moments_sfs_cfg(project):
+    """SFS-specific settings under parameters.moments.sfs (legacy flat keys supported)."""
+    m = _moments_cfg(project)
+    sfs = m.get("sfs")
+    if isinstance(sfs, dict) and sfs:
+        return sfs
+    # Legacy: easysfs/folded/n_optimizations lived at the top level of moments
+    return {
+        k: m[k]
+        for k in ("easysfs", "folded", "n_optimizations", "maxiter", "seed")
+        if k in m
+    }
+
+
+def _moments_ld_cfg(project):
+    """LD-specific settings under parameters.moments.ld."""
+    return _moments_cfg(project).get("ld", {})
+
+
+def _moments_easysfs_cfg(project):
+    """easySFS projection settings nested under parameters.moments.sfs.easysfs."""
+    sfs = _moments_sfs_cfg(project)
+    if "easysfs" in sfs:
+        return sfs["easysfs"]
+    return _moments_cfg(project).get("easysfs", {})
+
+def _stairwayplot2_ne_files(project, grouping):
+    """Per-population Ne trajectory tables for one grouping column."""
     return [
-        f"results/{project}/stairwayplot2/{project}.{pop}.ne.tsv"
-        for pop in _stairwayplot2_pops(project)
+        f"results/{project}/stairwayplot2/{grouping}/{project}.{pop}.ne.tsv"
+        for pop in _stairwayplot2_pops(project, grouping)
     ]
 
 
 def _stairwayplot2_summary_inputs(wildcards):
     project = wildcards.project
-    pops = _stairwayplot2_pops(project)
+    grouping = wildcards.grouping
+    pops = _stairwayplot2_pops(project, grouping)
     return {
         "stats": [
-            f"results/{project}/stairwayplot2/{project}.{pop}.sfs_stats.tsv" for pop in pops
-        ],
-        "ne": _stairwayplot2_ne_files(project),
-        "plots": [
-            f"results/{project}/stairwayplot2/plots/{project}.{pop}.stairwayplot2_ne.pdf"
+            f"results/{project}/stairwayplot2/{grouping}/{project}.{pop}.sfs_stats.tsv"
             for pop in pops
         ],
-        "combined_plot": f"results/{project}/stairwayplot2/plots/{project}.stairwayplot2_ne_combined.pdf",
+        "ne": _stairwayplot2_ne_files(project, grouping),
+        "plots": [
+            f"results/{project}/stairwayplot2/{grouping}/plots/{project}.{pop}.stairwayplot2_ne.pdf"
+            for pop in pops
+        ],
+        "combined_plot": (
+            f"results/{project}/stairwayplot2/{grouping}/plots/"
+            f"{project}.stairwayplot2_ne_combined.pdf"
+        ),
     }
 
 
@@ -1073,8 +1181,9 @@ def _gone2_seed_ne_inputs(wildcards):
     """Per-seed GONE2 Ne files for one population stratum."""
     n_seeds = _gone2_n_seeds(wildcards.project)
     return expand(
-        "results/{project}/gone2/seeds/{project}.{stratum}.seed{seed}_GONE2_Ne",
+        "results/{project}/gone2/{grouping}/seeds/{project}.{stratum}.seed{seed}_GONE2_Ne",
         project=wildcards.project,
+        grouping=wildcards.grouping,
         stratum=wildcards.stratum,
         seed=range(1, n_seeds + 1),
     )
@@ -1083,60 +1192,79 @@ def _gone2_seed_ne_inputs(wildcards):
 def _gone2_ne_inputs(wildcards):
     """Named mean/summary/seed inputs for combined GONE2 plotting / summary."""
     project = wildcards.project
+    grouping = wildcards.grouping
     params = config["projects"][project]["parameters"]
     inputs = {}
-    for pop in _pop_wildcards(project, params, "gone2_currentne2_common"):
-        inputs[f"ne_{pop}"] = f"results/{project}/gone2/{project}.{pop}_GONE2_Ne"
+    for pop in _pop_wildcards(project, params, "gone2_currentne2_common", group_col=grouping):
+        inputs[f"ne_{pop}"] = f"results/{project}/gone2/{grouping}/{project}.{pop}_GONE2_Ne"
         inputs[f"summary_{pop}"] = (
-            f"results/{project}/gone2/{project}.{pop}_GONE2_Ne_summary.tsv"
+            f"results/{project}/gone2/{grouping}/{project}.{pop}_GONE2_Ne_summary.tsv"
         )
         inputs[f"seeds_{pop}"] = (
-            f"results/{project}/gone2/{project}.{pop}_GONE2_Ne_seeds.tsv"
+            f"results/{project}/gone2/{grouping}/{project}.{pop}_GONE2_Ne_seeds.tsv"
         )
     return inputs
 
 
 def _gone2_summary_inputs(wildcards):
     project = wildcards.project
+    grouping = wildcards.grouping
     params = config["projects"][project]["parameters"]
     inputs = {
-        "populations": f"results/{project}/gone2_currentne2_common/{project}.gone2_currentne2_common_populations.tsv",
-        "combined_plot": f"results/{project}/gone2/plots/{project}.gone2_ne_combined.pdf",
+        "populations": (
+            f"results/{project}/gone2_currentne2_common/{grouping}/"
+            f"{project}.gone2_currentne2_common_populations.tsv"
+        ),
+        "combined_plot": (
+            f"results/{project}/gone2/{grouping}/plots/{project}.gone2_ne_combined.pdf"
+        ),
     }
     inputs.update(_gone2_ne_inputs(wildcards))
-    for pop in _pop_wildcards(project, params, "gone2_currentne2_common"):
-        inputs[f"plot_{pop}"] = f"results/{project}/gone2/plots/{project}.{pop}.gone2_ne.pdf"
+    for pop in _pop_wildcards(project, params, "gone2_currentne2_common", group_col=grouping):
+        inputs[f"plot_{pop}"] = (
+            f"results/{project}/gone2/{grouping}/plots/{project}.{pop}.gone2_ne.pdf"
+        )
     return inputs
 
 
 def _currentne2_ne_inputs(wildcards):
     """Named output-file inputs for combined currentNe2 plotting / summary."""
     project = wildcards.project
+    grouping = wildcards.grouping
     params = config["projects"][project]["parameters"]
     return {
-        f"ne_{pop}": f"results/{project}/currentne2/{project}.{pop}_currentNe2_OUTPUT.txt"
-        for pop in _pop_wildcards(project, params, "gone2_currentne2_common")
+        f"ne_{pop}": (
+            f"results/{project}/currentne2/{grouping}/"
+            f"{project}.{pop}_currentNe2_OUTPUT.txt"
+        )
+        for pop in _pop_wildcards(project, params, "gone2_currentne2_common", group_col=grouping)
     }
 
 
 def _currentne2_summary_inputs(wildcards):
     project = wildcards.project
-    params = config["projects"][project]["parameters"]
+    grouping = wildcards.grouping
     inputs = {
-        "populations": f"results/{project}/gone2_currentne2_common/{project}.gone2_currentne2_common_populations.tsv",
-        "combined_plot": f"results/{project}/currentne2/plots/{project}.currentne2_ne_combined.pdf",
+        "populations": (
+            f"results/{project}/gone2_currentne2_common/{grouping}/"
+            f"{project}.gone2_currentne2_common_populations.tsv"
+        ),
+        "combined_plot": (
+            f"results/{project}/currentne2/{grouping}/plots/"
+            f"{project}.currentne2_ne_combined.pdf"
+        ),
     }
     inputs.update(_currentne2_ne_inputs(wildcards))
     return inputs
 
 
-def _ne_comparison_pops(project):
-    """Populations estimated by both GONE2 and Stairway Plot 2, in GONE2 order."""
+def _ne_comparison_pops(project, grouping):
+    """Populations estimated by both GONE2 and Stairway Plot 2 for one grouping."""
     params = config["projects"][project]["parameters"]
-    stairwayplot2_pops = set(_stairwayplot2_pops(project))
+    stairwayplot2_pops = set(_stairwayplot2_pops(project, grouping))
     return [
         pop
-        for pop in _pop_wildcards(project, params, "gone2_currentne2_common")
+        for pop in _pop_wildcards(project, params, "gone2_currentne2_common", group_col=grouping)
         if pop in stairwayplot2_pops
     ]
 
@@ -1144,19 +1272,25 @@ def _ne_comparison_pops(project):
 def _ne_comparison_inputs(wildcards):
     """Per-method Ne tables for the cross-method comparison figure, in matching order."""
     project = wildcards.project
-    pops = _ne_comparison_pops(project)
+    grouping = wildcards.grouping
+    pops = _ne_comparison_pops(project, grouping)
     inputs = {
-        "populations": f"results/{project}/gone2_currentne2_common/{project}.gone2_currentne2_common_populations.tsv",
+        "populations": (
+            f"results/{project}/gone2_currentne2_common/{grouping}/"
+            f"{project}.gone2_currentne2_common_populations.tsv"
+        ),
         "gone2": [
-            f"results/{project}/gone2/{project}.{pop}_GONE2_Ne_summary.tsv" for pop in pops
+            f"results/{project}/gone2/{grouping}/{project}.{pop}_GONE2_Ne_summary.tsv"
+            for pop in pops
         ],
         "stairwayplot2": [
-            f"results/{project}/stairwayplot2/{project}.{pop}.ne.tsv" for pop in pops
+            f"results/{project}/stairwayplot2/{grouping}/{project}.{pop}.ne.tsv"
+            for pop in pops
         ],
     }
     if config["projects"][project].get("analyses", {}).get("currentne2", False):
         inputs["currentne2"] = [
-            f"results/{project}/currentne2/{project}.{pop}_currentNe2_OUTPUT.txt"
+            f"results/{project}/currentne2/{grouping}/{project}.{pop}_currentNe2_OUTPUT.txt"
             for pop in pops
         ]
     return inputs
@@ -1288,6 +1422,15 @@ include: "rules/mapmixture.smk"
 include: "rules/map_facet.smk"
 include: "rules/barplot_facet.smk"
 include: "rules/population_map.smk"
+# Keep path wildcards from swallowing directory separators / seed suffixes.
+# Without this, gone2_aggregate_seeds can match a seed path as
+# grouping=Massif/seeds, stratum=Pop.seed1 and recurse into seeds/seeds/... .
+wildcard_constraints:
+    project=r"[^/]+",
+    grouping=r"[^/]+",
+    stratum=r"[^/]+",
+    seed=r"[0-9]+",
+
 include: "rules/genetic_distances.smk"
 include: "rules/neighbornet.smk"
 include: "rules/pcoa.smk"
@@ -1311,6 +1454,7 @@ include: "rules/gone2.smk"
 include: "rules/currentne2.smk"
 include: "rules/easysfs.smk"
 include: "rules/stairwayplot2.smk"
+include: "rules/moments.smk"
 include: "rules/ne_comparison.smk"
 include: "rules/methods.smk"
 
@@ -2389,44 +2533,82 @@ def get_all_targets():
                 ])
 
         if analyses.get("gone2", False):
-            gone2_currentne2_common_pops = _pop_wildcards(project, params, "gone2_currentne2_common")
-            targets.append(f"results/{project}/gone2/{project}.gone2_summary.tsv")
-            targets.append(f"results/{project}/gone2/plots/{project}.gone2_ne_combined.pdf")
-            targets.extend(
-                expand(
-                    f"results/{project}/gone2/plots/{project}.{{stratum}}.gone2_ne.pdf",
-                    project=project,
-                    stratum=gone2_currentne2_common_pops,
+            for grouping in _gone2_currentne2_common_grouping_columns(params):
+                gone2_pops = _pop_wildcards(
+                    project, params, "gone2_currentne2_common", group_col=grouping
                 )
-            )
+                targets.append(
+                    f"results/{project}/gone2/{grouping}/{project}.gone2_summary.tsv"
+                )
+                targets.append(
+                    f"results/{project}/gone2/{grouping}/plots/{project}.gone2_ne_combined.pdf"
+                )
+                targets.extend(
+                    expand(
+                        f"results/{project}/gone2/{grouping}/plots/{project}.{{stratum}}.gone2_ne.pdf",
+                        stratum=gone2_pops,
+                    )
+                )
 
         if analyses.get("currentne2", False):
-            targets.append(f"results/{project}/currentne2/{project}.currentne2_summary.tsv")
-            targets.append(
-                f"results/{project}/currentne2/plots/{project}.currentne2_ne_combined.pdf"
-            )
+            for grouping in _gone2_currentne2_common_grouping_columns(params):
+                targets.append(
+                    f"results/{project}/currentne2/{grouping}/{project}.currentne2_summary.tsv"
+                )
+                targets.append(
+                    f"results/{project}/currentne2/{grouping}/plots/"
+                    f"{project}.currentne2_ne_combined.pdf"
+                )
 
         if analyses.get("stairwayplot2", False):
-            stairwayplot2_pops = _pop_wildcards(project, params, "easysfs")
-            targets.append(
-                f"results/{project}/stairwayplot2/{project}.stairwayplot2_summary.tsv"
-            )
-            targets.append(
-                f"results/{project}/stairwayplot2/plots/{project}.stairwayplot2_ne_combined.pdf"
-            )
-            targets.extend(
-                expand(
-                    f"results/{project}/stairwayplot2/plots/{project}.{{stratum}}.stairwayplot2_ne.pdf",
-                    project=project,
-                    stratum=stairwayplot2_pops,
+            for grouping in _stairwayplot2_grouping_columns(params):
+                stairwayplot2_pops = _stairwayplot2_pops(project, grouping)
+                targets.append(
+                    f"results/{project}/stairwayplot2/{grouping}/"
+                    f"{project}.stairwayplot2_summary.tsv"
                 )
+                targets.append(
+                    f"results/{project}/stairwayplot2/{grouping}/plots/"
+                    f"{project}.stairwayplot2_ne_combined.pdf"
+                )
+                targets.extend(
+                    expand(
+                        f"results/{project}/stairwayplot2/{grouping}/plots/"
+                        f"{project}.{{stratum}}.stairwayplot2_ne.pdf",
+                        stratum=stairwayplot2_pops,
+                    )
+                )
+
+        if analyses.get("moments_sfs", False) or analyses.get("moments", False):
+            # analyses.moments kept as a legacy alias for moments_sfs
+            targets.extend(
+                [
+                    f"results/{project}/moments/{project}.populations.tsv",
+                    f"results/{project}/moments/sfs/{project}.moments_sfs_fit.tsv",
+                    f"results/{project}/moments/sfs/{project}.moments_sfs_best.demes.yaml",
+                    f"results/{project}/moments/sfs/plots/{project}.moments_sfs_fit.pdf",
+                    f"results/{project}/moments/sfs/plots/{project}.moments_sfs_demes.pdf",
+                ]
+            )
+
+        if analyses.get("moments_ld", False):
+            targets.extend(
+                [
+                    f"results/{project}/moments/{project}.populations.tsv",
+                    f"results/{project}/moments/ld/{project}.moments_ld_fit.tsv",
+                    f"results/{project}/moments/ld/{project}.moments_ld_best.demes.yaml",
+                    f"results/{project}/moments/ld/plots/{project}.moments_ld_fit.pdf",
+                    f"results/{project}/moments/ld/plots/{project}.moments_ld_demes.pdf",
+                ]
             )
 
         if analyses.get("gone2", False) and analyses.get("stairwayplot2", False):
-            if _ne_comparison_pops(project):
-                targets.append(
-                    f"results/{project}/ne_comparison/plots/{project}.ne_comparison.pdf"
-                )
+            for grouping in _ne_comparison_grouping_columns(params):
+                if _ne_comparison_pops(project, grouping):
+                    targets.append(
+                        f"results/{project}/ne_comparison/{grouping}/plots/"
+                        f"{project}.ne_comparison.pdf"
+                    )
 
         # conStruct targets
         if analyses.get("construct", False):

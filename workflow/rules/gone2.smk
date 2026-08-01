@@ -2,6 +2,9 @@
 GONE2: historical Ne from linkage disequilibrium (https://github.com/esrud/GONE2).
 Uses shared per-population VCFs from gone2_currentne2_common prep.
 Runs multiple random seeds (-S) and aggregates mean Ne ± SD.
+
+Outputs are scoped by grouping column:
+results/{project}/gone2/{grouping}/...
 """
 
 
@@ -48,15 +51,18 @@ rule gone2_run_seed:
         vcf=rules.gone2_currentne2_common_subset_vcf.output.vcf,
         chrom_filter=rules.gone2_currentne2_common_subset_vcf.output.chrom_filter,
     output:
-        ne="results/{project}/gone2/seeds/{project}.{stratum}.seed{seed}_GONE2_Ne",
+        ne="results/{project}/gone2/{grouping}/seeds/{project}.{stratum}.seed{seed}_GONE2_Ne",
+    # stratum must not contain ".seedN" or greedy matching stacks .seed1.seed1...
+    wildcard_constraints:
+        stratum=r"(?:(?!\.seed[0-9]+).)+",
     params:
         gone2_bin=".snakemake/gone2/gone2",
         out_stem=lambda wildcards, output: str(output.ne).removesuffix("_GONE2_Ne"),
         recombination_rate=lambda wildcards: config["projects"][wildcards.project]["parameters"]["gone2_currentne2_common"].get("recombination_rate_cM_per_Mb", 2.5),
     log:
-        "logs/{project}/gone2_run_seed.{stratum}.seed{seed}.log"
+        "logs/{project}/gone2_run_seed.{grouping}.{stratum}.seed{seed}.log"
     benchmark:
-        "benchmarks/{project}/gone2_run_seed_{stratum}_seed{seed}.txt"
+        "benchmarks/{project}/gone2_run_seed_{grouping}_{stratum}_seed{seed}.txt"
     conda:
         "../envs/gone2.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("gone2", {}).get("threads", config["projects"][wildcards.project]["parameters"]["resources"].get("gone2_currentne2_common", {}).get("threads", config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"])),
@@ -75,13 +81,15 @@ rule gone2_aggregate_seeds:
     input:
         _gone2_seed_ne_inputs,
     output:
-        ne="results/{project}/gone2/{project}.{stratum}_GONE2_Ne",
-        summary="results/{project}/gone2/{project}.{stratum}_GONE2_Ne_summary.tsv",
-        seeds="results/{project}/gone2/{project}.{stratum}_GONE2_Ne_seeds.tsv",
+        ne="results/{project}/gone2/{grouping}/{project}.{stratum}_GONE2_Ne",
+        summary="results/{project}/gone2/{grouping}/{project}.{stratum}_GONE2_Ne_summary.tsv",
+        seeds="results/{project}/gone2/{grouping}/{project}.{stratum}_GONE2_Ne_seeds.tsv",
+    wildcard_constraints:
+        stratum=r"(?:(?!\.seed[0-9]+).)+",
     log:
-        "logs/{project}/gone2_aggregate_seeds.{stratum}.log"
+        "logs/{project}/gone2_aggregate_seeds.{grouping}.{stratum}.log"
     benchmark:
-        "benchmarks/{project}/gone2_aggregate_seeds_{stratum}.txt"
+        "benchmarks/{project}/gone2_aggregate_seeds_{grouping}_{stratum}.txt"
     conda:
         "../envs/python.yaml"
     threads: 1
@@ -98,20 +106,20 @@ rule gone2_plot_ne:
         summary=rules.gone2_aggregate_seeds.output.summary,
         seeds=rules.gone2_aggregate_seeds.output.seeds,
     output:
-        pdf="results/{project}/gone2/plots/{project}.{stratum}.gone2_ne.pdf",
-        rds="results/{project}/gone2/plots/{project}.{stratum}.gone2_ne.rds",
-        pdf_linear="results/{project}/gone2/plots/{project}.{stratum}.gone2_ne_linear.pdf",
-        rds_linear="results/{project}/gone2/plots/{project}.{stratum}.gone2_ne_linear.rds",
-        pdf_xlinear_ylog="results/{project}/gone2/plots/{project}.{stratum}.gone2_ne_xlinear_ylog.pdf",
-        rds_xlinear_ylog="results/{project}/gone2/plots/{project}.{stratum}.gone2_ne_xlinear_ylog.rds",
+        pdf="results/{project}/gone2/{grouping}/plots/{project}.{stratum}.gone2_ne.pdf",
+        rds="results/{project}/gone2/{grouping}/plots/{project}.{stratum}.gone2_ne.rds",
+        pdf_linear="results/{project}/gone2/{grouping}/plots/{project}.{stratum}.gone2_ne_linear.pdf",
+        rds_linear="results/{project}/gone2/{grouping}/plots/{project}.{stratum}.gone2_ne_linear.rds",
+        pdf_xlinear_ylog="results/{project}/gone2/{grouping}/plots/{project}.{stratum}.gone2_ne_xlinear_ylog.pdf",
+        rds_xlinear_ylog="results/{project}/gone2/{grouping}/plots/{project}.{stratum}.gone2_ne_xlinear_ylog.rds",
     params:
         width=lambda wildcards: _fig_cm_to_in(config["projects"][wildcards.project]["parameters"]["gone2"].get("plot", {}).get("width"), 20.32),
         height=lambda wildcards: _fig_cm_to_in(config["projects"][wildcards.project]["parameters"]["gone2"].get("plot", {}).get("height"), 12.7),
         show_seed_trajectories=lambda wildcards: config["projects"][wildcards.project]["parameters"]["gone2"].get("plot", {}).get("show_seed_trajectories", True),
     log:
-        "logs/{project}/gone2_plot_ne.{stratum}.log"
+        "logs/{project}/gone2_plot_ne.{grouping}.{stratum}.log"
     benchmark:
-        "benchmarks/{project}/gone2_plot_ne_{stratum}.txt"
+        "benchmarks/{project}/gone2_plot_ne_{grouping}_{stratum}.txt"
     conda:
         "../envs/r-plot.yaml"
     threads: 1
@@ -127,14 +135,14 @@ rule gone2_plot_ne_combined:
         unpack(_gone2_ne_inputs),
         populations=rules.gone2_currentne2_common_prepare_samples.output.populations,
     output:
-        pdf="results/{project}/gone2/plots/{project}.gone2_ne_combined.pdf",
-        rds="results/{project}/gone2/plots/{project}.gone2_ne_combined.rds",
-        pdf_linear="results/{project}/gone2/plots/{project}.gone2_ne_combined_linear.pdf",
-        rds_linear="results/{project}/gone2/plots/{project}.gone2_ne_combined_linear.rds",
-        pdf_xlinear_ylog="results/{project}/gone2/plots/{project}.gone2_ne_combined_xlinear_ylog.pdf",
-        rds_xlinear_ylog="results/{project}/gone2/plots/{project}.gone2_ne_combined_xlinear_ylog.rds",
+        pdf="results/{project}/gone2/{grouping}/plots/{project}.gone2_ne_combined.pdf",
+        rds="results/{project}/gone2/{grouping}/plots/{project}.gone2_ne_combined.rds",
+        pdf_linear="results/{project}/gone2/{grouping}/plots/{project}.gone2_ne_combined_linear.pdf",
+        rds_linear="results/{project}/gone2/{grouping}/plots/{project}.gone2_ne_combined_linear.rds",
+        pdf_xlinear_ylog="results/{project}/gone2/{grouping}/plots/{project}.gone2_ne_combined_xlinear_ylog.pdf",
+        rds_xlinear_ylog="results/{project}/gone2/{grouping}/plots/{project}.gone2_ne_combined_xlinear_ylog.rds",
     params:
-        out_dir=lambda wildcards: f"results/{wildcards.project}/gone2",
+        out_dir=lambda wildcards: f"results/{wildcards.project}/gone2/{wildcards.grouping}",
         width=lambda wildcards: _fig_cm_to_in(
             config["projects"][wildcards.project]["parameters"]["gone2"].get("plot", {}).get(
                 "combined_width",
@@ -149,17 +157,15 @@ rule gone2_plot_ne_combined:
             ),
             15.24,
         ),
-        legend_title=lambda wildcards: config["projects"][wildcards.project]["parameters"]["gone2_currentne2_common"].get(
-            "population_column", "Population"
-        ),
+        legend_title=lambda wildcards: wildcards.grouping,
         group_colors=lambda wildcards: _gone2_currentne2_common_group_setting(
             wildcards.project,
-            config["projects"][wildcards.project]["parameters"]["gone2_currentne2_common"].get("population_column", "Site"),
+            wildcards.grouping,
             "colors",
         ),
         group_sort_by=lambda wildcards: _gone2_currentne2_common_group_setting(
             wildcards.project,
-            config["projects"][wildcards.project]["parameters"]["gone2_currentne2_common"].get("population_column", "Site"),
+            wildcards.grouping,
             "sort_by",
         ),
         show_seed_trajectories=lambda wildcards: config["projects"][wildcards.project]["parameters"]["gone2"].get("plot", {}).get(
@@ -167,9 +173,9 @@ rule gone2_plot_ne_combined:
             config["projects"][wildcards.project]["parameters"]["gone2"].get("plot", {}).get("show_seed_trajectories", True),
         ),
     log:
-        "logs/{project}/gone2_plot_ne_combined.log"
+        "logs/{project}/gone2_plot_ne_combined.{grouping}.log"
     benchmark:
-        "benchmarks/{project}/gone2_plot_ne_combined.txt"
+        "benchmarks/{project}/gone2_plot_ne_combined_{grouping}.txt"
     conda:
         "../envs/r-plot.yaml"
     threads: 1
@@ -184,14 +190,14 @@ rule gone2_collect_summary:
     input:
         unpack(_gone2_summary_inputs),
     output:
-        summary="results/{project}/gone2/{project}.gone2_summary.tsv",
+        summary="results/{project}/gone2/{grouping}/{project}.gone2_summary.tsv",
     params:
-        prep_dir=lambda wildcards: f"results/{wildcards.project}/gone2_currentne2_common/vcf",
-        out_dir=lambda wildcards: f"results/{wildcards.project}/gone2",
+        prep_dir=lambda wildcards: f"results/{wildcards.project}/gone2_currentne2_common/{wildcards.grouping}/vcf",
+        out_dir=lambda wildcards: f"results/{wildcards.project}/gone2/{wildcards.grouping}",
     log:
-        "logs/{project}/gone2_collect_summary.log"
+        "logs/{project}/gone2_collect_summary.{grouping}.log"
     benchmark:
-        "benchmarks/{project}/gone2_collect_summary.txt"
+        "benchmarks/{project}/gone2_collect_summary_{grouping}.txt"
     conda:
         "../envs/python.yaml"
     threads: 1

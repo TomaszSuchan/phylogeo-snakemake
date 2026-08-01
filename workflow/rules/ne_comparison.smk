@@ -5,8 +5,9 @@ Overlays the GONE2 (LD-based, recent generations) and Stairway Plot 2 (folded-SF
 deep time) trajectories on a shared generation axis, one facet per population, so
 the narrow window where the two methods are comparable is visible. The CurrentNe2
 point estimate is drawn as a contemporary reference when that analysis is enabled.
-Restricted to populations that both methods estimated: the GONE2 and Stairway Plot 2
-population sets are configured independently and need not match.
+
+One comparison tree per grouping column shared by GONE2 and Stairway Plot 2:
+results/{project}/ne_comparison/{grouping}/...
 """
 
 
@@ -14,10 +15,10 @@ rule ne_comparison_plot:
     input:
         unpack(_ne_comparison_inputs),
     output:
-        pdf="results/{project}/ne_comparison/plots/{project}.ne_comparison.pdf",
-        rds="results/{project}/ne_comparison/plots/{project}.ne_comparison.rds",
+        pdf="results/{project}/ne_comparison/{grouping}/plots/{project}.ne_comparison.pdf",
+        rds="results/{project}/ne_comparison/{grouping}/plots/{project}.ne_comparison.rds",
     params:
-        pops=lambda wildcards: _ne_comparison_pops(wildcards.project),
+        pops=lambda wildcards: _ne_comparison_pops(wildcards.project, wildcards.grouping),
         width=lambda wildcards: _fig_cm_to_in(
             config["projects"][wildcards.project]["parameters"].get("ne_comparison", {}).get("plot", {}).get("width"),
             45.72,
@@ -26,15 +27,15 @@ rule ne_comparison_plot:
             config["projects"][wildcards.project]["parameters"].get("ne_comparison", {}).get("plot", {}).get("height"),
             22.86,
         ),
-        group_sort_by=lambda wildcards: _easysfs_group_setting(
+        group_sort_by=lambda wildcards: _stairwayplot2_group_setting(
             wildcards.project,
-            config["projects"][wildcards.project]["parameters"]["easysfs"].get("population_column", "Site"),
+            wildcards.grouping,
             "sort_by",
         ),
     log:
-        "logs/{project}/ne_comparison_plot.log"
+        "logs/{project}/ne_comparison_plot.{grouping}.log"
     benchmark:
-        "benchmarks/{project}/ne_comparison_plot.txt"
+        "benchmarks/{project}/ne_comparison_plot_{grouping}.txt"
     conda:
         "../envs/r-plot.yaml"
     threads: 1

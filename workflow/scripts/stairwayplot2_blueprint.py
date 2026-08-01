@@ -57,7 +57,6 @@ settings = {
     "project_dir": (blueprint_path.parent / "run").resolve(),
     "stairway_plot_dir": params["stairway_plot_dir"],
     "ninput": params["ninput"],
-    "random_seed": params["random_seed"],
     "mu": params["mu"],
     "year_per_generation": params["year_per_generation"],
     # Stairpainter reads the plot settings below; "0,0" lets it pick the axis ranges.
@@ -68,8 +67,9 @@ settings = {
     "yspacing": 2,
     "fontsize": 12,
 }
-if settings["random_seed"] is None:
-    del settings["random_seed"]
+# Blueprint key is software-defined as random_seed; config uses seed.
+if params["seed"] is not None:
+    settings["random_seed"] = params["seed"]
 
 blueprint_path.write_text("".join(f"{k}: {v}\n" for k, v in settings.items()))
 

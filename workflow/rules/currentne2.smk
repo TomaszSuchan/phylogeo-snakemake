@@ -1,6 +1,9 @@
 """
 currentNe2: contemporary Ne from linkage disequilibrium (https://github.com/esrud/currentNe2).
 Uses shared per-population VCFs from gone2_currentne2_common prep.
+
+Outputs are scoped by grouping column:
+results/{project}/currentne2/{grouping}/...
 """
 
 
@@ -44,7 +47,7 @@ rule currentne2_run:
         vcf=rules.gone2_currentne2_common_subset_vcf.output.vcf,
         chrom_filter=rules.gone2_currentne2_common_subset_vcf.output.chrom_filter,
     output:
-        result="results/{project}/currentne2/{project}.{stratum}_currentNe2_OUTPUT.txt",
+        result="results/{project}/currentne2/{grouping}/{project}.{stratum}_currentNe2_OUTPUT.txt",
     params:
         currentne2_bin=".snakemake/currentne2/currentne2",
         recombination_rate=lambda wildcards: config["projects"][wildcards.project]["parameters"]["gone2_currentne2_common"].get("recombination_rate_cM_per_Mb", 2.5),
@@ -63,9 +66,9 @@ rule currentne2_run:
             else ""
         ),
     log:
-        "logs/{project}/currentne2_run.{stratum}.log"
+        "logs/{project}/currentne2_run.{grouping}.{stratum}.log"
     benchmark:
-        "benchmarks/{project}/currentne2_run_{stratum}.txt"
+        "benchmarks/{project}/currentne2_run_{grouping}_{stratum}.txt"
     conda:
         "../envs/currentne2.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("currentne2", {}).get("threads", config["projects"][wildcards.project]["parameters"]["resources"].get("gone2_currentne2_common", {}).get("threads", config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"])),
@@ -85,10 +88,10 @@ rule currentne2_plot_ne_combined:
         unpack(_currentne2_ne_inputs),
         populations=rules.gone2_currentne2_common_prepare_samples.output.populations,
     output:
-        pdf="results/{project}/currentne2/plots/{project}.currentne2_ne_combined.pdf",
-        rds="results/{project}/currentne2/plots/{project}.currentne2_ne_combined.rds",
+        pdf="results/{project}/currentne2/{grouping}/plots/{project}.currentne2_ne_combined.pdf",
+        rds="results/{project}/currentne2/{grouping}/plots/{project}.currentne2_ne_combined.rds",
     params:
-        out_dir=lambda wildcards: f"results/{wildcards.project}/currentne2",
+        out_dir=lambda wildcards: f"results/{wildcards.project}/currentne2/{wildcards.grouping}",
         width=lambda wildcards: _fig_cm_to_in(
             config["projects"][wildcards.project]["parameters"]["currentne2"].get("plot", {}).get(
                 "combined_width",
@@ -103,24 +106,22 @@ rule currentne2_plot_ne_combined:
             ),
             15.24,
         ),
-        legend_title=lambda wildcards: config["projects"][wildcards.project]["parameters"]["gone2_currentne2_common"].get(
-            "population_column", "Population"
-        ),
+        legend_title=lambda wildcards: wildcards.grouping,
         group_colors=lambda wildcards: _gone2_currentne2_common_group_setting(
             wildcards.project,
-            config["projects"][wildcards.project]["parameters"]["gone2_currentne2_common"].get("population_column", "Site"),
+            wildcards.grouping,
             "colors",
         ),
         group_sort_by=lambda wildcards: _gone2_currentne2_common_group_setting(
             wildcards.project,
-            config["projects"][wildcards.project]["parameters"]["gone2_currentne2_common"].get("population_column", "Site"),
+            wildcards.grouping,
             "sort_by",
         ),
         y_log10=lambda wildcards: config["projects"][wildcards.project]["parameters"]["currentne2"].get("plot", {}).get("y_log10", True),
     log:
-        "logs/{project}/currentne2_plot_ne_combined.log"
+        "logs/{project}/currentne2_plot_ne_combined.{grouping}.log"
     benchmark:
-        "benchmarks/{project}/currentne2_plot_ne_combined.txt"
+        "benchmarks/{project}/currentne2_plot_ne_combined_{grouping}.txt"
     conda:
         "../envs/r-plot.yaml"
     threads: 1
@@ -135,14 +136,14 @@ rule currentne2_collect_summary:
     input:
         unpack(_currentne2_summary_inputs),
     output:
-        summary="results/{project}/currentne2/{project}.currentne2_summary.tsv",
+        summary="results/{project}/currentne2/{grouping}/{project}.currentne2_summary.tsv",
     params:
-        prep_dir=lambda wildcards: f"results/{wildcards.project}/gone2_currentne2_common/vcf",
-        out_dir=lambda wildcards: f"results/{wildcards.project}/currentne2",
+        prep_dir=lambda wildcards: f"results/{wildcards.project}/gone2_currentne2_common/{wildcards.grouping}/vcf",
+        out_dir=lambda wildcards: f"results/{wildcards.project}/currentne2/{wildcards.grouping}",
     log:
-        "logs/{project}/currentne2_collect_summary.log"
+        "logs/{project}/currentne2_collect_summary.{grouping}.log"
     benchmark:
-        "benchmarks/{project}/currentne2_collect_summary.txt"
+        "benchmarks/{project}/currentne2_collect_summary_{grouping}.txt"
     conda:
         "../envs/python.yaml"
     threads: 1

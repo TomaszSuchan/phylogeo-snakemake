@@ -1,10 +1,13 @@
 """
 Folded site frequency spectra with easySFS (https://github.com/isaacovercast/easySFS).
 
-Shared prep for SFS-based methods (Stairway Plot 2, and dadi/moments/fastsimcoal2 if added
-later). SNPs are taken from the all-sites VCF, i.e. without the MAC/MAF filters applied in
-select_biallelic_snps, so that rare variants are retained and the number of callable sites (L)
-is counted over exactly the same samples and loci as the SNPs.
+Prep for Stairway Plot 2. Outputs live under
+results/{project}/stairwayplot2/easysfs/{grouping}/.
+Config: parameters.stairwayplot2.easysfs.group_by (or legacy population_column).
+SNPs are taken from the all-sites VCF (no MAC/MAF filters from select_biallelic_snps)
+so rare variants are retained and L is counted over the same samples and loci as the SNPs.
+
+Moments SFS builds its own joint SFS under results/{project}/moments/sfs/ (see moments.smk).
 """
 
 
@@ -33,17 +36,18 @@ rule easysfs_prepare_samples:
     input:
         indpopdata=rules.generate_popdata.output.indpopdata,
     output:
-        samples_dir=directory("results/{project}/easysfs/samples"),
-        populations="results/{project}/easysfs/{project}.easysfs_populations.tsv",
+        samples_dir=directory("results/{project}/stairwayplot2/easysfs/{grouping}/samples"),
+        populations="results/{project}/stairwayplot2/easysfs/{grouping}/{project}.easysfs_populations.tsv",
     params:
-        population_column=lambda wildcards: config["projects"][wildcards.project]["parameters"]["easysfs"].get("population_column", "Site"),
-        min_individuals=lambda wildcards: config["projects"][wildcards.project]["parameters"]["easysfs"].get("min_individuals", 10),
-        project_to_n_diploids=lambda wildcards: config["projects"][wildcards.project]["parameters"]["easysfs"].get("project_to_n_diploids", None),
-        max_project_diploids=lambda wildcards: config["projects"][wildcards.project]["parameters"]["easysfs"].get("max_project_diploids", 40),
+        mode="column",
+        population_column=lambda wildcards: wildcards.grouping,
+        min_individuals=lambda wildcards: _stairwayplot2_easysfs_cfg(wildcards.project).get("min_individuals", 10),
+        project_to_n_diploids=lambda wildcards: _stairwayplot2_easysfs_cfg(wildcards.project).get("project_to_n_diploids", None),
+        max_project_diploids=lambda wildcards: _stairwayplot2_easysfs_cfg(wildcards.project).get("max_project_diploids", 40),
     log:
-        "logs/{project}/easysfs_prepare_samples.log"
+        "logs/{project}/easysfs_prepare_samples.{grouping}.log"
     benchmark:
-        "benchmarks/{project}/easysfs_prepare_samples.txt"
+        "benchmarks/{project}/easysfs_prepare_samples_{grouping}.txt"
     conda:
         "../envs/python.yaml"
     threads: 1
@@ -61,20 +65,20 @@ rule easysfs_subset_vcf:
         vcf_index=rules.prepare_invariant_vcf_gz_index.output.index,
         samples=rules.easysfs_prepare_samples.output.samples_dir,
     output:
-        vcf="results/{project}/easysfs/vcf/{project}.{stratum}.biallelic.vcf.gz",
-        index="results/{project}/easysfs/vcf/{project}.{stratum}.biallelic.vcf.gz.csi",
+        vcf="results/{project}/stairwayplot2/easysfs/{grouping}/vcf/{project}.{stratum}.biallelic.vcf.gz",
+        index="results/{project}/stairwayplot2/easysfs/{grouping}/vcf/{project}.{stratum}.biallelic.vcf.gz.csi",
     params:
-        samples_file="results/{project}/easysfs/samples/{project}.{stratum}.samples.txt",
+        samples_file="results/{project}/stairwayplot2/easysfs/{grouping}/samples/{project}.{stratum}.samples.txt",
     log:
-        "logs/{project}/easysfs_subset_vcf.{stratum}.log"
+        "logs/{project}/easysfs_subset_vcf.{grouping}.{stratum}.log"
     benchmark:
-        "benchmarks/{project}/easysfs_subset_vcf_{stratum}.txt"
+        "benchmarks/{project}/easysfs_subset_vcf_{grouping}_{stratum}.txt"
     conda:
         "../envs/bcftools.yaml"
     threads: 1
     resources:
-        mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("easysfs", {}).get("mem_mb", 8000),
-        runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("easysfs", {}).get("runtime", 120),
+        mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("stairwayplot2", {}).get("mem_mb", 8000),
+        runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("stairwayplot2", {}).get("runtime", 120),
     shell:
         r"""
         set -euo pipefail
@@ -94,19 +98,19 @@ rule easysfs_count_L:
         vcf_index=rules.prepare_invariant_vcf_gz_index.output.index,
         samples=rules.easysfs_prepare_samples.output.samples_dir,
     output:
-        L="results/{project}/easysfs/{project}.{stratum}.L.txt",
+        L="results/{project}/stairwayplot2/easysfs/{grouping}/{project}.{stratum}.L.txt",
     params:
-        samples_file="results/{project}/easysfs/samples/{project}.{stratum}.samples.txt",
+        samples_file="results/{project}/stairwayplot2/easysfs/{grouping}/samples/{project}.{stratum}.samples.txt",
     log:
-        "logs/{project}/easysfs_count_L.{stratum}.log"
+        "logs/{project}/easysfs_count_L.{grouping}.{stratum}.log"
     benchmark:
-        "benchmarks/{project}/easysfs_count_L_{stratum}.txt"
+        "benchmarks/{project}/easysfs_count_L_{grouping}_{stratum}.txt"
     conda:
         "../envs/bcftools.yaml"
     threads: 1
     resources:
-        mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("easysfs", {}).get("mem_mb", 8000),
-        runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("easysfs", {}).get("runtime", 120),
+        mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("stairwayplot2", {}).get("mem_mb", 8000),
+        runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("stairwayplot2", {}).get("runtime", 120),
     shell:
         r"""
         set -euo pipefail
@@ -122,20 +126,20 @@ rule easysfs_run:
         L=rules.easysfs_count_L.output.L,
         samples=rules.easysfs_prepare_samples.output.samples_dir,
     output:
-        sfs_dir=directory("results/{project}/easysfs/sfs/{project}.{stratum}"),
+        sfs_dir=directory("results/{project}/stairwayplot2/easysfs/{grouping}/sfs/{project}.{stratum}"),
     params:
-        popmap="results/{project}/easysfs/samples/{project}.{stratum}.popmap.txt",
-        proj_file="results/{project}/easysfs/samples/{project}.{stratum}.proj.txt",
+        popmap="results/{project}/stairwayplot2/easysfs/{grouping}/samples/{project}.{stratum}.popmap.txt",
+        proj_file="results/{project}/stairwayplot2/easysfs/{grouping}/samples/{project}.{stratum}.proj.txt",
     log:
-        "logs/{project}/easysfs_run.{stratum}.log"
+        "logs/{project}/easysfs_run.{grouping}.{stratum}.log"
     benchmark:
-        "benchmarks/{project}/easysfs_run_{stratum}.txt"
+        "benchmarks/{project}/easysfs_run_{grouping}_{stratum}.txt"
     conda:
         "../envs/easysfs.yaml"
     threads: 1
     resources:
-        mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("easysfs", {}).get("mem_mb", 32000),
-        runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("easysfs", {}).get("runtime", 120),
+        mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("stairwayplot2", {}).get("mem_mb", 32000),
+        runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("stairwayplot2", {}).get("runtime", 120),
     shell:
         r"""
         set -euo pipefail

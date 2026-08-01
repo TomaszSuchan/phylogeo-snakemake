@@ -1,5 +1,8 @@
 """
 Shared prep for GONE2 and currentNe2: per-population samples + filtered VCFs.
+
+One prep tree per grouping column (group_by / legacy population_column):
+results/{project}/gone2_currentne2_common/{grouping}/...
 """
 
 
@@ -7,15 +10,15 @@ rule gone2_currentne2_common_prepare_samples:
     input:
         indpopdata=rules.generate_popdata.output.indpopdata,
     output:
-        samples_dir=directory("results/{project}/gone2_currentne2_common/samples"),
-        populations="results/{project}/gone2_currentne2_common/{project}.gone2_currentne2_common_populations.tsv",
+        samples_dir=directory("results/{project}/gone2_currentne2_common/{grouping}/samples"),
+        populations="results/{project}/gone2_currentne2_common/{grouping}/{project}.gone2_currentne2_common_populations.tsv",
     params:
-        population_column=lambda wildcards: config["projects"][wildcards.project]["parameters"]["gone2_currentne2_common"].get("population_column", "Site"),
+        population_column=lambda wildcards: wildcards.grouping,
         min_individuals=lambda wildcards: config["projects"][wildcards.project]["parameters"]["gone2_currentne2_common"].get("min_individuals", 10),
     log:
-        "logs/{project}/gone2_currentne2_common_prepare_samples.log"
+        "logs/{project}/gone2_currentne2_common_prepare_samples.{grouping}.log"
     benchmark:
-        "benchmarks/{project}/gone2_currentne2_common_prepare_samples.txt"
+        "benchmarks/{project}/gone2_currentne2_common_prepare_samples_{grouping}.txt"
     conda:
         "../envs/python.yaml"
     threads: 1
@@ -31,10 +34,13 @@ rule gone2_currentne2_common_subset_vcf:
         vcf=rules.select_biallelic_snps.output.biallelic_vcf,
         samples=rules.gone2_currentne2_common_prepare_samples.output.samples_dir,
     output:
-        vcf="results/{project}/gone2_currentne2_common/vcf/{project}.{stratum}.vcf",
-        chrom_filter="results/{project}/gone2_currentne2_common/vcf/{project}.{stratum}.chrom_filter.tsv",
+        vcf="results/{project}/gone2_currentne2_common/{grouping}/vcf/{project}.{stratum}.vcf",
+        chrom_filter="results/{project}/gone2_currentne2_common/{grouping}/vcf/{project}.{stratum}.chrom_filter.tsv",
     params:
-        samples_file=lambda wildcards: f"results/{wildcards.project}/gone2_currentne2_common/samples/{wildcards.project}.{wildcards.stratum}.samples.txt",
+        samples_file=lambda wildcards: (
+            f"results/{wildcards.project}/gone2_currentne2_common/{wildcards.grouping}/samples/"
+            f"{wildcards.project}.{wildcards.stratum}.samples.txt"
+        ),
         f_missing=lambda wildcards: config["projects"][wildcards.project]["parameters"]["gone2_currentne2_common"].get("f_missing", 1.0),
         mac_threshold=lambda wildcards: config["projects"][wildcards.project]["parameters"]["gone2_currentne2_common"].get("mac_threshold", 1),
         min_snps=lambda wildcards: config["projects"][wildcards.project]["parameters"]["gone2_currentne2_common"].get("min_snps", 1000),
@@ -42,9 +48,9 @@ rule gone2_currentne2_common_subset_vcf:
         # GONE2 hard-fails if any chromosome span is <= 20 cM; applied to shared inputs.
         min_chromosome_cM=lambda wildcards: config["projects"][wildcards.project]["parameters"]["gone2_currentne2_common"].get("min_chromosome_cM", 20),
     log:
-        "logs/{project}/gone2_currentne2_common_subset_vcf.{stratum}.log"
+        "logs/{project}/gone2_currentne2_common_subset_vcf.{grouping}.{stratum}.log"
     benchmark:
-        "benchmarks/{project}/gone2_currentne2_common_subset_vcf_{stratum}.txt"
+        "benchmarks/{project}/gone2_currentne2_common_subset_vcf_{grouping}_{stratum}.txt"
     conda:
         "../envs/bcftools.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("gone2_currentne2_common", {}).get("threads", config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]),
