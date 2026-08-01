@@ -539,6 +539,55 @@ parameters: &global_params
     #    'North': '#E41A1C'
     #    'South': '#377EB8'
 
+  ## Stairway Plot 2 (per-population folded SFS under results/<project>/stairwayplot2/easysfs/)
+  stairwayplot2:
+    easysfs:
+      # One Stairway/easySFS tree per grouping column (like pixy.group_by).
+      # Prefer group_by (list or string). Legacy population_column (string) still works.
+      group_by: ["Site"]
+      # population_column: "Site"   # legacy single-column alias for group_by
+      min_individuals: 5
+      project_to_n_diploids: null   # null = min(n_individuals, max_project_diploids)
+      max_project_diploids: 40
+    # Optional per-group plot styling (one block per group_by column):
+    # Site:
+    #   sort_by:
+    #   colors:
+    #     SiteA: "#E41A1C"
+    exclude_singletons: false
+    pct_training: 0.67
+    ninput: 200
+    nrand: null
+    seed: 42
+    mu: 7.0e-9
+    year_per_generation: 10
+    plot:
+      width: 12
+      height: 8
+      combined_width: 12
+      combined_height: 6
+
+  ## moments 3-deme demographic inference (Demes model + joint SFS)
+  # Site membership in config; topology/parameters in Demes YAML under data/.
+  # Joint SFS under results/<project>/moments/easysfs/; deme_order must match Demes present-day demes.
+  moments:
+    easysfs:
+      min_individuals: 5
+      project_to_n_diploids: null
+      max_project_diploids: 5
+    deme_order: [pop1, pop2, pop3]
+    demes:
+      pop1: []                    # e.g. [SiteA, SiteB]
+      pop2: []
+      pop3: []
+    model: data/example-demes/model.yaml
+    options: data/example-demes/model.options.yaml
+    folded: true
+    mu: 7.0e-9
+    year_per_generation: 10
+    n_optimizations: 20
+    maxiter: 100
+    seed: 42
 
   ## AMOVA parameters
   # AMOVA variance partitioning across metadata strata.
@@ -665,13 +714,21 @@ parameters: &global_params
   ## Shared LD-Ne prep (GONE2 + currentNe2)
   # Per-population sample lists and filtered VCFs used by both tools.
   gone2_currentne2_common:
-    population_column: "Site"              # indpopdata column defining populations
+    # One full prep/analysis tree per grouping column (like pixy.group_by).
+    # Prefer group_by (list or string). Legacy population_column (string) still works.
+    group_by: ["Site"]
+    # population_column: "Site"              # legacy single-column alias for group_by
     recombination_rate_cM_per_Mb: 2.5        # -r for both tools (constant cM/Mb)
     min_chromosome_cM: 20                    # drop chroms with SNP-span genetic length <= this
     f_missing: 1.0                         # per-pop locus filter; 1.0 disables missingness filtering
     mac_threshold: 1                         # per-pop MAC > threshold after subsetting
     min_individuals: 10
     min_snps: 1000
+    # Optional per-group plot styling (one block per group_by column):
+    # Site:
+    #   sort_by:
+    #   colors:
+    #     SiteA: "#E41A1C"
 
   ## GONE2 parameters
   # Historical Ne trajectories; uses shared gone2_currentne2_common inputs.
@@ -910,6 +967,8 @@ projects:
       spca: false              # Spatial PCA combining genetic variance and spatial autocorrelation.
       gone2: false             # Historical Ne trajectories from linkage disequilibrium (GONE2).
       currentne2: false        # Contemporary Ne from linkage disequilibrium (currentNe2).
+      stairwayplot2: false     # Nonparametric Ne(t) from folded SFS (Stairway Plot 2).
+      moments: false           # 3-deme sequential-split + migration dating from joint SFS (moments).
     parameters:
       <<: *global_params
       popmap: "data/popmap.txt"
