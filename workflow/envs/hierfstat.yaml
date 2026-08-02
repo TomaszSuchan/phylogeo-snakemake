@@ -1,5 +1,6 @@
 channels:
   - conda-forge
+# methods_version: hierfstat=0.5-11
 dependencies:
   - r-base=4.5.3
   - r-hierfstat

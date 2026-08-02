@@ -1,0 +1,197 @@
+# moments.Demes.Inference options for data/DocWestCarp-demes/mylonite_first.yaml
+# Topology: (Mylonite, (Calcareous, Pieniny))
+# Sampled demes in the SFS must be named: Mylonite, Calcareous, Pieniny
+# Tip demes: two epochs each — constant Ne_*_anc until T_bot_*, then decline
+# to Ne_*_end (bottleneck / recent crash). Pieniny present Ne bounded 10–100.
+
+parameters:
+  - name: T_first
+    description: Generations before present of Mylonite vs sister_anc split
+    values:
+      - demes:
+          ancestral:
+            epochs:
+              0: end_time
+    lower_bound: 100
+    upper_bound: 50000
+
+  - name: T_second
+    description: Generations before present of Calcareous vs Pieniny split
+    values:
+      - demes:
+          sister_anc:
+            epochs:
+              0: end_time
+      - migrations:
+          0: start_time
+      - migrations:
+          1: start_time
+      - migrations:
+          2: start_time
+    lower_bound: 10
+    upper_bound: 20000
+
+  - name: Ne_ref
+    description: Ancestral / root Ne
+    values:
+      - demes:
+          ancestral:
+            epochs:
+              0: start_size
+    lower_bound: 100
+    upper_bound: 1000000
+
+  - name: Ne_sister
+    description: Ne of sister_anc (Calcareous+Pieniny) between the two splits
+    values:
+      - demes:
+          sister_anc:
+            epochs:
+              0: start_size
+    lower_bound: 100
+    upper_bound: 1000000
+
+  # --- Mylonite: pre-bot (anc) → post-bot decline to present ---
+  - name: T_bot_Mylonite
+    description: Generations before present when Mylonite post-bottleneck epoch begins
+    values:
+      - demes:
+          Mylonite:
+            epochs:
+              0: end_time
+    lower_bound: 5
+    upper_bound: 10000
+
+  - name: Ne_Mylonite_anc
+    description: Mylonite pre-bottleneck Ne (also size at start of post-bot decline)
+    values:
+      - demes:
+          Mylonite:
+            epochs:
+              0: start_size
+      - demes:
+          Mylonite:
+            epochs:
+              1: start_size
+    lower_bound: 100
+    upper_bound: 1000000
+
+  - name: Ne_Mylonite_end
+    description: Mylonite Ne at present (post-bottleneck)
+    values:
+      - demes:
+          Mylonite:
+            epochs:
+              1: end_size
+    lower_bound: 50
+    upper_bound: 50000
+
+  # --- Calcareous: pre-bot (anc) → post-bot decline to present ---
+  - name: T_bot_Calcareous
+    description: Generations before present when Calcareous post-bottleneck epoch begins
+    values:
+      - demes:
+          Calcareous:
+            epochs:
+              0: end_time
+    lower_bound: 5
+    upper_bound: 10000
+
+  - name: Ne_Calcareous_anc
+    description: Calcareous pre-bottleneck Ne (also size at start of post-bot decline)
+    values:
+      - demes:
+          Calcareous:
+            epochs:
+              0: start_size
+      - demes:
+          Calcareous:
+            epochs:
+              1: start_size
+    lower_bound: 100
+    upper_bound: 1000000
+
+  - name: Ne_Calcareous_end
+    description: Calcareous Ne at present (post-bottleneck)
+    values:
+      - demes:
+          Calcareous:
+            epochs:
+              1: end_size
+    lower_bound: 100
+    upper_bound: 50000
+
+  # --- Pieniny: larger pre-bot then crash to small present Ne ---
+  - name: T_bot_Pieniny
+    description: Generations before present when Pieniny post-bottleneck epoch begins
+    values:
+      - demes:
+          Pieniny:
+            epochs:
+              0: end_time
+    lower_bound: 5
+    upper_bound: 10000
+
+  - name: Ne_Pieniny_anc
+    description: Pieniny pre-bottleneck Ne (founder/expansion scale; also post-bot start)
+    values:
+      - demes:
+          Pieniny:
+            epochs:
+              0: start_size
+      - demes:
+          Pieniny:
+            epochs:
+              1: start_size
+    lower_bound: 50
+    upper_bound: 100000
+
+  - name: Ne_Pieniny_end
+    description: Pieniny Ne at present after crash (LD-scale; 10–100)
+    values:
+      - demes:
+          Pieniny:
+            epochs:
+              1: end_size
+    lower_bound: 10
+    upper_bound: 100
+
+  - name: m_Mylonite_Calcareous
+    values:
+      - migrations:
+          0: rate
+    lower_bound: 0
+    upper_bound: 0.01
+
+  - name: m_Mylonite_Pieniny
+    values:
+      - migrations:
+          1: rate
+    lower_bound: 0
+    upper_bound: 0.01
+
+  - name: m_Calcareous_Pieniny
+    values:
+      - migrations:
+          2: rate
+    lower_bound: 0
+    upper_bound: 0.01
+
+constraints:
+  # Split order
+  - params: [T_first, T_second]
+    constraint: greater_than
+  # Bottleneck after deme founding
+  - params: [T_first, T_bot_Mylonite]
+    constraint: greater_than
+  - params: [T_second, T_bot_Calcareous]
+    constraint: greater_than
+  - params: [T_second, T_bot_Pieniny]
+    constraint: greater_than
+  # Pre-bot Ne larger than present (decline / crash)
+  - params: [Ne_Mylonite_anc, Ne_Mylonite_end]
+    constraint: greater_than
+  - params: [Ne_Calcareous_anc, Ne_Calcareous_end]
+    constraint: greater_than
+  - params: [Ne_Pieniny_anc, Ne_Pieniny_end]
+    constraint: greater_than

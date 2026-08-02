@@ -1,0 +1,68 @@
+description: >
+  West Carpathians Dryas: sequential split with recent migration.
+  Topology (Mylonite, (Calcareous, Pieniny)): first Mylonite splits from the
+  ancestor of Calcareous+Pieniny; then Calcareous vs Pieniny.
+  Each tip deme has two epochs: a pre-bottleneck phase at Ne_*_anc, then a
+  post-bottleneck decline from Ne_*_anc to Ne_*_end (LD-scale present Ne).
+  Initial guesses only; free parameters are listed in the companion options YAML.
+  Present-day deme names must match moments.deme_order / SFS pop IDs.
+time_units: generations
+generation_time: 1
+
+demes:
+  - name: ancestral
+    description: Ancestral pool (Ne_ref)
+    epochs:
+      - end_time: 2000
+        start_size: 70000
+
+  - name: sister_anc
+    description: Ancestral lineage of Calcareous + Pieniny (unsampled)
+    ancestors: [ancestral]
+    epochs:
+      - end_time: 500
+        start_size: 30000
+
+  - name: Mylonite
+    description: Mylonite (outgroup / first split); pre-bot then recent decline
+    ancestors: [ancestral]
+    epochs:
+      # Pre-bottleneck (constant Ne_Mylonite_anc until T_bot_Mylonite)
+      - end_time: 100
+        start_size: 20000
+      # Post-bottleneck: decline Ne_Mylonite_anc → Ne_Mylonite_end
+      - end_time: 0
+        start_size: 20000
+        end_size: 500
+
+  - name: Calcareous
+    description: Calcareous; pre-bot then recent decline
+    ancestors: [sister_anc]
+    epochs:
+      - end_time: 100
+        start_size: 50000
+      - end_time: 0
+        start_size: 50000
+        end_size: 2000
+
+  - name: Pieniny
+    description: Pieniny (SMO); larger pre-bot then crash to small present Ne
+    ancestors: [sister_anc]
+    epochs:
+      - end_time: 50
+        start_size: 5000
+      - end_time: 0
+        start_size: 5000
+        end_size: 40
+
+migrations:
+  # Recent epoch only; start_time is tied to T_second in the options file.
+  - demes: [Mylonite, Calcareous]
+    rate: 0.0001
+    start_time: 500
+  - demes: [Mylonite, Pieniny]
+    rate: 0.0001
+    start_time: 500
+  - demes: [Calcareous, Pieniny]
+    rate: 0.0001
+    start_time: 500

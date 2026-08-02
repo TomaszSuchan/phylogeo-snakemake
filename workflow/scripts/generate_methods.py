@@ -884,6 +884,44 @@ if analyses.get("pixy", False):
         f"calculated in non-overlapping windows of {win:,} bp. {agg_text}"
     )
 
+if analyses.get("hierfstat", False):
+    hp = p.get("hierfstat", {})
+    _hf_gb = hp.get("group_by", ["Site"])
+    if isinstance(_hf_gb, list):
+        hf_pops = [str(x) for x in _hf_gb if x not in (None, "", "null", "NULL")]
+    else:
+        hf_pops = [str(_hf_gb)] if _hf_gb else ["Site"]
+    hf_pop = (
+        ", ".join(f"'{c}'" for c in hf_pops[:-1])
+        + (f" and '{hf_pops[-1]}'" if len(hf_pops) > 1 else f"'{hf_pops[0]}'")
+    )
+    hf_min_ind = int(hp.get("min_individuals", 2))
+    hf_group_clause = (
+        f"each of the {hf_pop} columns"
+        if len(hf_pops) > 1
+        else f"the {hf_pop} column"
+    )
+    hf_body = (
+        f"population-specific Fst and Fis were estimated with the dosage-based "
+        f"method of Weir & Goudet (2017) as implemented in the hierfstat R "
+        f"package {vn(versions,'hierfstat')} (Goudet 2005), together with observed "
+        f"heterozygosity (Ho) and Nei & Chesser (1983) gene diversity (Hs). "
+        f"Genotypes were read from the biallelic SNP dataset "
+        f"({n_snps_biallelic} SNPs, {n_samples} individuals) — the un-thinned "
+        f"set, so that all biallelic SNPs with MAC > 1 contributed — converted "
+        f"to alternate-allele dosages, and analysed separately for populations "
+        f"defined by {hf_group_clause} of the individual metadata, retaining "
+        f"populations with at least {hf_min_ind} individuals."
+    )
+    if analyses.get("pixy", False):
+        div_parts.append(
+            "As a SNP-based complement to the sequence-diversity estimates above, "
+            + hf_body
+        )
+    else:
+        div_parts.append(hf_body[0].upper() + hf_body[1:])
+
+
 if analyses.get("genome_scan", False):
     gs     = p.get("genome_scan", {})
     pop1   = gs.get("pop1",  "")
@@ -1159,7 +1197,17 @@ if rel_parts:
 # 7b. Demographic history (GONE2 / currentNe2) ────────────────────────────────
 
 gone2_currentne2_common = p.get("gone2_currentne2_common", {})
-gone2_currentne2_common_pop = gone2_currentne2_common.get("population_column", "Site")
+_gone2_gb = gone2_currentne2_common.get("group_by")
+if _gone2_gb in (None, "", "null", "NULL"):
+    _gone2_gb = gone2_currentne2_common.get("population_column", "Site")
+if isinstance(_gone2_gb, list):
+    gone2_currentne2_common_pops = [str(x) for x in _gone2_gb if x not in (None, "", "null", "NULL")]
+else:
+    gone2_currentne2_common_pops = [str(_gone2_gb)] if _gone2_gb else ["Site"]
+gone2_currentne2_common_pop = (
+    ", ".join(f"'{c}'" for c in gone2_currentne2_common_pops[:-1])
+    + (f" and '{gone2_currentne2_common_pops[-1]}'" if len(gone2_currentne2_common_pops) > 1 else f"'{gone2_currentne2_common_pops[0]}'")
+)
 gone2_currentne2_common_rate = gone2_currentne2_common.get("recombination_rate_cM_per_Mb", 2.5)
 gone2_currentne2_common_min_cm = gone2_currentne2_common.get("min_chromosome_cM", 20)
 gone2_currentne2_common_min_ind = gone2_currentne2_common.get("min_individuals", 10)
@@ -1167,9 +1215,14 @@ gone2_currentne2_common_min_snps = gone2_currentne2_common.get("min_snps", 1000)
 gone2_currentne2_common_mac = gone2_currentne2_common.get("mac_threshold", 1)
 
 if analyses.get("gone2", False) or analyses.get("currentne2", False):
+    _gone2_col_phrase = (
+        f"each of the {gone2_currentne2_common_pop} columns"
+        if len(gone2_currentne2_common_pops) > 1
+        else f"the {gone2_currentne2_common_pop} column"
+    )
     prep_text = (
         f"For LD-based Ne analyses, genotypes were prepared once per population "
-        f"defined by the '{gone2_currentne2_common_pop}' column of the individual metadata, retaining "
+        f"defined by {_gone2_col_phrase} of the individual metadata, retaining "
         f"populations with at least {gone2_currentne2_common_min_ind} individuals. For each population, "
         f"genotypes were subset from the biallelic SNP dataset — the un-thinned "
         f"set, because LD-based estimators require the physically linked SNPs that "
@@ -1235,8 +1288,18 @@ if analyses.get("currentne2", False):
 
 if analyses.get("stairwayplot2", False):
     sp = p.get("stairwayplot2", {})
-    sfs = p.get("easysfs", {})
-    sp_pop = sfs.get("population_column", "Site")
+    sfs = sp.get("easysfs", {})
+    _sp_gb = sfs.get("group_by")
+    if _sp_gb in (None, "", "null", "NULL"):
+        _sp_gb = sfs.get("population_column", "Site")
+    if isinstance(_sp_gb, list):
+        sp_pops = [str(x) for x in _sp_gb if x not in (None, "", "null", "NULL")]
+    else:
+        sp_pops = [str(_sp_gb)] if _sp_gb else ["Site"]
+    sp_pop = (
+        ", ".join(f"'{c}'" for c in sp_pops[:-1])
+        + (f" and '{sp_pops[-1]}'" if len(sp_pops) > 1 else f"'{sp_pops[0]}'")
+    )
     sp_min_ind = int(sfs.get("min_individuals", 10))
     sp_ninput = int(sp.get("ninput", 200))
     sp_mu = sp.get("mu", "[MU]")
@@ -1252,8 +1315,9 @@ if analyses.get("stairwayplot2", False):
         f"Longer-term effective population size trajectories were inferred with "
         f"Stairway Plot 2 (Liu & Fu 2020) from the folded site frequency spectrum, "
         f"without specifying a parametric demographic model a priori. Analyses were "
-        f"run separately for each population defined by the '{sp_pop}' column of the "
-        f"individual metadata (populations with fewer than {sp_min_ind} individuals "
+        f"run separately for each population defined by "
+        f"{'each of the ' + sp_pop + ' columns' if len(sp_pops) > 1 else 'the ' + sp_pop + ' column'} "
+        f"of the individual metadata (populations with fewer than {sp_min_ind} individuals "
         f"excluded). Folded SFSs were constructed with easySFS (Overcast) from the "
         f"all-sites dataset, restricted per population to biallelic SNPs but "
         f"deliberately not subjected to the MAC or MAF filters used for the "
@@ -1492,6 +1556,23 @@ if analyses.get("pixy", False):
             "sequencing. *Molecular Ecology Resources*, e14104. "
             "https://doi.org/10.1111/1755-0998.14104"
         )
+
+if analyses.get("hierfstat", False):
+    refs["goudet_hierfstat"] = (
+        "Goudet, J. (2005). hierfstat, a package for R to compute and test "
+        "hierarchical F-statistics. *Molecular Ecology Notes*, 5, 184–186. "
+        "https://doi.org/10.1111/j.1471-8286.2004.00828.x"
+    )
+    refs["weir_goudet"] = (
+        "Weir, B.S. & Goudet, J. (2017). A unified characterization of "
+        "population structure and relatedness. *Genetics*, 206, 2085–2103. "
+        "https://doi.org/10.1534/genetics.116.198309"
+    )
+    refs["nei_chesser"] = (
+        "Nei, M. & Chesser, R.K. (1983). Estimation of fixation indices and "
+        "gene diversities. *Annals of Human Genetics*, 47, 253–259. "
+        "https://doi.org/10.1111/j.1469-1809.1983.tb00993.x"
+    )
 
 if analyses.get("amova", False):
     refs["amova"] = (
