@@ -6,8 +6,6 @@ results/{project}/stairwayplot2/easysfs/{grouping}/.
 Config: parameters.stairwayplot2.easysfs.group_by (or legacy population_column).
 SNPs are taken from the all-sites VCF (no MAC/MAF filters from select_biallelic_snps)
 so rare variants are retained and L is counted over the same samples and loci as the SNPs.
-
-Moments SFS builds its own joint SFS under results/{project}/moments/sfs/ (see moments.smk).
 """
 
 

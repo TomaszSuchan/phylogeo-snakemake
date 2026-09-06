@@ -1117,60 +1117,6 @@ def _stairwayplot2_pops(project, grouping=None):
     return _pop_wildcards_from_cfg(project, _stairwayplot2_easysfs_cfg(project), group_col=grouping)
 
 
-def _moments_cfg(project):
-    """Shared moments demes/model config under parameters.moments."""
-    return config["projects"][project]["parameters"].get("moments", {})
-
-
-def _moments_model_name(project):
-    """Stem of parameters.moments.model (e.g. mylonite_first.yaml → mylonite_first)."""
-    model = _moments_cfg(project).get("model") or "model"
-    base = str(model).rstrip("/").split("/")[-1]
-    for suf in (".yaml", ".yml"):
-        if base.endswith(suf):
-            return base[: -len(suf)]
-    if "." in base:
-        return base.rsplit(".", 1)[0]
-    return base or "model"
-
-
-def _moments_model_path(wildcards):
-    """Demes model YAML; require {model} wildcard == stem of parameters.moments.model."""
-    expected = _moments_model_name(wildcards.project)
-    if wildcards.model != expected:
-        raise ValueError(
-            f"moments model folder {wildcards.model!r} != config model stem {expected!r} "
-            f"(parameters.moments.model)"
-        )
-    return _moments_cfg(wildcards.project)["model"]
-
-
-def _moments_sfs_cfg(project):
-    """SFS-specific settings under parameters.moments.sfs (legacy flat keys supported)."""
-    m = _moments_cfg(project)
-    sfs = m.get("sfs")
-    if isinstance(sfs, dict) and sfs:
-        return sfs
-    # Legacy: easysfs/folded/n_optimizations lived at the top level of moments
-    return {
-        k: m[k]
-        for k in ("easysfs", "folded", "n_optimizations", "maxiter", "seed")
-        if k in m
-    }
-
-
-def _moments_ld_cfg(project):
-    """LD-specific settings under parameters.moments.ld."""
-    return _moments_cfg(project).get("ld", {})
-
-
-def _moments_easysfs_cfg(project):
-    """easySFS projection settings nested under parameters.moments.sfs.easysfs."""
-    sfs = _moments_sfs_cfg(project)
-    if "easysfs" in sfs:
-        return sfs["easysfs"]
-    return _moments_cfg(project).get("easysfs", {})
-
 def _stairwayplot2_ne_files(project, grouping):
     """Per-population Ne trajectory tables for one grouping column."""
     return [
@@ -1478,7 +1424,6 @@ include: "rules/gone2.smk"
 include: "rules/currentne2.smk"
 include: "rules/easysfs.smk"
 include: "rules/stairwayplot2.smk"
-include: "rules/moments.smk"
 include: "rules/ne_comparison.smk"
 include: "rules/methods.smk"
 
@@ -2603,31 +2548,6 @@ def get_all_targets():
                         stratum=stairwayplot2_pops,
                     )
                 )
-
-        if analyses.get("moments_sfs", False) or analyses.get("moments", False):
-            # analyses.moments kept as a legacy alias for moments_sfs
-            moments_model = _moments_model_name(project)
-            targets.extend(
-                [
-                    f"results/{project}/moments/{project}.populations.tsv",
-                    f"results/{project}/moments/{moments_model}/sfs/{project}.moments_sfs_fit.tsv",
-                    f"results/{project}/moments/{moments_model}/sfs/{project}.moments_sfs_best.demes.yaml",
-                    f"results/{project}/moments/{moments_model}/sfs/plots/{project}.moments_sfs_fit.pdf",
-                    f"results/{project}/moments/{moments_model}/sfs/plots/{project}.moments_sfs_demes.pdf",
-                ]
-            )
-
-        if analyses.get("moments_ld", False):
-            moments_model = _moments_model_name(project)
-            targets.extend(
-                [
-                    f"results/{project}/moments/{project}.populations.tsv",
-                    f"results/{project}/moments/{moments_model}/ld/{project}.moments_ld_fit.tsv",
-                    f"results/{project}/moments/{moments_model}/ld/{project}.moments_ld_best.demes.yaml",
-                    f"results/{project}/moments/{moments_model}/ld/plots/{project}.moments_ld_fit.pdf",
-                    f"results/{project}/moments/{moments_model}/ld/plots/{project}.moments_ld_demes.pdf",
-                ]
-            )
 
         if analyses.get("gone2", False) and analyses.get("stairwayplot2", False):
             for grouping in _ne_comparison_grouping_columns(params):

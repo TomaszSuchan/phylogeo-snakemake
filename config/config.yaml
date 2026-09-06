@@ -567,28 +567,6 @@ parameters: &global_params
       combined_width: 12
       combined_height: 6
 
-  ## moments 3-deme demographic inference (Demes model + joint SFS)
-  # Site membership in config; topology/parameters in Demes YAML under data/.
-  # Joint SFS under results/<project>/moments/easysfs/; deme_order must match Demes present-day demes.
-  moments:
-    easysfs:
-      min_individuals: 5
-      project_to_n_diploids: null
-      max_project_diploids: 5
-    deme_order: [pop1, pop2, pop3]
-    demes:
-      pop1: []                    # e.g. [SiteA, SiteB]
-      pop2: []
-      pop3: []
-    model: data/example-demes/model.yaml
-    options: data/example-demes/model.options.yaml
-    folded: true
-    mu: 7.0e-9
-    year_per_generation: 10
-    n_optimizations: 20
-    maxiter: 100
-    seed: 42
-
   ## AMOVA parameters
   # AMOVA variance partitioning across metadata strata.
   amova:
@@ -968,7 +946,6 @@ projects:
       gone2: false             # Historical Ne trajectories from linkage disequilibrium (GONE2).
       currentne2: false        # Contemporary Ne from linkage disequilibrium (currentNe2).
       stairwayplot2: false     # Nonparametric Ne(t) from folded SFS (Stairway Plot 2).
-      moments: false           # 3-deme sequential-split + migration dating from joint SFS (moments).
     parameters:
       <<: *global_params
       popmap: "data/popmap.txt"
