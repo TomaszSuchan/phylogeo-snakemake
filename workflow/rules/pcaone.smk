@@ -160,6 +160,36 @@ rule pcaone_top_loadings:
         ) 2> {log}
         """
 
+
+# Manhattan-style plot of per-SNP loadings along the genome for the leading PCs,
+# to visualise whether an axis is driven by markers spread across the genome
+# (neutral/polygenic) or concentrated in a region. Points are coloured by
+# chromosome only when real chromosome data is present (see the R script).
+rule plot_pca_loadings_manhattan:
+    input:
+        table = rules.pcaone_top_loadings.output.ranked
+    output:
+        pdf = "results/{project}/pcaone/plots/{project}.PCA-loadings-manhattan.pdf",
+        rds = "results/{project}/pcaone/plots/{project}.PCA-loadings-manhattan.rds"
+    params:
+        n_pc = lambda wildcards: _pca_plot_setting(wildcards.project, "manhattan_pcs", 2),
+        axis_title_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_title_size", 10),
+        axis_text_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_text_size", 8),
+        point_size = lambda wildcards: _pca_plot_setting(wildcards.project, "manhattan_point_size", 0.6),
+        width = lambda wildcards: _fig_cm_to_in(_pca_plot_setting(wildcards.project, "manhattan_width"), 30.48),
+        height = lambda wildcards: _fig_cm_to_in(_pca_plot_setting(wildcards.project, "manhattan_height"), 14.0),
+    log:
+        "logs/{project}/plot_pca_loadings_manhattan.log"
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    group: "plot_pca"
+    conda:
+        "../envs/r-plot.yaml"
+    script:
+        "../scripts/plot_pca_loadings_manhattan.R"
+
 # Rule to run PCAone for each miss data threshold
 rule pcaone_miss:
     input:

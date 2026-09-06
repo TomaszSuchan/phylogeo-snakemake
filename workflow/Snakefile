@@ -1718,7 +1718,9 @@ def get_all_targets():
                 f"results/{project}/pcaone/{project}.PCA.eigvals",
                 f"results/{project}/pcaone/{project}.PCA.loadings.tsv",
                 f"results/{project}/pcaone/{project}.PCA.loadings.ranked_per_PC.tsv",
-                f"results/{project}/pcaone/{project}.PCA.loadings.axis_assignment.tsv"
+                f"results/{project}/pcaone/{project}.PCA.loadings.axis_assignment.tsv",
+                f"results/{project}/pcaone/plots/{project}.PCA-loadings-manhattan.pdf",
+                f"results/{project}/pcaone/plots/{project}.PCA-loadings-manhattan.rds"
             ])
             # Always add missing data calculation target
             targets.append(f"results/{project}/stats_vcf/thinned/{project}.biallelic_snps.imiss")
