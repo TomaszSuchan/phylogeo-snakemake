@@ -43,7 +43,9 @@ rule pcaone:
     output:
         pcaone_eigenvectors = "results/{project}/pcaone/{project}.PCA.eigvecs",
         pcaone_eigenvectors2 = "results/{project}/pcaone/{project}.PCA.eigvecs2",
-        pcaone_eigenvalues = "results/{project}/pcaone/{project}.PCA.eigvals"
+        pcaone_eigenvalues = "results/{project}/pcaone/{project}.PCA.eigvals",
+        pcaone_loadings = "results/{project}/pcaone/{project}.PCA.loadings",
+        pcaone_mbim = "results/{project}/pcaone/{project}.PCA.mbim"
     log:
         "logs/{project}/pcaone.log"
     benchmark:
@@ -65,8 +67,46 @@ rule pcaone:
         PCAone --threads {threads} \
         -d {params.SVD_method} \
         --pc {params.PCnum} \
+        --printv \
         --bfile {params.bfile_prefix} \
         --out {params.output_prefix} &> {log}
+        """
+
+# Rule to build a per-SNP PCA loadings table (which SNPs drive each axis).
+# PCAone's .loadings file has one row per SNP (same order as the input .bim)
+# and one column per PC. We join it with the .bim to attach snp_id/chrom/pos.
+rule pcaone_loadings_table:
+    input:
+        loadings = rules.pcaone.output.pcaone_loadings,
+        bim = rules.vcf_to_plink.output.bim
+    output:
+        table = "results/{project}/pcaone/{project}.PCA.loadings.tsv"
+    log:
+        "logs/{project}/pcaone_loadings_table.log"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    shell:
+        r"""
+        (
+        nbim=$(wc -l < {input.bim})
+        nload=$(wc -l < {input.loadings})
+        if [ "$nbim" -ne "$nload" ]; then
+            echo "ERROR: .bim ($nbim) and .loadings ($nload) row counts differ; cannot join by order" >&2
+            exit 1
+        fi
+        paste \
+            <(awk 'BEGIN{{OFS="\t"}} {{print $2, $1, $4}}' {input.bim}) \
+            <(awk 'BEGIN{{OFS="\t"}} {{$1=$1; print}}' {input.loadings}) \
+        | awk 'BEGIN{{OFS="\t"}}
+               NR==1 {{
+                   printf "snp_id\tchrom\tpos"
+                   for (i=4; i<=NF; i++) printf "\tPC%d", i-3
+                   printf "\n"
+               }}
+               {{print}}'
+        ) > {output.table} 2> {log}
         """
 
 # Rule to run PCAone for each miss data threshold

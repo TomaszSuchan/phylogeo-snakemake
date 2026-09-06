@@ -1122,6 +1122,29 @@ def _moments_cfg(project):
     return config["projects"][project]["parameters"].get("moments", {})
 
 
+def _moments_model_name(project):
+    """Stem of parameters.moments.model (e.g. mylonite_first.yaml → mylonite_first)."""
+    model = _moments_cfg(project).get("model") or "model"
+    base = str(model).rstrip("/").split("/")[-1]
+    for suf in (".yaml", ".yml"):
+        if base.endswith(suf):
+            return base[: -len(suf)]
+    if "." in base:
+        return base.rsplit(".", 1)[0]
+    return base or "model"
+
+
+def _moments_model_path(wildcards):
+    """Demes model YAML; require {model} wildcard == stem of parameters.moments.model."""
+    expected = _moments_model_name(wildcards.project)
+    if wildcards.model != expected:
+        raise ValueError(
+            f"moments model folder {wildcards.model!r} != config model stem {expected!r} "
+            f"(parameters.moments.model)"
+        )
+    return _moments_cfg(wildcards.project)["model"]
+
+
 def _moments_sfs_cfg(project):
     """SFS-specific settings under parameters.moments.sfs (legacy flat keys supported)."""
     m = _moments_cfg(project)
@@ -1429,6 +1452,7 @@ wildcard_constraints:
     project=r"[^/]+",
     grouping=r"[^/]+",
     stratum=r"[^/]+",
+    model=r"[^/]+",
     seed=r"[0-9]+",
 
 include: "rules/genetic_distances.smk"
@@ -1746,7 +1770,8 @@ def get_all_targets():
         if analyses.get("pcaone", False):
             targets.extend([
                 f"results/{project}/pcaone/{project}.PCA.eigvecs",
-                f"results/{project}/pcaone/{project}.PCA.eigvals"
+                f"results/{project}/pcaone/{project}.PCA.eigvals",
+                f"results/{project}/pcaone/{project}.PCA.loadings.tsv"
             ])
             # Always add missing data calculation target
             targets.append(f"results/{project}/stats_vcf/thinned/{project}.biallelic_snps.imiss")
@@ -2581,24 +2606,26 @@ def get_all_targets():
 
         if analyses.get("moments_sfs", False) or analyses.get("moments", False):
             # analyses.moments kept as a legacy alias for moments_sfs
+            moments_model = _moments_model_name(project)
             targets.extend(
                 [
                     f"results/{project}/moments/{project}.populations.tsv",
-                    f"results/{project}/moments/sfs/{project}.moments_sfs_fit.tsv",
-                    f"results/{project}/moments/sfs/{project}.moments_sfs_best.demes.yaml",
-                    f"results/{project}/moments/sfs/plots/{project}.moments_sfs_fit.pdf",
-                    f"results/{project}/moments/sfs/plots/{project}.moments_sfs_demes.pdf",
+                    f"results/{project}/moments/{moments_model}/sfs/{project}.moments_sfs_fit.tsv",
+                    f"results/{project}/moments/{moments_model}/sfs/{project}.moments_sfs_best.demes.yaml",
+                    f"results/{project}/moments/{moments_model}/sfs/plots/{project}.moments_sfs_fit.pdf",
+                    f"results/{project}/moments/{moments_model}/sfs/plots/{project}.moments_sfs_demes.pdf",
                 ]
             )
 
         if analyses.get("moments_ld", False):
+            moments_model = _moments_model_name(project)
             targets.extend(
                 [
                     f"results/{project}/moments/{project}.populations.tsv",
-                    f"results/{project}/moments/ld/{project}.moments_ld_fit.tsv",
-                    f"results/{project}/moments/ld/{project}.moments_ld_best.demes.yaml",
-                    f"results/{project}/moments/ld/plots/{project}.moments_ld_fit.pdf",
-                    f"results/{project}/moments/ld/plots/{project}.moments_ld_demes.pdf",
+                    f"results/{project}/moments/{moments_model}/ld/{project}.moments_ld_fit.tsv",
+                    f"results/{project}/moments/{moments_model}/ld/{project}.moments_ld_best.demes.yaml",
+                    f"results/{project}/moments/{moments_model}/ld/plots/{project}.moments_ld_fit.pdf",
+                    f"results/{project}/moments/{moments_model}/ld/plots/{project}.moments_ld_demes.pdf",
                 ]
             )
 
