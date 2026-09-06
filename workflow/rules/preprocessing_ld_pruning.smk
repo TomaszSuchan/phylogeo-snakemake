@@ -103,7 +103,7 @@ rule ld_prune_convert_to_vcf:
         bim = rules.ld_prune_extract.output.bim,
         fam = rules.ld_prune_extract.output.fam
     output:
-        vcf = "results/{project}/filtered_data/{project}.biallelic_snps_ld_pruned.vcf"
+        vcf = temporary("results/{project}/filtered_data/{project}.biallelic_snps_ld_pruned.vcf")
     log:
         "logs/{project}/ld_prune_convert_to_vcf.log"
     benchmark:
