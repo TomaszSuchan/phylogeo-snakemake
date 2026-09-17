@@ -2,12 +2,12 @@
 
 def _barplot_facet_plot_params(wildcards, method_label):
     """Layout for multi-K barplot facet panels (single column)."""
-    mm = config["projects"][wildcards.project]["parameters"]["mapmixture"]
-    facet = config["projects"][wildcards.project]["parameters"]["barplot_facet_plot"]
+    mm = config["projects"][wildcards.project]["parameters"].get("mapmixture", {})
+    facet = config["projects"][wildcards.project]["parameters"].get("barplot_facet_plot", {})
     return {
         "method_label": method_label,
-        "label_width": _fig_cm_to_in(facet["label_width"]),
-        "panel_gap": facet["panel_gap"],
+        "label_width": _fig_cm_to_in(facet.get("label_width"), 1.016),
+        "panel_gap": facet.get("panel_gap", 8),
         "legend_pad": _fig_cm_to_in(facet.get("legend_pad"), 1.016),
         "flip_axis": mm.get("flip_axis", False),
     }
@@ -21,7 +21,7 @@ def _barplot_facet_vertical_plot_params(wildcards, method_label):
     Shares label_width/panel_gap/legend_pad with the column layout and adds two
     optional knobs (col_width in cm, label_size in pt) with script-side defaults.
     """
-    facet = config["projects"][wildcards.project]["parameters"]["barplot_facet_plot"]
+    facet = config["projects"][wildcards.project]["parameters"].get("barplot_facet_plot", {})
     col_width_cm = facet.get("vertical_col_width")
     # The column-layout label_width sizes a narrow rot-90 "K = n" strip, which is
     # far too small for horizontal site-name labels / the cluster key here, so use
@@ -29,7 +29,7 @@ def _barplot_facet_vertical_plot_params(wildcards, method_label):
     return {
         "method_label": method_label,
         "label_width": _fig_cm_to_in(facet.get("vertical_label_width"), 3.8),
-        "panel_gap": facet["panel_gap"],
+        "panel_gap": facet.get("panel_gap", 8),
         "legend_pad": _fig_cm_to_in(facet.get("vertical_legend_pad"), 2.5),
         "col_width": _fig_cm_to_in(col_width_cm) if col_width_cm is not None else None,
         "label_size": facet.get("vertical_label_size"),

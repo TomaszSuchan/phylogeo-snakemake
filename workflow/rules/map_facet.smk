@@ -3,7 +3,7 @@
 
 def _map_facet_plot_params(wildcards, method_label):
     """Layout for multi-K map facet panels (page size follows map_background)."""
-    bg = config["projects"][wildcards.project]["parameters"]["map_background"]
+    bg = config["projects"][wildcards.project]["parameters"].get("map_background", {})
     facet = config["projects"][wildcards.project]["parameters"].get("map_facet_plot", {})
     return {
         "method_label": method_label,

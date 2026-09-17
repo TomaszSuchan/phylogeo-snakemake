@@ -193,7 +193,7 @@ rule plot_tess3_interpolation:
         map_method = lambda wildcards: _tess3_params(wildcards).get("map_method", "map.max"),
         map_resolution = lambda wildcards: _tess3_map_resolution(wildcards),
         interpolation_knots = lambda wildcards: _tess3_params(wildcards).get("interpolation_knots", 10),
-        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"]["mapmixture"].get("structure_colors", _DEFAULT_STRUCTURE_COLORS)
+        structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("mapmixture", {}).get("structure_colors", _DEFAULT_STRUCTURE_COLORS)
     conda:
         "../envs/tess3.yaml"
     threads: 1

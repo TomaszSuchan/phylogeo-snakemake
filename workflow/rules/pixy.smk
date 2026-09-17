@@ -101,7 +101,7 @@ rule pixy_pi:
     benchmark:
         "benchmarks/{project}/pixy_pi.{grouping}.txt"
     params:
-        window_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("window_size", 10000),
+        window_size = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pixy", {}).get("window_size", 10000),
         output_folder = "results/{project}/pixy/",
         output_prefix = "{project}.{grouping}.pixy"
     conda:
@@ -131,7 +131,7 @@ rule pixy_fst:
     benchmark:
         "benchmarks/{project}/pixy_fst.{grouping}.txt"
     params:
-        window_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("window_size", 10000),
+        window_size = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pixy", {}).get("window_size", 10000),
         output_folder = "results/{project}/pixy/",
         output_prefix = "{project}.{grouping}.pixy"
     conda:
@@ -167,7 +167,7 @@ rule pixy_dxy:
     benchmark:
         "benchmarks/{project}/pixy_dxy.{grouping}.txt"
     params:
-        window_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("window_size", 10000),
+        window_size = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pixy", {}).get("window_size", 10000),
         output_folder = "results/{project}/pixy/",
         output_prefix = "{project}.{grouping}.pixy"
     conda:
@@ -203,7 +203,7 @@ rule pixy_watterson_theta:
     benchmark:
         "benchmarks/{project}/pixy_watterson_theta.{grouping}.txt"
     params:
-        window_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("window_size", 10000),
+        window_size = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pixy", {}).get("window_size", 10000),
         output_folder = "results/{project}/pixy/",
         output_prefix = "{project}.{grouping}.pixy"
     conda:
@@ -233,7 +233,7 @@ rule pixy_tajima_d:
     benchmark:
         "benchmarks/{project}/pixy_tajima_d.{grouping}.txt"
     params:
-        window_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("window_size", 10000),
+        window_size = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pixy", {}).get("window_size", 10000),
         output_folder = "results/{project}/pixy/",
         output_prefix = "{project}.{grouping}.pixy"
     conda:
@@ -262,7 +262,7 @@ rule pixy_pi_summary:
         "benchmarks/{project}/pixy_pi_summary.{grouping}.txt"
     params:
         stat = "pi",
-        bootstrap_replicates = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("bootstrap_replicates", 1000)
+        bootstrap_replicates = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pixy", {}).get("bootstrap_replicates", 1000)
     conda:
         "../envs/python.yaml"
     threads: 1
@@ -284,7 +284,7 @@ rule pixy_fst_summary:
         "benchmarks/{project}/pixy_fst_summary.{grouping}.txt"
     params:
         stat = "fst",
-        bootstrap_replicates = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("bootstrap_replicates", 1000)
+        bootstrap_replicates = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pixy", {}).get("bootstrap_replicates", 1000)
     conda:
         "../envs/python.yaml"
     threads: 1
@@ -306,7 +306,7 @@ rule pixy_dxy_summary:
         "benchmarks/{project}/pixy_dxy_summary.{grouping}.txt"
     params:
         stat = "dxy",
-        bootstrap_replicates = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("bootstrap_replicates", 1000)
+        bootstrap_replicates = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pixy", {}).get("bootstrap_replicates", 1000)
     conda:
         "../envs/python.yaml"
     threads: 1
@@ -328,7 +328,7 @@ rule pixy_watterson_theta_summary:
         "benchmarks/{project}/pixy_watterson_theta_summary.{grouping}.txt"
     params:
         stat = "watterson_theta",
-        bootstrap_replicates = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("bootstrap_replicates", 1000)
+        bootstrap_replicates = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pixy", {}).get("bootstrap_replicates", 1000)
     conda:
         "../envs/python.yaml"
     threads: 1
@@ -350,7 +350,7 @@ rule pixy_tajima_d_summary:
         "benchmarks/{project}/pixy_tajima_d_summary.{grouping}.txt"
     params:
         stat = "tajima_d",
-        bootstrap_replicates = lambda wildcards: config["projects"][wildcards.project]["parameters"]["pixy"].get("bootstrap_replicates", 1000)
+        bootstrap_replicates = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pixy", {}).get("bootstrap_replicates", 1000)
     conda:
         "../envs/python.yaml"
     threads: 1
