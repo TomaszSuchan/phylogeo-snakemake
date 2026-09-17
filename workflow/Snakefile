@@ -2612,26 +2612,26 @@ def get_all_targets():
                 ])
                 targets.extend(
                     expand(
-                        f"results/{project}/spca/plots/{project}.spca.axis{axis}.pdf",
+                        f"results/{project}/spca/plots/{project}.spca.axis{{axis}}.pdf",
                         axis=list(range(1, n_spca_axes + 1)),
                     )
                 )
                 targets.extend(
                     expand(
-                        f"results/{project}/spca/plots/{project}.spca.loading.axis{axis}.pdf",
+                        f"results/{project}/spca/plots/{project}.spca.loading.axis{{axis}}.pdf",
                         axis=list(range(1, n_spca_axes + 1)),
                     )
                 )
                 targets.extend(
                     expand(
-                        f"results/{project}/spca/plots/{project}.spca.{score_type}_axis{axis}.map.pdf",
+                        f"results/{project}/spca/plots/{project}.spca.{{score_type}}_axis{{axis}}.map.pdf",
                         score_type=["global"],
                         axis=list(range(1, n_spca_global_axes + 1)),
                     )
                 )
                 targets.extend(
                     expand(
-                        f"results/{project}/spca/plots/{project}.spca.{score_type}_axis{axis}.map.pdf",
+                        f"results/{project}/spca/plots/{project}.spca.{{score_type}}_axis{{axis}}.map.pdf",
                         score_type=["local"],
                         axis=list(range(1, n_spca_local_axes + 1)),
                     )
