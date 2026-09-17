@@ -73,16 +73,21 @@ rule pcaone:
         """
 
 # Rule to build a per-SNP PCA loadings table (which SNPs drive each axis).
-# PCAone's .loadings file has one row per SNP (same order as the input .bim)
-# and one column per PC. We join it with the .bim to attach snp_id/chrom/pos.
+# PCAone's .loadings file has one row per SNP (same order as the PLINK .bed,
+# which preserves the input VCF order) and one column per PC. We attach
+# snp_id/chrom/pos from the *VCF* rather than the .bim, because the PLINK export
+# uses `--allow-extra-chr 0` and flattens every non-integer contig name to "0".
+# The VCF keeps the real chromosome (e.g. LR999934.1) and position.
 rule pcaone_loadings_table:
     input:
         loadings = rules.pcaone.output.pcaone_loadings,
-        bim = rules.vcf_to_plink.output.bim
+        vcf = lambda wildcards: get_filtered_vcf_output(wildcards)
     output:
         table = "results/{project}/pcaone/{project}.PCA.loadings.tsv"
     log:
         "logs/{project}/pcaone_loadings_table.log"
+    conda:
+        "../envs/bcftools.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
@@ -90,14 +95,14 @@ rule pcaone_loadings_table:
     shell:
         r"""
         (
-        nbim=$(wc -l < {input.bim})
+        nvcf=$(zcat {input.vcf} | grep -vc '^#')
         nload=$(wc -l < {input.loadings})
-        if [ "$nbim" -ne "$nload" ]; then
-            echo "ERROR: .bim ($nbim) and .loadings ($nload) row counts differ; cannot join by order" >&2
+        if [ "$nvcf" -ne "$nload" ]; then
+            echo "ERROR: VCF variant count ($nvcf) and .loadings ($nload) row counts differ; cannot join by order" >&2
             exit 1
         fi
         paste \
-            <(awk 'BEGIN{{OFS="\t"}} {{print $2, $1, $4}}' {input.bim}) \
+            <(zcat {input.vcf} | awk -F'\t' 'BEGIN{{OFS="\t"}} !/^#/ {{print $3, $1, $2}}') \
             <(awk 'BEGIN{{OFS="\t"}} {{$1=$1; print}}' {input.loadings}) \
         | awk 'BEGIN{{OFS="\t"}}
                NR==1 {{
@@ -108,6 +113,82 @@ rule pcaone_loadings_table:
                {{print}}'
         ) > {output.table} 2> {log}
         """
+
+
+# Rule to summarise which SNPs drive each PCA axis. Produces two tables from the
+# per-SNP loadings, restricted to the leading `n_pc` PCs (the rest are noise):
+#   * every SNP ranked by |loading| within each PC  (long/tidy)
+#   * every SNP assigned to its dominant axis (PC with the largest |loading|)
+# Both carry the real chrom/pos recovered in pcaone_loadings_table.
+rule pcaone_top_loadings:
+    input:
+        table = rules.pcaone_loadings_table.output.table
+    output:
+        ranked = "results/{project}/pcaone/{project}.PCA.loadings.ranked_per_PC.tsv",
+        assign = "results/{project}/pcaone/{project}.PCA.loadings.axis_assignment.tsv"
+    params:
+        # Summarise the same leading PCs that were computed (PCnum); the trailing
+        # PCs are noise and are intentionally not summarised.
+        n_pc = lambda wildcards: config["projects"][wildcards.project]["parameters"]["PCAone"].get("PCnum", 10)
+    log:
+        "logs/{project}/pcaone_top_loadings.log"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    shell:
+        r"""
+        (
+        # Every SNP ranked by absolute loading within each PC. loading_sq
+        # (= loading^2) is the fraction of that PC's variance carried by the SNP
+        # (they sum to 1 across all SNPs, so the per-SNP average is 1/M).
+        tail -n +2 {input.table} \
+        | awk -F'\t' -v K={params.n_pc} 'BEGIN{{OFS="\t"}}
+               {{ for (k=1; k<=K; k++) {{ c=3+k; v=$c; a=(v<0)?-v:v; print k, a, $1, $2, $3, v }} }}' \
+        | LC_ALL=C sort -k1,1n -k2,2gr \
+        | awk -F'\t' 'BEGIN{{OFS="\t"; print "pc","rank","snp_id","chrom","pos","loading","abs_loading","loading_sq"}}
+               {{ cnt[$1]++; print "PC"$1, cnt[$1], $3, $4, $5, $6, $2, $2*$2 }}' \
+        > {output.ranked}
+
+        # Assign every SNP to the PC (among the leading K) where |loading| is largest.
+        tail -n +2 {input.table} \
+        | awk -F'\t' -v K={params.n_pc} 'BEGIN{{OFS="\t"; print "snp_id","chrom","pos","best_pc","loading","abs_loading","loading_sq"}}
+               {{ best=0; bestv=-1; bestl=0;
+                  for (k=1; k<=K; k++) {{ c=3+k; v=$c; a=(v<0)?-v:v; if (a>bestv) {{ bestv=a; best=k; bestl=v }} }}
+                  print $1, $2, $3, "PC"best, bestl, bestv, bestv*bestv }}' \
+        > {output.assign}
+        ) 2> {log}
+        """
+
+
+# Manhattan-style plot of per-SNP loadings along the genome for the leading PCs,
+# to visualise whether an axis is driven by markers spread across the genome
+# (neutral/polygenic) or concentrated in a region. Points are coloured by
+# chromosome only when real chromosome data is present (see the R script).
+rule plot_pca_loadings_manhattan:
+    input:
+        table = rules.pcaone_top_loadings.output.ranked
+    output:
+        pdf = "results/{project}/pcaone/plots/{project}.PCA-loadings-manhattan.pdf",
+        rds = "results/{project}/pcaone/plots/{project}.PCA-loadings-manhattan.rds"
+    params:
+        n_pc = lambda wildcards: _pca_plot_setting(wildcards.project, "manhattan_pcs", 2),
+        axis_title_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_title_size", 10),
+        axis_text_size = lambda wildcards: _pca_plot_setting(wildcards.project, "axis_text_size", 8),
+        point_size = lambda wildcards: _pca_plot_setting(wildcards.project, "manhattan_point_size", 0.6),
+        width = lambda wildcards: _fig_cm_to_in(_pca_plot_setting(wildcards.project, "manhattan_width"), 30.48),
+        height = lambda wildcards: _fig_cm_to_in(_pca_plot_setting(wildcards.project, "manhattan_height"), 14.0),
+    log:
+        "logs/{project}/plot_pca_loadings_manhattan.log"
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    group: "plot_pca"
+    conda:
+        "../envs/r-plot.yaml"
+    script:
+        "../scripts/plot_pca_loadings_manhattan.R"
 
 # Rule to run PCAone for each miss data threshold
 rule pcaone_miss:

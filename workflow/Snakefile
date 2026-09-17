@@ -590,10 +590,16 @@ def _construct_barplot_facet_inputs(wildcards):
 
 
 def _barplot_facet_targets(project, method):
-    """PDF + RDS targets for a multi-K ancestry barplot facet panel."""
+    """PDF + RDS targets for multi-K ancestry barplot facet panels.
+
+    Includes both the column layout (barplot-facet) and the vertical layout
+    (barplot-facet-vertical: per-K panels tiled left-to-right, lowest K left).
+    """
     return [
         f"results/{project}/{method}/plots/{project}.{method}.barplot-facet.pdf",
         f"results/{project}/{method}/plots/{project}.{method}.barplot-facet.rds",
+        f"results/{project}/{method}/plots/{project}.{method}.barplot-facet-vertical.pdf",
+        f"results/{project}/{method}/plots/{project}.{method}.barplot-facet-vertical.rds",
     ]
 
 
@@ -1716,7 +1722,11 @@ def get_all_targets():
             targets.extend([
                 f"results/{project}/pcaone/{project}.PCA.eigvecs",
                 f"results/{project}/pcaone/{project}.PCA.eigvals",
-                f"results/{project}/pcaone/{project}.PCA.loadings.tsv"
+                f"results/{project}/pcaone/{project}.PCA.loadings.tsv",
+                f"results/{project}/pcaone/{project}.PCA.loadings.ranked_per_PC.tsv",
+                f"results/{project}/pcaone/{project}.PCA.loadings.axis_assignment.tsv",
+                f"results/{project}/pcaone/plots/{project}.PCA-loadings-manhattan.pdf",
+                f"results/{project}/pcaone/plots/{project}.PCA-loadings-manhattan.rds"
             ])
             # Always add missing data calculation target
             targets.append(f"results/{project}/stats_vcf/thinned/{project}.biallelic_snps.imiss")
