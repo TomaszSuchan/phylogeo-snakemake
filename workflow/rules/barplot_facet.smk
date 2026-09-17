@@ -13,29 +13,6 @@ def _barplot_facet_plot_params(wildcards, method_label):
     }
 
 
-def _barplot_facet_vertical_plot_params(wildcards, method_label):
-    """Layout for multi-K *vertical* barplot facet panels (single row).
-
-    Panels are drawn as vertical barplots (individuals top-to-bottom) tiled
-    left-to-right with the lowest K on the left and the highest K on the right.
-    Shares label_width/panel_gap/legend_pad with the column layout and adds two
-    optional knobs (col_width in cm, label_size in pt) with script-side defaults.
-    """
-    facet = config["projects"][wildcards.project]["parameters"]["barplot_facet_plot"]
-    col_width_cm = facet.get("vertical_col_width")
-    # The column-layout label_width sizes a narrow rot-90 "K = n" strip, which is
-    # far too small for horizontal site-name labels / the cluster key here, so use
-    # generous vertical-specific defaults (still overridable via config).
-    return {
-        "method_label": method_label,
-        "label_width": _fig_cm_to_in(facet.get("vertical_label_width"), 3.8),
-        "panel_gap": facet["panel_gap"],
-        "legend_pad": _fig_cm_to_in(facet.get("vertical_legend_pad"), 2.5),
-        "col_width": _fig_cm_to_in(col_width_cm) if col_width_cm is not None else None,
-        "label_size": facet.get("vertical_label_size"),
-    }
-
-
 rule plot_structure_barplot_facet:
     input:
         unpack(_structure_barplot_facet_inputs),
@@ -190,7 +167,7 @@ rule plot_structure_barplot_facet_vertical:
         pdf="results/{project}/structure/plots/{project}.structure.barplot-facet-vertical.pdf",
         rds="results/{project}/structure/plots/{project}.structure.barplot-facet-vertical.rds",
     params:
-        lambda wildcards: _barplot_facet_vertical_plot_params(wildcards, "STRUCTURE"),
+        lambda wildcards: _barplot_facet_plot_params(wildcards, "STRUCTURE"),
     log:
         "logs/{project}/plot_structure_barplot_facet_vertical.log",
     conda:
@@ -210,7 +187,7 @@ rule plot_faststructure_barplot_facet_vertical:
         pdf="results/{project}/faststructure/plots/{project}.faststructure.barplot-facet-vertical.pdf",
         rds="results/{project}/faststructure/plots/{project}.faststructure.barplot-facet-vertical.rds",
     params:
-        lambda wildcards: _barplot_facet_vertical_plot_params(wildcards, "fastStructure"),
+        lambda wildcards: _barplot_facet_plot_params(wildcards, "fastStructure"),
     log:
         "logs/{project}/plot_faststructure_barplot_facet_vertical.log",
     conda:
@@ -230,7 +207,7 @@ rule plot_admixture_barplot_facet_vertical:
         pdf="results/{project}/admixture/plots/{project}.admixture.barplot-facet-vertical.pdf",
         rds="results/{project}/admixture/plots/{project}.admixture.barplot-facet-vertical.rds",
     params:
-        lambda wildcards: _barplot_facet_vertical_plot_params(wildcards, "ADMIXTURE"),
+        lambda wildcards: _barplot_facet_plot_params(wildcards, "ADMIXTURE"),
     log:
         "logs/{project}/plot_admixture_barplot_facet_vertical.log",
     conda:
@@ -250,7 +227,7 @@ rule plot_snmf_barplot_facet_vertical:
         pdf="results/{project}/snmf/plots/{project}.snmf.barplot-facet-vertical.pdf",
         rds="results/{project}/snmf/plots/{project}.snmf.barplot-facet-vertical.rds",
     params:
-        lambda wildcards: _barplot_facet_vertical_plot_params(wildcards, "sNMF"),
+        lambda wildcards: _barplot_facet_plot_params(wildcards, "sNMF"),
     log:
         "logs/{project}/plot_snmf_barplot_facet_vertical.log",
     conda:
@@ -270,7 +247,7 @@ rule plot_tess3_barplot_facet_vertical:
         pdf="results/{project}/tess3/plots/{project}.tess3.barplot-facet-vertical.pdf",
         rds="results/{project}/tess3/plots/{project}.tess3.barplot-facet-vertical.rds",
     params:
-        lambda wildcards: _barplot_facet_vertical_plot_params(wildcards, "tess3"),
+        lambda wildcards: _barplot_facet_plot_params(wildcards, "tess3"),
     log:
         "logs/{project}/plot_tess3_barplot_facet_vertical.log",
     conda:
@@ -290,7 +267,7 @@ rule plot_alstructure_barplot_facet_vertical:
         pdf="results/{project}/alstructure/plots/{project}.alstructure.barplot-facet-vertical.pdf",
         rds="results/{project}/alstructure/plots/{project}.alstructure.barplot-facet-vertical.rds",
     params:
-        lambda wildcards: _barplot_facet_vertical_plot_params(wildcards, "ALStructure"),
+        lambda wildcards: _barplot_facet_plot_params(wildcards, "ALStructure"),
     log:
         "logs/{project}/plot_alstructure_barplot_facet_vertical.log",
     conda:
@@ -310,7 +287,7 @@ rule plot_construct_barplot_facet_vertical:
         pdf="results/{project}/construct/plots/{project}.construct.barplot-facet-vertical.pdf",
         rds="results/{project}/construct/plots/{project}.construct.barplot-facet-vertical.rds",
     params:
-        lambda wildcards: _barplot_facet_vertical_plot_params(wildcards, "conStruct"),
+        lambda wildcards: _barplot_facet_plot_params(wildcards, "conStruct"),
     log:
         "logs/{project}/plot_construct_barplot_facet_vertical.log",
     conda:
