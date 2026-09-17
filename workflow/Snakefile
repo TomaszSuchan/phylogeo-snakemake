@@ -335,7 +335,7 @@ def _map_bg_params(wildcards):
     Includes `use_elevation_bg` since it is always needed alongside the other
     map params and is derived from the same config section.
     """
-    bg = config["projects"][wildcards.project]["parameters"]["map_background"]
+    bg = config["projects"][wildcards.project]["parameters"].get("map_background", {})
     params = config["projects"][wildcards.project]["parameters"]
     return {
         "width": _fig_cm_to_in(bg.get("width"), 25.4),
@@ -366,7 +366,7 @@ def _map_bg_params(wildcards):
 
 def _mapmixture_pie_params(wildcards):
     """mapmixture pie chart + structure_colors params for ancestry map rules."""
-    mm = config["projects"][wildcards.project]["parameters"]["mapmixture"]
+    mm = config["projects"][wildcards.project]["parameters"].get("mapmixture", {})
     return {
         "pie_size": mm.get("pie_size", 1),
         "pie_border": mm.get("pie_border", 0.2),
@@ -384,8 +384,8 @@ def _mapmixture_map_params(wildcards):
 
 def _barplot_params(wildcards):
     """Shared params for all ancestry barplot rules (map_background size + mapmixture barplot keys)."""
-    bg = config["projects"][wildcards.project]["parameters"]["map_background"]
-    mm = config["projects"][wildcards.project]["parameters"]["mapmixture"]
+    bg = config["projects"][wildcards.project]["parameters"].get("map_background", {})
+    mm = config["projects"][wildcards.project]["parameters"].get("mapmixture", {})
     return {
         "width": _fig_cm_to_in(bg.get("width"), 25.4),
         "height": _fig_cm_to_in(bg.get("height"), 15.24),
@@ -605,7 +605,7 @@ def _barplot_facet_targets(project, method):
 
 def _pixy_pi_map_params(wildcards):
     """Params for plot_pixy_pi_map (map_background + pixy map knobs)."""
-    pixy = config["projects"][wildcards.project]["parameters"]["pixy"]
+    pixy = config["projects"][wildcards.project]["parameters"].get("pixy", {})
     return {
         **_map_bg_params(wildcards),
         "stat_type": "pi",
@@ -880,7 +880,7 @@ def _population_map_group_setting(project, group_col, key, default=None):
 
 def _population_map_params(wildcards):
     """Params for plot_population_map (map_background + label/ggrepel knobs)."""
-    pm = config["projects"][wildcards.project]["parameters"]["population_map"]
+    pm = config["projects"][wildcards.project]["parameters"].get("population_map", {})
     return {
         **_map_bg_params(wildcards),
         "point_size": pm.get("point_size", 3),
@@ -902,7 +902,7 @@ def _population_map_params(wildcards):
 
 def _population_map_group_params(wildcards):
     """Params for plot_population_map_by_group (map_background + grouped map knobs)."""
-    pm = config["projects"][wildcards.project]["parameters"]["population_map"]
+    pm = config["projects"][wildcards.project]["parameters"].get("population_map", {})
     group_col = wildcards.group_col
     return {
         **_map_bg_params(wildcards),
@@ -936,7 +936,7 @@ def _spca_map_rule_params(wildcards):
 
 def _tess3_map_resolution(wildcards):
     """plot.tess3Q/ggtess3Q interpolation grid c(rx, ry) from map_background size."""
-    bg = config["projects"][wildcards.project]["parameters"]["map_background"]
+    bg = config["projects"][wildcards.project]["parameters"].get("map_background", {})
     width = _fig_cm_to_in(bg.get("width"), 25.4)
     height = _fig_cm_to_in(bg.get("height"), 20.32)
     dpi = float(bg.get("dpi", 300))
@@ -950,7 +950,7 @@ def _tess3_map_resolution(wildcards):
 
 def _tess3_ggmap_params(wildcards):
     """Params for plot_tess3_ggmap (map_background + tess3 ggmap knobs)."""
-    mm = config["projects"][wildcards.project]["parameters"]["mapmixture"]
+    mm = config["projects"][wildcards.project]["parameters"].get("mapmixture", {})
     return {
         **_map_bg_params(wildcards),
         "k": int(wildcards.k),
@@ -2622,26 +2622,26 @@ def get_all_targets():
                 ])
                 targets.extend(
                     expand(
-                        f"results/{project}/spca/plots/{project}.spca.axis{axis}.pdf",
+                        f"results/{project}/spca/plots/{project}.spca.axis{{axis}}.pdf",
                         axis=list(range(1, n_spca_axes + 1)),
                     )
                 )
                 targets.extend(
                     expand(
-                        f"results/{project}/spca/plots/{project}.spca.loading.axis{axis}.pdf",
+                        f"results/{project}/spca/plots/{project}.spca.loading.axis{{axis}}.pdf",
                         axis=list(range(1, n_spca_axes + 1)),
                     )
                 )
                 targets.extend(
                     expand(
-                        f"results/{project}/spca/plots/{project}.spca.{score_type}_axis{axis}.map.pdf",
+                        f"results/{project}/spca/plots/{project}.spca.{{score_type}}_axis{{axis}}.map.pdf",
                         score_type=["global"],
                         axis=list(range(1, n_spca_global_axes + 1)),
                     )
                 )
                 targets.extend(
                     expand(
-                        f"results/{project}/spca/plots/{project}.spca.{score_type}_axis{axis}.map.pdf",
+                        f"results/{project}/spca/plots/{project}.spca.{{score_type}}_axis{{axis}}.map.pdf",
                         score_type=["local"],
                         axis=list(range(1, n_spca_local_axes + 1)),
                     )
