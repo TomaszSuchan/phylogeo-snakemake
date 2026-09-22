@@ -68,14 +68,13 @@ hc <- hclust(dist_matrix, method = "average")
 pop_order <- hc$labels[hc$order]
 message("Populations ordered by dendrogram: ", paste(pop_order, collapse = " -> "), "\n")
 
-# Reorder matrix by dendrogram order
-dxy_matrix_ordered <- dxy_matrix[pop_order, pop_order]
-
-# Create heatmap with dendrogram using pheatmap
+# Create heatmap with dendrogram using pheatmap.
+# Pass the unordered matrix: pheatmap reorders by hc$order internally.
+# Pre-reordering here would double-permute labels vs dendrogram tips.
 message("\n=== CREATING HEATMAP ===\n")
 
 p <- pheatmap::pheatmap(
-  dxy_matrix_ordered,
+  dxy_matrix,
   cluster_rows = hc,
   cluster_cols = hc,
   display_numbers = TRUE,
