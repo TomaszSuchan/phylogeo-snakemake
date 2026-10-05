@@ -258,7 +258,9 @@ rule plot_evaladmix_admixture:
         "benchmarks/{project}/plot_evaladmix_admixture.K{k}.txt"
     params:
         method = "ADMIXTURE",
-        k = lambda wildcards: wildcards.k
+        k = lambda wildcards: wildcards.k,
+        width = lambda wildcards: _project_param_inches(wildcards.project, ("evaladmix", "width"), 25.4),
+        height = lambda wildcards: _project_param_inches(wildcards.project, ("evaladmix", "height"), 22.86),
     conda:
         "../envs/r-plot.yaml"
     threads: 1
@@ -286,7 +288,9 @@ rule plot_evaladmix_faststructure:
         "benchmarks/{project}/plot_evaladmix_faststructure.K{k}.txt"
     params:
         method = "fastStructure",
-        k = lambda wildcards: wildcards.k
+        k = lambda wildcards: wildcards.k,
+        width = lambda wildcards: _project_param_inches(wildcards.project, ("evaladmix", "width"), 25.4),
+        height = lambda wildcards: _project_param_inches(wildcards.project, ("evaladmix", "height"), 22.86),
     conda:
         "../envs/r-plot.yaml"
     threads: 1
@@ -314,7 +318,9 @@ rule plot_evaladmix_structure:
         "benchmarks/{project}/plot_evaladmix_structure.K{k}.txt"
     params:
         method = "STRUCTURE",
-        k = lambda wildcards: wildcards.k
+        k = lambda wildcards: wildcards.k,
+        width = lambda wildcards: _project_param_inches(wildcards.project, ("evaladmix", "width"), 25.4),
+        height = lambda wildcards: _project_param_inches(wildcards.project, ("evaladmix", "height"), 22.86),
     conda:
         "../envs/r-plot.yaml"
     threads: 1

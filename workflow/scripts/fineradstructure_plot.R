@@ -31,6 +31,18 @@ output_rds <- snakemake@output[["rds"]]
 
 maxIndv <- as.numeric(snakemake@params[["max_indv"]])
 maxPop <- as.numeric(snakemake@params[["max_pop"]])
+
+fig_in <- function(name, default) {
+  if (!name %in% names(snakemake@params)) return(default)
+  value <- suppressWarnings(as.numeric(snakemake@params[[name]]))
+  if (length(value) != 1 || is.na(value)) default else value
+}
+simple_width <- fig_in("width", 25)
+simple_height <- fig_in("height", 25)
+popavg_width <- fig_in("popavg_width", 20)
+popavg_height <- fig_in("popavg_height", 20)
+labeled_width <- fig_in("labeled_width", 25)
+labeled_height <- fig_in("labeled_height", 25)
 population_columns <- snakemake@params[["population_columns"]]
 population_colors  <- snakemake@params[["population_colors"]]
 
@@ -123,7 +135,7 @@ datamatrix <- dataraw[fullorder, fullorder, drop = FALSE]
 
 tmpmat <- datamatrix
 tmpmat[tmpmat > maxIndv] <- maxIndv
-pdf(file = simple_pdf, height = 25, width = 25)
+pdf(file = simple_pdf, height = simple_height, width = simple_width)
 plotFinestructure(
   tmpmat,
   dimnames(tmpmat)[[1]],
@@ -138,7 +150,7 @@ cat("Wrote simple coancestry plot\n")
 popmeanmatrix <- getPopMeanMatrix(datamatrix, mapstatelist)
 tmpmat <- popmeanmatrix
 tmpmat[tmpmat > maxPop] <- maxPop
-pdf(file = popavg_pdf, height = 20, width = 20)
+pdf(file = popavg_pdf, height = popavg_height, width = popavg_width)
 plotFinestructure(
   tmpmat,
   dimnames(tmpmat)[[1]],
@@ -270,7 +282,7 @@ if (is.null(population_columns)) {
   text_labelsoff <- -bar_y_bot(n_bars) + 0.8   # push labels below last bar
 
   # --- draw the labeled plot --------------------------------------------------
-  pdf(file = labeled_pdf, height = 25, width = 25)
+  pdf(file = labeled_pdf, height = labeled_height, width = labeled_width)
 
   plotFinestructure(
     tmpmat,

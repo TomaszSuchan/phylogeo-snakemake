@@ -52,6 +52,17 @@ if ("plot_all" %in% names(snakemake@params)) {
   plot_all <- isTRUE(as.logical(snakemake@params[["plot_all"]]))
 }
 
+plot_width <- 12
+plot_height <- 10
+if ("width" %in% names(snakemake@params)) {
+  width_value <- suppressWarnings(as.numeric(snakemake@params[["width"]]))
+  if (!is.na(width_value)) plot_width <- width_value
+}
+if ("height" %in% names(snakemake@params)) {
+  height_value <- suppressWarnings(as.numeric(snakemake@params[["height"]]))
+  if (!is.na(height_value)) plot_height <- height_value
+}
+
 THRESHOLD_PROFILES <- list(
   ajk = list(
     clone = 0.45,
@@ -240,7 +251,7 @@ if (length(all_individuals) == 0) {
     annotate("text", x = 0.5, y = 0.5, label = "No related pairs found", size = 6) +
     theme_void()
   dir.create(dirname(output_pdf), recursive = TRUE, showWarnings = FALSE)
-  ggsave_pdf(filename = output_pdf, plot = p, width = 10, height = 8, units = "in")
+  ggsave_pdf(filename = output_pdf, plot = p, width = plot_width, height = plot_height, units = "in")
   saveRDS(list(plot = p, edges = pairwise_df), output_rds)
   quit(status = 0)
 }
@@ -340,7 +351,7 @@ build_plot <- function() {
 
 p <- build_plot()
 dir.create(dirname(output_pdf), recursive = TRUE, showWarnings = FALSE)
-ggsave_pdf(filename = output_pdf, plot = p, width = 12, height = 10, units = "in")
+ggsave_pdf(filename = output_pdf, plot = p, width = plot_width, height = plot_height, units = "in")
 saveRDS(
   list(
     graph = tbl_graph,

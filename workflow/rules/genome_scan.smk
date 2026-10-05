@@ -229,6 +229,9 @@ rule plot_genome_scan_imiss_histogram:
         summary = "results/{project}/genome_scan/{project}.genome_scan.imiss_summary.txt"
     log:
         "logs/{project}/plot_genome_scan_imiss_histogram.log"
+    params:
+        width = lambda wildcards: _project_param_inches(wildcards.project, ("qc_histogram", "width"), 25.4),
+        height = lambda wildcards: _project_param_inches(wildcards.project, ("qc_histogram", "height"), 15.24),
     conda:
         "../envs/r-plot.yaml"
     threads: 1
@@ -247,6 +250,9 @@ rule plot_genome_scan_lmiss_histogram:
         summary = "results/{project}/genome_scan/{project}.genome_scan.lmiss_summary.txt"
     log:
         "logs/{project}/plot_genome_scan_lmiss_histogram.log"
+    params:
+        width = lambda wildcards: _project_param_inches(wildcards.project, ("qc_histogram", "width"), 25.4),
+        height = lambda wildcards: _project_param_inches(wildcards.project, ("qc_histogram", "height"), 15.24),
     conda:
         "../envs/r-plot.yaml"
     threads: 1

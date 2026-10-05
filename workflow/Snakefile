@@ -38,6 +38,23 @@ def _fig_cm_to_in(value_cm, default_cm=None):
     return float(value_cm) / _CM_PER_INCH
 
 
+def _project_param_inches(project, path, default_cm):
+    """Walk parameters along `path` and convert a centimetre figure size to inches."""
+    node = config["projects"][project]["parameters"]
+    for key in path:
+        if not isinstance(node, dict):
+            node = None
+            break
+        node = node.get(key)
+    return _fig_cm_to_in(node, default_cm)
+
+
+def _map_bg_inches(project, key, default_cm):
+    """map_background width/height in inches. All geographic maps use this."""
+    bg = config["projects"][project]["parameters"].get("map_background", {})
+    return _fig_cm_to_in(bg.get(key) if isinstance(bg, dict) else None, default_cm)
+
+
 def _choose_k_plot_param(wildcards, key, default):
     """Width/height (cm in config → inches) or dpi for choose-K score plots."""
     raw = config["projects"][wildcards.project]["parameters"].get("choose_k_plot", {}).get(key, default)

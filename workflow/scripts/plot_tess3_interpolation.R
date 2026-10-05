@@ -28,6 +28,10 @@ map_resolution <- as.integer(unlist(snakemake@params[["map_resolution"]]))
 interpolation_knots <- as.integer(snakemake@params[["interpolation_knots"]])
 structure_colors <- unlist(snakemake@params[["structure_colors"]])
 use_custom_palette <- length(structure_colors) > 0
+map_width <- as.numeric(snakemake@params[["width"]])
+map_height <- as.numeric(snakemake@params[["height"]])
+if (is.na(map_width)) map_width <- 10
+if (is.na(map_height)) map_height <- 8
 
 results <- readRDS(results_rds)
 tess3_obj <- results$tess3
@@ -54,7 +58,7 @@ dir.create(dirname(output_pdf), recursive = TRUE, showWarnings = FALSE)
 
 cat("Drawing tess3r interpolated map for K =", k, "...\n")
 tryCatch({
-  pdf(output_pdf, width = 10, height = 8)
+  pdf(output_pdf, width = map_width, height = map_height)
   plot_args <- list(
     x = qmat,
     coord = coords,
@@ -78,7 +82,7 @@ tryCatch({
 }, error = function(e) {
   cat("WARNING: tess3r interpolation plot failed:", conditionMessage(e), "\n")
   if (dev.cur() != 1) dev.off()
-  pdf(output_pdf, width = 10, height = 8)
+  pdf(output_pdf, width = map_width, height = map_height)
   plot.new()
   text(0.5, 0.5, paste("Interpolation plot failed:", conditionMessage(e)))
   dev.off()

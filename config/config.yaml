@@ -115,6 +115,11 @@ parameters: &global_params
     height: 12.7                      # plot height in cm
     dpi: 300                        # dots per inch (resolution)
 
+  ## Missingness and depth histograms
+  qc_histogram:
+    width: 25.4                     # plot width in cm (10 in)
+    height: 15.24                   # plot height in cm (6 in)
+
   ## Multi-K ancestry map facet panels (structure, admixture, DAPC, etc.)
   # Tile per-K map panels (K >= 2); ncol only — page size follows map_background.
   map_facet_plot:
@@ -332,6 +337,13 @@ parameters: &global_params
     n_da: 10             # number of discriminant axes to retain
     n_rep: 30            # number of cross-validation replicates (reserved for future use)
     criterion: "diffNgroup"  # criterion for cluster selection: "diffNgroup", "min", "goesup", "smoothNgoesup", or "goodfit"
+    scatter_width: 20.32     # DAPC scatter page width in cm (8 in); the map uses map_background
+    scatter_height: 15.24    # DAPC scatter page height in cm (6 in)
+
+  ## evalAdmix residual-correlation plots
+  evaladmix:
+    width: 25.4              # plot width in cm (10 in)
+    height: 22.86            # plot height in cm (9 in)
 
   ## sPCA parameters
   # Spatial PCA (sPCA; adegenet 2.1.x, Jombart et al. 2008). Requires analyses.spca: true and
@@ -391,6 +403,18 @@ parameters: &global_params
     # Squared-loading cutoff for loadingplot allele labels; null = adegenet default (e.g. label top contributors).
     # Numeric example: 0.95 labels alleles above the 95th percentile of squared loadings on that axis.
     loading_threshold: null
+    # Non-map sPCA figures, in cm. Geographic plots (plot.spca, colorplot, per-axis maps)
+    # use map_background. The eigenvalue barplot keeps its fixed size.
+    scree_width: 25.4            # 10 in
+    scree_height: 17.78          # 7 in
+    composite_width: 30.48       # 12 in
+    composite_height: 25.4       # 10 in
+    rtest_width: 17.78           # 7 in
+    rtest_height: 12.7           # 5 in
+    scatter_width: 20.32         # 8 in
+    scatter_height: 15.24        # 6 in
+    loading_width: 30.48         # 12 in
+    loading_height: 15.24        # 6 in
   spca_map:
     # Repo-style maps of retained sPCA scores on the same basemap used by STRUCTURE/ADMIXTURE maps.
     # Each retained global/local axis gets a separate map; points are individual samples colored by score.
@@ -425,6 +449,8 @@ parameters: &global_params
   pca_plot:
     width: 15.24             # single-plot width in cm (~6 in); facet panels use this per panel
     height: 12.7             # single-plot height in cm (~5 in); facet panels use this per panel
+    manhattan_width: 30.48   # loadings manhattan width in cm (~12 in)
+    manhattan_height: 14.0   # loadings manhattan height in cm (~5.5 in)
     axis_title_size: 10
     axis_text_size: 8
     point_size: 3
@@ -446,6 +472,8 @@ parameters: &global_params
     color_by: ["none"]          # columns in indpopdata used to color network nodes; "none" disables node coloring
     plot_all: false             # when true, include unrelated individuals as isolated nodes in network plots
     relatedness_colors: null   # optional custom palette for relatedness network plots
+    width: 30.48                # network plot width in cm (12 in)
+    height: 25.4                # network plot height in cm (10 in)
 
   # Shared population stratification for vcftools, PLINK --genome, and R related.
   # Not used by KING or PC-Relate (full-sample estimators).
@@ -586,6 +614,8 @@ parameters: &global_params
   amova:
     strata: ["Region", "Site"]           # e.g. ["Region", "Site"]
     nperm: 999           # number of permutations
+    width: 12.7          # variance-component plot width in cm (5 in)
+    height: 7.62         # variance-component plot height in cm (3 in)
 
   ## ROH parameters
   # Runs of homozygosity calls and group summaries.
@@ -658,6 +688,12 @@ parameters: &global_params
     plot:
       max_indv: 10000           # max individuals for plotting
       max_pop: 10000            # max populations for plotting
+      width: 63.5               # simple coancestry plot width in cm (25 in)
+      height: 63.5              # simple coancestry plot height in cm (25 in)
+      popavg_width: 50.8        # population-averaged plot width in cm (20 in)
+      popavg_height: 50.8       # population-averaged plot height in cm (20 in)
+      labeled_width: 63.5       # labeled coancestry plot width in cm (25 in)
+      labeled_height: 63.5      # labeled coancestry plot height in cm (25 in)
       population_columns: ["Site"] # indpopdata columns for annotation bars and cluster labels;
                                    # null = skip the labeled plot entirely
       # Per-column color settings (same structure as roh / pixy).

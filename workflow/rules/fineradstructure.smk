@@ -115,6 +115,12 @@ rule fineradstructure_plot:
     params:
         max_indv = lambda wildcards: config["projects"][wildcards.project]["parameters"]["fineradstructure"].get("plot", {}).get("max_indv", 10000),
         max_pop = lambda wildcards: config["projects"][wildcards.project]["parameters"]["fineradstructure"].get("plot", {}).get("max_pop", 10000),
+        width = lambda wildcards: _project_param_inches(wildcards.project, ("fineradstructure", "plot", "width"), 63.5),
+        height = lambda wildcards: _project_param_inches(wildcards.project, ("fineradstructure", "plot", "height"), 63.5),
+        popavg_width = lambda wildcards: _project_param_inches(wildcards.project, ("fineradstructure", "plot", "popavg_width"), 50.8),
+        popavg_height = lambda wildcards: _project_param_inches(wildcards.project, ("fineradstructure", "plot", "popavg_height"), 50.8),
+        labeled_width = lambda wildcards: _project_param_inches(wildcards.project, ("fineradstructure", "plot", "labeled_width"), 63.5),
+        labeled_height = lambda wildcards: _project_param_inches(wildcards.project, ("fineradstructure", "plot", "labeled_height"), 63.5),
         population_columns = lambda wildcards: config["projects"][wildcards.project]["parameters"]["fineradstructure"].get("plot", {}).get("population_columns", ["Site"]),
         population_colors = lambda wildcards: {
             col: _fineradstructure_plot_setting(wildcards.project, col, "colors")

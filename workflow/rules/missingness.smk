@@ -178,6 +178,9 @@ rule plot_imiss_histogram_original:
         summary = "results/{project}/stats_vcf/original/{project}.subset.imiss_summary.txt"
     log:
         "logs/{project}/plot_imiss_histogram_original.log"
+    params:
+        width = lambda wildcards: _project_param_inches(wildcards.project, ("qc_histogram", "width"), 25.4),
+        height = lambda wildcards: _project_param_inches(wildcards.project, ("qc_histogram", "height"), 15.24),
     conda:
         "../envs/r-plot.yaml"
     threads: 1
@@ -197,6 +200,9 @@ rule plot_imiss_histogram_filtered:
         summary = "results/{project}/stats_vcf/filtered/{project}.filtered.imiss_summary.txt"
     log:
         "logs/{project}/plot_imiss_histogram_filtered.log"
+    params:
+        width = lambda wildcards: _project_param_inches(wildcards.project, ("qc_histogram", "width"), 25.4),
+        height = lambda wildcards: _project_param_inches(wildcards.project, ("qc_histogram", "height"), 15.24),
     conda:
         "../envs/r-plot.yaml"
     threads: 1
@@ -216,6 +222,9 @@ rule plot_imiss_histogram_thinned:
         summary = "results/{project}/stats_vcf/thinned/{project}.biallelic_snps.imiss_summary.txt"
     log:
         "logs/{project}/plot_imiss_histogram_thinned.log"
+    params:
+        width = lambda wildcards: _project_param_inches(wildcards.project, ("qc_histogram", "width"), 25.4),
+        height = lambda wildcards: _project_param_inches(wildcards.project, ("qc_histogram", "height"), 15.24),
     conda:
         "../envs/r-plot.yaml"
     threads: 1
@@ -235,6 +244,9 @@ rule plot_lmiss_histogram_original:
         summary = "results/{project}/stats_vcf/original/{project}.subset.lmiss_summary.txt"
     log:
         "logs/{project}/plot_lmiss_histogram_original.log"
+    params:
+        width = lambda wildcards: _project_param_inches(wildcards.project, ("qc_histogram", "width"), 25.4),
+        height = lambda wildcards: _project_param_inches(wildcards.project, ("qc_histogram", "height"), 15.24),
     conda:
         "../envs/r-plot.yaml"
     threads: 1
@@ -254,6 +266,9 @@ rule plot_lmiss_histogram_filtered:
         summary = "results/{project}/stats_vcf/filtered/{project}.filtered.lmiss_summary.txt"
     log:
         "logs/{project}/plot_lmiss_histogram_filtered.log"
+    params:
+        width = lambda wildcards: _project_param_inches(wildcards.project, ("qc_histogram", "width"), 25.4),
+        height = lambda wildcards: _project_param_inches(wildcards.project, ("qc_histogram", "height"), 15.24),
     conda:
         "../envs/r-plot.yaml"
     threads: 1
@@ -273,6 +288,9 @@ rule plot_lmiss_histogram_thinned:
         summary = "results/{project}/stats_vcf/thinned/{project}.biallelic_snps.lmiss_summary.txt"
     log:
         "logs/{project}/plot_lmiss_histogram_thinned.log"
+    params:
+        width = lambda wildcards: _project_param_inches(wildcards.project, ("qc_histogram", "width"), 25.4),
+        height = lambda wildcards: _project_param_inches(wildcards.project, ("qc_histogram", "height"), 15.24),
     conda:
         "../envs/r-plot.yaml"
     threads: 1

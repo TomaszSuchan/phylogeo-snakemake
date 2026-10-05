@@ -91,7 +91,17 @@ rule spca_plot:
         color_by = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("spca_plot", {}).get("color_by", "Site"),
         pc_max = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("spca_plot", {}).get("pc_max", 4),
         plot_axis = 0,
-        plot_loading = 0
+        plot_loading = 0,
+        scree_width = lambda wildcards: _project_param_inches(wildcards.project, ("spca_plot", "scree_width"), 25.4),
+        scree_height = lambda wildcards: _project_param_inches(wildcards.project, ("spca_plot", "scree_height"), 17.78),
+        composite_width = lambda wildcards: _project_param_inches(wildcards.project, ("spca_plot", "composite_width"), 30.48),
+        composite_height = lambda wildcards: _project_param_inches(wildcards.project, ("spca_plot", "composite_height"), 25.4),
+        rtest_width = lambda wildcards: _project_param_inches(wildcards.project, ("spca_plot", "rtest_width"), 17.78),
+        rtest_height = lambda wildcards: _project_param_inches(wildcards.project, ("spca_plot", "rtest_height"), 12.7),
+        scatter_width = lambda wildcards: _project_param_inches(wildcards.project, ("spca_plot", "scatter_width"), 20.32),
+        scatter_height = lambda wildcards: _project_param_inches(wildcards.project, ("spca_plot", "scatter_height"), 15.24),
+        map_width = lambda wildcards: _map_bg_inches(wildcards.project, "width", 25.4),
+        map_height = lambda wildcards: _map_bg_inches(wildcards.project, "height", 20.32),
     conda:
         "../envs/adegenet.yaml"
     threads: 1
@@ -149,7 +159,9 @@ rule spca_axis_plot:
         type = lambda wildcards: _spca_params(wildcards).get("type", 1),
         color_by = "none",
         pc_max = 2,
-        loading_threshold = None
+        loading_threshold = None,
+        map_width = lambda wildcards: _map_bg_inches(wildcards.project, "width", 25.4),
+        map_height = lambda wildcards: _map_bg_inches(wildcards.project, "height", 20.32),
     conda:
         "../envs/adegenet.yaml"
     threads: 1
@@ -178,7 +190,9 @@ rule spca_loading_plot:
         type = lambda wildcards: _spca_params(wildcards).get("type", 1),
         color_by = "none",
         pc_max = 2,
-        loading_threshold = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("spca_plot", {}).get("loading_threshold", None)
+        loading_threshold = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("spca_plot", {}).get("loading_threshold", None),
+        loading_width = lambda wildcards: _project_param_inches(wildcards.project, ("spca_plot", "loading_width"), 30.48),
+        loading_height = lambda wildcards: _project_param_inches(wildcards.project, ("spca_plot", "loading_height"), 15.24),
     conda:
         "../envs/adegenet.yaml"
     threads: 1

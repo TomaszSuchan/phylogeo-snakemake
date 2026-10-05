@@ -119,6 +119,9 @@ rule plot_idepth_histogram_original:
         summary = "results/{project}/stats_vcf/original/{project}.subset.idepth_summary.txt"
     log:
         "logs/{project}/plot_idepth_histogram_original.log"
+    params:
+        width = lambda wildcards: _project_param_inches(wildcards.project, ("qc_histogram", "width"), 25.4),
+        height = lambda wildcards: _project_param_inches(wildcards.project, ("qc_histogram", "height"), 15.24),
     conda:
         "../envs/r-plot.yaml"
     threads: 1
@@ -137,6 +140,9 @@ rule plot_ldepth_histogram_original:
         summary = "results/{project}/stats_vcf/original/{project}.subset.ldepth_summary.txt"
     log:
         "logs/{project}/plot_ldepth_histogram_original.log"
+    params:
+        width = lambda wildcards: _project_param_inches(wildcards.project, ("qc_histogram", "width"), 25.4),
+        height = lambda wildcards: _project_param_inches(wildcards.project, ("qc_histogram", "height"), 15.24),
     conda:
         "../envs/r-plot.yaml"
     threads: 1
@@ -243,6 +249,9 @@ rule plot_idepth_histogram_filtered:
         summary = "results/{project}/stats_vcf/filtered/{project}.filtered.idepth_summary.txt"
     log:
         "logs/{project}/plot_idepth_histogram_filtered.log"
+    params:
+        width = lambda wildcards: _project_param_inches(wildcards.project, ("qc_histogram", "width"), 25.4),
+        height = lambda wildcards: _project_param_inches(wildcards.project, ("qc_histogram", "height"), 15.24),
     conda:
         "../envs/r-plot.yaml"
     threads: 1
@@ -261,6 +270,9 @@ rule plot_ldepth_histogram_filtered:
         summary = "results/{project}/stats_vcf/filtered/{project}.filtered.ldepth_summary.txt"
     log:
         "logs/{project}/plot_ldepth_histogram_filtered.log"
+    params:
+        width = lambda wildcards: _project_param_inches(wildcards.project, ("qc_histogram", "width"), 25.4),
+        height = lambda wildcards: _project_param_inches(wildcards.project, ("qc_histogram", "height"), 15.24),
     conda:
         "../envs/r-plot.yaml"
     threads: 1
@@ -323,6 +335,9 @@ rule plot_idepth_histogram_thinned:
         summary = "results/{project}/stats_vcf/thinned/{project}.biallelic_snps.idepth_summary.txt"
     log:
         "logs/{project}/plot_idepth_histogram_thinned.log"
+    params:
+        width = lambda wildcards: _project_param_inches(wildcards.project, ("qc_histogram", "width"), 25.4),
+        height = lambda wildcards: _project_param_inches(wildcards.project, ("qc_histogram", "height"), 15.24),
     conda:
         "../envs/r-plot.yaml"
     threads: 1
@@ -341,6 +356,9 @@ rule plot_ldepth_histogram_thinned:
         summary = "results/{project}/stats_vcf/thinned/{project}.biallelic_snps.ldepth_summary.txt"
     log:
         "logs/{project}/plot_ldepth_histogram_thinned.log"
+    params:
+        width = lambda wildcards: _project_param_inches(wildcards.project, ("qc_histogram", "width"), 25.4),
+        height = lambda wildcards: _project_param_inches(wildcards.project, ("qc_histogram", "height"), 15.24),
     conda:
         "../envs/r-plot.yaml"
     threads: 1
