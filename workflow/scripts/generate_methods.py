@@ -372,14 +372,30 @@ def _biallelic_filter_label(maf_value):
     return "biallelic SNPs with MAC > 1 and no MAF filter"
 
 
+def _fmt_depth(value, fallback):
+    """Format a depth value to one decimal place for methods text."""
+    if value is None:
+        return fallback
+    try:
+        return f"{float(value):.1f}"
+    except (TypeError, ValueError):
+        return str(value)
+
+
 def _fmt_depth_triplet(depth):
-    overall = depth.get("overall_mean_depth", "[MEAN_DEPTH]")
-    ind_med = depth.get("individual_median_depth", "[IND_MEDIAN_DEPTH]")
-    site_med = depth.get("site_median_depth", "[SITE_MEDIAN_DEPTH]")
+    """Headline mean depth plus medians of the per-individual and per-site distributions.
+
+    The unweighted means of those distributions equal (or nearly equal) the
+    overall mean across called genotypes, so medians are reported instead to
+    show the typical individual/site under right-skewed coverage.
+    """
+    overall = _fmt_depth(depth.get("overall_mean_depth"), "[MEAN_DEPTH]")
+    ind_med = _fmt_depth(depth.get("individual_median_depth"), "[IND_MEDIAN_DEPTH]")
+    site_med = _fmt_depth(depth.get("site_median_depth"), "[SITE_MEDIAN_DEPTH]")
     return (
-        f"mean depth across called genotypes was {overall}, with a median "
-        f"individual mean depth of {ind_med} and a median site mean depth of "
-        f"{site_med}"
+        f"mean depth across called genotypes was {overall}; "
+        f"median depth per individual was {ind_med} and median depth per SNP "
+        f"was {site_med}"
     )
 
 
@@ -403,10 +419,10 @@ filt_parts.append(
 
 filt_parts.append(
     f"Sequencing depth was summarised with vcftools "
-    f"{vn(versions,'vcftools')} (Danecek et al. 2011), using --depth to "
-    f"estimate mean read depth per individual and --site-mean-depth to estimate "
-    f"mean read depth per SNP. In the all-SNP dataset, {_fmt_depth_triplet(depth_filtered)}. "
-    f"In the biallelic SNP dataset, {_fmt_depth_triplet(depth_biallelic)}."
+    f"{vn(versions,'vcftools')} (Danecek et al. 2011), using --depth "
+    f"(per individual) and --site-mean-depth (per SNP). In the all-SNP "
+    f"dataset, {_fmt_depth_triplet(depth_filtered)}. In the biallelic SNP "
+    f"dataset, {_fmt_depth_triplet(depth_biallelic)}."
 )
 
 sections.append(("Data filtering and dataset construction",
@@ -733,7 +749,7 @@ if uses_mapmixture_ancestry:
     struct_parts.append(
         f"Before visualisation, genetic clusters were aligned to correct for label "
         f"switching by optimal linear-sum assignment (the Hungarian algorithm, as "
-        f"implemented in the clue R package {vn(versions,'r-clue')}) of the "
+        f"implemented in the clue R package {vn(versions,'r-clue')}; Hornik 2005) of the "
         f"cluster columns of the ancestry matrices. Within each method, clusters "
         f"were matched progressively between successive values of K, so that a "
         f"cluster persisting across K retains its position while a newly split "
@@ -964,29 +980,47 @@ if div_parts:
 
 dist_parts = []
 
+# Dosage distances (Kosman, Euclidean, average squared) are targets of gen_dist
+# and are also built whenever PCoA is enabled, even if gen_dist itself is off.
+# The p-distance is a gen_dist (and NeighborNet) target only.
+_dosage_clause = (
+    f"Because distance-based methods do not assume that markers are unlinked, "
+    f"three dosage-based distances were calculated from the biallelic SNP dataset "
+    f"({n_snps_biallelic} SNPs, {n_samples} individuals), read from PLINK binary "
+    f"files via the bed-reader library: "
+    f"(i) the Kosman-Leonard distance (Kosman & Leonard 2005), a distance "
+    f"designed for diploid codominant markers that scores heterozygotes as "
+    f"intermediate between the two homozygotes and averages per-locus "
+    f"dissimilarities over loci scored in both individuals; "
+    f"(ii) the Euclidean distance between per-SNP allele-dosage vectors "
+    f"(coded 0, 1, 2 for the number of copies of the alternate allele), with "
+    f"missing genotypes replaced by the per-SNP mean; and "
+    f"(iii) the average squared genotype difference (the bed2diffs formulation "
+    f"of EEMS; Petkova et al. 2016), in which similarity is the genotype Gram "
+    f"matrix divided by the number of sites and the pairwise difference is "
+    f"s_ii + s_jj - 2 s_ij."
+)
+_pdist_clause = (
+    f"In addition, a pairwise p-distance was computed from the "
+    f"all-SNP dataset ({_fmt_int(vcf_stats_filtered.get('variants', '[NA]'))} "
+    f"variant sites, {n_samples} individuals) — the same dataset used by "
+    f"fineRADstructure, i.e. before the biallelic, MAC/MAF and thinning "
+    f"filters — as the pairwise mean of |g_i - g_j| / 2 over biallelic variant "
+    f"sites scored in both individuals (multiallelic sites excluded)."
+)
 if analyses.get("gen_dist", False):
     dist_parts.append(
         f"To summarise overall genetic similarity among individuals independently "
         f"of any population model, four complementary pairwise genetic distance "
-        f"matrices were computed with custom Python scripts. Because distance-based "
-        f"methods do not assume that markers are unlinked, three dosage-based "
-        f"distances were calculated from the biallelic SNP dataset "
-        f"({n_snps_biallelic} SNPs, {n_samples} individuals), read from PLINK binary "
-        f"files via the bed-reader library: "
-        f"(i) the Kosman-Leonard distance (Kosman & Leonard 2005), a distance "
-        f"designed for diploid codominant markers that scores heterozygotes as "
-        f"intermediate between the two homozygotes; "
-        f"(ii) the Euclidean distance between per-SNP allele-dosage vectors "
-        f"(coded 0, 1, 2 for the number of copies of the alternate allele), with "
-        f"missing genotypes replaced by the per-SNP mean; and "
-        f"(iii) the average squared genotype difference (the bed2diffs formulation "
-        f"used by EEMS), which underlies several landscape-genetic methods. "
-        f"In addition, (iv) a pairwise p-distance was computed from the "
-        f"all-SNP dataset ({_fmt_int(vcf_stats_filtered.get('variants', '[NA]'))} "
-        f"variant sites, {n_samples} individuals) — the same dataset used by "
-        f"fineRADstructure, i.e. before the biallelic, MAC/MAF and thinning "
-        f"filters — as the pairwise mean of |g_i - g_j| / 2 over biallelic variant "
-        f"sites scored in both individuals (multiallelic sites excluded)."
+        f"matrices were computed with custom Python scripts. {_dosage_clause} "
+        f"{_pdist_clause}"
+    )
+elif analyses.get("pcoa", False):
+    dist_parts.append(
+        f"To summarise overall genetic similarity among individuals independently "
+        f"of any population model, and as input to the principal coordinates "
+        f"analysis above, pairwise genetic distance matrices were computed with "
+        f"custom Python scripts. {_dosage_clause}"
     )
 
 if analyses.get("neighbornet", False):
@@ -1021,8 +1055,12 @@ if analyses.get("neighbornet", False):
     )
 
 if dist_parts:
-    sections.append(("Genetic distances and networks",
-                     "\n\n".join(dist_parts)))
+    dist_title = (
+        "Genetic distances and networks"
+        if analyses.get("neighbornet", False)
+        else "Genetic distances"
+    )
+    sections.append((dist_title, "\n\n".join(dist_parts)))
 
 
 # 6. Phylogenetics ────────────────────────────────────────────────────────────
@@ -1493,6 +1531,11 @@ if analyses.get("construct", False):
     )
 
 if uses_mapmixture_ancestry:
+    refs["clue"] = (
+        "Hornik, K. (2005). A CLUE for CLUster Ensembles. "
+        "*Journal of Statistical Software*, 14(12), 1–25. "
+        "https://doi.org/10.18637/jss.v014.i12"
+    )
     refs["mapmixture"] = (
         "Jenkins, T.L. (2024). mapmixture: an R package and web app for spatial "
         "visualisation of admixture and population structure. "
@@ -1587,12 +1630,17 @@ if analyses.get("amova", False):
         "https://doi.org/10.7717/peerj.281"
     )
 
-if analyses.get("gen_dist", False):
+if analyses.get("gen_dist", False) or analyses.get("pcoa", False):
     refs["kosman"] = (
         "Kosman, E. & Leonard, K.J. (2005). Similarity coefficients for molecular "
         "markers in studies of genetic relationships between individuals. "
         "*Molecular Ecology*, 14, 415–424. "
         "https://doi.org/10.1111/j.1365-294x.2005.02416.x"
+    )
+    refs["eems"] = (
+        "Petkova, D., Novembre, J. & Stephens, M. (2016). Visualizing spatial "
+        "population structure with estimated effective migration surfaces. "
+        "*Nature Genetics*, 48, 94–100. https://doi.org/10.1038/ng.3464"
     )
 
 if analyses.get("neighbornet", False):

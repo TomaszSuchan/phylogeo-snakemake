@@ -168,12 +168,20 @@ parameters: &global_params
 
     site_dividers: true             # show dividers between sites
     divider_width: 0.4              # width of site dividers
-    site_order: null                # custom site order as list, e.g. ["Site1", "Site2", "Site3"]
-    population_sort_by: null        # indpopdata column to sort populations by; null = alphabetical
+    site_order: null                # full label list; overrides sort_order and sort_by when set
     flip_axis: false                # flip barplot axis
     site_labels_angle: 90           # rotation angle for site labels in barplots
-    population_labels: ["Site"]     # null hides labels; otherwise use one or more indpopdata columns, e.g. ["Site"] or ["Region", "Site"]
-    # Structure color palette 
+    # indpopdata columns that group barplot individuals. Several columns are joined
+    # into one label ("Region | Site"). population_labels is the legacy name for this list.
+    group_by: ["Site"]
+    # Order for each group_by column. sort_order is a list of that column's values.
+    # sort_by is a second option: another indpopdata column, used only when sort_order is empty.
+    # Do not set per-population colours here. Cluster membership changes with K, so
+    # ancestry colours are the structure_colors list below (first K colours used at each K).
+    # Site:
+    #   sort_order: ["SiteB", "SiteA"]
+    #   sort_by: ["Region"]
+    # population_sort_by: null      # legacy column sort if no column block sets sort_order or sort_by
     structure_colors:
       - "#E41A1C"  # red
       - "#377EB8"  # blue
@@ -509,17 +517,23 @@ parameters: &global_params
     # Map-specific parameters for pixy PI maps
     point_size: 3        # size of points on genetic diversity maps
     map_outline: true    # add point outlines (true/false, default: true)
-    # Optional per-group settings for pi barplots (one plot per group_by column).
-    # Omit a column block for default grey bars and alphabetical order.
+    # One block per group_by column. Omit a column for grey bars and alphabetical order.
+    # sort_order: values from that column, in the order to plot them. Values left
+    # out are appended alphabetically.
+    # sort_by: an indpopdata column, used only when sort_order is empty.
+    # colors: fill for each value of that column.
+    # Region:
+    #   sort_order: ["South", "North"]
+    #   sort_by: ["Site"]
+    #   colors:
+    #     North: "#E41A1C"
+    #     South: "#377EB8"
     # Site:
-    #   sort_by: ["Region"]   # indpopdata column to order x-axis; null/empty = alphabetical
+    #   sort_order: ["SiteB", "SiteA"]
+    #   sort_by: ["Region"]
     #   colors:
     #     SiteA: "#E41A1C"
     #     SiteB: "#377EB8"
-    # Massif:
-    #   sort_by:
-    #   colors:
-    #     MassifA: "#4DAF4A"
 
   hierfstat:
     width: 8
@@ -1043,14 +1057,26 @@ projects:
   #       pc_max: 4
   #       color_by: ["Region", "Site"]
   #     mapmixture:
-  #       population_labels: ["Region", "Site"]
-  #       population_sort_by: "Region"
+  #       group_by: ["Region"]
   #       site_order: null
+  #       Region:
+  #         sort_order: ["South", "North"]
+  #         sort_by: ["Site"]
+  #       structure_colors:
+  #         - "#E41A1C"
+  #         - "#377EB8"
+  #         - "#4DAF4A"
   #     pixy:
   #       stats: ["pi", "fst", "dxy", "watterson_theta", "tajima_d"]
   #       window_size: 10000
   #       bootstrap_replicates: 1000
   #       group_by: ["Site", "Region"]
+  #       Region:
+  #         sort_order: ["South", "North"]
+  #         sort_by: ["Site"]
+  #         colors:
+  #           North: "#E41A1C"
+  #           South: "#377EB8"
   #     amova:
   #       strata: ["Region", "Site"]
   #       nperm: 999

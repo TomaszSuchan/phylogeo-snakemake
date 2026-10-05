@@ -382,10 +382,52 @@ def _mapmixture_map_params(wildcards):
     return {**_map_bg_params(wildcards), **_mapmixture_pie_params(wildcards)}
 
 
+def _metadata_columns(value, default=None):
+    """Normalise a config column list. Empty / null returns `default`."""
+    if value is None:
+        return list(default or [])
+    if isinstance(value, str):
+        text = value.strip()
+        if text.lower() in ("", "none", "null"):
+            return list(default or [])
+        return [text]
+    if isinstance(value, list):
+        cols = []
+        for item in value:
+            if item is None:
+                continue
+            text = str(item).strip()
+            if text and text.lower() not in ("none", "null"):
+                cols.append(text)
+        return cols or list(default or [])
+    return list(default or [])
+
+
+def _mapmixture_label_columns(mm):
+    """Barplot grouping columns. `group_by` matches pixy; `population_labels` is the legacy name."""
+    cols = _metadata_columns(mm.get("group_by"))
+    if cols:
+        return cols
+    return _metadata_columns(mm.get("population_labels"), default=["Site"])
+
+
+def _mapmixture_group_block(project, group_col):
+    """Per-column mapmixture order settings. Ancestry colours stay in structure_colors."""
+    mm = config["projects"][project]["parameters"].get("mapmixture", {})
+    block = mm.get(group_col)
+    if not isinstance(block, dict):
+        return {"sort_order": None, "sort_by": None}
+    return {
+        "sort_order": block.get("sort_order"),
+        "sort_by": block.get("sort_by"),
+    }
+
+
 def _barplot_params(wildcards):
     """Shared params for all ancestry barplot rules (map_background size + mapmixture barplot keys)."""
     bg = config["projects"][wildcards.project]["parameters"].get("map_background", {})
     mm = config["projects"][wildcards.project]["parameters"].get("mapmixture", {})
+    label_columns = _mapmixture_label_columns(mm)
     return {
         "width": _fig_cm_to_in(bg.get("width"), 25.4),
         "height": _fig_cm_to_in(bg.get("height"), 15.24),
@@ -396,7 +438,11 @@ def _barplot_params(wildcards):
         "population_sort_by": mm.get("population_sort_by", "NULL"),
         "flip_axis": mm.get("flip_axis", False),
         "site_labels_angle": mm.get("site_labels_angle", 90),
-        "population_labels": mm.get("population_labels", ["Site"]),
+        "population_labels": label_columns,
+        "group_settings": {
+            col: _mapmixture_group_block(wildcards.project, col)
+            for col in label_columns
+        },
         "structure_colors": mm.get("structure_colors", _DEFAULT_STRUCTURE_COLORS),
     }
 

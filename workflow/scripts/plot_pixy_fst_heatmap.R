@@ -71,17 +71,39 @@ message("Populations ordered by dendrogram: ", paste(pop_order, collapse = " -> 
 # Create heatmap with dendrogram using pheatmap.
 # Pass the unordered matrix: pheatmap reorders by hc$order internally.
 # Pre-reordering here would double-permute labels vs dendrogram tips.
+#
+# Color by the observed pairwise range (not from 0). Diagonal self-comparisons
+# would otherwise pin the scale at 0 and compress contrast among real FST values.
 message("\n=== CREATING HEATMAP ===\n")
 
+pairwise <- fst_matrix[lower.tri(fst_matrix)]
+z_min <- min(pairwise, na.rm = TRUE)
+z_max <- max(pairwise, na.rm = TRUE)
+if (!is.finite(z_min) || !is.finite(z_max)) {
+  stop("No finite pairwise FST values available for coloring.")
+}
+if (isTRUE(all.equal(z_min, z_max))) {
+  pad <- max(abs(z_min) * 0.01, 1e-8)
+  z_min <- z_min - pad
+  z_max <- z_max + pad
+}
+message(sprintf("Color scale from pairwise FST range: [%.6g, %.6g]\n", z_min, z_max))
+
+fst_plot <- fst_matrix
+diag(fst_plot) <- NA
+color_breaks <- seq(z_min, z_max, length.out = 101)
+
 p <- pheatmap::pheatmap(
-  fst_matrix,
+  fst_plot,
   cluster_rows = hc,
   cluster_cols = hc,
   display_numbers = TRUE,
-  number_format = "%.3f",
+  number_format = "%.5f",
   fontsize = axis_title_size,
   fontsize_number = axis_text_size,
   color = colorRampPalette(c("white", "yellow", "orange", "red"))(100),
+  breaks = color_breaks,
+  na_col = "grey90",
   main = "",
   silent = FALSE
 )

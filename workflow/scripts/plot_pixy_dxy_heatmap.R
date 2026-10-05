@@ -71,17 +71,40 @@ message("Populations ordered by dendrogram: ", paste(pop_order, collapse = " -> 
 # Create heatmap with dendrogram using pheatmap.
 # Pass the unordered matrix: pheatmap reorders by hc$order internally.
 # Pre-reordering here would double-permute labels vs dendrogram tips.
+#
+# Color by the observed pairwise range (not from 0). Dxy diagonals are not
+# meaningful comparisons and would otherwise pin the scale at 0, washing out
+# the tight between-pop differences that are typical for dxy.
 message("\n=== CREATING HEATMAP ===\n")
 
+pairwise <- dxy_matrix[lower.tri(dxy_matrix)]
+z_min <- min(pairwise, na.rm = TRUE)
+z_max <- max(pairwise, na.rm = TRUE)
+if (!is.finite(z_min) || !is.finite(z_max)) {
+  stop("No finite pairwise DXY values available for coloring.")
+}
+if (isTRUE(all.equal(z_min, z_max))) {
+  pad <- max(abs(z_min) * 0.01, 1e-8)
+  z_min <- z_min - pad
+  z_max <- z_max + pad
+}
+message(sprintf("Color scale from pairwise DXY range: [%.6g, %.6g]\n", z_min, z_max))
+
+dxy_plot <- dxy_matrix
+diag(dxy_plot) <- NA
+color_breaks <- seq(z_min, z_max, length.out = 101)
+
 p <- pheatmap::pheatmap(
-  dxy_matrix,
+  dxy_plot,
   cluster_rows = hc,
   cluster_cols = hc,
   display_numbers = TRUE,
-  number_format = "%.4f",
+  number_format = "%.5f",
   fontsize = axis_title_size,
   fontsize_number = axis_text_size,
   color = colorRampPalette(c("white", "yellow", "orange", "red"))(100),
+  breaks = color_breaks,
+  na_col = "grey90",
   main = "",
   silent = FALSE
 )

@@ -28,6 +28,16 @@ if (file.exists(common_functions)) {
   source("workflow/scripts/common_map_functions.R")
 }
 
+plot_group_utils <- tryCatch({
+  script_dir <- dirname(normalizePath(snakemake@script))
+  file.path(script_dir, "plot_group_utils.R")
+}, error = function(e) "workflow/scripts/plot_group_utils.R")
+if (file.exists(plot_group_utils)) {
+  source(plot_group_utils)
+} else {
+  source("workflow/scripts/plot_group_utils.R")
+}
+
 params <- snakemake_rule_params()
 
 # Prevent creation of Rplots.pdf
@@ -50,6 +60,7 @@ site_dividers <- as.logical(params[["site_dividers"]])
 divider_width <- as.numeric(params[["divider_width"]])
 site_order <- params[["site_order"]]
 population_sort_by <- params[["population_sort_by"]]
+group_settings <- params[["group_settings"]]
 flip_axis <- as.logical(params[["flip_axis"]])
 site_labels_angle <- as.numeric(params[["site_labels_angle"]])
 population_labels <- params[["population_labels"]]
@@ -173,35 +184,30 @@ if (is.null(site_order)) {
   )
 }
 
-# Parse population_sort_by: indpopdata column used to order populations when site_order is unset
-if (is.null(population_sort_by)) {
-  population_sort_by_val <- NULL
-} else if (length(population_sort_by) == 1 &&
-           (is.na(population_sort_by) || population_sort_by == "NULL" || population_sort_by == "")) {
-  population_sort_by_val <- NULL
-} else {
-  population_sort_by_val <- as.character(unlist(population_sort_by))[1]
-}
+# One metadata row per barplot group. Keep indpopdata columns so sort_by can
+# name a column other than the displayed label.
+label_meta <- indpopdata
+label_meta$barplot_label <- population_label_values
+label_meta <- label_meta %>%
+  distinct(barplot_label, .keep_all = TRUE)
 
-if (is.null(site_order_val) && !is.null(population_sort_by_val)) {
-  if (!(population_sort_by_val %in% colnames(indpopdata))) {
-    stop(sprintf(
-      "ERROR: population_sort_by column not found in indpopdata: %s",
-      population_sort_by_val
-    ))
+# Order: explicit site_order, then per-column sort_order, then per-column
+# sort_by, then top-level population_sort_by, then alphabetical.
+if (is.null(site_order_val)) {
+  fallback_sort_by <- population_sort_by
+  if (length(fallback_sort_by) == 1 &&
+      (is.na(fallback_sort_by) || fallback_sort_by == "NULL" || fallback_sort_by == "")) {
+    fallback_sort_by <- NULL
   }
-
-  sort_df <- tibble(
-    Site = population_label_values,
-    sort_value = indpopdata[[population_sort_by_val]]
-  ) %>%
-    distinct(Site, .keep_all = TRUE) %>%
-    arrange(sort_value, Site)
-
-  site_order_val <- sort_df$Site
+  site_order_val <- order_group_labels(
+    label_meta,
+    population_label_columns_val,
+    group_settings,
+    fallback_sort_by = fallback_sort_by,
+    label_col = "barplot_label"
+  )
   cat(sprintf(
-    "Sorting populations by column '%s': %s\n",
-    population_sort_by_val,
+    "Barplot group order: %s\n",
     paste(site_order_val, collapse = ", ")
   ))
 }
@@ -249,7 +255,6 @@ structure_barplot <- structure_plot(
       unit = "pt"
     )
   )
-
 
 # Calculate plot dimensions
 n_individuals <- nrow(qmatrix_with_data)
