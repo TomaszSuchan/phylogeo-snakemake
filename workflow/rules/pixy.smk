@@ -426,6 +426,9 @@ rule plot_pixy_pi_barplot:
         group_colors = lambda wildcards: _pixy_group_setting(
             wildcards.project, wildcards.grouping, "colors"
         ),
+        sort_order = lambda wildcards: _pixy_group_setting(
+            wildcards.project, wildcards.grouping, "sort_order"
+        ),
         population_sort_by = lambda wildcards: _pixy_group_setting(
             wildcards.project, wildcards.grouping, "sort_by"
         ),
@@ -458,6 +461,9 @@ rule plot_pixy_watterson_theta_barplot:
         group_colors = lambda wildcards: _pixy_group_setting(
             wildcards.project, wildcards.grouping, "colors"
         ),
+        sort_order = lambda wildcards: _pixy_group_setting(
+            wildcards.project, wildcards.grouping, "sort_order"
+        ),
         population_sort_by = lambda wildcards: _pixy_group_setting(
             wildcards.project, wildcards.grouping, "sort_by"
         ),
@@ -489,6 +495,9 @@ rule plot_pixy_tajima_d_barplot:
         grouping = lambda wildcards: wildcards.grouping,
         group_colors = lambda wildcards: _pixy_group_setting(
             wildcards.project, wildcards.grouping, "colors"
+        ),
+        sort_order = lambda wildcards: _pixy_group_setting(
+            wildcards.project, wildcards.grouping, "sort_order"
         ),
         population_sort_by = lambda wildcards: _pixy_group_setting(
             wildcards.project, wildcards.grouping, "sort_by"
@@ -525,6 +534,9 @@ rule plot_pixy_diversity_combined:
         grouping = lambda wildcards: wildcards.grouping,
         group_colors = lambda wildcards: _pixy_group_setting(
             wildcards.project, wildcards.grouping, "colors"
+        ),
+        sort_order = lambda wildcards: _pixy_group_setting(
+            wildcards.project, wildcards.grouping, "sort_order"
         ),
         population_sort_by = lambda wildcards: _pixy_group_setting(
             wildcards.project, wildcards.grouping, "sort_by"

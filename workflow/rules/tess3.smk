@@ -140,7 +140,10 @@ rule tess3_analysis:
         ploidy = lambda wildcards: _tess3_params(wildcards).get("ploidy", 2),
         map_method = lambda wildcards: _tess3_params(wildcards).get("map_method", "map.max"),
         map_resolution = lambda wildcards: _tess3_map_resolution(wildcards),
-        interpolation_knots = lambda wildcards: _tess3_params(wildcards).get("interpolation_knots", 10)
+        interpolation_knots = lambda wildcards: _tess3_params(wildcards).get("interpolation_knots", 10),
+        width = lambda wildcards: _map_bg_inches(wildcards.project, "width", 25.4),
+        height = lambda wildcards: _map_bg_inches(wildcards.project, "height", 20.32),
+        dpi = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("map_background", {}).get("dpi", 300),
     conda:
         "../envs/tess3.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["tess3"]["threads"]
@@ -193,6 +196,9 @@ rule plot_tess3_interpolation:
         map_method = lambda wildcards: _tess3_params(wildcards).get("map_method", "map.max"),
         map_resolution = lambda wildcards: _tess3_map_resolution(wildcards),
         interpolation_knots = lambda wildcards: _tess3_params(wildcards).get("interpolation_knots", 10),
+        width = lambda wildcards: _map_bg_inches(wildcards.project, "width", 25.4),
+        height = lambda wildcards: _map_bg_inches(wildcards.project, "height", 20.32),
+        dpi = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("map_background", {}).get("dpi", 300),
         structure_colors = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("mapmixture", {}).get("structure_colors", _DEFAULT_STRUCTURE_COLORS)
     conda:
         "../envs/tess3.yaml"

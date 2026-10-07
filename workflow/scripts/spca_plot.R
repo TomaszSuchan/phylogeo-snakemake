@@ -44,6 +44,25 @@ save_base_plot <- function(path, expr, width = 8, height = 6) {
   invisible(NULL)
 }
 
+num_param <- function(name, default) {
+  if (!name %in% names(snakemake@params)) return(default)
+  value <- suppressWarnings(as.numeric(snakemake@params[[name]]))
+  if (length(value) != 1 || is.na(value)) default else value
+}
+
+scree_width <- num_param("scree_width", 10)
+scree_height <- num_param("scree_height", 7)
+composite_width <- num_param("composite_width", 12)
+composite_height <- num_param("composite_height", 10)
+rtest_width <- num_param("rtest_width", 7)
+rtest_height <- num_param("rtest_height", 5)
+scatter_width <- num_param("scatter_width", 8)
+scatter_height <- num_param("scatter_height", 6)
+loading_width <- num_param("loading_width", 12)
+loading_height <- num_param("loading_height", 6)
+map_width <- num_param("map_width", 10)
+map_height <- num_param("map_height", 8)
+
 unwrap_results <- function(rds_path) {
   obj <- readRDS(rds_path)
   if (inherits(obj, "spca")) {
@@ -118,16 +137,16 @@ if (run_main) {
   save_base_plot(
     snakemake@output[["screeplot"]],
     quote(screeplot(spca_obj)),
-    width = 10,
-    height = 7
+    width = scree_width,
+    height = scree_height
   )
 
   cat("plot(mySpca) composite...\n")
   save_base_plot(
     snakemake@output[["composite_plot"]],
     quote(plot(spca_obj)),
-    width = 12,
-    height = 10
+    width = composite_width,
+    height = composite_height
   )
   saveRDS(spca_obj, snakemake@output[["composite_plot_rds"]])
 
@@ -135,8 +154,8 @@ if (run_main) {
   save_base_plot(
     snakemake@output[["map_plot"]],
     quote(plot.spca(spca_obj, type = plot_type)),
-    width = 10,
-    height = 8
+    width = map_width,
+    height = map_height
   )
   saveRDS(spca_obj, snakemake@output[["map_plot_rds"]])
 
@@ -144,8 +163,8 @@ if (run_main) {
   save_base_plot(
     snakemake@output[["colorplot_global"]],
     quote(colorplot(spca_obj, cex = 2, main = "sPCA colorplot — global scores")),
-    width = 8,
-    height = 7
+    width = map_width,
+    height = map_height
   )
 
   if (ncol(spca_obj$li) >= 2) {
@@ -158,8 +177,8 @@ if (run_main) {
         useLag = FALSE,
         main = "sPCA colorplot — local scores"
       )),
-      width = 8,
-      height = 7
+      width = map_width,
+      height = map_height
     )
   } else {
     save_base_plot(
@@ -168,8 +187,8 @@ if (run_main) {
         plot.new()
         text(0.5, 0.5, "Not enough local axes for colorplot", cex = 1.2)
       }),
-      width = 8,
-      height = 7
+      width = map_width,
+      height = map_height
     )
   }
 
@@ -177,14 +196,14 @@ if (run_main) {
   save_base_plot(
     snakemake@output[["global_rtest_plot"]],
     quote(plot(global_test)),
-    width = 7,
-    height = 5
+    width = rtest_width,
+    height = rtest_height
   )
   save_base_plot(
     snakemake@output[["local_rtest_plot"]],
     quote(plot(local_test)),
-    width = 7,
-    height = 5
+    width = rtest_width,
+    height = rtest_height
   )
 
   make_scatter <- function(scores, title_prefix, pdf_out, rds_out) {
@@ -195,8 +214,8 @@ if (run_main) {
           plot.new()
           text(0.5, 0.5, paste(title_prefix, ": need >= 2 axes"), cex = 1.1)
         }),
-        width = 8,
-        height = 6
+        width = scatter_width,
+        height = scatter_height
       )
       saveRDS(list(plot = NULL, spca_obj = spca_obj), rds_out)
       return(invisible(NULL))
@@ -228,7 +247,7 @@ if (run_main) {
         y = sprintf("Axis %d", pc2)
       ) +
       theme_bw()
-    ggsave_pdf(pdf_out, plot = p, width = 8, height = 6)
+    ggsave_pdf(pdf_out, plot = p, width = scatter_width, height = scatter_height)
     saveRDS(list(plot = p, spca_obj = spca_obj, scores = scores), rds_out)
   }
 
@@ -256,8 +275,8 @@ if (plot_axis > 0L) {
   save_base_plot(
     snakemake@output[["axis_plot"]],
     quote(plot(spca_obj, axis = axis)),
-    width = 10,
-    height = 8
+    width = map_width,
+    height = map_height
   )
 }
 
@@ -298,8 +317,8 @@ if (plot_loading > 0L) {
         )
       }
     }),
-    width = 12,
-    height = 6
+    width = loading_width,
+    height = loading_height
   )
 }
 

@@ -15,6 +15,10 @@ output_pdf <- snakemake@output[["pdf"]]
 output_rds <- snakemake@output[["rds"]]
 method_name <- snakemake@params[["method"]]
 k_value <- snakemake@params[["k"]]
+plot_width <- as.numeric(snakemake@params[["width"]])
+plot_height <- as.numeric(snakemake@params[["height"]])
+if (is.na(plot_width)) plot_width <- 10
+if (is.na(plot_height)) plot_height <- 9
 
 message("\n=== LOADING VISFUNS.R ===\n")
 source(visfuns_file)
@@ -62,7 +66,7 @@ message("\n=== CREATING PLOT ===\n")
 dir.create(dirname(output_pdf), recursive = TRUE, showWarnings = FALSE)
 
 # Open PDF device
-pdf(output_pdf, width = 10, height = 9)
+pdf(output_pdf, width = plot_width, height = plot_height)
 
 # Plot correlation of residuals using visFuns.R function
 plotCorRes(

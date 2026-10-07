@@ -51,6 +51,7 @@ output_rds <- snakemake@output[["rds"]]
 grouping_name <- as.character(snakemake@params[["grouping"]])
 group_colors <- group_fill_values(snakemake@params[["group_colors"]])
 population_sort_by <- snakemake@params[["population_sort_by"]]
+sort_order <- snakemake@params[["sort_order"]]
 plot_width <- as.numeric(snakemake@params[["width"]])
 plot_height <- as.numeric(snakemake@params[["height"]])
 axis_title_size <- as.numeric(snakemake@params[["axis_title_size"]])
@@ -91,7 +92,9 @@ message(sprintf("Combined %d rows across %d statistics\n", nrow(long_df), n_pane
 popdata <- read.table(popdata_file, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
 site_col <- if ("Site" %in% colnames(popdata)) "Site" else colnames(popdata)[1]
 
-pop_order <- population_levels(unique(long_df$population), popdata, population_sort_by, site_col)
+pop_order <- population_levels(
+  unique(long_df$population), popdata, population_sort_by, site_col, sort_order
+)
 long_df$population <- factor(long_df$population, levels = pop_order)
 long_df$statistic <- factor(long_df$statistic, levels = STAT_LEVELS, labels = STAT_LABELS[STAT_LEVELS])
 long_df <- long_df[order(match(as.character(long_df$population), pop_order)), , drop = FALSE]

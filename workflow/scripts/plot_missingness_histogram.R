@@ -36,6 +36,16 @@ if ("imiss" %in% names(snakemake@input)) {
 
 output_pdf <- snakemake@output[["pdf"]]
 output_rds <- snakemake@output[["rds"]]
+plot_width <- 10
+plot_height <- 6
+if ("width" %in% names(snakemake@params)) {
+  width_value <- suppressWarnings(as.numeric(snakemake@params[["width"]]))
+  if (!is.na(width_value)) plot_width <- width_value
+}
+if ("height" %in% names(snakemake@params)) {
+  height_value <- suppressWarnings(as.numeric(snakemake@params[["height"]]))
+  if (!is.na(height_value)) plot_height <- height_value
+}
 
 data_type <- ifelse(is_imiss, "Individual", "Locus")
 
@@ -145,8 +155,8 @@ dir.create(dirname(output_pdf), recursive = TRUE, showWarnings = FALSE)
 ggsave_pdf(
   filename = output_pdf,
   plot = p,
-  width = 10,
-  height = 6,
+  width = plot_width,
+  height = plot_height,
   dpi = 300
 )
 

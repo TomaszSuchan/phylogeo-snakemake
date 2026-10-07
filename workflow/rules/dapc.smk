@@ -15,7 +15,9 @@ rule dapc_analysis:
         k = lambda wildcards: int(wildcards.k),
         n_pca = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("dapc", {}).get("n_pca", "retained"),
         n_da = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("dapc", {}).get("n_da", "all"),
-        criterion = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("dapc", {}).get("criterion", "diffNgroup")
+        criterion = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("dapc", {}).get("criterion", "diffNgroup"),
+        width = lambda wildcards: _project_param_inches(wildcards.project, ("dapc", "scatter_width"), 20.32),
+        height = lambda wildcards: _project_param_inches(wildcards.project, ("dapc", "scatter_height"), 15.24),
     conda:
         "../envs/adegenet.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["dapc"]["threads"]

@@ -14,6 +14,17 @@ if (file.exists(histogram_utils)) {
 
 pdf(NULL)
 
+plot_width <- 10
+plot_height <- 6
+if ("width" %in% names(snakemake@params)) {
+  width_value <- suppressWarnings(as.numeric(snakemake@params[["width"]]))
+  if (!is.na(width_value)) plot_width <- width_value
+}
+if ("height" %in% names(snakemake@params)) {
+  height_value <- suppressWarnings(as.numeric(snakemake@params[["height"]]))
+  if (!is.na(height_value)) plot_height <- height_value
+}
+
 log_file <- file(snakemake@log[[1]], open = "wt")
 sink(log_file, type = "output")
 sink(log_file, type = "message")
@@ -96,8 +107,8 @@ dir.create(dirname(output_pdf), recursive = TRUE, showWarnings = FALSE)
 ggsave_pdf(
   filename = output_pdf,
   plot = p,
-  width = 10,
-  height = 6,
+  width = plot_width,
+  height = plot_height,
   dpi = 300
 )
 

@@ -61,6 +61,7 @@ stat <- as.character(snakemake@params[["stat"]])
 grouping_name <- as.character(snakemake@params[["grouping"]])
 group_colors <- group_fill_values(snakemake@params[["group_colors"]])
 population_sort_by <- snakemake@params[["population_sort_by"]]
+sort_order <- snakemake@params[["sort_order"]]
 plot_width <- as.numeric(snakemake@params[["width"]])
 plot_height <- as.numeric(snakemake@params[["height"]])
 axis_title_size <- as.numeric(snakemake@params[["axis_title_size"]])
@@ -89,7 +90,9 @@ for (req in c("ci_low", "ci_high", "population")) {
 popdata <- read.table(popdata_file, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
 site_col <- if ("Site" %in% colnames(popdata)) "Site" else colnames(popdata)[1]
 
-if (is.null(group_sort_by(population_sort_by))) {
+if (!is.null(group_sort_by(sort_order))) {
+  message(sprintf("Using configured sort_order for %s\n", grouping_name))
+} else if (is.null(group_sort_by(population_sort_by))) {
   message(sprintf("Using alphabetical order for %s\n", grouping_name))
 } else if (length(group_sort_by(population_sort_by)) == 1 &&
            group_sort_by(population_sort_by)[1] %in% colnames(popdata)) {
@@ -102,7 +105,9 @@ if (is.null(group_sort_by(population_sort_by))) {
   message(sprintf("Using configured level order for %s\n", grouping_name))
 }
 
-pop_order <- population_levels(sum_df$population, popdata, population_sort_by, site_col)
+pop_order <- population_levels(
+  sum_df$population, popdata, population_sort_by, site_col, sort_order
+)
 sum_df$population <- factor(sum_df$population, levels = pop_order)
 sum_df <- sum_df[order(match(as.character(sum_df$population), pop_order)), , drop = FALSE]
 

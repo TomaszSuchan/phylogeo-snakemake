@@ -19,7 +19,9 @@ rule amova:
         plot_rds="results/{project}/amova/plots/{project}.amova_variance_components.rds"
     params:
         strata=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("amova", {}).get("strata", []),
-        nperm=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("amova", {}).get("nperm", 999)
+        nperm=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("amova", {}).get("nperm", 999),
+        width=lambda wildcards: _project_param_inches(wildcards.project, ("amova", "width"), 12.7),
+        height=lambda wildcards: _project_param_inches(wildcards.project, ("amova", "height"), 7.62),
     conda:
         "../envs/adegenet.yaml"
     log:

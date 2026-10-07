@@ -93,6 +93,8 @@ rule plot_king_network:
         ),
         relatedness_colors=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_plot", {}).get("relatedness_colors", None),
         plot_all=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_plot", {}).get("plot_all", False),
+        width=lambda wildcards: _project_param_inches(wildcards.project, ("relatedness_plot", "width"), 30.48),
+        height=lambda wildcards: _project_param_inches(wildcards.project, ("relatedness_plot", "height"), 25.4),
         threshold_profile="king",
         weight_column="KINSHIP",
     conda:
@@ -121,6 +123,8 @@ rule plot_pcrelate_network:
         ),
         relatedness_colors=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_plot", {}).get("relatedness_colors", None),
         plot_all=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_plot", {}).get("plot_all", False),
+        width=lambda wildcards: _project_param_inches(wildcards.project, ("relatedness_plot", "width"), 30.48),
+        height=lambda wildcards: _project_param_inches(wildcards.project, ("relatedness_plot", "height"), 25.4),
         threshold_profile="king",
         weight_column="kin",
     conda:

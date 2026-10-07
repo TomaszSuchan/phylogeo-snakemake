@@ -283,7 +283,11 @@ p <- ggplot(var_data, aes(x = Source, y = Percentage)) +
   )
 
 # Save plot as PDF
-ggsave_pdf(output_plot, plot = p, width = 5, height = 3, dpi = 300)
+plot_width <- as.numeric(snakemake@params[["width"]])
+plot_height <- as.numeric(snakemake@params[["height"]])
+if (is.na(plot_width)) plot_width <- 5
+if (is.na(plot_height)) plot_height <- 3
+ggsave_pdf(output_plot, plot = p, width = plot_width, height = plot_height, dpi = 300)
 
 # Save plot as ggplot object (RDS)
 saveRDS(p, file = output_plot_rds)

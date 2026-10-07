@@ -228,7 +228,11 @@ cat("Creating scatter plot using native adegenet scatter()...\n")
 
 # Save plot using PDF device
 dir.create(dirname(snakemake@output[["scatter_plot"]]), recursive = TRUE, showWarnings = FALSE)
-pdf(snakemake@output[["scatter_plot"]], width = 8, height = 6)
+scatter_width <- as.numeric(snakemake@params[["width"]])
+scatter_height <- as.numeric(snakemake@params[["height"]])
+if (is.na(scatter_width)) scatter_width <- 8
+if (is.na(scatter_height)) scatter_height <- 6
+pdf(snakemake@output[["scatter_plot"]], width = scatter_width, height = scatter_height)
 scatter(dapc_result)
 invisible(dev.off())
 cat("Scatter plot saved to:", snakemake@output[["scatter_plot"]], "\n")

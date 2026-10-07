@@ -38,6 +38,12 @@ ploidy <- as.integer(snakemake@params[["ploidy"]])
 map_method <- as.character(snakemake@params[["map_method"]])
 map_resolution <- as.integer(unlist(snakemake@params[["map_resolution"]]))
 interpolation_knots <- as.integer(snakemake@params[["interpolation_knots"]])
+map_width <- as.numeric(snakemake@params[["width"]])
+map_height <- as.numeric(snakemake@params[["height"]])
+map_dpi <- as.numeric(snakemake@params[["dpi"]])
+if (is.na(map_width)) map_width <- 10
+if (is.na(map_height)) map_height <- 8
+if (is.na(map_dpi)) map_dpi <- 200
 threads <- as.integer(snakemake@threads)
 
 cat("=== tess3r Analysis ===\n")
@@ -172,7 +178,7 @@ window <- c(
   max(coords[, 2], na.rm = TRUE)
 )
 tryCatch({
-  png(max_cluster_png, width = 1800, height = 1400, res = 200)
+  png(max_cluster_png, width = map_width, height = map_height, units = "in", res = map_dpi)
   plot_tess3Q_fn <- getS3method("plot", "tess3Q")
   plot_args <- list(
     x = qmat_obj,
@@ -196,7 +202,7 @@ tryCatch({
 }, error = function(e) {
   cat("WARNING: tess3r native plot failed:", conditionMessage(e), "\n")
   if (dev.cur() != 1) dev.off()
-  png(max_cluster_png, width = 1800, height = 1400, res = 200)
+  png(max_cluster_png, width = map_width, height = map_height, units = "in", res = map_dpi)
   plot.new()
   text(0.5, 0.5, paste("Max-cluster plot failed:", conditionMessage(e)))
   dev.off()
