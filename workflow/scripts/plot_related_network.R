@@ -7,15 +7,20 @@ library(igraph)
 library(tidygraph)
 library(ggraph)
 
-ggsave_utils <- tryCatch(
-  file.path(dirname(normalizePath(snakemake@script)), "plot_ggsave_utils.R"),
-  error = function(e) "workflow/scripts/plot_ggsave_utils.R"
+script_dir <- tryCatch(
+  dirname(normalizePath(snakemake@script)),
+  error = function(e) "workflow/scripts"
 )
-if (file.exists(ggsave_utils)) {
-  source(ggsave_utils)
-} else {
-  source("workflow/scripts/plot_ggsave_utils.R")
+ggsave_utils <- file.path(script_dir, "plot_ggsave_utils.R")
+group_utils <- file.path(script_dir, "plot_group_utils.R")
+if (!file.exists(ggsave_utils)) {
+  ggsave_utils <- "workflow/scripts/plot_ggsave_utils.R"
 }
+if (!file.exists(group_utils)) {
+  group_utils <- "workflow/scripts/plot_group_utils.R"
+}
+source(ggsave_utils)
+source(group_utils)
 
 pdf(NULL)
 
@@ -38,6 +43,7 @@ weight_column <- snakemake@params[["weight_column"]]
 
 color_by_name <- NULL
 relatedness_colors <- NULL
+group_colors <- NULL
 plot_all <- FALSE
 if ("color_by" %in% names(snakemake@params)) {
   color_by_name <- as.character(snakemake@params[["color_by"]])
@@ -47,6 +53,9 @@ if ("relatedness_colors" %in% names(snakemake@params)) {
   if (!is.null(relatedness_colors)) {
     relatedness_colors <- unlist(relatedness_colors)
   }
+}
+if ("group_colors" %in% names(snakemake@params)) {
+  group_colors <- group_fill_values(snakemake@params[["group_colors"]])
 }
 if ("plot_all" %in% names(snakemake@params)) {
   plot_all <- isTRUE(as.logical(snakemake@params[["plot_all"]]))
@@ -268,11 +277,13 @@ if (!is.null(color_by_name) && color_by_name != "" && color_by_name != "none" &&
     node_color_col <- color_by_name
     unique_vals <- unique(nodes_df[[node_color_col]][!is.na(nodes_df[[node_color_col]]) & nodes_df[[node_color_col]] != ""])
     n_categories <- length(unique_vals)
-    if (!is.null(relatedness_colors) && length(relatedness_colors) > 0) {
+    if (!is.null(group_colors) && length(group_colors) > 0) {
+      node_colors <- group_colors
+    } else if (!is.null(relatedness_colors) && length(relatedness_colors) > 0) {
       node_colors <- if (n_categories > length(relatedness_colors)) {
         colorRampPalette(relatedness_colors)(n_categories)
       } else {
-        relatedness_colors[seq_len(n_categories)]
+        stats::setNames(relatedness_colors[seq_len(n_categories)], unique_vals)
       }
     }
   }

@@ -88,6 +88,9 @@ rule plot_king_network:
         "logs/{project}/plot_king_network-{color_by}.log",
     params:
         color_by=lambda wildcards: wildcards.color_by,
+        group_colors=lambda wildcards: _relatedness_plot_group_colors(
+            wildcards.project, wildcards.color_by
+        ),
         relatedness_colors=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_plot", {}).get("relatedness_colors", None),
         plot_all=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_plot", {}).get("plot_all", False),
         threshold_profile="king",
@@ -113,6 +116,9 @@ rule plot_pcrelate_network:
         "logs/{project}/plot_pcrelate_network-{color_by}.log",
     params:
         color_by=lambda wildcards: wildcards.color_by,
+        group_colors=lambda wildcards: _relatedness_plot_group_colors(
+            wildcards.project, wildcards.color_by
+        ),
         relatedness_colors=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_plot", {}).get("relatedness_colors", None),
         plot_all=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_plot", {}).get("plot_all", False),
         threshold_profile="king",

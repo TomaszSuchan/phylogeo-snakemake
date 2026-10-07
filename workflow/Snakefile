@@ -298,6 +298,21 @@ def _relatedness_color_by_columns(project_params):
     return ["none"]
 
 
+def _relatedness_plot_group_colors(project, color_by):
+    """Named node colors for a relatedness network `{color_by}` column.
+
+    Reads relatedness_plot.{color_by}.colors, then pca_plot.{color_by}.colors.
+    """
+    if not color_by or str(color_by).strip().lower() == "none":
+        return None
+    params = config["projects"][project]["parameters"]
+    for section in ("relatedness_plot", "pca_plot"):
+        group_cfg = params.get(section, {}).get(color_by)
+        if isinstance(group_cfg, dict) and group_cfg.get("colors"):
+            return group_cfg["colors"]
+    return None
+
+
 def _neighbornet_color_by_columns(project_params):
     """Columns used as NeighborNet plot `{color_by}` wildcards."""
     neighbornet_cfg = project_params.get("neighbornet", {})

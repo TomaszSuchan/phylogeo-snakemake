@@ -296,6 +296,9 @@ rule plot_genome_network:
         "logs/{project}/plot_genome_network-{color_by}.log",
     params:
         color_by=lambda wildcards: wildcards.color_by,
+        group_colors=lambda wildcards: _relatedness_plot_group_colors(
+            wildcards.project, wildcards.color_by
+        ),
         relatedness_colors=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_plot", {}).get("relatedness_colors", None),
         plot_all=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_plot", {}).get("plot_all", False),
         threshold_profile="pihat",
@@ -321,6 +324,9 @@ rule plot_relatedness_network:
         "logs/{project}/plot_relatedness_network-{color_by}.log",
     params:
         color_by=lambda wildcards: wildcards.color_by,
+        group_colors=lambda wildcards: _relatedness_plot_group_colors(
+            wildcards.project, wildcards.color_by
+        ),
         relatedness_colors=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_plot", {}).get("relatedness_colors", None),
         plot_all=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_plot", {}).get("plot_all", False),
         threshold_profile="ajk",
@@ -346,6 +352,9 @@ rule plot_relatedness2_network:
         "logs/{project}/plot_relatedness2_network-{color_by}.log",
     params:
         color_by=lambda wildcards: wildcards.color_by,
+        group_colors=lambda wildcards: _relatedness_plot_group_colors(
+            wildcards.project, wildcards.color_by
+        ),
         relatedness_colors=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_plot", {}).get("relatedness_colors", None),
         plot_all=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_plot", {}).get("plot_all", False),
         threshold_profile="manichaikul",
@@ -371,6 +380,9 @@ rule plot_coancestry_network:
         "logs/{project}/plot_coancestry_network-{color_by}.log",
     params:
         color_by=lambda wildcards: wildcards.color_by,
+        group_colors=lambda wildcards: _relatedness_plot_group_colors(
+            wildcards.project, wildcards.color_by
+        ),
         relatedness_colors=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_plot", {}).get("relatedness_colors", None),
         plot_all=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_plot", {}).get("plot_all", False),
         threshold_profile="manichaikul",
