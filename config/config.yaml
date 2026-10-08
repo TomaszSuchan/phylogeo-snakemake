@@ -503,11 +503,9 @@ parameters: &global_params
       dyadml: 0      # DyadML — dyadic maximum-likelihood (Milligan 2003)
 
   # PC-Relate (GENESIS): PC-AiR-adjusted kinship on the full sample.
+  # SNPs are the workflow unlinked set (thinning or ld_pruning); no second prune here.
   pcrelate:
     n_pcs: 2                    # ancestry PCs from PC-AiR passed to PC-Relate
-    ld_r2: 0.2                  # LD pruning threshold before PC-AiR / PC-Relate
-    ld_window: 500              # LD pruning window (SNPs)
-    maf: 0.01                   # MAF filter for LD pruning
     return_ibd_probs: true      # include k0/k1/k2 IBD probabilities in output table
   
   ## VCF2PCACluster parameters

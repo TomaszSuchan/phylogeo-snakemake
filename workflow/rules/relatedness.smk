@@ -51,15 +51,6 @@ rule pcrelate_analysis:
         n_pcs=lambda wildcards: config["projects"][wildcards.project]["parameters"].get(
             "pcrelate", {}
         ).get("n_pcs", 2),
-        ld_r2=lambda wildcards: config["projects"][wildcards.project]["parameters"].get(
-            "pcrelate", {}
-        ).get("ld_r2", 0.2),
-        ld_window=lambda wildcards: config["projects"][wildcards.project]["parameters"].get(
-            "pcrelate", {}
-        ).get("ld_window", 500),
-        maf=lambda wildcards: config["projects"][wildcards.project]["parameters"].get(
-            "pcrelate", {}
-        ).get("maf", 0.01),
         return_ibd_probs=lambda wildcards: config["projects"][wildcards.project]["parameters"].get(
             "pcrelate", {}
         ).get("return_ibd_probs", True),

@@ -1,5 +1,6 @@
 #!/usr/bin/env Rscript
-# Run PC-Relate (GENESIS) on the full filtered VCF.
+# Run PC-Relate (GENESIS) on the workflow's unlinked SNP VCF
+# (one SNP per locus, or the PLINK LD-pruned set, depending on thinning_strategy).
 # PC-AiR identifies ancestry-representative PCs; PC-Relate conditions on them
 # to estimate kinship and IBD probabilities robust to population structure.
 
@@ -24,9 +25,6 @@ pdf(NULL)
 vcf_file <- snakemake@input[["vcf"]]
 output_file <- snakemake@output[["kinship"]]
 n_pcs <- as.integer(snakemake@params[["n_pcs"]])
-ld_r2 <- as.numeric(snakemake@params[["ld_r2"]])
-ld_window <- as.integer(snakemake@params[["ld_window"]])
-maf <- as.numeric(snakemake@params[["maf"]])
 return_ibd_probs <- isTRUE(snakemake@params[["return_ibd_probs"]])
 
 gds_file <- tempfile(fileext = ".gds")
@@ -43,21 +41,11 @@ if (nsamp < 2L) {
   stop("PC-Relate requires at least 2 individuals (found ", nsamp, ")")
 }
 
-set.seed(100)
-cat("LD pruning (r2 <=", ld_r2, ", slide.max.n =", ld_window, ")\n")
-# Contig-named RAD/WGS scaffolds are not human autosomes; keep all chromosomes.
-snpset <- snpgdsLDpruning(
-  gds,
-  ld.threshold = ld_r2,
-  slide.max.n = ld_window,
-  maf = maf,
-  autosome.only = FALSE,
-  verbose = FALSE
-)
-snps.use <- unlist(snpset, use.names = FALSE)
-cat("SNPs after LD pruning:", length(snps.use), "\n")
+# SNP set is the input VCF. Thinning or PLINK LD pruning already happened upstream.
+snps.use <- seqGetData(gds, "variant.id")
+cat("SNPs in unlinked input VCF:", length(snps.use), "\n")
 if (length(snps.use) < 50L) {
-  stop("Too few SNPs (", length(snps.use), ") after LD pruning for PC-Relate")
+  stop("Too few SNPs (", length(snps.use), ") in the unlinked input VCF for PC-Relate")
 }
 
 cat("Computing KING kinship matrix for PC-AiR\n")
