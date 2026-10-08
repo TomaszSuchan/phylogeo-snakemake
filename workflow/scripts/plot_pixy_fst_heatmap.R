@@ -58,9 +58,13 @@ for (i in 1:nrow(fst_df)) {
 
 message("FST matrix created: ", nrow(fst_matrix), " x ", ncol(fst_matrix), "\n")
 
-# Calculate distance matrix for dendrogram (use FST as distance)
-# Higher FST = greater distance
-dist_matrix <- as.dist(fst_matrix)
+# Negative FST estimates no differentiation, not a negative distance.
+# Floor at 0 only for the tree; the heatmap still prints the raw estimates.
+fst_dist <- fst_matrix
+n_neg <- sum(fst_dist[lower.tri(fst_dist)] < 0, na.rm = TRUE)
+fst_dist[fst_dist < 0] <- 0
+message(sprintf("Floored %d negative pairwise FST values to 0 for clustering\n", n_neg))
+dist_matrix <- as.dist(fst_dist)
 
 # Hierarchical clustering
 message("\n=== CALCULATING DENDROGRAM ===\n")
