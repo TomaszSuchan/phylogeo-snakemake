@@ -561,13 +561,15 @@ parameters: &global_params
     #     SiteA: "#E41A1C"
     #     SiteB: "#377EB8"
 
-  hierfstat:
+  popgenstats:
     width: 8
     height: 6
     axis_title_size: 10
     axis_text_size: 8
     group_by: ["Region", "Region2"]
     min_individuals: 2
+    # Bootstrap replicates for pairwise WC Fst confidence intervals (boot.ppfst)
+    nboot: 1000
     #Region:
     #  sort_by:
     #  colors:
@@ -866,10 +868,10 @@ parameters: &global_params
       threads: 1
       mem_mb: 8000
       runtime: 60
-    hierfstat:
+    popgenstats:
       threads: 1
-      mem_mb: 8000
-      runtime: 10
+      mem_mb: 32000
+      runtime: 720
     iqtree:
       threads: 12
       mem_mb: 8000

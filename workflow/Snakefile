@@ -805,9 +805,9 @@ def _pixy_group_setting(project, group_col, key, default=None):
     return default
 
 
-def _hierfstat_grouping_columns(project_params):
-    """Columns used as hierfstat `{grouping}` wildcards (and in result filenames)."""
-    gb = project_params.get("hierfstat", {}).get("group_by")
+def _popgenstats_grouping_columns(project_params):
+    """Columns used as popgenstats `{grouping}` wildcards (and in result filenames)."""
+    gb = project_params.get("popgenstats", {}).get("group_by")
     if isinstance(gb, list) and gb:
         return [str(x) for x in gb if x and str(x) != "none"]
     if isinstance(gb, str) and gb and gb != "none":
@@ -815,25 +815,25 @@ def _hierfstat_grouping_columns(project_params):
     return ["Site"]
 
 
-def _hierfstat_setting(project, key, default=None):
-    """Read top-level hierfstat settings from parameters.hierfstat.{key}."""
-    return config["projects"][project]["parameters"].get("hierfstat", {}).get(key, default)
+def _popgenstats_setting(project, key, default=None):
+    """Read top-level popgenstats settings from parameters.popgenstats.{key}."""
+    return config["projects"][project]["parameters"].get("popgenstats", {}).get(key, default)
 
 
-def _hierfstat_plot_style_params(wildcards):
-    """Shared width/height (cm→in) and font sizes for hierfstat barplots."""
+def _popgenstats_plot_style_params(wildcards):
+    """Shared width/height (cm→in) and font sizes for popgenstats barplots."""
     project = wildcards.project
     return {
-        "width": _fig_cm_to_in(_hierfstat_setting(project, "width"), 20.32),
-        "height": _fig_cm_to_in(_hierfstat_setting(project, "height"), 15.24),
-        "axis_title_size": _hierfstat_setting(project, "axis_title_size", 10),
-        "axis_text_size": _hierfstat_setting(project, "axis_text_size", 8),
+        "width": _fig_cm_to_in(_popgenstats_setting(project, "width"), 20.32),
+        "height": _fig_cm_to_in(_popgenstats_setting(project, "height"), 15.24),
+        "axis_title_size": _popgenstats_setting(project, "axis_title_size", 10),
+        "axis_text_size": _popgenstats_setting(project, "axis_text_size", 8),
     }
 
 
-def _hierfstat_group_setting(project, group_col, key, default=None):
-    """Read per-group hierfstat settings from hierfstat.{group_col}.{key}."""
-    group_cfg = config["projects"][project]["parameters"].get("hierfstat", {}).get(group_col)
+def _popgenstats_group_setting(project, group_col, key, default=None):
+    """Read per-group popgenstats settings from popgenstats.{group_col}.{key}."""
+    group_cfg = config["projects"][project]["parameters"].get("popgenstats", {}).get(group_col)
     if isinstance(group_cfg, dict):
         return group_cfg.get(key, default)
     return default
@@ -1467,7 +1467,7 @@ include: "rules/vcf2pcacluster.smk"
 include: "rules/relatedness.smk"
 include: "rules/relatedness_by_pop.smk"
 include: "rules/pixy.smk"
-include: "rules/hierfstat.smk"
+include: "rules/popgenstats.smk"
 include: "rules/structure.smk"
 include: "rules/iqtree.smk"
 include: "rules/align_clusters.smk"
@@ -2101,40 +2101,91 @@ def get_all_targets():
                     )
                 )
 
-        # hierfstat: population-specific Fst/Fis plus Ho/Hs table, per-stat and combined plots
-        if analyses.get("hierfstat", False):
-            hierfstat_groupings = _hierfstat_grouping_columns(params)
-            hierfstat_stats = ["Ho", "Hs", "Fis", "Fst"]
+        # popgenstats: WG dosage Fst/Fis + Ho/Hs; WC diversity, pairwise Fst, Ar, private alleles
+        if analyses.get("popgenstats", False):
+            popgenstats_groupings = _popgenstats_grouping_columns(params)
+            popgenstats_stats = ["Ho", "Hs", "Fis", "Fst"]
+            popgenstats_wc_stats = ["Ar", "private_alleles"]
             targets.extend(
                 expand(
-                    f"results/{project}/hierfstat/{project}.{{grouping}}.hierfstat_stats.tsv",
-                    grouping=hierfstat_groupings,
+                    f"results/{project}/popgenstats/{project}.{{grouping}}.popgenstats_stats.tsv",
+                    grouping=popgenstats_groupings,
                 )
             )
             targets.extend(
                 expand(
-                    f"results/{project}/hierfstat/plots/{project}.{{grouping}}.hierfstat_{{stat}}.pdf",
-                    grouping=hierfstat_groupings,
-                    stat=hierfstat_stats,
+                    f"results/{project}/popgenstats/{project}.{{grouping}}.popgenstats_wc_overall.tsv",
+                    grouping=popgenstats_groupings,
                 )
             )
             targets.extend(
                 expand(
-                    f"results/{project}/hierfstat/plots/{project}.{{grouping}}.hierfstat_{{stat}}.rds",
-                    grouping=hierfstat_groupings,
-                    stat=hierfstat_stats,
+                    f"results/{project}/popgenstats/{project}.{{grouping}}.popgenstats_wc_popstats.tsv",
+                    grouping=popgenstats_groupings,
                 )
             )
             targets.extend(
                 expand(
-                    f"results/{project}/hierfstat/plots/{project}.{{grouping}}.hierfstat_stats.pdf",
-                    grouping=hierfstat_groupings,
+                    f"results/{project}/popgenstats/{project}.{{grouping}}.popgenstats_wc_pairwise_fst.tsv",
+                    grouping=popgenstats_groupings,
                 )
             )
             targets.extend(
                 expand(
-                    f"results/{project}/hierfstat/plots/{project}.{{grouping}}.hierfstat_stats.rds",
-                    grouping=hierfstat_groupings,
+                    f"results/{project}/popgenstats/{project}.{{grouping}}.popgenstats_wc_pairwise_fst_ci.tsv",
+                    grouping=popgenstats_groupings,
+                )
+            )
+            targets.extend(
+                expand(
+                    f"results/{project}/popgenstats/plots/{project}.{{grouping}}.popgenstats_{{stat}}.pdf",
+                    grouping=popgenstats_groupings,
+                    stat=popgenstats_stats,
+                )
+            )
+            targets.extend(
+                expand(
+                    f"results/{project}/popgenstats/plots/{project}.{{grouping}}.popgenstats_{{stat}}.rds",
+                    grouping=popgenstats_groupings,
+                    stat=popgenstats_stats,
+                )
+            )
+            targets.extend(
+                expand(
+                    f"results/{project}/popgenstats/plots/{project}.{{grouping}}.popgenstats_stats.pdf",
+                    grouping=popgenstats_groupings,
+                )
+            )
+            targets.extend(
+                expand(
+                    f"results/{project}/popgenstats/plots/{project}.{{grouping}}.popgenstats_stats.rds",
+                    grouping=popgenstats_groupings,
+                )
+            )
+            targets.extend(
+                expand(
+                    f"results/{project}/popgenstats/plots/{project}.{{grouping}}.popgenstats_wc_{{stat}}.pdf",
+                    grouping=popgenstats_groupings,
+                    stat=popgenstats_wc_stats,
+                )
+            )
+            targets.extend(
+                expand(
+                    f"results/{project}/popgenstats/plots/{project}.{{grouping}}.popgenstats_wc_{{stat}}.rds",
+                    grouping=popgenstats_groupings,
+                    stat=popgenstats_wc_stats,
+                )
+            )
+            targets.extend(
+                expand(
+                    f"results/{project}/popgenstats/plots/{project}.{{grouping}}.popgenstats_wc_pairwise_fst_heatmap.pdf",
+                    grouping=popgenstats_groupings,
+                )
+            )
+            targets.extend(
+                expand(
+                    f"results/{project}/popgenstats/plots/{project}.{{grouping}}.popgenstats_wc_pairwise_fst_heatmap.rds",
+                    grouping=popgenstats_groupings,
                 )
             )
 

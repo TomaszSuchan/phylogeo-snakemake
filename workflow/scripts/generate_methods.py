@@ -900,8 +900,8 @@ if analyses.get("pixy", False):
         f"calculated in non-overlapping windows of {win:,} bp. {agg_text}"
     )
 
-if analyses.get("hierfstat", False):
-    hp = p.get("hierfstat", {})
+if analyses.get("popgenstats", False):
+    hp = p.get("popgenstats", {})
     _hf_gb = hp.get("group_by", ["Site"])
     if isinstance(_hf_gb, list):
         hf_pops = [str(x) for x in _hf_gb if x not in (None, "", "null", "NULL")]
@@ -912,22 +912,30 @@ if analyses.get("hierfstat", False):
         + (f" and '{hf_pops[-1]}'" if len(hf_pops) > 1 else f"'{hf_pops[0]}'")
     )
     hf_min_ind = int(hp.get("min_individuals", 2))
+    hf_nboot = int(hp.get("nboot", 1000))
     hf_group_clause = (
         f"each of the {hf_pop} columns"
         if len(hf_pops) > 1
         else f"the {hf_pop} column"
     )
+    n_snps_all = _fmt_int(vcf_stats_filtered.get("variants", "[NA]"))
     hf_body = (
-        f"population-specific Fst and Fis were estimated with the dosage-based "
-        f"method of Weir & Goudet (2017) as implemented in the hierfstat R "
-        f"package {vn(versions,'hierfstat')} (Goudet 2005), together with observed "
-        f"heterozygosity (Ho) and Nei & Chesser (1983) gene diversity (Hs). "
-        f"Genotypes were read from the biallelic SNP dataset "
-        f"({n_snps_biallelic} SNPs, {n_samples} individuals) — the un-thinned "
-        f"set, so that all biallelic SNPs with MAC > 1 contributed — converted "
-        f"to alternate-allele dosages, and analysed separately for populations "
-        f"defined by {hf_group_clause} of the individual metadata, retaining "
-        f"populations with at least {hf_min_ind} individuals."
+        f"population-genetic summary statistics were computed with the hierfstat "
+        f"R package {vn(versions,'hierfstat')} (Goudet 2005) and the poppr R package "
+        f"{vn(versions,'r-poppr')} (Kamvar et al. 2014), for populations defined by "
+        f"{hf_group_clause} of the individual metadata (retaining populations with "
+        f"at least {hf_min_ind} individuals). Population-specific Fst and Fis were "
+        f"estimated with the dosage-based method of Weir & Goudet (2017) from the "
+        f"biallelic SNP dataset ({n_snps_biallelic} SNPs, {n_samples} individuals) — "
+        f"the un-thinned set, so that all biallelic SNPs with MAC > 1 contributed — "
+        f"together with observed heterozygosity (Ho) and Nei & Chesser (1983) gene "
+        f"diversity (Hs). Separately, Weir & Cockerham (1984) estimators of Ho, gene "
+        f"diversity (He/Hs), Fis and overall Fst were obtained with hierfstat "
+        f"basic.stats from the all-SNP dataset ({n_snps_all} variant sites, "
+        f"{n_samples} individuals), along with pairwise Fst (pairwise.WCfst) and "
+        f"{hf_nboot}-replicate bootstrap 95% confidence intervals (boot.ppfst), "
+        f"rarefied allelic richness (allelic.richness), and private-allele counts "
+        f"(poppr private_alleles)."
     )
     if analyses.get("pixy", False):
         div_parts.append(
@@ -1285,7 +1293,7 @@ if analyses.get("gone2", False):
         f"Recent effective population size (Ne) trajectories were estimated with "
         f"GONE2 (Santiago et al. 2025) from linkage disequilibrium as a function "
         f"of genetic distance, using the shared per-population VCFs described above. "
-        f"GONE2 was run with phased/diploid genotype coding (-g 0) and recombination "
+        f"GONE2 was run with unphased diploid genotype coding (-g 0) and recombination "
         f"rate -r {gone2_currentne2_common_rate:g}. To obtain robust estimates, each "
         f"population analysis was repeated across {n_seeds} independent stochastic "
         f"seeds (-S); reported trajectories are the mean Ne across seeds, with "
@@ -1600,7 +1608,7 @@ if analyses.get("pixy", False):
             "https://doi.org/10.1111/1755-0998.14104"
         )
 
-if analyses.get("hierfstat", False):
+if analyses.get("popgenstats", False):
     refs["goudet_hierfstat"] = (
         "Goudet, J. (2005). hierfstat, a package for R to compute and test "
         "hierarchical F-statistics. *Molecular Ecology Notes*, 5, 184–186. "
@@ -1611,10 +1619,21 @@ if analyses.get("hierfstat", False):
         "population structure and relatedness. *Genetics*, 206, 2085–2103. "
         "https://doi.org/10.1534/genetics.116.198309"
     )
+    refs["weir_cockerham"] = (
+        "Weir, B.S. & Cockerham, C.C. (1984). Estimating F-statistics for the "
+        "analysis of population structure. *Evolution*, 38, 1358–1370. "
+        "https://doi.org/10.2307/2408641"
+    )
     refs["nei_chesser"] = (
         "Nei, M. & Chesser, R.K. (1983). Estimation of fixation indices and "
         "gene diversities. *Annals of Human Genetics*, 47, 253–259. "
         "https://doi.org/10.1111/j.1469-1809.1983.tb00993.x"
+    )
+    refs["poppr"] = (
+        "Kamvar, Z.N., Tabima, J.F. & Grünwald, N.J. (2014). Poppr: an R "
+        "package for genetic analysis of populations with clonal, partially clonal, "
+        "and/or sexual reproduction. *PeerJ*, 2, e281. "
+        "https://doi.org/10.7717/peerj.281"
     )
 
 if analyses.get("amova", False):

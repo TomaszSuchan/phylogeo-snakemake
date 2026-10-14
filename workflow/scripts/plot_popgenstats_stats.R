@@ -63,7 +63,7 @@ n_panels <- length(STAT_LEVELS)
 # Match the pixy combined-panel relative height: ~4/6 of single-panel height per panel.
 panel_height <- plot_height * n_panels * (4 / 6)
 
-message("\n=== READING HIERFSTAT SUMMARY ===\n")
+message("\n=== READING POPGENSTATS SUMMARY ===\n")
 stats_df <- read.table(stats_file, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
 missing <- setdiff(c("population", STAT_LEVELS), colnames(stats_df))
 if (length(missing) > 0) {

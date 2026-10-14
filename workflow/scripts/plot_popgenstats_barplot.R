@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-# Single-statistic hierfstat barplot (Ho / Hs / Fis / Fst).
+# Single-statistic popgenstats barplot (Ho / Hs / He / Fis / Fst / Ar / private_alleles).
 
 library(ggplot2)
 library(dplyr)
@@ -31,9 +31,12 @@ ylab_expression <- function(stat) {
     stat,
     Ho = expression(paste("Observed heterozygosity (", italic(H)[o], ")")),
     Hs = expression(paste("Expected heterozygosity (", italic(H)[s], ")")),
+    He = expression(paste("Expected heterozygosity (", italic(H)[e], ")")),
     Fis = expression(paste("Inbreeding coefficient (", italic(F)[IS], ")")),
     Fst = expression(paste("Population-specific ", italic(F)[ST])),
-    stop(sprintf("Unsupported hierfstat barplot statistic: %s", stat))
+    Ar = expression(paste("Allelic richness (", italic(A)[r], ")")),
+    private_alleles = "Private alleles",
+    stop(sprintf("Unsupported popgenstats barplot statistic: %s", stat))
   )
 }
 
@@ -63,7 +66,7 @@ if (is.na(axis_text_size)) axis_text_size <- 8
 
 y_lab <- ylab_expression(stat)
 
-message(sprintf("\n=== READING HIERFSTAT SUMMARY (%s) ===\n", stat))
+message(sprintf("\n=== READING POPGENSTATS SUMMARY (%s) ===\n", stat))
 stats_df <- read.table(stats_file, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
 message(sprintf("Loaded %d populations for grouping '%s'\n", nrow(stats_df), grouping_name))
 
