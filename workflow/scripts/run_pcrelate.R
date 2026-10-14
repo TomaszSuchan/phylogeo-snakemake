@@ -48,11 +48,15 @@ if (length(snps.use) < 50L) {
   stop("Too few SNPs (", length(snps.use), ") in the unlinked input VCF for PC-Relate")
 }
 
+# SNPRelate defaults to missing.rate = 0.01. That drops every SNP missing in
+# more than 1% of samples, which is nearly the whole RAD set. Missingness was
+# already set by vcf_filtering; do not filter again here.
 cat("Computing KING kinship matrix for PC-AiR\n")
 king <- snpgdsIBDKING(
   gds,
   snp.id = snps.use,
   autosome.only = FALSE,
+  missing.rate = NaN,
   verbose = FALSE
 )
 kingMat <- king$kinship
@@ -67,8 +71,10 @@ pcair_res <- pcair(
   kinobj = kingMat,
   divobj = kingMat,
   snp.include = snps.use,
-  # Passed through to snpgdsPCA; contig scaffolds are not human autosomes.
+  # Passed through to snpgdsPCA. Contig scaffolds are not human autosomes,
+  # and missing.rate = NaN keeps the upstream SNP set (default is 0.01).
   autosome.only = FALSE,
+  missing.rate = NaN,
   verbose = FALSE
 )
 
