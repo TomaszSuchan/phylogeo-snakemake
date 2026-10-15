@@ -1,7 +1,7 @@
 """
 Shared prep for GONE2 and currentNe2: per-population samples + filtered VCFs.
 
-One prep tree per grouping column (group_by / legacy population_column):
+One prep tree per grouping column (group_by):
 results/{project}/gone2_currentne2_common/{grouping}/...
 """
 

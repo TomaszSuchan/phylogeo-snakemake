@@ -1244,12 +1244,12 @@ if rel_parts:
 
 gone2_currentne2_common = p.get("gone2_currentne2_common", {})
 _gone2_gb = gone2_currentne2_common.get("group_by")
-if _gone2_gb in (None, "", "null", "NULL"):
-    _gone2_gb = gone2_currentne2_common.get("population_column", "Site")
 if isinstance(_gone2_gb, list):
     gone2_currentne2_common_pops = [str(x) for x in _gone2_gb if x not in (None, "", "null", "NULL")]
 else:
-    gone2_currentne2_common_pops = [str(_gone2_gb)] if _gone2_gb else ["Site"]
+    gone2_currentne2_common_pops = [str(_gone2_gb)] if _gone2_gb not in (None, "", "null", "NULL") else ["Site"]
+if not gone2_currentne2_common_pops:
+    gone2_currentne2_common_pops = ["Site"]
 gone2_currentne2_common_pop = (
     ", ".join(f"'{c}'" for c in gone2_currentne2_common_pops[:-1])
     + (f" and '{gone2_currentne2_common_pops[-1]}'" if len(gone2_currentne2_common_pops) > 1 else f"'{gone2_currentne2_common_pops[0]}'")
@@ -1336,12 +1336,12 @@ if analyses.get("stairwayplot2", False):
     sp = p.get("stairwayplot2", {})
     sfs = sp.get("easysfs", {})
     _sp_gb = sfs.get("group_by")
-    if _sp_gb in (None, "", "null", "NULL"):
-        _sp_gb = sfs.get("population_column", "Site")
     if isinstance(_sp_gb, list):
         sp_pops = [str(x) for x in _sp_gb if x not in (None, "", "null", "NULL")]
     else:
-        sp_pops = [str(_sp_gb)] if _sp_gb else ["Site"]
+        sp_pops = [str(_sp_gb)] if _sp_gb not in (None, "", "null", "NULL") else ["Site"]
+    if not sp_pops:
+        sp_pops = ["Site"]
     sp_pop = (
         ", ".join(f"'{c}'" for c in sp_pops[:-1])
         + (f" and '{sp_pops[-1]}'" if len(sp_pops) > 1 else f"'{sp_pops[0]}'")

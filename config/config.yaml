@@ -585,9 +585,7 @@ parameters: &global_params
   stairwayplot2:
     easysfs:
       # One Stairway/easySFS tree per grouping column (like pixy.group_by).
-      # Prefer group_by (list or string). Legacy population_column (string) still works.
       group_by: ["Site"]
-      # population_column: "Site"   # legacy single-column alias for group_by
       min_individuals: 5
       project_to_n_diploids: null   # null = min(n_individuals, max_project_diploids)
       max_project_diploids: 40
@@ -743,9 +741,7 @@ parameters: &global_params
   # Per-population sample lists and filtered VCFs used by both tools.
   gone2_currentne2_common:
     # One full prep/analysis tree per grouping column (like pixy.group_by).
-    # Prefer group_by (list or string). Legacy population_column (string) still works.
     group_by: ["Site"]
-    # population_column: "Site"              # legacy single-column alias for group_by
     recombination_rate_cM_per_Mb: 2.5        # -r for both tools (constant cM/Mb)
     min_chromosome_cM: 20                    # drop chroms with SNP-span genetic length <= this
     f_missing: 1.0                         # per-pop locus filter; 1.0 disables missingness filtering

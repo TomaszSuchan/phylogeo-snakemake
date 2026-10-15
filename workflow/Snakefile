@@ -1070,7 +1070,7 @@ def _pop_safe(label):
 
 
 def _normalize_grouping_columns(value, default="Site"):
-    """Normalize group_by / population_column config to a list of column names."""
+    """Normalize group_by config to a list of column names."""
     if isinstance(value, list):
         cols = [str(x) for x in value if x not in (None, "", "null", "NULL")]
         return cols if cols else [default]
@@ -1080,19 +1080,15 @@ def _normalize_grouping_columns(value, default="Site"):
 
 
 def _gone2_currentne2_common_grouping_columns(params):
-    """Grouping columns for GONE2/currentNe2 (group_by, else legacy population_column)."""
+    """Grouping columns for GONE2/currentNe2 from gone2_currentne2_common.group_by."""
     cfg = params.get("gone2_currentne2_common", {})
-    if "group_by" in cfg and cfg["group_by"] not in (None, "", "null", "NULL"):
-        return _normalize_grouping_columns(cfg["group_by"], "Site")
-    return _normalize_grouping_columns(cfg.get("population_column", "Site"), "Site")
+    return _normalize_grouping_columns(cfg.get("group_by"), "Site")
 
 
 def _stairwayplot2_grouping_columns(params):
-    """Grouping columns for Stairway Plot 2 / easySFS."""
+    """Grouping columns for Stairway Plot 2 / easySFS from easysfs.group_by."""
     easysfs = params.get("stairwayplot2", {}).get("easysfs", {})
-    if "group_by" in easysfs and easysfs["group_by"] not in (None, "", "null", "NULL"):
-        return _normalize_grouping_columns(easysfs["group_by"], "Site")
-    return _normalize_grouping_columns(easysfs.get("population_column", "Site"), "Site")
+    return _normalize_grouping_columns(easysfs.get("group_by"), "Site")
 
 
 def _ne_comparison_grouping_columns(params):
@@ -1113,7 +1109,7 @@ def _pop_wildcards(project, params, cfg_key, group_col=None):
         if cfg_key == "gone2_currentne2_common":
             group_col = _gone2_currentne2_common_grouping_columns(params)[0]
         else:
-            group_col = _normalize_grouping_columns(cfg.get("population_column", "Site"), "Site")[0]
+            group_col = _normalize_grouping_columns(cfg.get("group_by"), "Site")[0]
     return _pop_wildcards_from_cfg(project, cfg, group_col=group_col)
 
 
@@ -1127,10 +1123,7 @@ def _pop_wildcards_from_cfg(project, cfg, group_col=None):
         return []
 
     if group_col is None:
-        if "group_by" in cfg and cfg["group_by"] not in (None, "", "null", "NULL"):
-            group_col = _normalize_grouping_columns(cfg["group_by"], "Site")[0]
-        else:
-            group_col = _normalize_grouping_columns(cfg.get("population_column", "Site"), "Site")[0]
+        group_col = _normalize_grouping_columns(cfg.get("group_by"), "Site")[0]
     if not isinstance(group_col, str):
         raise ValueError(f"group_col must be a column name string, got {group_col!r}")
 

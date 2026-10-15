@@ -3,7 +3,7 @@ Folded site frequency spectra with easySFS (https://github.com/isaacovercast/eas
 
 Prep for Stairway Plot 2. Outputs live under
 results/{project}/stairwayplot2/easysfs/{grouping}/.
-Config: parameters.stairwayplot2.easysfs.group_by (or legacy population_column).
+Config: parameters.stairwayplot2.easysfs.group_by.
 SNPs are taken from the all-sites VCF (no MAC/MAF filters from select_biallelic_snps)
 so rare variants are retained and L is counted over the same samples and loci as the SNPs.
 """
