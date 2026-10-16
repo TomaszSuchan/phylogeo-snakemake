@@ -42,17 +42,10 @@ threshold_profile <- snakemake@params[["threshold_profile"]]
 weight_column <- snakemake@params[["weight_column"]]
 
 color_by_name <- NULL
-relatedness_colors <- NULL
 group_colors <- NULL
 plot_all <- FALSE
 if ("color_by" %in% names(snakemake@params)) {
   color_by_name <- as.character(snakemake@params[["color_by"]])
-}
-if ("relatedness_colors" %in% names(snakemake@params)) {
-  relatedness_colors <- snakemake@params[["relatedness_colors"]]
-  if (!is.null(relatedness_colors)) {
-    relatedness_colors <- unlist(relatedness_colors)
-  }
 }
 if ("group_colors" %in% names(snakemake@params)) {
   group_colors <- group_fill_values(snakemake@params[["group_colors"]])
@@ -290,12 +283,6 @@ if (!is.null(color_by_name) && color_by_name != "" && color_by_name != "none" &&
     n_categories <- length(unique_vals)
     if (!is.null(group_colors) && length(group_colors) > 0) {
       node_colors <- group_colors
-    } else if (!is.null(relatedness_colors) && length(relatedness_colors) > 0) {
-      node_colors <- if (n_categories > length(relatedness_colors)) {
-        colorRampPalette(relatedness_colors)(n_categories)
-      } else {
-        stats::setNames(relatedness_colors[seq_len(n_categories)], unique_vals)
-      }
     }
   }
 }

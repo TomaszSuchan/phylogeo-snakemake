@@ -471,9 +471,14 @@ parameters: &global_params
   relatedness_plot:
     color_by: ["none"]          # columns in indpopdata used to color network nodes; "none" disables node coloring
     plot_all: false             # when true, include unrelated individuals as isolated nodes in network plots
-    relatedness_colors: null   # optional custom palette for relatedness network plots
     width: 30.48                # network plot width in cm (12 in)
     height: 25.4                # network plot height in cm (10 in)
+    # Optional per-group colours for each color_by column (same pattern as roh.{group_col}.colors).
+    # Falls back to pca_plot.{group_col}.colors when unset.
+    # Region:
+    #   colors:
+    #     North: "#E41A1C"
+    #     South: "#377EB8"
 
   # Shared population stratification for vcftools, PLINK --genome, and R related.
   # Not used by KING or PC-Relate (full-sample estimators).
