@@ -128,6 +128,36 @@ rule roh_group_plots:
         "../scripts/roh_plots.R"
 
 
+rule roh_comparison_plots:
+    """
+    Mean ± SE and Tukey pairwise differences from the ROH comparison report.
+    """
+    input:
+        stats=rules.roh_summary.output.stats
+    output:
+        pdf="results/{project}/roh/plots/{project}.roh_comparisons_by_{group_col}.pdf",
+        rds="results/{project}/roh/plots/{project}.roh_comparisons_by_{group_col}.rds"
+    params:
+        group_col=lambda wildcards: wildcards.group_col,
+        width=lambda wildcards: _roh_plot_style_params(wildcards)["width"],
+        height=lambda wildcards: _roh_plot_style_params(wildcards)["height"],
+        axis_title_size=lambda wildcards: _roh_plot_style_params(wildcards)["axis_title_size"],
+        axis_text_size=lambda wildcards: _roh_plot_style_params(wildcards)["axis_text_size"],
+        dpi=lambda wildcards: _roh_setting(wildcards.project, "dpi", 300)
+    log:
+        "logs/{project}/roh_comparison_plots.{group_col}.log"
+    benchmark:
+        "benchmarks/{project}/roh_comparison_plots.{group_col}.txt"
+    conda:
+        "../envs/r-plot.yaml"
+    threads: 1
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["roh"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["roh"]["runtime"]
+    script:
+        "../scripts/plot_roh_comparisons.R"
+
+
 rule plot_froh_map:
     input:
         unpack(_froh_map_inputs),

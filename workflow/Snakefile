@@ -896,6 +896,7 @@ def _roh_plot_stems(group_by_cols):
             f"froh_by_{col}_classes",
             f"nroh_by_{col}",
             f"nroh_by_{col}_classes",
+            f"roh_comparisons_by_{col}",
         ])
     return stems
 
