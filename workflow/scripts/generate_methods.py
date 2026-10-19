@@ -98,6 +98,40 @@ def parse_depth_summary(path):
     return result
 
 
+def parse_samples_removed(path):
+    """Rows of (sample, reason) from the two-column KING exclusion table."""
+    rows = []
+    try:
+        with open(path) as fh:
+            header = fh.readline()
+            if not header:
+                return rows
+            for line in fh:
+                if not line.strip():
+                    continue
+                sample, reason = line.rstrip("\n").split("\t", 1)
+                rows.append((sample, reason))
+    except FileNotFoundError:
+        return rows
+    return rows
+
+
+def samples_removed_sentence(rows, project):
+    """One methods sentence naming each KING exclusion and its cause."""
+    table = f"stats_samples/{project}.samples_removed.txt"
+    if not rows:
+        return "No individual was excluded, because no pair exceeded this threshold."
+    listed = "; ".join(f"{sample}, {reason}" for sample, reason in rows)
+    if len(rows) == 1:
+        opening = "One individual was excluded"
+    else:
+        opening = f"The following {len(rows)} individuals were excluded"
+    return (
+        f"{opening}: {listed}. "
+        f"The same two-column list (sample, reason) is written to {table}."
+    )
+
+
 def parse_imiss(path):
     """Mean per-individual missingness (F_MISS) from a vcftools .imiss file."""
     try:
@@ -267,6 +301,7 @@ imiss_filtered  = parse_imiss(snakemake.input.imiss_filtered)
 imiss_biallelic = parse_imiss(snakemake.input.imiss_biallelic)
 depth_filtered  = parse_depth_summary(snakemake.input.depth_summary_filtered)
 depth_biallelic = parse_depth_summary(snakemake.input.depth_summary_biallelic)
+samples_removed = parse_samples_removed(snakemake.input.samples_removed)
 
 n_snps     = vcf_stats.get("variants",      "[N_SNPS]")
 n_loci     = vcf_stats.get("rad_fragments", "[N_RAD_LOCI]")
@@ -321,7 +356,8 @@ if rel_on:
         f"connected individuals, samples were greedily excluded until no remaining "
         f"pair had a kinship coefficient exceeding {king_thr}, the conventional "
         f"threshold corresponding to approximately second-degree relatives "
-        f"(e.g. half-siblings, avuncular or grandparent-grandchild pairs)."
+        f"(e.g. half-siblings, avuncular or grandparent-grandchild pairs). "
+        f"{samples_removed_sentence(samples_removed, project)}"
     )
 
 miss_clause = (f"Sites with more than {100*f_missing:.0f}% missing genotype calls "

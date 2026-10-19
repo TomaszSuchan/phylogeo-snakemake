@@ -24,6 +24,7 @@ def _methods_inputs(wildcards):
     inputs = {
         "mainparams": "data/mainparams",
         "samples_to_keep": f"{base}/filtered_data/{proj}.samples_to_keep.txt",
+        "samples_removed": f"{base}/stats_samples/{proj}.samples_removed.txt",
         # Analysis (unlinked biallelic / thinned) dataset
         "vcf_stats": f"{base}/stats_vcf/thinned/{proj}.biallelic_snps.vcf_stats.txt",
         "imiss_thinned": f"{base}/stats_vcf/thinned/{proj}.biallelic_snps.imiss",

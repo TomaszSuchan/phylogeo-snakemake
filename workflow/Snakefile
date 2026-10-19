@@ -1587,6 +1587,24 @@ def get_all_targets():
             f"results/{project}/stats_vcf/thinned/plots/{project}.biallelic_snps.ldepth_histogram.rds",
         ])
 
+        # KING exclusions: who was removed, why, and barplots by group_by.
+        rel_filt = params.get("relatedness_filtering", {})
+        if rel_filt.get("enabled", False):
+            targets.extend([
+                f"results/{project}/stats_samples/{project}.samples_removed.txt",
+                f"results/{project}/stats_samples/{project}.relatedness_filtered_samples.txt",
+            ])
+            rel_groups = rel_filt.get("group_by", ["Region"])
+            if isinstance(rel_groups, str):
+                rel_groups = [rel_groups]
+            for group in rel_groups:
+                if not group:
+                    continue
+                targets.extend([
+                    f"results/{project}/stats_samples/plots/{project}.removed_individuals_by_{group}.pdf",
+                    f"results/{project}/stats_samples/plots/{project}.removed_individuals_by_{group}.rds",
+                ])
+
         # Get project-specific parameters
         k_values = params.get("k_values", [1, 2, 3])
         plot_k_values = _plot_k_values(k_values)

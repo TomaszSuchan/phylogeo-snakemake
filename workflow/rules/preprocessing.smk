@@ -383,11 +383,13 @@ rule categorize_removed_individuals:
         king_table=rules.filter_related_individuals.output.king_table,
         samples_to_keep=rules.filter_related_individuals.output.samples_to_keep
     output:
-        categorized="results/{project}/stats_samples/{project}.relatedness_filtered_samples.txt"
+        categorized="results/{project}/stats_samples/{project}.relatedness_filtered_samples.txt",
+        samples_removed="results/{project}/stats_samples/{project}.samples_removed.txt"
     log:
         "logs/{project}/categorize_removed_individuals.log"
     params:
         enabled=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_filtering", {}).get("enabled", False),
+        king_threshold=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_filtering", {}).get("king_threshold", 0.0884),
         clone_threshold=0.354,  # duplicates/monozygotic twins
         first_degree_threshold=0.177,  # parents/siblings
         second_degree_threshold=0.0884  # half-siblings/grandparents
@@ -404,12 +406,15 @@ rule categorize_removed_individuals:
                 --king-table {input.king_table} \
                 --samples-to-keep {input.samples_to_keep} \
                 --output {output.categorized} \
+                --samples-removed {output.samples_removed} \
+                --king-threshold {params.king_threshold} \
                 --clone-threshold {params.clone_threshold} \
                 --first-degree-threshold {params.first_degree_threshold} \
                 --second-degree-threshold {params.second_degree_threshold} &> {log} || exit 1
         else
-            # If filtering is disabled, create empty file
+            # If filtering is disabled, create empty files
             echo -e "individual\tmax_KING\tcategory" > {output.categorized} 2> {log} || exit 1
+            echo -e "sample\treason" > {output.samples_removed} 2>> {log} || exit 1
         fi
         """
 

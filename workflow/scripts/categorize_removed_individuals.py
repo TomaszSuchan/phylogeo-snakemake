@@ -1,184 +1,210 @@
 #!/usr/bin/env python3
 """
-Categorize removed individuals by relationship type based on KING kinship values.
+List individuals removed by PLINK 2 --king-cutoff, and why.
 
-Reads KING table and samples-to-keep list, identifies removed individuals,
-finds their maximum KING value, and categorizes them into:
-- Clones: KING > 0.354 (duplicates/monozygotic twins)
-- 1st-degree: 0.177 < KING <= 0.354 (parents/siblings)
-- 2nd-degree: 0.0884 < KING <= 0.177 (half-siblings/grandparents)
-- Other: KING <= 0.0884 (but above filtering threshold)
+PLINK removes one member of each pair whose KING kinship exceeds the cutoff.
+When several relatives remain, it removes the sample with more such relatives
+(the partner of the first degree-1 sample, otherwise the first sample of
+maximal degree, in VCF sample order). The two-column table records that
+sample and the relative or relatives that were still above the cutoff when
+it was removed.
 """
 
 import argparse
 import sys
 from collections import defaultdict
 
+
 def parse_king_table(king_file):
-    """Parse KING table and return dictionary of max KING values per individual."""
-    max_king = defaultdict(float)
-    
-    with open(king_file, 'r') as f:
-        # Skip header
-        header = f.readline().strip().split('\t')
-        
-        # Find column indices
-        # plink2 KING table uses IID1, IID2, KINSHIP columns
+    """Return (sample_order, list of (id1, id2, kinship))."""
+    pairs = []
+    order = []
+    seen = set()
+    with open(king_file, "r") as handle:
+        header = handle.readline().rstrip("\n").split("\t")
+        if not header or header == [""]:
+            return order, pairs
         try:
-            id1_idx = header.index('IID1')
-            id2_idx = header.index('IID2')
-            kinship_idx = header.index('KINSHIP')
+            id1_idx = header.index("IID1")
+            id2_idx = header.index("IID2")
+            kinship_idx = header.index("KINSHIP")
         except ValueError:
-            # Try alternative column names
             try:
-                id1_idx = header.index('ID1')
-                id2_idx = header.index('ID2')
-                kinship_idx = header.index('KINSHIP')
+                id1_idx = header.index("ID1")
+                id2_idx = header.index("ID2")
+                kinship_idx = header.index("KINSHIP")
             except ValueError:
-                try:
-                    # Try FID columns (family ID)
-                    id1_idx = header.index('#FID1')
-                    id2_idx = header.index('#FID2')
-                    kinship_idx = header.index('KINSHIP')
-                except ValueError:
-                    sys.stderr.write(f"Error: Could not find required columns in KING table. Found columns: {header}\n")
-                    sys.exit(1)
-        
-        for line in f:
+                sys.stderr.write(
+                    "Error: Could not find IID1/IID2/KINSHIP in KING table. "
+                    f"Found columns: {header}\n"
+                )
+                sys.exit(1)
+        first = True
+        for line in handle:
             if not line.strip():
                 continue
-            fields = line.strip().split('\t')
+            fields = line.rstrip("\n").split("\t")
             if len(fields) <= max(id1_idx, id2_idx, kinship_idx):
                 continue
-            
             id1 = fields[id1_idx]
             id2 = fields[id2_idx]
             try:
                 kinship = float(fields[kinship_idx])
-            except (ValueError, IndexError):
+            except ValueError:
                 continue
-            
-            # Update max KING for both individuals
-            if kinship > max_king[id1]:
-                max_king[id1] = kinship
-            if kinship > max_king[id2]:
-                max_king[id2] = kinship
-    
-    return max_king
+            pairs.append((id1, id2, kinship))
+            # PLINK writes the higher sample index as IID1 and the lower as IID2,
+            # so the first IID2 is sample 0 and each new IID1 is the next sample.
+            if first:
+                order.append(id2)
+                seen.add(id2)
+                first = False
+            if id1 not in seen:
+                order.append(id1)
+                seen.add(id1)
+    return order, pairs
+
 
 def read_samples_to_keep(samples_file):
-    """Read list of samples to keep."""
     samples_to_keep = set()
-    with open(samples_file, 'r') as f:
-        for line in f:
+    with open(samples_file, "r") as handle:
+        for line in handle:
             sample = line.strip()
-            # Skip header line if present
-            if sample and sample.upper() not in ['IID', 'ID', 'SAMPLE', 'INDIVIDUAL']:
+            if sample and sample.upper() not in ["IID", "ID", "SAMPLE", "INDIVIDUAL"]:
                 samples_to_keep.add(sample)
     return samples_to_keep
 
-def categorize_relationship(king_value, thresholds):
-    """Categorize relationship based on KING value."""
-    if king_value > thresholds['clone']:
-        return 'clone'
-    elif king_value > thresholds['first_degree']:
-        return '1st-degree'
-    elif king_value > thresholds['second_degree']:
-        return '2nd-degree'
-    else:
-        return 'other'
+
+def relationship_category(king_value, thresholds):
+    """Category labels expected by the removed-individuals barplot."""
+    if king_value > thresholds["clone"]:
+        return "clone"
+    if king_value > thresholds["first_degree"]:
+        return "1st-degree"
+    if king_value > thresholds["second_degree"]:
+        return "2nd-degree"
+    return "other"
+
+
+def relationship_phrase(king_value, thresholds):
+    if king_value > thresholds["clone"]:
+        return "duplicate"
+    if king_value > thresholds["first_degree"]:
+        return "1st-degree relative"
+    if king_value > thresholds["second_degree"]:
+        return "2nd-degree relative"
+    return "relative above the KING cutoff"
+
+
+def removal_reason(partners, thresholds):
+    """partners: list of (sample, kinship), closest first."""
+    parts = []
+    for sample, kinship in partners:
+        kind = relationship_phrase(kinship, thresholds)
+        parts.append(f"{kind} of {sample} (KING kinship {kinship:.4f})")
+    return "; ".join(parts)
+
+
+def prune_related(sample_order, pairs, threshold):
+    """Reproduce PLINK 2 KinshipPruneDestructive. Return removal records."""
+    neighbors = defaultdict(set)
+    kinship = {}
+    for id1, id2, value in pairs:
+        if value > threshold:
+            neighbors[id1].add(id2)
+            neighbors[id2].add(id1)
+            kinship[(id1, id2)] = value
+            kinship[(id2, id1)] = value
+    active = {sample for sample in sample_order if neighbors[sample]}
+    removed = []
+    while active:
+        degree_one = [
+            sample for sample in sample_order
+            if sample in active and len(neighbors[sample]) == 1
+        ]
+        if degree_one:
+            prune = next(iter(neighbors[degree_one[0]]))
+        else:
+            max_degree = max(len(neighbors[sample]) for sample in active)
+            prune = next(
+                sample for sample in sample_order
+                if sample in active and len(neighbors[sample]) == max_degree
+            )
+        partners = [
+            (sample, kinship[(prune, sample)])
+            for sample in sample_order
+            if sample in neighbors[prune]
+        ]
+        partners.sort(key=lambda item: -item[1])
+        removed.append((prune, partners))
+        for partner, _value in partners:
+            neighbors[partner].discard(prune)
+            if not neighbors[partner]:
+                active.discard(partner)
+        neighbors[prune].clear()
+        active.discard(prune)
+    return removed
+
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Categorize removed individuals by relationship type'
+        description="List individuals removed by KING cutoff and why"
     )
+    parser.add_argument("--king-table", required=True)
+    parser.add_argument("--samples-to-keep", required=True)
     parser.add_argument(
-        '--king-table',
+        "--output",
         required=True,
-        help='KING table file (TSV format)'
+        help="Three-column table used by the removed-individuals barplot",
     )
     parser.add_argument(
-        '--samples-to-keep',
+        "--samples-removed",
         required=True,
-        help='File with list of samples to keep (one per line)'
+        help="Two-column table: sample and the relative that caused the exclusion",
     )
-    parser.add_argument(
-        '--output',
-        required=True,
-        help='Output TSV file with removed individuals and categories'
-    )
-    parser.add_argument(
-        '--clone-threshold',
-        type=float,
-        default=0.354,
-        help='KING threshold for clones (default: 0.354)'
-    )
-    parser.add_argument(
-        '--first-degree-threshold',
-        type=float,
-        default=0.177,
-        help='KING threshold for 1st-degree relatives (default: 0.177)'
-    )
-    parser.add_argument(
-        '--second-degree-threshold',
-        type=float,
-        default=0.0884,
-        help='KING threshold for 2nd-degree relatives (default: 0.0884)'
-    )
-    
+    parser.add_argument("--king-threshold", type=float, default=0.0884)
+    parser.add_argument("--clone-threshold", type=float, default=0.354)
+    parser.add_argument("--first-degree-threshold", type=float, default=0.177)
+    parser.add_argument("--second-degree-threshold", type=float, default=0.0884)
     args = parser.parse_args()
-    
-    # Read samples to keep
-    samples_to_keep = read_samples_to_keep(args.samples_to_keep)
-    
-    # Parse KING table
-    print(f"Reading KING table from {args.king_table}...", file=sys.stderr)
-    max_king = parse_king_table(args.king_table)
-    
-    # Get all samples from KING table
-    all_samples = set(max_king.keys())
-    
-    # Find removed individuals
-    removed_samples = all_samples - samples_to_keep
-    
-    if not removed_samples:
-        print("No removed individuals found.", file=sys.stderr)
-        # Create empty output file
-        with open(args.output, 'w') as f:
-            f.write("individual\tmax_KING\tcategory\n")
-        return
-    
-    # Categorize removed individuals
+
     thresholds = {
-        'clone': args.clone_threshold,
-        'first_degree': args.first_degree_threshold,
-        'second_degree': args.second_degree_threshold
+        "clone": args.clone_threshold,
+        "first_degree": args.first_degree_threshold,
+        "second_degree": args.second_degree_threshold,
     }
-    
-    results = []
-    for sample in removed_samples:
-        king_value = max_king.get(sample, 0.0)
-        category = categorize_relationship(king_value, thresholds)
-        results.append((sample, king_value, category))
-    
-    # Sort by category, then by KING value (descending)
-    category_order = {'clone': 0, '1st-degree': 1, '2nd-degree': 2, 'other': 3}
-    results.sort(key=lambda x: (category_order.get(x[2], 99), -x[1]))
-    
-    # Write output
-    print(f"Writing results to {args.output}...", file=sys.stderr)
-    with open(args.output, 'w') as f:
-        f.write("individual\tmax_KING\tcategory\n")
-        for sample, king_value, category in results:
-            f.write(f"{sample}\t{king_value:.6f}\t{category}\n")
-    
-    print(f"Found {len(removed_samples)} removed individuals.", file=sys.stderr)
-    category_counts = defaultdict(int)
-    for _, _, category in results:
-        category_counts[category] += 1
-    for category, count in sorted(category_counts.items()):
-        print(f"  {category}: {count}", file=sys.stderr)
+    samples_to_keep = read_samples_to_keep(args.samples_to_keep)
+    sample_order, pairs = parse_king_table(args.king_table)
+    removed = prune_related(sample_order, pairs, args.king_threshold)
 
-if __name__ == '__main__':
+    expected = set(sample_order) - samples_to_keep
+    got = {sample for sample, _partners in removed}
+    if got != expected:
+        sys.stderr.write(
+            "Error: KING cutoff reconstruction does not match samples_to_keep "
+            f"({len(got)} reconstructed, {len(expected)} absent from the keep list).\n"
+        )
+        sys.exit(1)
+
+    with open(args.samples_removed, "w") as handle:
+        handle.write("sample\treason\n")
+        for sample, partners in removed:
+            handle.write(f"{sample}\t{removal_reason(partners, thresholds)}\n")
+
+    with open(args.output, "w") as handle:
+        handle.write("individual\tmax_KING\tcategory\n")
+        rows = []
+        for sample, partners in removed:
+            max_kinship = partners[0][1]
+            category = relationship_category(max_kinship, thresholds)
+            rows.append((sample, max_kinship, category))
+        category_order = {"clone": 0, "1st-degree": 1, "2nd-degree": 2, "other": 3}
+        rows.sort(key=lambda row: (category_order.get(row[2], 99), -row[1], row[0]))
+        for sample, max_kinship, category in rows:
+            handle.write(f"{sample}\t{max_kinship:.6f}\t{category}\n")
+
+    print(f"Removed {len(removed)} individuals.", file=sys.stderr)
+
+
+if __name__ == "__main__":
     main()
-

@@ -153,7 +153,8 @@ message("\n=== COUNTS BY SITE AND CATEGORY ===\n")
 print(count_df)
 
 # If grouping by a column (e.g., Region), add that information
-if (!is.null(group_by_name) && group_by_name %in% colnames(popdata)) {
+# Site is already the x axis. Facet only when group_by is a coarser column.
+if (!is.null(group_by_name) && group_by_name %in% colnames(popdata) && group_by_name != "Site") {
   # Get unique Site-Region mapping
   site_region <- popdata[, c("Site", group_by_name)] %>%
     distinct()

@@ -172,7 +172,7 @@ The pipeline applies filtering steps in the following order:
     - Common values: `0.354` (duplicates/twins), `0.177` (1st-degree), `0.0884` (2nd-degree), `0.0442` (3rd-degree). Lower values are stricter and remove more distant relatives.
   - `parameters.relatedness_filtering.mac_threshold` <INTEGER>: Minimum Minor Allele Count (MAC) for KING calculation (default: `1`). Raising this excludes very rare variants from the kinship calculation, which can help with sparse RAD datasets.
   - `parameters.relatedness_filtering.group_by` <LIST[STRING]>: List of columns from popdata to group barplots by (default: `["Region"]`). These columns must exist in `indpopdata`.
-- **Output**: Generates filtered sample list and KING relatedness table; creates barplots showing removed individuals grouped by specified columns
+- **Output**: Generates the retained sample list (`filtered_data/<project>.samples_to_keep.txt`) and the KING relatedness table. Who was removed, and why, is written under `stats_samples/`: `<project>.samples_removed.txt` (sample and the relative that caused the exclusion), `<project>.relatedness_filtered_samples.txt` (relationship category), and barplots `plots/<project>.removed_individuals_by_<group>.pdf` for each column in `parameters.relatedness_filtering.group_by`. These files are default targets when relatedness filtering is enabled. The exclusion list is also summarised in `methods.md`.
 
 #### 4. Missing Data Filtering (After Relatedness)
 - **Variant-level missing data filter**: Applied after relatedness filtering (if enabled)
