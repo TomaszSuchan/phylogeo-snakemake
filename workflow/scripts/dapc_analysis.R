@@ -40,9 +40,11 @@ k <- as.numeric(snakemake@params[["k"]])
 n_pca <- snakemake@params[["n_pca"]]
 n_da <- snakemake@params[["n_da"]]
 criterion <- snakemake@params[["criterion"]]
+# K = 1 has no between-group axis, so only the clustering BIC is computed.
+bic_only <- "bic_only" %in% names(snakemake@params) && isTRUE(snakemake@params[["bic_only"]])
 
-if (k < 2) {
-  stop("DAPC requires K >= 2. Update config k_values to exclude K=1 for DAPC.")
+if (k < 1 || (k < 2 && !bic_only)) {
+  stop("DAPC requires K >= 2. The K = 1 BIC is computed by the dapc_bic_k1 rule.")
 }
 
 cat("Parameters:\n")
@@ -76,10 +78,15 @@ n_pca_used <- ifelse(n_pca == "retained", ncol(genind_obj@tab), as.numeric(n_pca
 # Initialize
 criterion_value <- NA
 
-# Get clustering for the target K
-grp <- find.clusters(genind_obj, n.clust = k, choose.n.clust = FALSE,
-                     n.pca = n_pca_used,
-                     criterion = criterion)
+# Get clustering for the target K. K = 1 is one group containing every individual.
+if (bic_only) {
+  grp <- list(grp = factor(rep("1", nInd(genind_obj))))
+  cat("K = 1: one group; computing BIC only.\n")
+} else {
+  grp <- find.clusters(genind_obj, n.clust = k, choose.n.clust = FALSE,
+                       n.pca = n_pca_used,
+                       criterion = criterion)
+}
 
 # Check if find.clusters stores PCA coordinates internally
 # The result object might have a 'stat' component or PCA information
@@ -167,6 +174,18 @@ tryCatch({
   criterion_value <<- NA
 })
 
+if (bic_only) {
+  if (!is.finite(criterion_value)) {
+    stop("BIC at K = 1 could not be calculated")
+  }
+  bic_file <- snakemake@output[["bic"]]
+  dir.create(dirname(bic_file), recursive = TRUE, showWarnings = FALSE)
+  write.table(data.frame(K = k, BIC = criterion_value), bic_file,
+              sep = "\t", quote = FALSE, row.names = FALSE)
+  cat("BIC table saved to:", bic_file, "\n")
+  cat("\n=== DAPC Analysis Complete (K =", k, ") ===\n")
+} else {
+
 # Get clustering for the target K (for DAPC analysis)
 # Only do this if we haven't already obtained it from BIC extraction
 if (!exists("grp") || is.null(grp)) {
@@ -175,8 +194,6 @@ if (!exists("grp") || is.null(grp)) {
                        n.pca = n_pca_used,
                        criterion = criterion)
 }
-
-# Criterion value calculation removed - using native BIC from find.clusters instead
 
 # ==============================================================================
 # 3. Perform DAPC
@@ -275,6 +292,8 @@ write.table(membership_probs, snakemake@output[["membership_probs"]],
 cat("Membership probabilities saved to:", snakemake@output[["membership_probs"]], "\n")
 
 cat("\n=== DAPC Analysis Complete (K =", k, ") ===\n")
+
+} # end of full DAPC (K >= 2)
 
 # Final cleanup - remove Rplots.pdf if it was created
 if (file.exists("Rplots.pdf")) {

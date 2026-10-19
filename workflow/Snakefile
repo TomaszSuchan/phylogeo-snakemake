@@ -2802,6 +2802,7 @@ def get_all_targets():
                        k=dapc_k_values),
                 expand(f"results/{project}/dapc/plots/{project}.dapc.K{{k}}.scatter.pdf",
                        k=dapc_k_values),
+                f"results/{project}/dapc/{project}.dapc.K1.bic.txt",
                 f"results/{project}/dapc/plots/{project}.dapc.criterion_plot.pdf"
             ])
             # Only add map plots if popdata is specified

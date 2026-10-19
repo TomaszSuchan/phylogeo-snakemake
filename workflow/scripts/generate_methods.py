@@ -722,7 +722,7 @@ if analyses.get("dapc", False):
     dp    = p.get("dapc", {})
     n_pca = dp.get("n_pca",     50)
     n_da  = dp.get("n_da",      10)
-    # K range mirrors k_values filtered to >= 2 (adegenet requires at least 2 clusters)
+    # DAPC fits use k_values filtered to >= 2. The BIC curve also includes K = 1.
     dapc_ks   = [int(k) for k in k_vals if int(k) >= 2]
     k_tested_da = k_str(dapc_ks)
     struct_parts.append(
@@ -735,8 +735,10 @@ if analyses.get("dapc", False):
         f"maximises among-group variation while minimising within-group variation. "
         f"The analysis was run separately for each value of K = {k_tested_da}, "
         f"each time retaining {n_pca} principal components and {n_da} discriminant "
-        f"functions. The Bayesian Information Criterion (BIC) computed for each K was "
-        f"compared across runs to identify the best-supported number of clusters; "
+        f"functions. The Bayesian Information Criterion (BIC) was computed for K = 1, "
+        f"where every individual belongs to a single group, and for each K above, "
+        f"and these values were compared to identify the best-supported number of "
+        f"clusters; "
         f"the number of retained PCA components was kept well below the number of "
         f"individuals to avoid over-fitting."
     )

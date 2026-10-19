@@ -31,6 +31,33 @@ rule dapc_analysis:
     script:
         "../scripts/dapc_analysis.R"
 
+# K = 1 has no discriminant axis. Compute the same clustering BIC as the other
+# K values (one group: WSS is the total sum of squares) so the criterion plot
+# has a no-structure baseline.
+rule dapc_bic_k1:
+    input:
+        vcf = lambda wildcards: get_filtered_vcf_output(wildcards)
+    output:
+        bic = "results/{project}/dapc/{project}.dapc.K1.bic.txt"
+    params:
+        k = 1,
+        bic_only = True,
+        n_pca = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("dapc", {}).get("n_pca", "retained"),
+        n_da = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("dapc", {}).get("n_da", "all"),
+        criterion = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("dapc", {}).get("criterion", "diffNgroup"),
+    conda:
+        "../envs/adegenet.yaml"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["dapc"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["dapc"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["dapc"]["runtime"]
+    log:
+        "logs/{project}/dapc.K1.log.txt"
+    benchmark:
+        "benchmarks/{project}/dapc.K1.txt"
+    script:
+        "../scripts/dapc_analysis.R"
+
 # Rule to plot BIC values parsed from per-K DAPC logs
 rule dapc_bic_plot_from_log:
     input:
@@ -38,7 +65,7 @@ rule dapc_bic_plot_from_log:
             "logs/{project}/dapc.K{k}.log.txt",
             project=wildcards.project,
             k=[k for k in config["projects"][wildcards.project]["parameters"]["k_values"] if int(k) >= 2]
-        )
+        ) + [f"logs/{wildcards.project}/dapc.K1.log.txt"]
     output:
         plot = "results/{project}/dapc/plots/{project}.dapc.criterion_plot.pdf",
         plot_rds = "results/{project}/dapc/plots/{project}.dapc.criterion_plot.rds"

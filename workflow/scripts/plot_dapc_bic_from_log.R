@@ -84,7 +84,7 @@ parsed <- lapply(log_files, function(path) {
 
 bic_data <- do.call(rbind, parsed)
 bic_data <- bic_data[is.finite(bic_data$BIC) & !is.na(bic_data$K), c("K", "BIC", "source")]
-bic_data <- bic_data[bic_data$K >= 2, ]
+bic_data <- bic_data[bic_data$K >= 1, ]
 
 if (nrow(bic_data) == 0) {
   stop("Could not parse any valid K/BIC pairs from DAPC log files")
