@@ -119,6 +119,71 @@ def parse_imiss(path):
         return None
 
 
+def parse_snp_density(path):
+    """Genome-wide and inside-ROH rows from roh_snp_density's summary table."""
+    rows = {}
+    with open(path) as fh:
+        header = fh.readline().rstrip("\n").split("\t")
+        for line in fh:
+            if not line.strip():
+                continue
+            parts = line.rstrip("\n").split("\t")
+            row = dict(zip(header, parts))
+            scope = row.get("scope")
+            if scope in ("genome", "inside_roh"):
+                rows[scope] = row
+    if "genome" not in rows:
+        raise ValueError(f"No genome row in SNP density summary: {path}")
+    return rows
+
+
+def _fmt_density(value):
+    """Format a density for methods prose, or None when the value is missing."""
+    if value is None or value == "NA" or value == "":
+        return None
+    text = f"{float(value):.2f}".rstrip("0").rstrip(".")
+    return text
+
+
+def snp_density_sentence(summary):
+    """One methods sentence describing 1 Mb window density and density inside ROHs."""
+    genome = summary["genome"]
+    inside = summary.get("inside_roh", {})
+    mean = _fmt_density(genome["mean_snps_per_window"])
+    median = _fmt_density(genome["median_snps_per_window"])
+    empty_pct = _fmt_density(float(genome["frac_windows_empty"]) * 100)
+    comparable = genome.get("windows_comparable", "yes") == "yes"
+    inside_density = _fmt_density(inside.get("snps_per_mb_of_span"))
+    if inside_density is None:
+        inside_clause = (
+            "No ROH segments were called, so no within-segment SNP density was calculated."
+        )
+    else:
+        inside_clause = (
+            f"Within called ROH segments the density was {inside_density} SNPs/Mb, "
+            f"counting only sequence that falls inside those segments."
+        )
+    sentence = (
+        f"SNP density on this all-SNP dataset was {mean} SNPs per 1 Mb window "
+        f"(median {median}; {empty_pct}% of windows contained no SNP). "
+        f"Windows are non-overlapping and run from the start of each contig through its end, "
+        f"so windows with no SNP are included. {inside_clause} "
+    )
+    if comparable:
+        sentence += (
+            "Lavanchy and Goudet (2023) compared this window density with about 2 SNPs/Mb "
+            "for ranking individual inbreeding coefficients and about 11 SNPs/Mb for length "
+            "distributions from a model-based caller."
+        )
+    else:
+        sentence += (
+            "The median contig is shorter than 1 Mb, so each window is a short locus and "
+            "these per-Mb figures fall outside the genome-wide density comparison of "
+            "Lavanchy and Goudet (2023)."
+        )
+    return sentence
+
+
 def parse_versions(envs_dir):
     """
     Scan all *.yaml files in envs_dir and return {package_name_lower: version}.
@@ -1232,7 +1297,8 @@ if analyses.get("roh", False):
         f"medium (1-5 Mb), or short (<1 Mb), corresponding approximately to "
         f"<10, 10-50, and >50 generations since common ancestry under "
         f"G = 100/(2 × cM) with cM estimated from megabases assuming a "
-        f"uniform recombination rate of 1 cM/Mb."
+        f"uniform recombination rate of 1 cM/Mb. "
+        f"{snp_density_sentence(parse_snp_density(snakemake.input.snp_density))}"
     )
 
 if rel_parts:

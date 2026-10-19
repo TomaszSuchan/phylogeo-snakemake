@@ -2442,6 +2442,8 @@ def get_all_targets():
             roh_groupings = _roh_group_by_columns_from_params(params)
             targets.extend([
                 f"results/{project}/roh/{project}.bcftools_roh.txt",
+                f"results/{project}/roh/{project}.snp_density_windows.txt",
+                f"results/{project}/roh/{project}.snp_density_summary.txt",
                 f"results/{project}/roh/{project}.roh_summary.txt",
                 f"results/{project}/roh/{project}.roh_per_ind.txt",
                 f"results/{project}/roh/{project}.roh_stats_comparisons.txt",

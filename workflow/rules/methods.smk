@@ -21,7 +21,7 @@ def _methods_inputs(wildcards):
     """
     proj = wildcards.project
     base = f"results/{proj}"
-    return {
+    inputs = {
         "mainparams": "data/mainparams",
         "samples_to_keep": f"{base}/filtered_data/{proj}.samples_to_keep.txt",
         # Analysis (unlinked biallelic / thinned) dataset
@@ -36,6 +36,9 @@ def _methods_inputs(wildcards):
         "imiss_biallelic": f"{base}/stats_vcf/biallelic/{proj}.biallelic_snps.imiss",
         "depth_summary_biallelic": f"{base}/stats_vcf/biallelic/{proj}.biallelic_snps.depth_summary.txt",
     }
+    if config["projects"][proj].get("analyses", {}).get("roh", False):
+        inputs["snp_density"] = f"{base}/roh/{proj}.snp_density_summary.txt"
+    return inputs
 
 
 rule generate_methods:
