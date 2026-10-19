@@ -78,12 +78,16 @@ rule pcaone:
 # snp_id/chrom/pos from the *VCF* rather than the .bim, because the PLINK export
 # uses `--allow-extra-chr 0` and flattens every non-integer contig name to "0".
 # The VCF keeps the real chromosome (e.g. LR999934.1) and position.
+# Full SVD (--printv) writes one loading column per sample. The table keeps
+# only the leading PCAone.PCnum axes, the same axes as the eigenvectors.
 rule pcaone_loadings_table:
     input:
         loadings = rules.pcaone.output.pcaone_loadings,
         vcf = lambda wildcards: get_filtered_vcf_output(wildcards)
     output:
         table = "results/{project}/pcaone/{project}.PCA.loadings.tsv"
+    params:
+        n_pc = lambda wildcards: config["projects"][wildcards.project]["parameters"]["PCAone"].get("PCnum", 10)
     log:
         "logs/{project}/pcaone_loadings_table.log"
     conda:
@@ -104,19 +108,27 @@ rule pcaone_loadings_table:
         paste \
             <(zcat {input.vcf} | awk -F'\t' 'BEGIN{{OFS="\t"}} !/^#/ {{print $3, $1, $2}}') \
             <(awk 'BEGIN{{OFS="\t"}} {{$1=$1; print}}' {input.loadings}) \
-        | awk 'BEGIN{{OFS="\t"}}
-               NR==1 {{
-                   printf "snp_id\tchrom\tpos"
-                   for (i=4; i<=NF; i++) printf "\tPC%d", i-3
+        | awk -v K={params.n_pc} 'BEGIN{{OFS="\t"}}
+               {{
+                   if (NR==1) {{
+                       if (K+0 < 1) K = 1
+                       ncol = 3 + K
+                       if (ncol > NF) ncol = NF
+                       printf "snp_id\tchrom\tpos"
+                       for (i=4; i<=ncol; i++) printf "\tPC%d", i-3
+                       printf "\n"
+                   }}
+                   printf "%s", $1
+                   for (i=2; i<=ncol; i++) printf "\t%s", $i
                    printf "\n"
-               }}
-               {{print}}'
+               }}'
         ) > {output.table} 2> {log}
         """
 
 
 # Rule to summarise which SNPs drive each PCA axis. Produces two tables from the
-# per-SNP loadings, restricted to the leading `n_pc` PCs (the rest are noise):
+# per-SNP loadings. The loadings table already contains only PC1..PC{PCnum};
+# `n_pc` is the same value, and is capped at the columns actually present.
 #   * every SNP ranked by |loading| within each PC  (long/tidy)
 #   * every SNP assigned to its dominant axis (PC with the largest |loading|)
 # Both carry the real chrom/pos recovered in pcaone_loadings_table.
@@ -127,8 +139,6 @@ rule pcaone_top_loadings:
         ranked = "results/{project}/pcaone/{project}.PCA.loadings.ranked_per_PC.tsv",
         assign = "results/{project}/pcaone/{project}.PCA.loadings.axis_assignment.tsv"
     params:
-        # Summarise the same leading PCs that were computed (PCnum); the trailing
-        # PCs are noise and are intentionally not summarised.
         n_pc = lambda wildcards: config["projects"][wildcards.project]["parameters"]["PCAone"].get("PCnum", 10)
     log:
         "logs/{project}/pcaone_top_loadings.log"
@@ -142,8 +152,11 @@ rule pcaone_top_loadings:
         # Every SNP ranked by absolute loading within each PC. loading_sq
         # (= loading^2) is the fraction of that PC's variance carried by the SNP
         # (they sum to 1 across all SNPs, so the per-SNP average is 1/M).
+        K={params.n_pc}
+        n_cols=$(awk -F'\t' 'NR==1 {{print NF-3; exit}}' {input.table})
+        if [ "$K" -gt "$n_cols" ]; then K=$n_cols; fi
         tail -n +2 {input.table} \
-        | awk -F'\t' -v K={params.n_pc} 'BEGIN{{OFS="\t"}}
+        | awk -F'\t' -v K="$K" 'BEGIN{{OFS="\t"}}
                {{ for (k=1; k<=K; k++) {{ c=3+k; v=$c; a=(v<0)?-v:v; print k, a, $1, $2, $3, v }} }}' \
         | LC_ALL=C sort -k1,1n -k2,2gr \
         | awk -F'\t' 'BEGIN{{OFS="\t"; print "pc","rank","snp_id","chrom","pos","loading","abs_loading","loading_sq"}}
@@ -152,7 +165,7 @@ rule pcaone_top_loadings:
 
         # Assign every SNP to the PC (among the leading K) where |loading| is largest.
         tail -n +2 {input.table} \
-        | awk -F'\t' -v K={params.n_pc} 'BEGIN{{OFS="\t"; print "snp_id","chrom","pos","best_pc","loading","abs_loading","loading_sq"}}
+        | awk -F'\t' -v K="$K" 'BEGIN{{OFS="\t"; print "snp_id","chrom","pos","best_pc","loading","abs_loading","loading_sq"}}
                {{ best=0; bestv=-1; bestl=0;
                   for (k=1; k<=K; k++) {{ c=3+k; v=$c; a=(v<0)?-v:v; if (a>bestv) {{ bestv=a; best=k; bestl=v }} }}
                   print $1, $2, $3, "PC"best, bestl, bestv, bestv*bestv }}' \
