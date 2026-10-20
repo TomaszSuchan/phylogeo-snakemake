@@ -2,4 +2,5 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - orientagraph=1.2
+  # bioconda has 1.1 (binary banner still says 1.0); 1.2 is not on conda yet
+  - orientagraph=1.1

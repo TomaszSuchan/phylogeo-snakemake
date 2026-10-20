@@ -801,7 +801,7 @@ if analyses.get("treemix", False):
         if root_value not in [None, "", "null", "NULL"]
         else "No explicit root was configured, so graph searches were run without the recommended outgroup root. "
     )
-    mlno_value = tm.get("mlno", None)
+    mlno_value = tm.get("mlno", True)
     allmigs_value = tm.get("allmigs", False)
     bootstrap_cfg = tm.get("bootstrap", {})
     if isinstance(bootstrap_cfg, bool):
@@ -814,17 +814,9 @@ if analyses.get("treemix", False):
     bootstrap_reps = int(bootstrap_cfg.get("replicates", 100))
 
     def _orientagraph_flag_text(flag, value):
-        if value in [None, "", "null", "NULL"]:
-            if flag == "-mlno":
-                return f"{flag} omitted (OrientAGraph 1.2 default -mlno 1,2)"
+        if value in [None, False, "", "null", "NULL"] or str(value).lower() in {"0", "false", "off", "none"}:
             return f"{flag} was not used"
-        if value is False or value == 0 or str(value).lower() in {"0", "false", "off", "none"}:
-            if flag == "-mlno":
-                return "-mlno 0"
-            return f"{flag} was not used"
-        if value is True or str(value).lower() in {"all", "every", "each"}:
-            return flag
-        return f"{flag} {value}"
+        return flag
 
     struct_parts.append(
         f"Historical relationships among populations were inferred with "

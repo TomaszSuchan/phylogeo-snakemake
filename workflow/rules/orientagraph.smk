@@ -63,24 +63,6 @@ def _orientagraph_value_flag(wildcards, key, flag, default=None):
     return f"{flag} {value}"
 
 
-def _orientagraph_mlno_flag(wildcards):
-    """Map config treemix.mlno to an OrientAGraph -mlno argument.
-
-    OrientAGraph ≥1.2 defaults to ``-mlno 1,2`` when the flag is omitted.
-    ``false`` / ``0`` must pass ``-mlno 0`` to disable (omitting the flag no
-    longer turns MLNO off). ``true`` / ``"all"`` pass bare ``-mlno`` (MLNO
-    after every migration edge). Strings such as ``"1,2"`` are passed through.
-    """
-    value = _treemix_params(wildcards).get("mlno", None)
-    if value in [None, "", "null", "NULL"]:
-        return ""
-    if value is False or value == 0 or str(value).lower() in {"0", "false", "off", "none"}:
-        return "-mlno 0"
-    if value is True or str(value).lower() in {"all", "every", "each"}:
-        return "-mlno"
-    return f"-mlno {value}"
-
-
 rule treemix_prepare_input:
     """
     Convert the final analysis VCF to TreeMix-compatible allele-count input.
@@ -138,7 +120,7 @@ rule treemix:
         ),
         global_flag=lambda wildcards: "-global" if _treemix_params(wildcards).get("global", False) else "",
         bootstrap_flag=lambda wildcards: _treemix_main_bootstrap_flag(wildcards),
-        mlno_flag=lambda wildcards: _orientagraph_mlno_flag(wildcards),
+        mlno_flag=lambda wildcards: _orientagraph_value_flag(wildcards, "mlno", "-mlno", True),
         allmigs_flag=lambda wildcards: _orientagraph_value_flag(wildcards, "allmigs", "-allmigs", False),
         seed_flag=lambda wildcards: (
             "-seed " + str(_treemix_params(wildcards).get("seed"))
@@ -198,7 +180,7 @@ rule treemix_optm_run:
         ),
         global_flag=lambda wildcards: "-global" if _treemix_params(wildcards).get("global", False) else "",
         bootstrap_flag=lambda wildcards: _treemix_main_bootstrap_flag(wildcards),
-        mlno_flag=lambda wildcards: _orientagraph_mlno_flag(wildcards),
+        mlno_flag=lambda wildcards: _orientagraph_value_flag(wildcards, "mlno", "-mlno", True),
         allmigs_flag=lambda wildcards: _orientagraph_value_flag(wildcards, "allmigs", "-allmigs", False),
         seed_flag=lambda wildcards: (
             "-seed " + str(
@@ -261,7 +243,7 @@ rule treemix_bootstrap_run:
             else ""
         ),
         global_flag=lambda wildcards: "-global" if _treemix_params(wildcards).get("global", False) else "",
-        mlno_flag=lambda wildcards: _orientagraph_mlno_flag(wildcards),
+        mlno_flag=lambda wildcards: _orientagraph_value_flag(wildcards, "mlno", "-mlno", True),
         allmigs_flag=lambda wildcards: _orientagraph_value_flag(wildcards, "allmigs", "-allmigs", False),
         seed_flag=lambda wildcards: "-seed " + str(
             (
