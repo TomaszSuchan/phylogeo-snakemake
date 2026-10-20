@@ -800,7 +800,7 @@ parameters: &global_params
     # - Newick: .iqtree.unrooted.treefile and .iqtree.rooted.treefile
 
   ## rapidNJ neighbour-joining parameters
-  # Alignment-based NJ from the ipyrad PHYLIP file ({ipyrad_prefix}.phy must exist).
+  # Alignment-based NJ from the filtered .loci concatenation (same keep-list as IQ-TREE).
   # rapidNJ supports Kimura and Jukes-Cantor distance models plus bootstrap replicates.
   njtree:
     distance_model: kim    # jc (Jukes-Cantor) or kim (Kimura 2-parameter)

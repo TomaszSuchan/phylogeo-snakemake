@@ -1,33 +1,14 @@
 """
-Neighbour-joining tree with rapidNJ from the ipyrad PHYLIP alignment.
-
-Requires {ipyrad_prefix}.phy in the ipyrad output directory. The workflow
-converts PHYLIP to FASTA internally because rapidNJ cannot read PHYLIP alignments.
+Neighbour-joining tree with rapidNJ from the filtered .loci alignment.
 """
-
-rule phy_to_fasta:
-    input:
-        phy=lambda wildcards: f"{config['projects'][wildcards.project]['ipyrad_prefix']}.phy",
-    output:
-        fasta="results/{project}/filtered_data/{project}.njtree.fasta",
-    benchmark:
-        "benchmarks/{project}/phy_to_fasta.txt",
-    conda:
-        "../envs/rapidnj.yaml",
-    threads: 1,
-    resources:
-        mem_mb=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("default", {}).get("mem_mb", 8000),
-        runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"].get("default", {}).get("runtime", 10),
-    script:
-        "../scripts/phy_to_fasta.py"
-
 
 rule njtree:
     input:
-        fasta=rules.phy_to_fasta.output.fasta,
+        fasta=rules.loci_to_alignment.output.fasta,
     output:
         treefile="results/{project}/njtree/{project}.njtree.treefile",
-        log="results/{project}/njtree/{project}.njtree.log",
+    log:
+        "logs/{project}/njtree.log",
     benchmark:
         "benchmarks/{project}/njtree.txt",
     params:
@@ -45,8 +26,9 @@ rule njtree:
         runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["njtree"]["runtime"],
     shell:
         """
-        rapidnj {input.fasta} -i fa -d {params.distance_model} -c {threads} \
-            -x {output.treefile} {params.bootstrap_flag} 2> {output.log}
+        # -a is the sequence distance model (jc/kim). Do not use -d here: that is HDD cache dir.
+        rapidnj {input.fasta} -i fa -a {params.distance_model} -c {threads} \
+            -x {output.treefile} {params.bootstrap_flag} > {log} 2>&1
         """
 
 
