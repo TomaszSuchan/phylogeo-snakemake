@@ -33,7 +33,12 @@ suppressPackageStartupMessages({
 
 cat("=== DAPC Analysis (K =", snakemake@params[["k"]], ") ===\n")
 cat("VCF file:", snakemake@input[["vcf"]], "\n")
-cat("Output directory:", dirname(snakemake@output[["results_rds"]]), "\n\n")
+out_dir <- if ("bic" %in% names(snakemake@output) && !("results_rds" %in% names(snakemake@output))) {
+  dirname(snakemake@output[["bic"]])
+} else {
+  dirname(snakemake@output[["results_rds"]])
+}
+cat("Output directory:", out_dir, "\n\n")
 
 # Read parameters
 k <- as.numeric(snakemake@params[["k"]])
