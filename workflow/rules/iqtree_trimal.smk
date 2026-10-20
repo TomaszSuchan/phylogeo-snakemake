@@ -1,6 +1,6 @@
 rule N_to_gaps:
     input:
-        phy=lambda wildcards: f"{config['projects'][wildcards.project]['ipyrad_prefix']}.phy"
+        phy=rules.loci_to_alignment.output.phy
     output:
         gapped_phy="results/{project}/filtered_data/{project}.gapped.phy"
     benchmark:

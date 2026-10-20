@@ -1463,6 +1463,7 @@ include: "rules/relatedness_by_pop.smk"
 include: "rules/pixy.smk"
 include: "rules/popgenstats.smk"
 include: "rules/structure.smk"
+include: "rules/alignment.smk"
 include: "rules/iqtree.smk"
 include: "rules/align_clusters.smk"
 include: "rules/mapmixture.smk"
@@ -2294,7 +2295,6 @@ def get_all_targets():
         if analyses.get("njtree", False):
             targets.extend([
                 f"results/{project}/njtree/{project}.njtree.treefile",
-                f"results/{project}/njtree/{project}.njtree.log",
                 f"results/{project}/njtree/plots/{project}.tree_plot.unrooted.pdf",
                 f"results/{project}/njtree/plots/{project}.tree_plot.unrooted.rds",
                 f"results/{project}/njtree/{project}.njtree.unrooted.treefile",

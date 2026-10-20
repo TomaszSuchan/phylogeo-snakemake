@@ -1208,8 +1208,9 @@ for iq_key, label in [("iqtree",        ""),
         )
 
     phy_parts.append(
-        f"A maximum-likelihood phylogeny{label} was inferred from the concatenated "
-        f"RAD-seq sequence alignment exported by ipyrad using IQ-TREE 2 "
+        f"A maximum-likelihood phylogeny{label} was inferred from a concatenated "
+        f"RAD-seq sequence alignment built from the ipyrad .loci file after restricting "
+        f"to individuals retained in the filtered dataset, using IQ-TREE 2 "
         f"{vn(versions,'iqtree')} (Minh et al. 2020) under {model_clause}.{trimal_clause} "
         f"The tree maximising the likelihood of the alignment under this model was "
         f"retained, and branch support was estimated from {boots:,} ultrafast "
@@ -1235,8 +1236,9 @@ if analyses.get("njtree", False):
         else "No bootstrap support values were computed."
     )
     phy_parts.append(
-        f"A neighbour-joining phylogeny was inferred from the concatenated "
-        f"RAD-seq sequence alignment exported by ipyrad (PHYLIP format) using "
+        f"A neighbour-joining phylogeny was inferred from the same concatenated "
+        f"RAD-seq sequence alignment built from the ipyrad .loci file after "
+        f"restricting to individuals retained in the filtered dataset, using "
         f"RapidNJ {vn(versions, 'rapidnj')} (Simonsen et al. 2008). "
         f"Pairwise distances were computed under {dist_name}, and the tree was "
         f"reconstructed with the neighbour-joining algorithm. {boot_clause} "

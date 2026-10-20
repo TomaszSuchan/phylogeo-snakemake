@@ -1,6 +1,6 @@
 rule iqtree:
     input:
-        phy=lambda wildcards: f"{config['projects'][wildcards.project]['ipyrad_prefix']}.phy"
+        phy=rules.loci_to_alignment.output.phy
     output:
         treefile="results/{project}/iqtree/{project}.iqtree.treefile",
         iqtree="results/{project}/iqtree/{project}.iqtree.iqtree",
@@ -28,7 +28,7 @@ rule iqtree:
 
 rule iqtree_robust:
     input:
-        phy=lambda wildcards: f"{config['projects'][wildcards.project]['ipyrad_prefix']}.phy"
+        phy=rules.loci_to_alignment.output.phy
     output:
         treefile="results/{project}/iqtree_robust/{project}.iqtree_robust.treefile",
         iqtree="results/{project}/iqtree_robust/{project}.iqtree_robust.iqtree",

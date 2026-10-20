@@ -96,10 +96,10 @@ parameters: &global_params
   # amova: AMOVA variance partitioning across metadata strata.
   # mapi: Spatial MAPI maps of unusually high/low genetic distances.
   # genome_scan: Sliding-window FST, pi, and dXY between two metadata groups.
-  # iqtree: Maximum-likelihood phylogeny from the ipyrad PHYLIP alignment.
+  # iqtree: Maximum-likelihood phylogeny from the filtered ipyrad .loci alignment.
   # iqtree_trimal: trimAl alignment trimming followed by IQ-TREE inference.
   # iqtree_robust: Robust IQ-TREE output selection based on support threshold.
-  # njtree: rapidNJ neighbour-joining tree from the ipyrad PHYLIP alignment (requires .phy file).
+  # njtree: rapidNJ neighbour-joining tree from the filtered ipyrad .loci alignment.
   # fineradstructure: RADpainter/fineRADstructure coancestry and clustering.
   # treemix: OrientAGraph historical population graph with migration edges from allele counts.
 
@@ -787,7 +787,7 @@ parameters: &global_params
     gt: 0.95        # gap threshold for trimming alignments (0-1 where 0=no gaps, 1=no trimming)
 
   ## IQ-TREE parameters
-  # Maximum-likelihood phylogeny from the ipyrad PHYLIP alignment.
+  # Maximum-likelihood phylogeny from the filtered ipyrad .loci alignment.
   iqtree:
     model: "MFP"      # substitution model, MFP for ModelFinder Plus
     bootstraps: 1000  # number of ultrafast bootstrap replicates
@@ -873,6 +873,10 @@ parameters: &global_params
       threads: 1
       mem_mb: 32000
       runtime: 720
+    loci_to_alignment: # concatenate filtered .loci for IQ-TREE / NJ
+      threads: 1
+      mem_mb: 32000
+      runtime: 120
     iqtree:
       threads: 12
       mem_mb: 8000
@@ -985,10 +989,10 @@ projects:
       amova: false            # AMOVA variance partitioning across metadata strata.
       genome_scan: false      # Sliding-window FST, pi, and dXY between two metadata groups.
       evaladmix: false        # Residual-correlation diagnostics for ancestry model fit.
-      iqtree: false           # Maximum-likelihood phylogeny from the ipyrad PHYLIP alignment.
+      iqtree: false           # Maximum-likelihood phylogeny from the filtered ipyrad .loci alignment.
       iqtree_trimal: false    # trimAl alignment trimming followed by IQ-TREE inference.
       iqtree_robust: false    # Robust IQ-TREE output selection based on support threshold.
-      njtree: false           # rapidNJ neighbour-joining tree from ipyrad PHYLIP alignment (requires .phy).
+      njtree: false           # rapidNJ neighbour-joining tree from the filtered ipyrad .loci alignment.
       fineradstructure: false # RADpainter/fineRADstructure coancestry and clustering.
       treemix: false          # OrientAGraph historical population graph with migration edges.
       construct: false        # Spatial population structure model with conStruct.
@@ -1047,7 +1051,7 @@ projects:
   #     amova: true             # AMOVA variance partitioning across metadata strata.
   #     mapi: false             # Spatial MAPI maps of unusually high/low genetic distances.
   #     genome_scan: false      # Sliding-window FST, pi, and dXY between two metadata groups.
-  #     iqtree: false           # Maximum-likelihood phylogeny from the ipyrad PHYLIP alignment.
+  #     iqtree: false           # Maximum-likelihood phylogeny from the filtered ipyrad .loci alignment.
   #     iqtree_trimal: false    # trimAl alignment trimming followed by IQ-TREE inference.
   #     iqtree_robust: false    # Robust IQ-TREE output selection based on support threshold.
   #     fineradstructure: false # RADpainter/fineRADstructure coancestry and clustering.
