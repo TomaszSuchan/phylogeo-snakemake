@@ -722,8 +722,11 @@ parameters: &global_params
     # Strongly recommended for OrientAGraph/TreeMix: set to a TreeMix population label
     # from treemix.populations.tsv, e.g. "A" or "Outgroup". Leave null only for exploratory unrooted runs.
     root: null                      # passed to -root; comma-delimited labels are allowed by OrientAGraph
-    mlno: true                      # pass -mlno by default; false/null omits it. OrientAGraph 1.2+ source builds also accept values like "1,2", "0", or "all"
-    allmigs: false                  # pass -allmigs only when true; exhaustive/original-paper mode can be slow. OrientAGraph 1.2+ source builds also accept values like "1,2" or "all"
+    # OrientAGraph 1.2 (bioconda) defaults to -mlno 1,2 when -mlno is omitted.
+    # null: omit flag → use that default; "1,2": set explicitly; false/0: -mlno 0 (off);
+    # true/"all": bare -mlno (MLNO after every migration edge; original-paper style).
+    mlno: null
+    allmigs: false                  # false/null omit -allmigs (OrientAGraph default 0). true/"all": bare -allmigs (slow; use only for small datasets)
     global: false                   # pass -global for global rearrangements
     bootstrap:
       enabled: false                # opt-in final support check; default graph/OptM fits are not bootstrapped
