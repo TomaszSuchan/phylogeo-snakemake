@@ -750,7 +750,7 @@ parameters: &global_params
     recombination_rate_cM_per_Mb: 2.5        # -r for both tools (constant cM/Mb)
     min_chromosome_cM: 20                    # drop chroms with SNP-span genetic length <= this
     f_missing: 1.0                         # per-pop locus filter; 1.0 disables missingness filtering
-    mac_threshold: 1                         # per-pop MAC > threshold after subsetting
+    mac_threshold: 1                         # per-pop MAC > threshold; input is biallelic SNPs before global MAC/MAF
     min_individuals: 10
     min_snps: 1000
     # Optional per-group plot styling (one block per group_by column):

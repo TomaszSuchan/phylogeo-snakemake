@@ -1,6 +1,10 @@
 """
 Shared prep for GONE2 and currentNe2: per-population samples + filtered VCFs.
 
+Sites come from filtered.vcf.gz (after sample and missingness filters, before the
+global MAC/MAF filter). Each population keeps biallelic SNPs, then applies
+MAC > mac_threshold on allele counts recomputed in that population.
+
 One prep tree per grouping column (group_by):
 results/{project}/gone2_currentne2_common/{grouping}/...
 """
@@ -31,7 +35,7 @@ rule gone2_currentne2_common_prepare_samples:
 
 rule gone2_currentne2_common_subset_vcf:
     input:
-        vcf=rules.select_biallelic_snps.output.biallelic_vcf,
+        vcf=rules.subset_vcf_after_relatedness.output.vcf,
         samples=rules.gone2_currentne2_common_prepare_samples.output.samples_dir,
     output:
         vcf="results/{project}/gone2_currentne2_common/{grouping}/vcf/{project}.{stratum}.vcf",
@@ -66,7 +70,7 @@ rule gone2_currentne2_common_subset_vcf:
         KEEP_LIST="$(mktemp "${{TMPDIR:-/tmp}}/gone2_currentne2_common_keep.XXXXXX.txt")"
         trap 'rm -f "$TMP_VCF" "$TMP_VCF.tbi" "$TMP_VCF.csi" "$KEEP_LIST"' EXIT
 
-        bcftools view -S {params.samples_file} -Ou {input.vcf} \
+        bcftools view -S {params.samples_file} -m2 -M2 -v snps -Ou {input.vcf} \
         | bcftools filter -e 'F_MISSING > {params.f_missing}' -Ou - \
         | bcftools +fill-tags - -Ou -- -t AC,AN,AF \
         | bcftools view -i 'MAC > {params.mac_threshold}' -Ou - \
