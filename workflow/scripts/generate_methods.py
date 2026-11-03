@@ -331,7 +331,7 @@ maf       = vcf_filt.get("maf",       0.0)
 rel_filt  = p.get("relatedness_filtering", {})
 rel_on    = rel_filt.get("enabled",         False)
 king_thr  = rel_filt.get("king_threshold",  0.0884)
-mac_thr   = rel_filt.get("mac_threshold",   1)
+mac_thr   = rel_filt.get("mac_threshold",   2)
 vcf_thin  = p.get("vcf_thinning", {})
 thin_meth = vcf_thin.get("method", "max_coverage")
 ld        = p.get("ld_pruning", {})
@@ -1245,6 +1245,32 @@ if analyses.get("njtree", False):
         f"The tree was displayed unrooted."
     )
 
+if analyses.get("rapidnj_snp", False):
+    snp = p.get("rapidnj_snp", {})
+    nj = p.get("njtree", {})
+    dist_model = snp.get("distance_model", nj.get("distance_model", "kim"))
+    boots = int(snp.get("bootstraps", nj.get("bootstraps", 1000)))
+    supp_thr = snp.get("support_threshold", nj.get("support_threshold", 70))
+    dist_name = (
+        "Kimura's two-parameter distance"
+        if dist_model == "kim"
+        else "Jukes-Cantor distance"
+    )
+    boot_clause = (
+        f"Branch support was estimated from {boots:,} bootstrap replicates; "
+        f"nodes with less than {supp_thr}% support are not shown."
+        if boots > 0
+        else "No bootstrap support values were computed."
+    )
+    phy_parts.append(
+        f"A second neighbour-joining phylogeny (rapidnj-snp) was inferred from "
+        f"variable sites only: biallelic SNPs from the filtered analysis VCF were "
+        f"encoded as a sequence alignment (homozygotes as the corresponding base, "
+        f"heterozygotes as IUPAC ambiguity codes, missing genotypes as N) and "
+        f"analysed with RapidNJ {vn(versions, 'rapidnj')} (Simonsen et al. 2008) "
+        f"under {dist_name}. {boot_clause} The tree was displayed unrooted."
+    )
+
 if analyses.get("fineradstructure", False):
     fr  = p.get("fineradstructure", {})
     cl  = fr.get("cluster", {})
@@ -1808,7 +1834,7 @@ if analyses.get("iqtree_trimal", False):
         "https://doi.org/10.1093/bioinformatics/btp348"
     )
 
-if analyses.get("njtree", False):
+if analyses.get("njtree", False) or analyses.get("rapidnj_snp", False):
     refs["rapidnj"] = (
         "Simonsen, M., Mailund, T. & Pedersen, C.N.S. (2008). Rapid neighbour "
         "joining. In *Algorithms in Bioinformatics* (WABI 2008), LNBI 5251, "
