@@ -40,7 +40,7 @@ parameters: &global_params
   relatedness_filtering:
     enabled: true             # enable KING-based relatedness filtering in preprocessing
     king_threshold: 0.0884    # 2nd-degree relatives threshold
-    mac_threshold: 1          # minimum MAC used for KING calculation
+    mac_threshold: 2          # minimum MAC used for KING calculation
     group_by: ["Region"]      # grouping columns for removed-individual plots
 
   # Steps 4-5: variant-level filtering before thinning/LD pruning.
@@ -1072,7 +1072,7 @@ projects:
   #     relatedness_filtering:
   #       enabled: false
   #       king_threshold: 0.0884
-  #       mac_threshold: 1
+  #       mac_threshold: 2
   #       group_by: ["Region"]
   #
   #     # 3. Variant missingness, then biallelic SNP + MAF filtering.

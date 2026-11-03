@@ -169,7 +169,7 @@ The pipeline applies filtering steps in the following order:
   - `parameters.relatedness_filtering.enabled` <BOOLEAN>: Enable/disable relatedness filtering (default: `false`). Enable this when close kin could bias PCA, ancestry clustering, allele frequencies, or diversity summaries.
   - `parameters.relatedness_filtering.king_threshold` <FLOAT>: KING kinship threshold for filtering (default: `0.0884`, equivalent to PI-HAT > 0.2, 2nd-degree relatives)
     - Common values: `0.354` (duplicates/twins), `0.177` (1st-degree), `0.0884` (2nd-degree), `0.0442` (3rd-degree). Lower values are stricter and remove more distant relatives.
-  - `parameters.relatedness_filtering.mac_threshold` <INTEGER>: Minimum Minor Allele Count (MAC) for KING calculation (default: `1`). Raising this excludes very rare variants from the kinship calculation, which can help with sparse RAD datasets.
+  - `parameters.relatedness_filtering.mac_threshold` <INTEGER>: Minimum Minor Allele Count (MAC) for KING calculation (default: `2`, which drops singletons). Raising this further excludes rarer variants from the kinship calculation.
   - `parameters.relatedness_filtering.group_by` <LIST[STRING]>: List of columns from popdata to group barplots by (default: `["Region"]`). These columns must exist in `indpopdata`.
 - **Output**: Generates the retained sample list (`filtered_data/<project>.samples_to_keep.txt`) and the KING relatedness table. Who was removed, and why, is written under `stats_samples/`: `<project>.samples_removed.txt` (sample and the relative that caused the exclusion), `<project>.relatedness_filtered_samples.txt` (relationship category), and barplots `plots/<project>.removed_individuals_by_<group>.pdf` for each column in `parameters.relatedness_filtering.group_by`. These files are default targets when relatedness filtering is enabled. The exclusion list is also summarised in `methods.md`.
 
@@ -233,6 +233,8 @@ The pipeline applies filtering steps in the following order:
   - `original/`: missingness tables (`*.imiss`, `*.lmiss`), sequencing-depth tables, summary stats, and histograms for the original (subset) VCF
   - `filtered/`: the same set of files for the post-filtering, pre-thinning VCF
   - `thinned/`: the same set of files for the thinned / LD-pruned VCF
+- **VCF summary (`*.vcf_stats.txt`)**: chromosome / RAD-locus / variant / sample counts, plus SNPs-per-locus distribution.
+- **Locus length (`loci/*.loci_length_stats.txt`)**: from the ipyrad `.loci` file (restricted to `samples_to_keep`). Reports alignment width (padded `len(seq)`, usually constant within a locus) and effective length (non-gap / non-N bases), which varies among individuals at the same locus; includes per-locus min/median/max effective length and within-locus range.
 - **Sequencing depth outputs**:
   - `*.idepth`: per-individual mean depth from `vcftools --depth`, useful for identifying low-coverage samples
   - `*.ldepth.mean`: per-site mean depth from `vcftools --site-mean-depth`, useful for identifying poorly covered or unusually high-depth loci

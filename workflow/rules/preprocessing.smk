@@ -232,7 +232,7 @@ rule convert_vcf_to_plink_for_king:
     benchmark:
         "benchmarks/{project}/convert_vcf_to_plink_for_king.txt"
     params:
-        mac_threshold=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_filtering", {}).get("mac_threshold", 1),
+        mac_threshold=lambda wildcards: config["projects"][wildcards.project]["parameters"].get("relatedness_filtering", {}).get("mac_threshold", 2),
         plink_prefix="results/{project}/filtered_data/{project}.king_temp"
     conda:
         "../envs/plink.yaml"
