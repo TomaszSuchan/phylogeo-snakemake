@@ -63,6 +63,18 @@ def _orientagraph_value_flag(wildcards, key, flag, default=None):
     return f"{flag} {value}"
 
 
+def _orientagraph_base_seed(wildcards):
+    seed = _treemix_params(wildcards).get("seed")
+    if seed in [None, "", "null", "NULL"]:
+        return 1
+    return int(seed)
+
+
+def _orientagraph_seed_retries(wildcards):
+    """Retries on OrientAGraph's get_child_node_mig outgroup re-root crash."""
+    return int(_treemix_params(wildcards).get("seed_retries", 8))
+
+
 rule treemix_prepare_input:
     """
     Convert the final analysis VCF to TreeMix-compatible allele-count input.
@@ -122,11 +134,8 @@ rule treemix:
         bootstrap_flag=lambda wildcards: _treemix_main_bootstrap_flag(wildcards),
         mlno_flag=lambda wildcards: _orientagraph_value_flag(wildcards, "mlno", "-mlno", True),
         allmigs_flag=lambda wildcards: _orientagraph_value_flag(wildcards, "allmigs", "-allmigs", False),
-        seed_flag=lambda wildcards: (
-            "-seed " + str(_treemix_params(wildcards).get("seed"))
-            if _treemix_params(wildcards).get("seed") not in [None, "", "null", "NULL"]
-            else ""
-        )
+        seed=lambda wildcards: _orientagraph_base_seed(wildcards),
+        seed_retries=lambda wildcards: _orientagraph_seed_retries(wildcards),
     log:
         "logs/{project}/treemix.m{m}.log"
     benchmark:
@@ -139,18 +148,19 @@ rule treemix:
         runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["treemix"]["runtime"]
     shell:
         """
-        orientagraph \
-            -i {input.frq} \
-            -o {params.prefix} \
-            -m {wildcards.m} \
-            -k {params.block_size} \
+        bash workflow/scripts/run_orientagraph_retry.sh \
+            {log} \
+            {params.prefix} \
+            {input.frq} \
+            {wildcards.m} \
+            {params.block_size} \
+            {params.seed} \
+            {params.seed_retries} \
             {params.root_flag} \
             {params.global_flag} \
             {params.bootstrap_flag} \
             {params.mlno_flag} \
-            {params.allmigs_flag} \
-            {params.seed_flag} \
-            > {log} 2>&1
+            {params.allmigs_flag}
         """
 
 
@@ -182,15 +192,12 @@ rule treemix_optm_run:
         bootstrap_flag=lambda wildcards: _treemix_main_bootstrap_flag(wildcards),
         mlno_flag=lambda wildcards: _orientagraph_value_flag(wildcards, "mlno", "-mlno", True),
         allmigs_flag=lambda wildcards: _orientagraph_value_flag(wildcards, "allmigs", "-allmigs", False),
-        seed_flag=lambda wildcards: (
-            "-seed " + str(
-                int(_treemix_params(wildcards).get("seed")) +
-                int(wildcards.rep) * 1000 +
-                int(wildcards.m)
-            )
-            if _treemix_params(wildcards).get("seed") not in [None, "", "null", "NULL"]
-            else ""
-        )
+        seed=lambda wildcards: (
+            _orientagraph_base_seed(wildcards) +
+            int(wildcards.rep) * 1000 +
+            int(wildcards.m)
+        ),
+        seed_retries=lambda wildcards: _orientagraph_seed_retries(wildcards),
     log:
         "logs/{project}/treemix_optm.r{rep}.m{m}.log"
     benchmark:
@@ -203,18 +210,19 @@ rule treemix_optm_run:
         runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["treemix"]["runtime"]
     shell:
         """
-        orientagraph \
-            -i {input.frq} \
-            -o {params.prefix} \
-            -m {wildcards.m} \
-            -k {params.block_size} \
+        bash workflow/scripts/run_orientagraph_retry.sh \
+            {log} \
+            {params.prefix} \
+            {input.frq} \
+            {wildcards.m} \
+            {params.block_size} \
+            {params.seed} \
+            {params.seed_retries} \
             {params.root_flag} \
             {params.global_flag} \
             {params.bootstrap_flag} \
             {params.mlno_flag} \
-            {params.allmigs_flag} \
-            {params.seed_flag} \
-            > {log} 2>&1
+            {params.allmigs_flag}
         """
 
 
@@ -245,15 +253,12 @@ rule treemix_bootstrap_run:
         global_flag=lambda wildcards: "-global" if _treemix_params(wildcards).get("global", False) else "",
         mlno_flag=lambda wildcards: _orientagraph_value_flag(wildcards, "mlno", "-mlno", True),
         allmigs_flag=lambda wildcards: _orientagraph_value_flag(wildcards, "allmigs", "-allmigs", False),
-        seed_flag=lambda wildcards: "-seed " + str(
-            (
-                int(_treemix_params(wildcards).get("seed"))
-                if _treemix_params(wildcards).get("seed") not in [None, "", "null", "NULL"]
-                else 0
-            ) +
+        seed=lambda wildcards: (
+            _orientagraph_base_seed(wildcards) +
             int(wildcards.rep) * 10000 +
             int(wildcards.m)
-        )
+        ),
+        seed_retries=lambda wildcards: _orientagraph_seed_retries(wildcards),
     log:
         "logs/{project}/treemix_bootstrap.r{rep}.m{m}.log"
     benchmark:
@@ -266,18 +271,19 @@ rule treemix_bootstrap_run:
         runtime=lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["treemix"]["runtime"]
     shell:
         """
-        orientagraph \
-            -i {input.frq} \
-            -o {params.prefix} \
-            -m {wildcards.m} \
-            -k {params.block_size} \
+        bash workflow/scripts/run_orientagraph_retry.sh \
+            {log} \
+            {params.prefix} \
+            {input.frq} \
+            {wildcards.m} \
+            {params.block_size} \
+            {params.seed} \
+            {params.seed_retries} \
             {params.root_flag} \
             {params.global_flag} \
             -bootstrap \
             {params.mlno_flag} \
-            {params.allmigs_flag} \
-            {params.seed_flag} \
-            > {log} 2>&1
+            {params.allmigs_flag}
         """
 
 
