@@ -1,3 +1,21 @@
+# RAD locus length distributions from ipyrad .loci (alignment width + per-sample effective length)
+rule calculate_loci_length_stats:
+    input:
+        loci = lambda wildcards: config["projects"][wildcards.project]["ipyrad_prefix"] + ".loci",
+        samples = rules.filter_related_individuals.output.samples_to_keep,
+    output:
+        stats = "results/{project}/stats_vcf/loci/{project}.loci_length_stats.txt",
+    log:
+        "logs/{project}/calculate_loci_length_stats.log",
+    conda:
+        "../envs/python.yaml"
+    threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["threads"]
+    resources:
+        mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["mem_mb"],
+        runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default"]["runtime"]
+    script:
+        "../scripts/calculate_loci_length_stats.py"
+
 # VCF statistics from original VCF (after user sample subset, before relatedness filtering)
 rule calculate_stats_vcf_original:
     input:
