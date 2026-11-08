@@ -21,18 +21,21 @@ except Exception:
     raise
 
 
-def weighted_mean(values, weights):
-    return (values * weights).sum() / weights.sum()
+def ratio_sum(numerators, denominators):
+    """sum(numerators) / sum(denominators); nan when the denominator is 0."""
+    denom = float(np.sum(denominators))
+    if denom == 0 or not np.isfinite(denom):
+        return np.nan
+    return float(np.sum(numerators) / denom)
 
 
-def bootstrap_ci(values, weights, B=1000, seed=42):
-    rng = np.random.default_rng(seed)
-    n = len(values)
-    boot = np.empty(B)
-    for b in range(B):
-        idx = rng.integers(0, n, size=n)
-        boot[b] = weighted_mean(values[idx], weights[idx])
-    return np.percentile(boot, [2.5, 97.5]), boot.std(ddof=1)
+def finite_rows(df, columns):
+    """Rows whose component columns are all finite. Zeros are kept."""
+    keep = pd.Series(True, index=df.index)
+    for column in columns:
+        values = pd.to_numeric(df[column], errors="coerce")
+        keep &= values.notna()
+    return df.loc[keep].copy()
 
 
 def bootstrap_ratio_ci(numerators, denominators, B=1000, seed=42):
@@ -130,17 +133,31 @@ def bootstrap_tajima_d_ci(raw_pi, raw_watterson_theta, s_count_values, B=1000, s
     return np.percentile(valid, [2.5, 97.5]), float(np.std(valid, ddof=1)) if len(valid) > 1 else 0.0
 
 
+def _require_columns(df, required, stat):
+    missing = required - set(df.columns)
+    if missing:
+        raise ValueError(
+            f"{stat} output missing columns {sorted(missing)}; "
+            "rerun pixy so window components are available for aggregation"
+        )
+
+
 def process_pi(file, output, bootstrap_replicates=1000):
+    # sum(count_diffs) / sum(count_comparisons), not a mean of avg_pi.
     df = pd.read_csv(file, sep="\t")
-    df_clean = df[df["avg_pi"].notna()].copy()
+    _require_columns(df, {"pop", "count_diffs", "count_comparisons", "no_sites"}, "pi")
 
     results = []
-    for pop, group_df in df_clean.groupby("pop"):
-        values = group_df["avg_pi"].to_numpy()
-        weights = group_df["no_sites"].to_numpy()
+    for pop, group_df in df.groupby("pop"):
+        used = finite_rows(group_df, ["count_diffs", "count_comparisons"])
+        if used.empty:
+            continue
+        num = used["count_diffs"].to_numpy(dtype=float)
+        den = used["count_comparisons"].to_numpy(dtype=float)
+        sites = pd.to_numeric(used["no_sites"], errors="coerce").fillna(0).to_numpy(dtype=float)
 
-        m = weighted_mean(values, weights)
-        (ci_low, ci_high), se = bootstrap_ci(values, weights, B=bootstrap_replicates)
+        m = ratio_sum(num, den)
+        (ci_low, ci_high), se = bootstrap_ratio_ci(num, den, B=bootstrap_replicates)
 
         results.append({
             "population": pop,
@@ -148,8 +165,8 @@ def process_pi(file, output, bootstrap_replicates=1000):
             "bootstrap_se": se,
             "ci_low": ci_low,
             "ci_high": ci_high,
-            "n_loci": len(group_df),
-            "n_sites_total": int(weights.sum()),
+            "n_loci": len(used),
+            "n_sites_total": int(sites.sum()),
         })
 
     out = pd.DataFrame(results)
@@ -157,17 +174,52 @@ def process_pi(file, output, bootstrap_replicates=1000):
     print(f"Pi results written to {output}")
 
 
+def _fst_components(df):
+    """Per-window numerator and denominator for Weir–Cockerham or Hudson FST."""
+    if {"wc_fst_a", "wc_fst_b", "wc_fst_c"} <= set(df.columns):
+        used = finite_rows(df, ["wc_fst_a", "wc_fst_b", "wc_fst_c"])
+        if used.empty:
+            return used, np.array([]), np.array([])
+        a = used["wc_fst_a"].to_numpy(dtype=float)
+        b = used["wc_fst_b"].to_numpy(dtype=float)
+        c = used["wc_fst_c"].to_numpy(dtype=float)
+        return used, a, a + b + c
+    if {"hudson_fst_num", "hudson_fst_den"} <= set(df.columns):
+        used = finite_rows(df, ["hudson_fst_num", "hudson_fst_den"])
+        if used.empty:
+            return used, np.array([]), np.array([])
+        return (
+            used,
+            used["hudson_fst_num"].to_numpy(dtype=float),
+            used["hudson_fst_den"].to_numpy(dtype=float),
+        )
+    raise ValueError(
+        "fst output has no wc_fst_a/b/c or hudson_fst_num/den columns; "
+        "rerun pixy with --fst_components"
+    )
+
+
 def process_fst(file, output, bootstrap_replicates=1000):
+    # sum(components) recomputed as one ratio, not a mean of per-window FST.
     df = pd.read_csv(file, sep="\t")
-    df_clean = df[df["avg_wc_fst"].notna()].copy()
+    _require_columns(df, {"pop1", "pop2", "no_snps"}, "fst")
+    has_wc = {"wc_fst_a", "wc_fst_b", "wc_fst_c"} <= set(df.columns)
+    has_hudson = {"hudson_fst_num", "hudson_fst_den"} <= set(df.columns)
+    if not has_wc and not has_hudson:
+        raise ValueError(
+            "fst output has no wc_fst_a/b/c or hudson_fst_num/den columns; "
+            "rerun pixy with --fst_components"
+        )
 
     results = []
-    for (pop1, pop2), group_df in df_clean.groupby(["pop1", "pop2"]):
-        values = group_df["avg_wc_fst"].to_numpy()
-        weights = group_df["no_snps"].to_numpy()
+    for (pop1, pop2), group_df in df.groupby(["pop1", "pop2"]):
+        used, num, den = _fst_components(group_df)
+        if used.empty:
+            continue
+        snps = pd.to_numeric(used["no_snps"], errors="coerce").fillna(0).to_numpy(dtype=float)
 
-        m = weighted_mean(values, weights)
-        (ci_low, ci_high), se = bootstrap_ci(values, weights, B=bootstrap_replicates)
+        m = ratio_sum(num, den)
+        (ci_low, ci_high), se = bootstrap_ratio_ci(num, den, B=bootstrap_replicates)
 
         results.append({
             "pop1": pop1,
@@ -176,8 +228,8 @@ def process_fst(file, output, bootstrap_replicates=1000):
             "bootstrap_se": se,
             "ci_low": ci_low,
             "ci_high": ci_high,
-            "n_loci": len(group_df),
-            "n_snps_total": int(weights.sum()),
+            "n_loci": len(used),
+            "n_snps_total": int(snps.sum()),
         })
 
     out = pd.DataFrame(results)
@@ -186,16 +238,21 @@ def process_fst(file, output, bootstrap_replicates=1000):
 
 
 def process_dxy(file, output, bootstrap_replicates=1000):
+    # sum(count_diffs) / sum(count_comparisons), not a mean of avg_dxy.
     df = pd.read_csv(file, sep="\t")
-    df_clean = df[df["avg_dxy"].notna()].copy()
+    _require_columns(df, {"pop1", "pop2", "count_diffs", "count_comparisons", "no_sites"}, "dxy")
 
     results = []
-    for (pop1, pop2), group_df in df_clean.groupby(["pop1", "pop2"]):
-        values = group_df["avg_dxy"].to_numpy()
-        weights = group_df["no_sites"].to_numpy()
+    for (pop1, pop2), group_df in df.groupby(["pop1", "pop2"]):
+        used = finite_rows(group_df, ["count_diffs", "count_comparisons"])
+        if used.empty:
+            continue
+        num = used["count_diffs"].to_numpy(dtype=float)
+        den = used["count_comparisons"].to_numpy(dtype=float)
+        sites = pd.to_numeric(used["no_sites"], errors="coerce").fillna(0).to_numpy(dtype=float)
 
-        m = weighted_mean(values, weights)
-        (ci_low, ci_high), se = bootstrap_ci(values, weights, B=bootstrap_replicates)
+        m = ratio_sum(num, den)
+        (ci_low, ci_high), se = bootstrap_ratio_ci(num, den, B=bootstrap_replicates)
 
         results.append({
             "pop1": pop1,
@@ -204,8 +261,8 @@ def process_dxy(file, output, bootstrap_replicates=1000):
             "bootstrap_se": se,
             "ci_low": ci_low,
             "ci_high": ci_high,
-            "n_loci": len(group_df),
-            "n_sites_total": int(weights.sum()),
+            "n_loci": len(used),
+            "n_sites_total": int(sites.sum()),
         })
 
     out = pd.DataFrame(results)

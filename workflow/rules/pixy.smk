@@ -146,9 +146,9 @@ rule pixy_fst:
         n_pops=$(awk -F'\t' 'NF>=2 && $2!="" {{p[$2]=1}} END {{print length(p)+0}}' {input.popmap})
         if [ "$n_pops" -lt 2 ]; then
             echo "Skipping pixy fst for grouping {wildcards.grouping}: only $n_pops population(s) (fst requires >= 2)" >> {log}
-            printf 'pop1\tpop2\tchromosome\twindow_pos_1\twindow_pos_2\tavg_wc_fst\tno_snps\n' > {output.fst}
+            printf 'pop1\tpop2\tchromosome\twindow_pos_1\twindow_pos_2\tavg_wc_fst\tno_snps\twc_fst_a\twc_fst_b\twc_fst_c\n' > {output.fst}
         else
-            pixy --stats fst --vcf {input.vcf} --populations {input.popmap} \
+            pixy --stats fst --fst_components --vcf {input.vcf} --populations {input.popmap} \
                  --n_cores {threads} --window_size {params.window_size} \
                  --output_folder {params.output_folder} --output_prefix {params.output_prefix} &> {log}
         fi

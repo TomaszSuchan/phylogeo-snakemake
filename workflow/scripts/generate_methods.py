@@ -964,34 +964,46 @@ if analyses.get("pixy", False):
         "of Bailey, Stevison & Samuk (2025)."
         if uses_theta_or_d else ""
     )
-    if uses_theta_or_d:
-        agg_text = (
-            f"Genome-wide summaries were obtained by aggregating window components "
-            f"rather than averaging per-window summary statistics: for pi and Dxy "
-            f"the site-weighted mean of window estimates; for Fst the SNP-weighted "
-            f"mean; for Watterson's theta the ratio of summed raw theta to summed "
-            f"sites; and for Tajima's D by summing raw pi and raw Watterson "
-            f"components and recomputing the denominator from "
-            f"--tajima_components segregating-site counts (Bailey et al. 2025). "
-            f"Uncertainty was quantified by bootstrap resampling of windows with "
-            f"replacement ({nboot:,} replicates) and recomputing each aggregated "
-            f"statistic; 95% confidence intervals were the 2.5th and 97.5th "
-            f"percentiles of that bootstrap distribution. These intervals "
-            f"therefore reflect sampling variation across genomic windows rather "
-            f"than uncertainty arising from the finite number of individuals."
+    agg_bits = []
+    pi_dxy = [name for name, key in (("pi", "pi"), ("Dxy", "dxy")) if key in stats]
+    if pi_dxy:
+        joined_pi = " and ".join(pi_dxy)
+        agg_bits.append(
+            f"for {joined_pi} the ratio of summed pairwise differences to summed "
+            f"pairwise comparisons"
         )
+    if "fst" in stats:
+        agg_bits.append(
+            "for Fst the ratio of summed Weir and Cockerham variance components "
+            "(wc_fst_a, wc_fst_b, and wc_fst_c from pixy --fst_components)"
+        )
+    if "watterson_theta" in stats:
+        agg_bits.append(
+            "for Watterson's theta the ratio of summed raw theta to summed sites"
+        )
+    if "tajima_d" in stats:
+        agg_bits.append(
+            "for Tajima's D by summing raw pi and raw Watterson components and "
+            "recomputing the denominator from --tajima_components "
+            "segregating-site counts (Bailey et al. 2025)"
+        )
+    if len(agg_bits) == 1:
+        agg_list = agg_bits[0]
+    elif len(agg_bits) == 2:
+        agg_list = f"{agg_bits[0]} and {agg_bits[1]}"
     else:
-        agg_text = (
-            f"For each population (or population pair), genome-wide summaries "
-            f"were obtained as the weighted mean of window estimates (weights = "
-            f"number of scored sites for pi/Dxy, or number of SNPs for Fst). "
-            f"Uncertainty in these genome-wide means was quantified by bootstrap "
-            f"resampling of windows with replacement ({nboot:,} replicates); 95% "
-            f"confidence intervals were taken as the 2.5th and 97.5th percentiles "
-            f"of the bootstrap distribution of the weighted mean. These intervals "
-            f"therefore reflect sampling variation across genomic windows rather "
-            f"than uncertainty arising from the finite number of individuals."
-        )
+        agg_list = "; ".join(agg_bits[:-1]) + f"; and {agg_bits[-1]}"
+    agg_text = (
+        f"Genome-wide summaries were obtained by summing raw window components "
+        f"and recomputing each statistic, rather than averaging per-window "
+        f"values: {agg_list}. "
+        f"Uncertainty was quantified by bootstrap resampling of windows with "
+        f"replacement ({nboot:,} replicates) and recomputing each aggregated "
+        f"statistic; 95% confidence intervals were the 2.5th and 97.5th "
+        f"percentiles of that bootstrap distribution. These intervals "
+        f"therefore reflect sampling variation across genomic windows rather "
+        f"than uncertainty arising from the finite number of individuals."
+    )
     div_parts.append(
         f"Within- and between-population genetic diversity was quantified with "
         f"pixy {vn(versions,'pixy')} (Korunes & Samuk 2021), which estimates "
