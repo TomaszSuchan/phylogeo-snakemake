@@ -254,6 +254,41 @@ def _pixy_enabled_stats(project_params):
     return {"pi", "fst", "dxy"}
 
 
+# Pixy 2.1 --fst_type. Nei is not implemented there.
+_PIXY_FST_TYPES = ("wc", "hudson")
+
+
+def _parse_name_list(raw, default):
+    if raw is None:
+        return list(default)
+    if isinstance(raw, str):
+        names = [t.strip().lower() for t in raw.replace(",", " ").split() if t.strip()]
+    else:
+        names = [str(t).strip().lower() for t in raw if str(t).strip()]
+    if not names:
+        return list(default)
+    seen = []
+    for name in names:
+        if name not in seen:
+            seen.append(name)
+    return seen
+
+
+def _pixy_fst_types(project_params):
+    """FST estimators to run when stats includes fst. Default is Weir–Cockerham."""
+    raw = project_params.get("pixy", {}).get("fst_types", ["wc"])
+    types = _parse_name_list(raw, ["wc"])
+    unknown = [t for t in types if t not in _PIXY_FST_TYPES]
+    if unknown:
+        raise ValueError(
+            "parameters.pixy.fst_types has unsupported estimator(s) "
+            f"{unknown}. Pixy 2.1 supports {list(_PIXY_FST_TYPES)} "
+            "(wc = Weir and Cockerham 1984, hudson = Hudson 1992). "
+            "Nei is not available in pixy."
+        )
+    return types
+
+
 def _pixy_has_diversity_panel_stats(project_params):
     """True when pi, watterson_theta, and tajima_d are all requested (combined panel)."""
     stats = _pixy_enabled_stats(project_params)
@@ -2062,10 +2097,12 @@ def get_all_targets():
                     )
                 )
             if "fst" in pixy_stats:
+                pixy_fst_types = _pixy_fst_types(params)
                 targets.extend(
                     expand(
-                        f"results/{project}/pixy/{project}.{{grouping}}.pixy_fst-summary.txt",
+                        f"results/{project}/pixy/{project}.{{grouping}}.pixy_{{fst_type}}_fst-summary.txt",
                         grouping=pixy_pairwise_groupings,
+                        fst_type=pixy_fst_types,
                     )
                 )
                 targets.extend(
@@ -2074,8 +2111,9 @@ def get_all_targets():
                         + project
                         + "/pixy/plots/"
                         + project
-                        + ".{grouping}.pixy_fst_heatmap.pdf",
+                        + ".{grouping}.pixy_{fst_type}_fst_heatmap.pdf",
                         grouping=pixy_pairwise_groupings,
+                        fst_type=pixy_fst_types,
                     )
                 )
                 targets.extend(
@@ -2084,8 +2122,9 @@ def get_all_targets():
                         + project
                         + "/pixy/plots/"
                         + project
-                        + ".{grouping}.pixy_fst_heatmap.rds",
+                        + ".{grouping}.pixy_{fst_type}_fst_heatmap.rds",
                         grouping=pixy_pairwise_groupings,
+                        fst_type=pixy_fst_types,
                     )
                 )
             if "dxy" in pixy_stats:

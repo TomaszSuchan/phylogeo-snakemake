@@ -125,30 +125,45 @@ rule pixy_fst:
         vcf_index = rules.prepare_invariant_vcf_gz_index.output.index,
         popmap = rules.generate_pixy_popmap.output.popmap
     output:
-        fst = "results/{project}/pixy/{project}.{grouping}.pixy_fst.txt"
+        fst = "results/{project}/pixy/{project}.{grouping}.pixy_{fst_type}_fst.txt"
     log:
-        "logs/{project}/pixy_fst.{grouping}.log"
+        "logs/{project}/pixy_fst.{grouping}.{fst_type}.log"
     benchmark:
-        "benchmarks/{project}/pixy_fst.{grouping}.txt"
+        "benchmarks/{project}/pixy_fst.{grouping}.{fst_type}.txt"
     params:
         window_size = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pixy", {}).get("window_size", 10000),
         output_folder = "results/{project}/pixy/",
-        output_prefix = "{project}.{grouping}.pixy"
+        output_prefix = "{project}.{grouping}.pixy_{fst_type}"
     conda:
         "../envs/pixy.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["pixy"]["threads"]
     resources:
         mem_mb = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["pixy"]["mem_mb"],
         runtime = lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["pixy"]["runtime"]
+    wildcard_constraints:
+        fst_type = "wc|hudson"
     shell:
         """
         mkdir -p {params.output_folder}
+        case "{wildcards.fst_type}" in
+            wc)
+                header=$(printf 'pop1\tpop2\tchromosome\twindow_pos_1\twindow_pos_2\tavg_wc_fst\tno_snps\twc_fst_a\twc_fst_b\twc_fst_c')
+                ;;
+            hudson)
+                header=$(printf 'pop1\tpop2\tchromosome\twindow_pos_1\twindow_pos_2\tavg_hudson_fst\tno_snps\thudson_fst_num\thudson_fst_den')
+                ;;
+            *)
+                echo "Unsupported fst_type {wildcards.fst_type}. Pixy supports wc and hudson." >> {log}
+                exit 1
+                ;;
+        esac
         n_pops=$(awk -F'\t' 'NF>=2 && $2!="" {{p[$2]=1}} END {{print length(p)+0}}' {input.popmap})
         if [ "$n_pops" -lt 2 ]; then
-            echo "Skipping pixy fst for grouping {wildcards.grouping}: only $n_pops population(s) (fst requires >= 2)" >> {log}
-            printf 'pop1\tpop2\tchromosome\twindow_pos_1\twindow_pos_2\tavg_wc_fst\tno_snps\twc_fst_a\twc_fst_b\twc_fst_c\n' > {output.fst}
+            echo "Skipping pixy fst ({wildcards.fst_type}) for grouping {wildcards.grouping}: only $n_pops population(s) (fst requires >= 2)" >> {log}
+            printf '%s\n' "$header" > {output.fst}
         else
-            pixy --stats fst --fst_components --vcf {input.vcf} --populations {input.popmap} \
+            pixy --stats fst --fst_type {wildcards.fst_type} --fst_components \
+                 --vcf {input.vcf} --populations {input.popmap} \
                  --n_cores {threads} --window_size {params.window_size} \
                  --output_folder {params.output_folder} --output_prefix {params.output_prefix} &> {log}
         fi
@@ -277,11 +292,13 @@ rule pixy_fst_summary:
     input:
         fst = rules.pixy_fst.output.fst
     output:
-        fst = "results/{project}/pixy/{project}.{grouping}.pixy_fst-summary.txt"
+        fst = "results/{project}/pixy/{project}.{grouping}.pixy_{fst_type}_fst-summary.txt"
     log:
-        "logs/{project}/pixy_fst_summary.{grouping}.log"
+        "logs/{project}/pixy_fst_summary.{grouping}.{fst_type}.log"
     benchmark:
-        "benchmarks/{project}/pixy_fst_summary.{grouping}.txt"
+        "benchmarks/{project}/pixy_fst_summary.{grouping}.{fst_type}.txt"
+    wildcard_constraints:
+        fst_type = "wc|hudson"
     params:
         stat = "fst",
         bootstrap_replicates = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("pixy", {}).get("bootstrap_replicates", 1000)
@@ -365,17 +382,20 @@ rule plot_pixy_fst_heatmap:
     input:
         fst_summary = rules.pixy_fst_summary.output.fst
     output:
-        pdf = "results/{project}/pixy/plots/{project}.{grouping}.pixy_fst_heatmap.pdf",
-        rds = "results/{project}/pixy/plots/{project}.{grouping}.pixy_fst_heatmap.rds"
+        pdf = "results/{project}/pixy/plots/{project}.{grouping}.pixy_{fst_type}_fst_heatmap.pdf",
+        rds = "results/{project}/pixy/plots/{project}.{grouping}.pixy_{fst_type}_fst_heatmap.rds"
     params:
         width = lambda wildcards: _pixy_plot_style_params(wildcards)["width"],
         height = lambda wildcards: _pixy_plot_style_params(wildcards)["height"],
         axis_title_size = lambda wildcards: _pixy_plot_style_params(wildcards)["axis_title_size"],
         axis_text_size = lambda wildcards: _pixy_plot_style_params(wildcards)["axis_text_size"],
+        fst_type = lambda wildcards: wildcards.fst_type,
     log:
-        "logs/{project}/plot_pixy_fst_heatmap.{grouping}.log"
+        "logs/{project}/plot_pixy_fst_heatmap.{grouping}.{fst_type}.log"
     benchmark:
-        "benchmarks/{project}/plot_pixy_fst_heatmap.{grouping}.txt"
+        "benchmarks/{project}/plot_pixy_fst_heatmap.{grouping}.{fst_type}.txt"
+    wildcard_constraints:
+        fst_type = "wc|hudson"
     conda:
         "../envs/r-plot.yaml"
     threads: 1

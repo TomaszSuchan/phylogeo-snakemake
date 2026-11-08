@@ -26,6 +26,16 @@ if (is.na(plot_width)) plot_width <- 12
 if (is.na(plot_height)) plot_height <- 10
 if (is.na(axis_title_size)) axis_title_size <- 10
 if (is.na(axis_text_size)) axis_text_size <- 8
+fst_type <- "wc"
+if (!is.null(snakemake@params[["fst_type"]])) {
+  fst_type <- as.character(snakemake@params[["fst_type"]])
+}
+fst_title <- switch(
+  fst_type,
+  wc = "Weir-Cockerham FST",
+  hudson = "Hudson FST",
+  paste(fst_type, "FST")
+)
 
 message("\n=== READING FST SUMMARY ===\n")
 fst_df <- read.table(fst_summary_file, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
@@ -108,7 +118,7 @@ p <- pheatmap::pheatmap(
   color = colorRampPalette(c("white", "yellow", "orange", "red"))(100),
   breaks = color_breaks,
   na_col = "grey90",
-  main = "",
+  main = fst_title,
   silent = FALSE
 )
 

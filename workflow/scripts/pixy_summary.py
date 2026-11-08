@@ -2,7 +2,6 @@
 import math
 import sys
 import traceback
-from collections import Counter
 from functools import lru_cache
 
 import numpy as np
@@ -22,9 +21,13 @@ except Exception:
 
 
 def ratio_sum(numerators, denominators):
-    """sum(numerators) / sum(denominators); nan when the denominator is 0."""
+    """sum(numerators) / sum(denominators); nan unless the denominator is positive.
+
+    Matches pixy >= 2.2.5: a negative numerator is a valid estimate, and a
+    non-positive denominator is undefined.
+    """
     denom = float(np.sum(denominators))
-    if denom == 0 or not np.isfinite(denom):
+    if not np.isfinite(denom) or not denom > 0:
         return np.nan
     return float(np.sum(numerators) / denom)
 
@@ -45,8 +48,8 @@ def bootstrap_ratio_ci(numerators, denominators, B=1000, seed=42):
     boot = np.empty(B)
     for b in range(B):
         idx = rng.integers(0, n, size=n)
-        denom = denominators[idx].sum()
-        boot[b] = np.nan if denom == 0 else numerators[idx].sum() / denom
+        denom = float(denominators[idx].sum())
+        boot[b] = np.nan if not (np.isfinite(denom) and denom > 0) else numerators[idx].sum() / denom
     valid = boot[~np.isnan(boot)]
     if len(valid) == 0:
         return (np.nan, np.nan), np.nan
@@ -70,45 +73,53 @@ def _tajima_constants(n):
     return e1, e2
 
 
-def parse_tajima_d_s_counts(value):
-    """Parse pixy tajima_d_s_counts ('n:s,n:s,...') into a Counter."""
+def parse_tajima_d_components(value):
+    """Parse pixy >= 2.2.3 tajima_d_components ('nsum=<int>,mut=<int>')."""
     if value is None or (isinstance(value, float) and math.isnan(value)):
-        return Counter()
+        return None
     text = str(value).strip()
     if text in ("", "NA", "nan"):
-        return Counter()
-    counts = Counter()
+        return None
+    fields = {}
     for item in text.split(","):
-        n_str, s_str = item.split(":")
-        counts[int(n_str)] += int(float(s_str))
-    return counts
+        key, sep, val = item.partition("=")
+        if not sep:
+            raise ValueError(
+                f"Unrecognized tajima_d_components {text!r}. "
+                "pixy >= 2.2.3 writes 'nsum=<int>,mut=<int>' "
+                "(pixy <= 2.2.1 wrote n:s allele-count classes). Re-run pixy."
+            )
+        fields[key] = int(float(val))
+    if "nsum" not in fields or "mut" not in fields:
+        raise ValueError(
+            f"tajima_d_components {text!r} is missing nsum or mut"
+        )
+    return fields["nsum"], fields["mut"]
 
 
-def combine_tajima_d_s_counts(values):
-    total = Counter()
-    for value in values:
-        total.update(parse_tajima_d_s_counts(value))
-    return total
+def calc_tajima_d_stdev(total_allele_count, num_sites, num_mutations):
+    """Tajima's D denominator at the pooled mean allele count (pixy >= 2.2.3)."""
+    if num_sites <= 0 or num_mutations <= 0:
+        return float("nan")
+    n = int(np.rint(total_allele_count / num_sites))
+    if n < 2:
+        return float("nan")
+    e1, e2 = _tajima_constants(n)
+    s = num_mutations
+    variance = (e1 * s) + (e2 * s * (s - 1))
+    if variance < 0:
+        return float("nan")
+    return math.sqrt(variance)
 
 
-def calc_tajima_d_stdev(s_counts):
-    """Denominator of Tajima's D from summed observed-allele-count classes (Bailey et al. 2025)."""
-    d_stdev = 0.0
-    for n, s in s_counts.items():
-        if n < 2 or s <= 0:
-            continue
-        e1, e2 = _tajima_constants(int(n))
-        variance = (e1 * s) + (e2 * s * (s - 1))
-        if variance < 0:
-            return float("nan")
-        d_stdev += math.sqrt(variance)
-    return float(d_stdev)
-
-
-def aggregate_tajima_d(raw_pi, raw_watterson_theta, s_count_values):
+def aggregate_tajima_d(raw_pi, raw_watterson_theta, nsum, mut, no_sites):
     raw_pi_sum = float(np.nansum(raw_pi))
     raw_theta_sum = float(np.nansum(raw_watterson_theta))
-    d_stdev = calc_tajima_d_stdev(combine_tajima_d_s_counts(s_count_values))
+    d_stdev = calc_tajima_d_stdev(
+        float(np.nansum(nsum)),
+        float(np.nansum(no_sites)),
+        float(np.nansum(mut)),
+    )
     if not np.isfinite(d_stdev) or d_stdev <= 0:
         tajima_d = np.nan
     else:
@@ -116,7 +127,7 @@ def aggregate_tajima_d(raw_pi, raw_watterson_theta, s_count_values):
     return tajima_d, d_stdev, raw_pi_sum, raw_theta_sum
 
 
-def bootstrap_tajima_d_ci(raw_pi, raw_watterson_theta, s_count_values, B=1000, seed=42):
+def bootstrap_tajima_d_ci(raw_pi, raw_watterson_theta, nsum, mut, no_sites, B=1000, seed=42):
     rng = np.random.default_rng(seed)
     n = len(raw_pi)
     boot = np.empty(B)
@@ -125,7 +136,9 @@ def bootstrap_tajima_d_ci(raw_pi, raw_watterson_theta, s_count_values, B=1000, s
         boot[b], _, _, _ = aggregate_tajima_d(
             raw_pi[idx],
             raw_watterson_theta[idx],
-            [s_count_values[i] for i in idx],
+            nsum[idx],
+            mut[idx],
+            no_sites[idx],
         )
     valid = boot[~np.isnan(boot)]
     if len(valid) == 0:
@@ -306,25 +319,37 @@ def process_watterson_theta(file, output, bootstrap_replicates=1000):
 
 def process_tajima_d(file, output, bootstrap_replicates=1000):
     df = pd.read_csv(file, sep="\t")
-    required = {"tajima_d", "raw_pi", "raw_watterson_theta", "no_sites", "tajima_d_s_counts"}
+    required = {"tajima_d", "raw_pi", "raw_watterson_theta", "no_sites", "tajima_d_components"}
     missing = required - set(df.columns)
     if missing:
         raise ValueError(
             f"tajima_d output missing columns {sorted(missing)}; "
-            "run pixy with --stats tajima_d --tajima_components"
+            "run pixy >= 2.2.3 with --stats tajima_d --tajima_components"
         )
-    df_clean = df[df["tajima_d"].notna()].copy()
+    parsed = df["tajima_d_components"].map(parse_tajima_d_components)
+    df = df.loc[parsed.notna()].copy()
+    df["_nsum"] = [pair[0] for pair in parsed.loc[parsed.notna()]]
+    df["_mut"] = [pair[1] for pair in parsed.loc[parsed.notna()]]
 
     results = []
-    for pop, group_df in df_clean.groupby("pop"):
-        raw_pi = group_df["raw_pi"].to_numpy(dtype=float)
-        raw_theta = group_df["raw_watterson_theta"].to_numpy(dtype=float)
-        s_counts = group_df["tajima_d_s_counts"].tolist()
-        sites = group_df["no_sites"].to_numpy(dtype=float)
+    for pop, group_df in df.groupby("pop"):
+        raw_pi = pd.to_numeric(group_df["raw_pi"], errors="coerce").to_numpy(dtype=float)
+        raw_theta = pd.to_numeric(group_df["raw_watterson_theta"], errors="coerce").to_numpy(dtype=float)
+        nsum = group_df["_nsum"].to_numpy(dtype=float)
+        mut = group_df["_mut"].to_numpy(dtype=float)
+        sites = pd.to_numeric(group_df["no_sites"], errors="coerce").to_numpy(dtype=float)
+        ok = np.isfinite(raw_pi) & np.isfinite(raw_theta) & np.isfinite(sites)
+        raw_pi, raw_theta, nsum, mut, sites = (
+            raw_pi[ok], raw_theta[ok], nsum[ok], mut[ok], sites[ok]
+        )
+        if len(raw_pi) == 0:
+            continue
 
-        m, d_stdev, raw_pi_sum, raw_theta_sum = aggregate_tajima_d(raw_pi, raw_theta, s_counts)
+        m, d_stdev, raw_pi_sum, raw_theta_sum = aggregate_tajima_d(
+            raw_pi, raw_theta, nsum, mut, sites
+        )
         (ci_low, ci_high), se = bootstrap_tajima_d_ci(
-            raw_pi, raw_theta, s_counts, B=bootstrap_replicates
+            raw_pi, raw_theta, nsum, mut, sites, B=bootstrap_replicates
         )
 
         results.append({
@@ -336,7 +361,7 @@ def process_tajima_d(file, output, bootstrap_replicates=1000):
             "tajima_d_stdev": d_stdev,
             "raw_pi_total": raw_pi_sum,
             "raw_watterson_theta_total": raw_theta_sum,
-            "n_loci": len(group_df),
+            "n_loci": len(raw_pi),
             "n_sites_total": int(sites.sum()),
         })
 

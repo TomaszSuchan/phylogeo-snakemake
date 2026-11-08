@@ -147,6 +147,7 @@ rule genome_scan_fst:
         "benchmarks/{project}/genome_scan_fst.txt"
     params:
         window_size = lambda wildcards: config["projects"][wildcards.project]["parameters"]["genome_scan"].get("window_size_fst", 100),
+        fst_type = lambda wildcards: str(config["projects"][wildcards.project]["parameters"]["genome_scan"].get("fst_type", "wc")).strip().lower() or "wc",
         output_folder = "results/{project}/genome_scan/",
         output_prefix = "{project}.genome_scan"
     conda:
@@ -158,7 +159,14 @@ rule genome_scan_fst:
     shell:
         """
         mkdir -p {params.output_folder}
-        pixy --stats fst --vcf {input.vcf} --populations {input.popmap} \
+        case "{params.fst_type}" in
+            wc|hudson) ;;
+            *)
+                echo "Unsupported genome_scan.fst_type {params.fst_type}. Pixy supports wc and hudson." >> {log}
+                exit 1
+                ;;
+        esac
+        pixy --stats fst --fst_type {params.fst_type} --vcf {input.vcf} --populations {input.popmap} \
              --n_cores {threads} --window_size {params.window_size} \
              --output_folder {params.output_folder} --output_prefix {params.output_prefix} &> {log}
         """

@@ -2,7 +2,8 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
- - pixy=2.1.0
+ - pixy=2.2.5
  - htslib=1.22
- # dask 2023.x (pulled by scikit-allel) still imports numpy.compat, removed in NumPy 2
+ # pixy 2.2.4+ requires a numpy-2-safe dask. Keep NumPy 1.x so this env
+ # stays on the same ABI as the rest of the workflow.
  - numpy>=1.24,<2

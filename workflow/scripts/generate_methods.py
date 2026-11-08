@@ -973,9 +973,24 @@ if analyses.get("pixy", False):
             f"pairwise comparisons"
         )
     if "fst" in stats:
+        _fst_labels = {"wc": "Weir and Cockerham", "hudson": "Hudson"}
+        raw_ft = pp.get("fst_types", ["wc"])
+        if isinstance(raw_ft, str):
+            fst_types = [t.strip().lower() for t in raw_ft.replace(",", " ").split() if t.strip()]
+        else:
+            fst_types = [str(t).strip().lower() for t in (raw_ft or []) if str(t).strip()]
+        if not fst_types:
+            fst_types = ["wc"]
+        named = [_fst_labels.get(t, t) for t in fst_types]
+        if len(named) == 1:
+            fst_label = named[0]
+        elif len(named) == 2:
+            fst_label = f"{named[0]} and {named[1]}"
+        else:
+            fst_label = ", ".join(named[:-1]) + f", and {named[-1]}"
         agg_bits.append(
-            "for Fst the ratio of summed Weir and Cockerham variance components "
-            "(wc_fst_a, wc_fst_b, and wc_fst_c from pixy --fst_components)"
+            f"for Fst ({fst_label}) the ratio of summed estimator components "
+            f"from pixy --fst_components"
         )
     if "watterson_theta" in stats:
         agg_bits.append(
@@ -984,8 +999,9 @@ if analyses.get("pixy", False):
     if "tajima_d" in stats:
         agg_bits.append(
             "for Tajima's D by summing raw pi and raw Watterson components and "
-            "recomputing the denominator from --tajima_components "
-            "segregating-site counts (Bailey et al. 2025)"
+            "recomputing the denominator once from the pooled mean number of "
+            "observed alleles and the summed mutation count in "
+            "--tajima_components (tajima_d_components; Bailey et al. 2025)"
         )
     if len(agg_bits) == 1:
         agg_list = agg_bits[0]
@@ -1066,11 +1082,15 @@ if analyses.get("genome_scan", False):
     w_fst  = gs.get("window_size_fst",  100)
     w_pi   = gs.get("window_size_pi",  1_000_000)
     w_dxy  = gs.get("window_size_dxy", 1_000_000)
+    gs_fst_type = str(gs.get("fst_type", "wc")).strip().lower() or "wc"
+    gs_fst_name = {"wc": "Weir and Cockerham", "hudson": "Hudson"}.get(
+        gs_fst_type, gs_fst_type
+    )
     div_parts.append(
         f"Genome-wide scans of differentiation between {pop1} and {pop2} were "
         f"performed with pixy {vn(versions,'pixy')} on the all-sites dataset, "
         f"retaining only individuals assigned to the two focal groups. Sliding-window "
-        f"estimates of F_ST (window size {w_fst:,} bp), nucleotide diversity "
+        f"estimates of {gs_fst_name} F_ST (window size {w_fst:,} bp), nucleotide diversity "
         f"pi (window size {w_pi:,} bp), and absolute divergence Dxy "
         f"(window size {w_dxy:,} bp) were plotted along the genome to "
         f"localise regions of elevated differentiation or diversity."

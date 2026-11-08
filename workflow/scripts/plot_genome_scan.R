@@ -72,16 +72,24 @@ dxy_df <- read.table(dxy_file, header = TRUE, sep = "\t", stringsAsFactors = FAL
 message(sprintf("  Loaded %d rows", nrow(dxy_df)))
 message(sprintf("  Columns: %s", paste(colnames(dxy_df), collapse = ", ")))
 
-# Process FST data
-# Pixy FST output (new): pop1, pop2, chromosome, window_pos_1, window_pos_2, avg_wc_fst, no_snps
+# Process FST data. Column is avg_wc_fst or avg_hudson_fst depending on --fst_type.
 message("\n=== PROCESSING FST DATA ===\n")
+fst_col <- grep("^avg_.+_fst$", colnames(fst_df), value = TRUE)
+if (length(fst_col) != 1) {
+  stop(
+    "Expected one pixy FST column (avg_wc_fst or avg_hudson_fst), found: ",
+    paste(fst_col, collapse = ", ")
+  )
+}
+message(sprintf("FST column: %s", fst_col))
 fst_plot <- fst_df %>%
-  filter(!is.na(avg_wc_fst)) %>%
+  filter(!is.na(.data[[fst_col]])) %>%
   mutate(
     midpoint = (window_pos_1 + window_pos_2) / 2,
-    chromosome = as.character(chromosome)
+    chromosome = as.character(chromosome),
+    fst = .data[[fst_col]]
   ) %>%
-  select(chromosome, midpoint, fst = avg_wc_fst) %>%
+  select(chromosome, midpoint, fst) %>%
   arrange(chromosome, midpoint)
 
 message(sprintf("FST data: %d windows", nrow(fst_plot)))
