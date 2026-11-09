@@ -335,9 +335,8 @@ mac_thr   = rel_filt.get("mac_threshold",   2)
 vcf_thin  = p.get("vcf_thinning", {})
 thin_meth = vcf_thin.get("method", "max_coverage")
 ld        = p.get("ld_pruning", {})
-ld_r2     = ld.get("r2",          0.5)
+ld_r2     = ld.get("r2",          0.2)
 ld_win    = ld.get("window_size", 50)
-ld_step   = ld.get("step_size",   5)
 
 filt_parts = []
 
@@ -421,8 +420,9 @@ elif thinning_strat == "ld_pruning":
         f"Because linked SNPs violate the assumption of marker independence made "
         f"by clustering and ordination methods, the biallelic SNP dataset was "
         f"pruned for linkage disequilibrium (LD) using PLINK {vn(versions,'plink')} "
-        f"(Chang et al. 2015). LD pruning was performed in a sliding window of "
-        f"{ld_win} SNPs advanced {ld_step} SNPs at a time, recursively removing one "
+        f"(Chang et al. 2015). LD pruning was performed in physical windows of "
+        f"{ld_win} kb, advanced one variant at a time and restricted to variants "
+        f"on the same chromosome, recursively removing one "
         f"SNP from each pair whose squared correlation (r2) exceeded {ld_r2} until "
         f"no such pair remained within any window. This produced the "
         f"**LD-pruned biallelic SNP dataset** ({n_snps} SNPs, {n_samples} "

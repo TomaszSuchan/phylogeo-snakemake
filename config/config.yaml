@@ -65,11 +65,10 @@ parameters: &global_params
     id_pattern: "loc(\\d+)_" # regex pattern to extract RAD fragment ID
 
   # Settings used only when thinning_strategy: "ld_pruning".
-  # Window and step sizes are PLINK-style LD-pruning window parameters.
+  # window_size is kilobases within each chromosome. PLINK2 steps by one variant.
   ld_pruning:
     r2: 0.2                   # LD r^2 threshold
-    window_size: 50           # LD window size
-    step_size: 5              # LD step size
+    window_size: 50           # LD window size in kb
   
   ## Analysis method overview
   # structure: Bayesian ancestry clustering with STRUCTURE across k_values.
@@ -1096,7 +1095,6 @@ projects:
   #     ld_pruning:
   #       r2: 0.2
   #       window_size: 50
-  #       step_size: 5
   #
   #     pca_plot:
   #       pc_max: 4

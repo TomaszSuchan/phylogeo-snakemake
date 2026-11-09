@@ -48,8 +48,8 @@ rule ld_prune_calculate:
     params:
         plink_prefix = "results/{project}/filtered_data/{project}.ld_prune_temp",
         r2 = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("ld_pruning", {}).get("r2", 0.2),
+        # Kilobases. Without the kb token PLINK2 treats this as a variant count in bim order.
         window_size = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("ld_pruning", {}).get("window_size", 50),
-        step_size = lambda wildcards: config["projects"][wildcards.project]["parameters"].get("ld_pruning", {}).get("step_size", 5)
     conda:
         "../envs/plink.yaml"
     threads: lambda wildcards: config["projects"][wildcards.project]["parameters"]["resources"]["default-long"]["threads"]
@@ -59,7 +59,7 @@ rule ld_prune_calculate:
     shell:
         """
         plink2 --bfile {params.plink_prefix} \
-               --indep-pairwise {params.window_size} {params.step_size} {params.r2} \
+               --indep-pairwise {params.window_size} kb 1 {params.r2} \
                --bad-ld \
                --out {params.plink_prefix} >> {log} 2>&1
         """

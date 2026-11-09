@@ -201,9 +201,8 @@ The pipeline applies filtering steps in the following order:
   - `parameters.vcf_thinning.ns_tag` <STRING>: VCF INFO field tag for number of samples with data (default: `NS`)
   - `parameters.vcf_thinning.id_pattern` <STRING>: Regex pattern to extract RAD fragment ID from variant names (default: `loc(\d+)_`). Change it if your VCF IDs do not use ipyrad-style locus IDs.
 - **Parameters for `"ld_pruning"`** (from `parameters.ld_pruning`):
-  - `parameters.ld_pruning.r2` <FLOAT>: \(r^2\) threshold for LD pruning (default: `0.5`). Lower values are stricter and keep fewer, more independent SNPs.
-  - `parameters.ld_pruning.window_size` <INTEGER>: Window size in kb for LD pruning (default: `50`). Larger windows detect broader LD blocks but may remove more SNPs.
-  - `parameters.ld_pruning.step_size` <INTEGER>: Step size in kb for LD pruning (default: `5`). This controls how far the window advances between LD checks.
+  - `parameters.ld_pruning.r2` <FLOAT>: \(r^2\) threshold for LD pruning (default: `0.2`). Lower values are stricter and keep fewer, more independent SNPs.
+  - `parameters.ld_pruning.window_size` <INTEGER>: Physical window size in kilobases (default: `50`). PLINK2 compares pairs only within this distance and only on the same chromosome, then advances the window by one variant. It rejects any other step when the window is in kilobases. On a de novo ipyrad VCF each locus is its own short contig, so a window of this size covers that locus and does not pair SNPs from different loci.
 - **Key outputs** (per project, under `results/<project>/filtered_data/`):
   - `.../{project}.filtered.vcf.gz`: VCF after missing data filtering
   - `.../{project}.biallelic_snps.vcf.gz`: biallelic SNPs (before thinning / LD pruning)
